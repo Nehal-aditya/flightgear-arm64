@@ -68,6 +68,9 @@
 
 using namespace flightgear;
 
+typedef osgUtil::LineSegmentIntersector::Intersection Intersection;
+typedef osgUtil::LineSegmentIntersector::Intersections Intersections;
+
 // Operation for querying OpenGL parameters. This must be done in a
 // valid OpenGL context, potentially in another thread.
 class QueryGLParametersOperation : public GraphicsContextOperation {
@@ -613,8 +616,6 @@ FGRenderer::resize(int width, int height)
 
 namespace {
 
-typedef osgUtil::LineSegmentIntersector::Intersection Intersection;
-
 SGVec2d uvFromIntersection(const Intersection& hit)
 {
     // Taken from http://trac.openscenegraph.org/projects/osg/browser/OpenSceneGraph/trunk/examples/osgmovie/osgmovie.cpp
@@ -666,14 +667,10 @@ SGVec2d uvFromIntersection(const Intersection& hit)
 
 } // anonymous namespace
 
-FGRenderer::PickList FGRenderer::pick(const osg::Vec2& windowPos)
+FGRenderer::PickList handlePickIntersections(Intersections& intersections)
 {
-    PickList result;
-    osgUtil::LineSegmentIntersector::Intersections intersections;
+    FGRenderer::PickList result;
 
-    if (!computeIntersections(CameraGroup::getDefault(), windowPos, intersections))
-        return result; // return empty list
-    
     // We attempt to highlight nodes until Highlight::highlight_nodes()
     // succeeds and returns +ve, or highlighting is disabled and it returns -1.
     auto highlight = globals->get_subsystem<Highlight>();
@@ -709,6 +706,26 @@ FGRenderer::PickList FGRenderer::pick(const osg::Vec2& windowPos)
     }
 
     return result;
+}
+
+FGRenderer::PickList FGRenderer::pick(const osg::Vec2& windowPos)
+{
+    Intersections intersections;
+
+    if (!computeIntersections(CameraGroup::getDefault(), windowPos, intersections))
+        return PickList();
+
+    return handlePickIntersections(intersections);
+}
+
+FGRenderer::PickList FGRenderer::pick(const std::vector<osg::Vec3d>& lineStrip)
+{
+    Intersections intersections;
+
+    if (!computeSceneIntersections(CameraGroup::getDefault(), lineStrip, intersections))
+        return PickList();
+
+    return handlePickIntersections(intersections);
 }
 
 void
