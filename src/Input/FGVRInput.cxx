@@ -37,6 +37,8 @@
 #include <cassert>
 #include <cmath>
 
+#include "FGVRButton.hxx"
+
 using flightgear::CameraGroup;
 using flightgear::VRManager;
 
@@ -778,7 +780,10 @@ void FGVRInput::Mode::SubactionInfo::readProcesses(Mode* mode,
 
         // Create a process of the specified type
         ModeProcess* process = nullptr;
-        {
+        if (processType == "button") {
+            process = new FGVRButton(mode, _subaction, processNode,
+                                     processStatusNode);
+        } else {
             SG_LOG(SG_INPUT, SG_WARN,
                    "Unknown VR mode process type \"" << processType << "\" VR mode " << mode->getPath() << " process " << processName);
         }
