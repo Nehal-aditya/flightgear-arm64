@@ -15,6 +15,7 @@ set(SOURCES
 	sview.cxx
 	GraphicsPresets.cxx
 	PluginLoader.cxx
+	StartupWindow.cxx
 	)
 
 set(HEADERS
@@ -30,6 +31,7 @@ set(HEADERS
 	sview.hxx
 	GraphicsPresets.hxx
 	VRManager.hxx
+	StartupWindow.hxx
 	)
 
 if (ENABLE_OSGXR)
