@@ -240,6 +240,7 @@ bool FGLocale::selectLanguage(const std::string& language)
     loadResource("sys");
     loadResource("atc");
     loadResource("tips");
+    loadResource("vr");
     loadResource("weather-scenarios");
 
     _inited = true;
