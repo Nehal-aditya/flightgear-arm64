@@ -8,6 +8,7 @@ set(SOURCES
     FGColor.cxx
     FileDialog.cxx
     MouseCursor.cxx
+    MouseCursor3d.cxx
     MessageBox.cxx
     Highlight.cxx
     FGPUICompatDialog.cxx
@@ -23,6 +24,7 @@ set(HEADERS
     FGColor.hxx
     FileDialog.hxx
     MouseCursor.hxx
+    MouseCursor3d.hxx
     MessageBox.hxx
     Highlight.hxx
     FGPUICompatDialog.hxx
