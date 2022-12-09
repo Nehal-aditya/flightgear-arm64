@@ -6,6 +6,7 @@ include(FlightGearComponent)
 set(SOURCES
 	CameraGroup.cxx
 	FGEventHandler.cxx
+	FGMouseCursor3D.cxx
 	WindowBuilder.cxx
 	WindowSystemAdapter.cxx
 	fg_os_osgviewer.cxx
@@ -23,6 +24,7 @@ set(SOURCES
 set(HEADERS
 	CameraGroup.hxx
 	FGEventHandler.hxx
+	FGMouseCursor3D.hxx
 	WindowBuilder.hxx
 	WindowSystemAdapter.hxx
 	fgviewer.hxx
