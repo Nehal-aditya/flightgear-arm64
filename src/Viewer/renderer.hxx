@@ -89,6 +89,8 @@ public:
     {
         return pick({start, end});
     }
+    PickList pick(const osg::Polytope& polytope);
+    PickList pick(const osg::Plane& plane, const osg::Polytope& polytope);
 
     /**
      * @brief Add a Canvas RTT camera to the renderer.
