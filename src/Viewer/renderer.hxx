@@ -11,6 +11,7 @@
 #include <osgViewer/CompositeViewer>
 
 #include <simgear/props/props.hxx>
+#include <simgear/scene/model/SGIKLink.hxx>
 #include <simgear/scene/util/SGPickCallback.hxx>
 #include <simgear/timing/timestamp.hxx>
 
@@ -22,10 +23,23 @@ class FrameStamp;
 }
 namespace flightgear {
 class FGEventHandler;
+struct CameraInfo;
 }
 class SGSky;
 class SGUpdateVisitor;
 class SplashScreen;
+
+struct LinksPick {
+  SGIKLink::LinkPath linkPath;
+  osg::Node* rootNode;
+  osg::Matrix rootMatrix;
+  osg::Matrix tipMatrix;
+  osg::Vec3d wgs84;
+  /// Pointer to camera info this hit was found in.
+  const flightgear::CameraInfo *cameraInfo;
+  /// Ratio into camera frustum.
+  double distance;
+};
 
 class FGRenderer final {
 public:
@@ -91,6 +105,11 @@ public:
     }
     PickList pick(const osg::Polytope& polytope);
     PickList pick(const osg::Plane& plane, const osg::Polytope& polytope);
+
+    LinksPick pickLinks(const osg::Vec2& windowPos);
+    bool windowToGlobal(const osg::Vec2& windowPos,
+                        const flightgear::CameraInfo* camInfo, double distance,
+                        osg::Vec3d& outGlobal);
 
     /**
      * @brief Add a Canvas RTT camera to the renderer.
