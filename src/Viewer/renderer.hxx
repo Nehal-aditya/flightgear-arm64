@@ -37,8 +37,7 @@ struct LinksPick {
   osg::Vec3d wgs84;
   /// Pointer to camera info this hit was found in.
   const flightgear::CameraInfo *cameraInfo;
-  /// Ratio into camera frustum.
-  double distance;
+  osg::Vec3d lineSegment[2];
 };
 
 class FGRenderer final {
@@ -107,9 +106,11 @@ public:
     PickList pick(const osg::Plane& plane, const osg::Polytope& polytope);
 
     LinksPick pickLinks(const osg::Vec2& windowPos);
-    bool windowToGlobal(const osg::Vec2& windowPos,
-                        const flightgear::CameraInfo* camInfo, double distance,
-                        osg::Vec3d& outGlobal);
+    // FIXME unused
+    bool windowToLineSegment(const osg::Vec2& windowPos,
+                             const flightgear::CameraInfo* camInfo,
+                             osg::Vec3d& outLine1,
+                             osg::Vec3d& outLine2);
 
     /**
      * @brief Add a Canvas RTT camera to the renderer.
