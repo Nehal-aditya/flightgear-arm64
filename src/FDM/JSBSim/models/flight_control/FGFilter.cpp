@@ -208,22 +208,28 @@ bool FGFilter::Run(void)
 
     if (DynamicFilter) CalculateDynamicFilters();
 
-    switch (FilterType) {
-      case eLag:
-        Output = (Input + PreviousInput1) * ca + PreviousOutput1 * cb;
-        break;
-      case eLeadLag:
-        Output = Input * ca + PreviousInput1 * cb + PreviousOutput1 * cc;
-        break;
-      case eOrder2:
-        Output = Input * ca + PreviousInput1 * cb + PreviousInput2 * cc
-                            - PreviousOutput1 * cd - PreviousOutput2 * ce;
-        break;
-      case eWashout:
-        Output = Input * ca - PreviousInput1 * ca + PreviousOutput1 * cb;
-        break;
-      case eUnknown:
-        break;
+    if (!_reverseModifier) {
+      if (_reverseModifier->isHeld()) {
+        _reverseModifier->release();
+      } else {
+        switch (FilterType) {
+        case eLag:
+          Output = (Input + PreviousInput1) * ca + PreviousOutput1 * cb;
+          break;
+        case eLeadLag:
+          Output = Input * ca + PreviousInput1 * cb + PreviousOutput1 * cc;
+          break;
+        case eOrder2:
+          Output = Input * ca + PreviousInput1 * cb + PreviousInput2 * cc
+            - PreviousOutput1 * cd - PreviousOutput2 * ce;
+          break;
+        case eWashout:
+          Output = Input * ca - PreviousInput1 * ca + PreviousOutput1 * cb;
+          break;
+        case eUnknown:
+          break;
+        }
+      }
     }
 
   }
