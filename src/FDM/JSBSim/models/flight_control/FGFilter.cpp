@@ -208,7 +208,7 @@ bool FGFilter::Run(void)
 
     if (DynamicFilter) CalculateDynamicFilters();
 
-    if (!_reverseModifier) {
+    if (_reverseModifier) {
       if (_reverseModifier->isHeld()) {
         _reverseModifier->release();
       } else {

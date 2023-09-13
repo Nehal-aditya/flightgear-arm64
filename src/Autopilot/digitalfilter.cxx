@@ -33,6 +33,7 @@
 #include <algorithm>
 
 #include <simgear/misc/strutils.hxx>
+#include <simgear/scene/model/SGIKVariable.hxx>
 
 namespace FGXMLAutopilot
 {
@@ -49,6 +50,11 @@ class DigitalFilterImplementation:
     DigitalFilterImplementation();
     virtual void   initialize( double initvalue ) {}
     virtual double compute( double dt, double input ) = 0;
+    virtual double reverse( double output )
+    {
+        // FIXME unused
+        return output;
+    }
     virtual bool configure( SGPropertyNode& cfg_node,
                             const std::string& cfg_name,
                             SGPropertyNode& prop_root ) = 0;
@@ -845,6 +851,36 @@ bool CoherentNoiseFilterImplementation::configure(SGPropertyNode& cfg_node,
 }
 
 /* -------------------------------------------------------------------------- */
+/* Reverse Modifier Implementation                                            */
+/* -------------------------------------------------------------------------- */
+
+class DigitalFilter::ReverseModifier : public SGIKVariable::ModifyHandler
+{
+public:
+    typedef SGIKVariable::ModifyHandler Super;
+
+    ReverseModifier(DigitalFilter* filter,
+                    SGPropertyNode* propertyNode) :
+        Super(propertyNode),
+        _filter(filter)
+    {
+    }
+
+    double modify(double value) override
+    {
+        return _filter->reverse(value);
+    }
+
+    void collectDependentProperties(std::set<const SGPropertyNode*>& props) const override
+    {
+        _filter->collectDependentProperties(props);
+    }
+
+private:
+    DigitalFilter* _filter;
+};
+
+/* -------------------------------------------------------------------------- */
 /* Digital Filter Component Implementation                                    */
 /* -------------------------------------------------------------------------- */
 
@@ -937,6 +973,11 @@ bool DigitalFilter::configure( SGPropertyNode& prop_root,
       }
     }
   }
+
+  // And let IK system know how to reverse the filter
+  _reverseModifiers.reserve(_output_list.size());
+  for (auto output: _output_list)
+      _reverseModifiers.push_back(std::make_unique<ReverseModifier>(this, output.get()));
   
   return true;
 }
@@ -973,6 +1014,17 @@ void DigitalFilter::update( bool firstTime, double dt)
 {
   if( _implementation == NULL ) return;
 
+  // Skip if held
+  bool held = false;
+  for (auto& modifier: _reverseModifiers) {
+      if (modifier && modifier->isHeld()) {
+          modifier->release();
+          held = true;
+      }
+  }
+  if (held)
+      return;
+
   if( firstTime ) {
     switch( _initializeTo ) {
 
@@ -1005,6 +1057,19 @@ void DigitalFilter::update( bool firstTime, double dt)
   }
 }
 
+//------------------------------------------------------------------------------
+double DigitalFilter::reverse(double value)
+{
+    set_output_value(value);
+    value = get_output_value();
+    _implementation->initialize(value);
+    auto* input = _valueInput.get_active().get();
+    if (input) {
+        std::cout << "DigitalFilter::reverse(" << value << ")" << std::endl;
+        return input->set_value(value);
+    }
+    return value;
+}
 
 // Register the subsystem.
 SGSubsystemMgr::Registrant<DigitalFilter> registrantDigitalFilter;

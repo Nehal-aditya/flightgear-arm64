@@ -46,8 +46,12 @@ protected:
                             const std::string& cfg_name,
                             SGPropertyNode& prop_root ) override;
     void update( bool firstTime, double dt) override;
+    double reverse(double value);
 
     InitializeTo _initializeTo = INITIALIZE_INPUT;
+
+    class ReverseModifier;
+    std::vector<std::unique_ptr<ReverseModifier>> _reverseModifiers;
 
 public:
     DigitalFilter();
