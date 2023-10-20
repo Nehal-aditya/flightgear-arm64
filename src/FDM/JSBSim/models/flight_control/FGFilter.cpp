@@ -59,7 +59,7 @@ public:
     {
     }
 
-    double modify(double value) override
+    double modify(double value, bool recurse) override
     {
         _filter->Output = value;
         _filter->Clip();
@@ -73,7 +73,7 @@ public:
         default:
             return _filter->Output;
         }
-        _filter->Output = Super::modify(_filter->Input);
+        _filter->Output = Super::modify(_filter->Input, recurse);
         _filter->Clip();
         _filter->SetOutput();
         return _filter->Output;

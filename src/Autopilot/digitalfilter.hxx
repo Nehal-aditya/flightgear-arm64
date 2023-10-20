@@ -53,6 +53,8 @@ protected:
     class ReverseModifier;
     std::vector<std::unique_ptr<ReverseModifier>> _reverseModifiers;
 
+    SGSourceLocation _srcLocation;
+
 public:
     DigitalFilter();
     ~DigitalFilter();
@@ -62,6 +64,13 @@ public:
 
     virtual bool configure( SGPropertyNode& prop_root,
                             SGPropertyNode& cfg );
+
+    void evalDerivative(double& value, double deriv[2], const SGPropertyNode* wrt,
+                        const simgear::expression::Binding* b) const override;
+    SGItBreaks evalIterativeBreaks(const SGPropertyNode* wrt,
+                                   const simgear::expression::Binding* b,
+                                   const SGItBreaks& breaks) const;
+    bool isKinematic() const;
 };
 
 } // namespace FGXMLAutopilot

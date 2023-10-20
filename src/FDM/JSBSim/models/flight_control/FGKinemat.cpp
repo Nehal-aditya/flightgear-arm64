@@ -64,14 +64,19 @@ public:
     {
     }
 
-    double modify(double value) override
+    bool isKinematic() const override
+    {
+        return true;
+    }
+
+    double modify(double value, bool recurse) override
     {
         _kinemat->Output = value;
         _kinemat->Clip();
         _kinemat->SetOutput();
 
         _kinemat->Input = Constrain(_kinemat->Detents.front(), _kinemat->Output, _kinemat->Detents.back());
-        return Super::modify(_kinemat->Input);
+        return Super::modify(_kinemat->Input, recurse);
         
         //_kinemat->InputNodes[0]->SetValue(_kinemat->Input);
     }

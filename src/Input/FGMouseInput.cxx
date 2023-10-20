@@ -538,6 +538,10 @@ void FGMouseInput::init()
   fgRegisterMouseClickHandler(mouseClickHandler);
   fgRegisterMouseMotionHandler(mouseMotionHandler);
   global_mouseInput = this;
+
+  SGPropertyNode * ikNode = fgGetNode("/sim/ik", false);
+  if (ikNode)
+      SGIKVariable::readIKVariables(ikNode);
 }
 
 void FGMouseInput::shutdown()

@@ -144,7 +144,11 @@ public:
      Add to <props> all properties that are used by this component. Similar to
      SGExpression::collectDependentProperties().
      */
-    void collectDependentProperties(std::set<const SGPropertyNode*>& props) const;
+    void collectDependentProperties(std::set<const SGPropertyNode*>& props,
+                                    int minRev = 0) const;
+
+    virtual void evalDerivative(double& value, double deriv[2], const SGPropertyNode* wrt,
+                                const simgear::expression::Binding* b) const;
 };
 
 inline void AnalogComponent::disabled( double dt )

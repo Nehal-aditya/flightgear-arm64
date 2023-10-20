@@ -50,6 +50,27 @@ class DigitalFilterImplementation:
     DigitalFilterImplementation();
     virtual void   initialize( double initvalue ) {}
     virtual double compute( double dt, double input ) = 0;
+    // value/deriv initially set to that of input - reference
+    virtual void   evalDerivative(double& value, double deriv[2],
+                                  const SGPropertyNode* wrt,
+                                  const simgear::expression::Binding* b) const
+    {
+        std::cout << "DigitalFilterImplementation::evalDerivative " << (wrt ? wrt->getPath() : "-") << std::endl;
+    }
+    // wrt input - reference
+    // breaks are in output space
+    virtual SGItBreaks evalIterativeBreaks(double input,
+                                           const simgear::expression::Binding* b,
+                                           const SGItBreaks& breaks) const
+    {
+        std::cout << "DigitalFilterImplementation::evalIterativeBreaks" << std::endl;
+        return breaks;
+    }
+    // Does the output change over time with constant input?
+    virtual bool isKinematic() const
+    {
+        return false;
+    }
     virtual double reverse( double output )
     {
         // FIXME unused
@@ -76,6 +97,12 @@ protected:
 public:
   GainFilterImplementation() : _gainInput(1.0) {}
   double compute(  double dt, double input );
+  void evalDerivative(double& value, double deriv[2],
+                      const SGPropertyNode* wrt,
+                      const simgear::expression::Binding* b) const override;
+  SGItBreaks evalIterativeBreaks(double input,
+                                 const simgear::expression::Binding* b,
+                                 const SGItBreaks& breaks) const override;
   virtual void collectDependentProperties(std::set<const SGPropertyNode*>& props) const
   {
     _gainInput.collectDependentProperties(props);
@@ -85,6 +112,9 @@ public:
 class ReciprocalFilterImplementation : public GainFilterImplementation {
 public:
   double compute(  double dt, double input );
+  void evalDerivative(double& value, double deriv[2],
+                      const SGPropertyNode* wrt,
+                      const simgear::expression::Binding* b) const override;
 };
 
 class DerivativeFilterImplementation : public GainFilterImplementation {
@@ -96,6 +126,13 @@ class DerivativeFilterImplementation : public GainFilterImplementation {
 public:
   DerivativeFilterImplementation();
   double compute(  double dt, double input );
+  void evalDerivative(double& value, double deriv[2],
+                      const SGPropertyNode* wrt,
+                      const simgear::expression::Binding* b) const override;
+  virtual bool isKinematic() const override
+  {
+      return true;
+  }
   virtual void initialize( double initvalue );
   virtual void collectDependentProperties(std::set<const SGPropertyNode*>& props) const
   {
@@ -115,6 +152,13 @@ protected:
 public:
   ExponentialFilterImplementation();
   double compute(  double dt, double input );
+  void evalDerivative(double& value, double deriv[2],
+                      const SGPropertyNode* wrt,
+                      const simgear::expression::Binding* b) const override;
+  virtual bool isKinematic() const override
+  {
+      return true;
+  }
   virtual void initialize( double initvalue );
   virtual void collectDependentProperties(std::set<const SGPropertyNode*>& props) const
   {
@@ -134,6 +178,9 @@ protected:
 public:
   MovingAverageFilterImplementation();
   double compute(  double dt, double input );
+  void evalDerivative(double& value, double deriv[2],
+                      const SGPropertyNode* wrt,
+                      const simgear::expression::Binding* b) const override;
   virtual void initialize( double initvalue );
   virtual void collectDependentProperties(std::set<const SGPropertyNode*>& props) const
   {
@@ -151,6 +198,13 @@ protected:
 public:
   NoiseSpikeFilterImplementation();
   double compute(  double dt, double input );
+  void evalDerivative(double& value, double deriv[2],
+                      const SGPropertyNode* wrt,
+                      const simgear::expression::Binding* b) const override;
+  virtual bool isKinematic() const override
+  {
+      return true;
+  }
   virtual void initialize( double initvalue );
   virtual void collectDependentProperties(std::set<const SGPropertyNode*>& props) const
   {
@@ -169,6 +223,13 @@ protected:
 public:
   RateLimitFilterImplementation();
   double compute(  double dt, double input );
+  void evalDerivative(double& value, double deriv[2],
+                      const SGPropertyNode* wrt,
+                      const simgear::expression::Binding* b) const override;
+  virtual bool isKinematic() const override
+  {
+      return true;
+  }
   virtual void initialize( double initvalue );
   virtual void collectDependentProperties(std::set<const SGPropertyNode*>& props) const
   {
@@ -190,6 +251,13 @@ protected:
 public:
   IntegratorFilterImplementation();
   double compute(  double dt, double input );
+  void evalDerivative(double& value, double deriv[2],
+                      const SGPropertyNode* wrt,
+                      const simgear::expression::Binding* b) const override;
+  virtual bool isKinematic() const override
+  {
+      return true;
+  }
   virtual void initialize( double initvalue );
   virtual void collectDependentProperties(std::set<const SGPropertyNode*>& props) const
   {
@@ -215,6 +283,13 @@ protected:
 public:
   DampedOscillationFilterImplementation();
   double compute(  double dt, double input );
+  void evalDerivative(double& value, double deriv[2],
+                      const SGPropertyNode* wrt,
+                      const simgear::expression::Binding* b) const override;
+  virtual bool isKinematic() const override
+  {
+      return true;
+  }
   virtual void initialize( double initvalue );
   virtual void collectDependentProperties(std::set<const SGPropertyNode*>& props) const
   {
@@ -236,6 +311,13 @@ protected:
 public:
   HighPassFilterImplementation();
   double compute(  double dt, double input );
+  void evalDerivative(double& value, double deriv[2],
+                      const SGPropertyNode* wrt,
+                      const simgear::expression::Binding* b) const override;
+  virtual bool isKinematic() const override
+  {
+      return true;
+  }
   virtual void initialize( double initvalue );
   virtual void collectDependentProperties(std::set<const SGPropertyNode*>& props) const
   {
@@ -255,6 +337,13 @@ protected:
 public:
   LeadLagFilterImplementation();
   double compute(  double dt, double input );
+  void evalDerivative(double& value, double deriv[2],
+                      const SGPropertyNode* wrt,
+                      const simgear::expression::Binding* b) const override;
+  virtual bool isKinematic() const override
+  {
+      return true;
+  }
   virtual void initialize( double initvalue );
   virtual void collectDependentProperties(std::set<const SGPropertyNode*>& props) const
   {
@@ -280,6 +369,9 @@ protected:
 public:
     CoherentNoiseFilterImplementation();
     double compute(double dt, double input) override;
+    void evalDerivative(double& value, double deriv[2],
+                        const SGPropertyNode* wrt,
+                        const simgear::expression::Binding* b) const override;
     void initialize(double initvalue) override;
   virtual void collectDependentProperties(std::set<const SGPropertyNode*>& props) const
   {
@@ -307,6 +399,28 @@ double GainFilterImplementation::compute(  double dt, double input )
   return _gainInput.get_value() * input;
 }
 
+void GainFilterImplementation::evalDerivative(double& value, double deriv[2],
+                                              const SGPropertyNode* wrt,
+                                              const simgear::expression::Binding* b) const
+{
+    double gainVal, gainDeriv[2];
+    _gainInput.evalDerivative(gainVal, gainDeriv, wrt, b);
+    if (wrt) {
+        // Product rule: d(u*v)/dx = v*du/dx + u*dv/dx
+        deriv[0] = deriv[0]*gainVal + gainDeriv[0]*value;
+        deriv[1] = deriv[1]*gainVal + gainDeriv[1]*value;
+    }
+    value *= gainVal;
+}
+
+SGItBreaks GainFilterImplementation::evalIterativeBreaks(double input,
+                                                         const simgear::expression::Binding* b,
+                                                         const SGItBreaks& breaks) const
+{
+    double gain = _gainInput.get_value();
+    return SGItBreaks(breaks.first / gain, breaks.second / gain);
+}
+
 bool GainFilterImplementation::configure( SGPropertyNode& cfg_node,
                                           const std::string& cfg_name,
                                           SGPropertyNode& prop_root )
@@ -329,6 +443,31 @@ double ReciprocalFilterImplementation::compute(  double dt, double input )
 
   return _gainInput.get_value() / input;
 
+}
+
+void ReciprocalFilterImplementation::evalDerivative(double& value, double deriv[2],
+                                                    const SGPropertyNode* wrt,
+                                                    const simgear::expression::Binding* b) const
+{
+    if( value >= -SGLimitsd::min() && value <= SGLimitsd::min() ) {
+        value = SGLimitsd::max();
+        if (wrt) {
+            deriv[0] = SGLimitsd::max();
+            deriv[1] = SGLimitsd::max();
+        }
+    }
+
+    double numVal, numDeriv[2];
+    _gainInput.evalDerivative(numVal, numDeriv, wrt, b);
+    // Product rule: d(u*v)/dx = v*du/dx + u*dv/dx
+    // d(u/v)/dx = d(u/v)/dx = du/dx/v + u*d(1/v)/dx
+    //                       = du/dx/v - u/(v^2)*dv/dx
+    if (wrt) {
+        double denomSqr = value * value;
+        deriv[0] = numDeriv[0] / value - numVal * deriv[0] / denomSqr;
+        deriv[1] = numDeriv[1] / value - numVal * deriv[1] / denomSqr;
+    }
+    value = numVal / value;
 }
 
 /* --------------------------------------------------------------------------------- */
@@ -366,6 +505,14 @@ double DerivativeFilterImplementation::compute(  double dt, double input )
   _input_1 = input;
   return output;
 
+}
+
+void DerivativeFilterImplementation::evalDerivative(double& value, double deriv[2],
+                                                    const SGPropertyNode* wrt,
+                                                    const simgear::expression::Binding* b) const
+{
+    // FIXME implement
+    std::cout << "DerivativeFilterImplementation::evalDerivative " << (wrt ? wrt->getPath() : "-") << std::endl;
 }
 
 /* --------------------------------------------------------------------------------- */
@@ -406,6 +553,14 @@ double MovingAverageFilterImplementation::compute(  double dt, double input )
   return output_0;
 }
 
+void MovingAverageFilterImplementation::evalDerivative(double& value, double deriv[2],
+                                                       const SGPropertyNode* wrt,
+                                                       const simgear::expression::Binding* b) const
+{
+    // FIXME implement
+    std::cout << "MovingAverageFilterImplementation::evalDerivative " << (wrt ? wrt->getPath() : "-") << std::endl;
+}
+
 bool MovingAverageFilterImplementation::configure( SGPropertyNode& cfg_node,
                                                    const std::string& cfg_name,
                                                    SGPropertyNode& prop_root )
@@ -444,6 +599,14 @@ double NoiseSpikeFilterImplementation::compute(  double dt, double input )
     return (_output_1 = input);
   else
     return (_output_1 = _output_1 + copysign( maxChange, delta ));
+}
+
+void NoiseSpikeFilterImplementation::evalDerivative(double& value, double deriv[2],
+                                                    const SGPropertyNode* wrt,
+                                                    const simgear::expression::Binding* b) const
+{
+    // FIXME implement
+    std::cout << "NoiseSpikeFilterImplementation::evalDerivative " << (wrt?wrt->getPath():"-") << std::endl;
 }
 
 //------------------------------------------------------------------------------
@@ -489,6 +652,14 @@ double RateLimitFilterImplementation::compute(  double dt, double input )
   _output_1 = output;
 
   return (output);
+}
+
+void RateLimitFilterImplementation::evalDerivative(double& value, double deriv[2],
+                                                   const SGPropertyNode* wrt,
+                                                   const simgear::expression::Binding* b) const
+{
+    // FIXME implement
+    std::cout << "RateLimitFilterImplementation::evalDerivative " << (wrt?wrt->getPath():"-") << std::endl;
 }
 
 bool RateLimitFilterImplementation::configure( SGPropertyNode& cfg_node,
@@ -544,6 +715,14 @@ double ExponentialFilterImplementation::compute(  double dt, double input )
   }
   _output_2 = _output_1;
   return (_output_1 = output_0);
+}
+
+void ExponentialFilterImplementation::evalDerivative(double& value, double deriv[2],
+                                                    const SGPropertyNode* wrt,
+                                                    const simgear::expression::Binding* b) const
+{
+    // FIXME implement
+    std::cout << "ExponentialFilterImplementation::evalDerivative " << (wrt?wrt->getPath():"-") << std::endl;
 }
 
 //------------------------------------------------------------------------------
@@ -612,6 +791,14 @@ double IntegratorFilterImplementation::compute(  double dt, double input )
 
 }
 
+void IntegratorFilterImplementation::evalDerivative(double& value, double deriv[2],
+                                                    const SGPropertyNode* wrt,
+                                                    const simgear::expression::Binding* b) const
+{
+    // FIXME implement
+    std::cout << "IntegratorFilterImplementation::evalDerivative " << (wrt ? wrt->getPath() : "-") << std::endl;
+}
+
 /* --------------------------------------------------------------------------------- */
 DampedOscillationFilterImplementation::DampedOscillationFilterImplementation() :
   _x0(0.0)
@@ -660,6 +847,14 @@ double DampedOscillationFilterImplementation::compute( double dt, double input )
     _x1 = _x0;
   }
   return _x0;
+}
+
+void DampedOscillationFilterImplementation::evalDerivative(double& value, double deriv[2],
+                                                           const SGPropertyNode* wrt,
+                                                           const simgear::expression::Binding* b) const
+{
+    // FIXME implement
+    std::cout << "DampedOscillationFilterImplementation::evalDerivative " << (wrt ? wrt->getPath() : "-") << std::endl;
 }
 
 /* --------------------------------------------------------------------------------- */
@@ -721,6 +916,14 @@ double HighPassFilterImplementation::compute(double dt, double input)
     _output_1 = output;
     return output;
 }
+
+void HighPassFilterImplementation::evalDerivative(double& value, double deriv[2],
+                                                    const SGPropertyNode* wrt,
+                                                    const simgear::expression::Binding* b) const
+{
+    // FIXME implement
+    std::cout << "HighPassFilterImplementation::evalDerivative " << (wrt ? wrt->getPath() : "-") << std::endl;
+}
 //------------------------------------------------------------------------------
 bool HighPassFilterImplementation::configure( SGPropertyNode& cfg_node,
                                               const std::string& cfg_name,
@@ -769,6 +972,14 @@ double LeadLagFilterImplementation::compute(  double dt, double input )
   _input_1 = input;
   _output_1 = output;
   return output;
+}
+
+void LeadLagFilterImplementation::evalDerivative(double& value, double deriv[2],
+                                                    const SGPropertyNode* wrt,
+                                                    const simgear::expression::Binding* b) const
+{
+    // FIXME implement
+    std::cout << "LeadLagFilterImplementation::evalDerivative " << (wrt ? wrt->getPath() : "-") << std::endl;
 }
 
 //------------------------------------------------------------------------------
@@ -828,6 +1039,14 @@ double CoherentNoiseFilterImplementation::compute(double dt, double input)
     return _absoluteVal ? fabs(output) * a : output * a;
 }
 
+void CoherentNoiseFilterImplementation::evalDerivative(double& value, double deriv[2],
+                                                    const SGPropertyNode* wrt,
+                                                    const simgear::expression::Binding* b) const
+{
+    // FIXME implement
+    std::cout << "CoherentNoiseFilterImplementation::evalDerivative " << (wrt ? wrt->getPath() : "-") << std::endl;
+}
+
 //------------------------------------------------------------------------------
 bool CoherentNoiseFilterImplementation::configure(SGPropertyNode& cfg_node,
                                                   const std::string& cfg_name,
@@ -866,14 +1085,39 @@ public:
     {
     }
 
-    double modify(double value) override
+    bool isEnabled() const override
+    {
+        return _filter->isPropertyEnabled();
+    }
+
+    bool isKinematic() const override
+    {
+        return _filter->isKinematic();
+    }
+
+    double modify(double value, bool recurse) override
     {
         return _filter->reverse(value);
     }
 
-    void collectDependentProperties(std::set<const SGPropertyNode*>& props) const override
+    void collectDependentProperties(std::set<const SGPropertyNode*>& props,
+                                    int minRev) const override
     {
-        _filter->collectDependentProperties(props);
+        _filter->collectDependentProperties(props, minRev);
+    }
+
+    void evalDerivative(double& value, double deriv[2], const SGPropertyNode* wrt,
+                        const simgear::expression::Binding* b) const override
+    {
+        _filter->evalDerivative(value, deriv, wrt, b);
+        std::cout << "DigitalFilter::ReverseModifier::evalDerivative " << _filter->_srcLocation << " wrt " << (wrt?wrt->getPath():"N/A") << ": " << deriv[0] << "," << deriv[1] << " @" << value << std::endl;
+    }
+
+    SGItBreaks evalIterativeBreaks(const SGPropertyNode* wrt,
+                                   const simgear::expression::Binding* b,
+                                   const SGItBreaks& breaks) const override
+    {
+        return _filter->evalIterativeBreaks(wrt, b, breaks);
     }
 
 private:
@@ -909,6 +1153,7 @@ static DigitalFilterMap componentForge;
 bool DigitalFilter::configure( SGPropertyNode& prop_root,
                                SGPropertyNode& cfg )
 {
+  _srcLocation = cfg.getLocation();
   if( componentForge.empty() )
   {
     componentForge["gain"               ] = digitalFilterFactory<GainFilterImplementation>;
@@ -1063,12 +1308,73 @@ double DigitalFilter::reverse(double value)
     set_output_value(value);
     value = get_output_value();
     _implementation->initialize(value);
-    auto* input = _valueInput.get_active().get();
-    if (input) {
+    if (isPropertyEnabled()) {
+        std::cout << _srcLocation << std::endl;
         std::cout << "DigitalFilter::reverse(" << value << ")" << std::endl;
-        return input->set_value(value);
+        // FIXME we lie about the value...
+        /*return*/ _valueInput.set_value(value);
     }
     return value;
+}
+
+//------------------------------------------------------------------------------
+void DigitalFilter::evalDerivative(double& value, double deriv[2], const SGPropertyNode* wrt,
+                                   const simgear::expression::Binding* b) const
+{
+    _valueInput.evalDerivative(value, deriv, wrt, b);
+
+    double refVal, refDeriv[2];
+    _referenceInput.evalDerivative(refVal, refDeriv, wrt, b);
+    value -= refVal;
+    if (wrt) {
+        deriv[0] -= refDeriv[0];
+        deriv[1] -= refDeriv[1];
+    }
+
+    _implementation->evalDerivative(value, deriv, wrt, b);
+}
+
+//------------------------------------------------------------------------------
+SGItBreaks DigitalFilter::evalIterativeBreaks(const SGPropertyNode* wrt,
+                                              const simgear::expression::Binding* b,
+                                              const SGItBreaks& breaks) const
+{
+    double value = _valueInput.get_value(b);
+    double ref = _referenceInput.get_value(b);
+    auto inputBreaks = _implementation->evalIterativeBreaks(value - ref, b, breaks);
+    std::cout << "DigitalFilter::evalIterativeBreaks in " << inputBreaks.first << "," << inputBreaks.second << std::endl;
+    // input = value - ref
+    // value = input + ref
+    // ref = value + input
+
+    // Find iterative breaks of wrt for each of the inputs, assuming the other
+    // remains constant
+
+    SGItBreaksInfo<double> inputBreaksValue, inputBreaksRef;
+    if (!std::isinf(inputBreaks.first)) {
+        inputBreaksValue.insertMin(inputBreaks.first + ref);
+        inputBreaksRef.insertMin(inputBreaks.first + value);
+    }
+    if (!std::isinf(inputBreaks.second)) {
+        inputBreaksValue.insertMax(inputBreaks.second + ref);
+        inputBreaksRef.insertMax(inputBreaks.second + value);
+    }
+    auto valueBreaks = _valueInput.evalIterativeBreaks(wrt, b, inputBreaksValue);
+    auto refBreaks = _referenceInput.evalIterativeBreaks(wrt, b, inputBreaksRef);
+    std::cout << "DigitalFilter::evalIterativeBreaks val " << valueBreaks.first << "," << valueBreaks.second << std::endl;
+    std::cout << "DigitalFilter::evalIterativeBreaks ref " << refBreaks.first << "," << refBreaks.second << std::endl;
+
+    // Return combined range
+    SGItBreaks ret(std::max(valueBreaks.first, refBreaks.first),
+                   std::min(valueBreaks.second, refBreaks.second));
+    std::cout << "DigitalFilter::evalIterativeBreaks ret " << ret.first << "," << ret.second << std::endl;
+    return ret;
+}
+
+//------------------------------------------------------------------------------
+bool DigitalFilter::isKinematic() const
+{
+    return _implementation->isKinematic();
 }
 
 // Register the subsystem.

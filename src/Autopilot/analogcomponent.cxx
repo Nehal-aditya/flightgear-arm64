@@ -121,10 +121,20 @@ bool AnalogComponent::configure( SGPropertyNode& cfg_node,
   return Component::configure(cfg_node, cfg_name, prop_root);
 }
 
-void AnalogComponent::collectDependentProperties(std::set<const SGPropertyNode*>& props) const
+void AnalogComponent::collectDependentProperties(std::set<const SGPropertyNode*>& props,
+                                                 int minRev) const
 {
-    _valueInput.collectDependentProperties(props);
-    _referenceInput.collectDependentProperties(props);
-    _minInput.collectDependentProperties(props);
-    _maxInput.collectDependentProperties(props);
+    _valueInput.collectDependentProperties(props, minRev);
+    _referenceInput.collectDependentProperties(props, minRev);
+    _minInput.collectDependentProperties(props, minRev);
+    _maxInput.collectDependentProperties(props, minRev);
+}
+
+void AnalogComponent::evalDerivative(double& value, double deriv[2], const SGPropertyNode* wrt,
+                                     const simgear::expression::Binding* b) const
+{
+    value = 0.0;
+    deriv[0] = 0;
+    deriv[1] = 0;
+    std::cout << "AnalogComponent::evalDerivative " << wrt->getPath() << std::endl;
 }
