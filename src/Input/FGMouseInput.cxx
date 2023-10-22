@@ -700,7 +700,7 @@ void FGMouseInput::doMouseClick (int b, int updown, int x, int y, bool mainWindo
       // compute a
       // scenegraph intersection point corresponding to the mouse click
       if (updown == MOUSE_BUTTON_DOWN) {
-          if (d->_directManipulation && b == 0 && !pickLinks.linkPath.empty()) {
+          if (d->_directManipulation && b == 0 && pickLinks.reversible) {
               // left click
               auto* ik = pickLinks.linkPath.back().link;
               if (d->_directContact)

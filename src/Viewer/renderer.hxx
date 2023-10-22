@@ -34,6 +34,7 @@ struct LinksPick {
   osg::Node* rootNode;
   osg::Matrix rootMatrix;
   osg::Matrix tipMatrix;
+  bool reversible;
   osg::Vec3d wgs84;
   /// Pointer to camera info this hit was found in.
   const flightgear::CameraInfo *cameraInfo;

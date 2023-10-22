@@ -997,7 +997,8 @@ LinksPick handlePickLinkIntersections(Intersections& intersections,
         result.lineSegment[1] = hitCamInfo.lineSegment[1];
 
         SGIKLink::nodePathToLinks(np, result.linkPath, rootIndex,
-                                  result.rootMatrix, result.tipMatrix);
+                                  result.rootMatrix, result.tipMatrix,
+                                  result.reversible);
         if (rootIndex >= 0)
             result.rootNode = np[rootIndex];
         break;

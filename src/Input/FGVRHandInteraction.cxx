@@ -292,6 +292,7 @@ void FGVRHandInteraction::update(double dt)
         SGIKLink::LinkPath ikLinks;
         int rootIndex = -1;
         osg::Matrix rootMatrix, tipMatrix;
+        bool reversible = false;
 #if 0
         if (grabsChanged[grab])
             std::cout << "Grab " << grab << " = " << grabs[grab] << " (changed: " << grabsChanged[grab] << ")" << std::endl;
@@ -330,8 +331,8 @@ void FGVRHandInteraction::update(double dt)
             continue;
         }
         if (grabNodes[grab])
-            SGIKLink::nodePathToLinks(*grabNodes[grab], ikLinks, rootIndex, rootMatrix, tipMatrix);
-        if (!ikLinks.empty() && grabPositions[grab]) {
+            SGIKLink::nodePathToLinks(*grabNodes[grab], ikLinks, rootIndex, rootMatrix, tipMatrix, reversible);
+        if (reversible && grabPositions[grab]) {
             auto* ik = ikLinks.back().link;
             // If top link is different to last time, clear contact and
             // update

@@ -1110,7 +1110,6 @@ public:
                         const simgear::expression::Binding* b) const override
     {
         _filter->evalDerivative(value, deriv, wrt, b);
-        std::cout << "DigitalFilter::ReverseModifier::evalDerivative " << _filter->_srcLocation << " wrt " << (wrt?wrt->getPath():"N/A") << ": " << deriv[0] << "," << deriv[1] << " @" << value << std::endl;
     }
 
     SGItBreaks evalIterativeBreaks(const SGPropertyNode* wrt,
@@ -1260,15 +1259,20 @@ void DigitalFilter::update( bool firstTime, double dt)
   if( _implementation == NULL ) return;
 
   // Skip if held
-  bool held = false;
+  //bool held = false;
   for (auto& modifier: _reverseModifiers) {
       if (modifier && modifier->isHeld()) {
+          return;
+          /*
           modifier->release();
           held = true;
+          */
       }
   }
+  /*
   if (held)
       return;
+  */
 
   if( firstTime ) {
     switch( _initializeTo ) {
@@ -1311,8 +1315,10 @@ double DigitalFilter::reverse(double value)
     if (isPropertyEnabled()) {
         std::cout << _srcLocation << std::endl;
         std::cout << "DigitalFilter::reverse(" << value << ")" << std::endl;
-        // FIXME we lie about the value...
-        /*return*/ _valueInput.set_value(value);
+        double actualValue = _valueInput.set_value(value);
+        // The output can differ from the input for kinematic filters
+        if (!_implementation->isKinematic())
+            return actualValue;
     }
     return value;
 }
@@ -1342,7 +1348,6 @@ SGItBreaks DigitalFilter::evalIterativeBreaks(const SGPropertyNode* wrt,
     double value = _valueInput.get_value(b);
     double ref = _referenceInput.get_value(b);
     auto inputBreaks = _implementation->evalIterativeBreaks(value - ref, b, breaks);
-    std::cout << "DigitalFilter::evalIterativeBreaks in " << inputBreaks.first << "," << inputBreaks.second << std::endl;
     // input = value - ref
     // value = input + ref
     // ref = value + input
@@ -1361,13 +1366,10 @@ SGItBreaks DigitalFilter::evalIterativeBreaks(const SGPropertyNode* wrt,
     }
     auto valueBreaks = _valueInput.evalIterativeBreaks(wrt, b, inputBreaksValue);
     auto refBreaks = _referenceInput.evalIterativeBreaks(wrt, b, inputBreaksRef);
-    std::cout << "DigitalFilter::evalIterativeBreaks val " << valueBreaks.first << "," << valueBreaks.second << std::endl;
-    std::cout << "DigitalFilter::evalIterativeBreaks ref " << refBreaks.first << "," << refBreaks.second << std::endl;
 
     // Return combined range
     SGItBreaks ret(std::max(valueBreaks.first, refBreaks.first),
                    std::min(valueBreaks.second, refBreaks.second));
-    std::cout << "DigitalFilter::evalIterativeBreaks ret " << ret.first << "," << ret.second << std::endl;
     return ret;
 }
 
