@@ -59,7 +59,7 @@ public:
     {
     }
 
-    double modify(double value, bool recurse) override
+    double modify(double value, bool recurse, simgear::expression::Binding* b) override
     {
         _filter->Output = value;
         _filter->Clip();
@@ -73,7 +73,7 @@ public:
         default:
             return _filter->Output;
         }
-        _filter->Output = Super::modify(_filter->Input, recurse);
+        _filter->Output = Super::modify(_filter->Input, recurse, b);
         _filter->Clip();
         _filter->SetOutput();
         return _filter->Output;

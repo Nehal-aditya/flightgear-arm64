@@ -69,16 +69,16 @@ public:
         return true;
     }
 
-    double modify(double value, bool recurse) override
+    double modify(double value, bool recurse, simgear::expression::Binding* b) override
     {
         _kinemat->Output = value;
         _kinemat->Clip();
         _kinemat->SetOutput();
 
         _kinemat->Input = Constrain(_kinemat->Detents.front(), _kinemat->Output, _kinemat->Detents.back());
-        return Super::modify(_kinemat->Input, recurse);
-        
-        //_kinemat->InputNodes[0]->SetValue(_kinemat->Input);
+        Super::modify(_kinemat->Input, recurse, b);
+
+        return value;
     }
 
 private:

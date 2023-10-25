@@ -1090,9 +1090,10 @@ public:
         return _filter->isKinematic();
     }
 
-    double modify(double value, bool recurse) override
+    double modify(double value, bool recurse,
+                  simgear::expression::Binding* b) override
     {
-        return _filter->reverse(value);
+        return _filter->reverse(value, b);
     }
 
     void collectDependentProperties(std::set<const SGPropertyNode*>& props,
@@ -1302,7 +1303,7 @@ void DigitalFilter::update( bool firstTime, double dt)
 }
 
 //------------------------------------------------------------------------------
-double DigitalFilter::reverse(double value)
+double DigitalFilter::reverse(double value, simgear::expression::Binding* b)
 {
     set_output_value(value);
     value = get_output_value();
@@ -1310,7 +1311,7 @@ double DigitalFilter::reverse(double value)
     if (isPropertyEnabled()) {
         std::cout << _srcLocation << std::endl;
         std::cout << "DigitalFilter::reverse(" << value << ")" << std::endl;
-        double actualValue = _valueInput.set_value(value);
+        double actualValue = _valueInput.set_value(value, b);
         // The output can differ from the input for kinematic filters
         if (!_implementation->isKinematic())
             return actualValue;

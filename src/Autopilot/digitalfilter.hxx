@@ -46,7 +46,7 @@ protected:
                             const std::string& cfg_name,
                             SGPropertyNode& prop_root ) override;
     void update( bool firstTime, double dt) override;
-    double reverse(double value);
+    double reverse(double value, simgear::expression::Binding* b = 0);
 
     InitializeTo _initializeTo = INITIALIZE_INPUT;
 
