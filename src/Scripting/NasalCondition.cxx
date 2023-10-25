@@ -51,7 +51,7 @@ static naRef f_createCondition(naContext c, naRef me, int argc, naRef* args)
 naRef initNasalCondition(naRef globals, naContext c)
 {
   nasal::Ghost<SGConditionRef>::init("Condition")
-    .method("test", &SGCondition::test);
+    .method("test", (bool (SGCondition::*)() const)&SGCondition::test);
 
   nasal::Hash(globals, c).set("_createCondition", f_createCondition);
 
