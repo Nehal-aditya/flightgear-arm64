@@ -1309,8 +1309,6 @@ double DigitalFilter::reverse(double value, simgear::expression::Binding* b)
     value = get_output_value();
     _implementation->initialize(value);
     if (isPropertyEnabled()) {
-        std::cout << _srcLocation << std::endl;
-        std::cout << "DigitalFilter::reverse(" << value << ")" << std::endl;
         double actualValue = _valueInput.set_value(value, b);
         // The output can differ from the input for kinematic filters
         if (!_implementation->isKinematic())
