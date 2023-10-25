@@ -71,11 +71,6 @@ class DigitalFilterImplementation:
     {
         return false;
     }
-    virtual double reverse( double output )
-    {
-        // FIXME unused
-        return output;
-    }
     virtual bool configure( SGPropertyNode& cfg_node,
                             const std::string& cfg_name,
                             SGPropertyNode& prop_root ) = 0;
