@@ -132,8 +132,9 @@ public:
             if (!pick.callback)
                 continue;
 
-            osgGA::GUIEventAdapter* hackTmp = nullptr;
-            if (pick.callback->buttonPressed(button, *hackTmp, pick.info)) {
+            // FIXME HACK!
+            osgGA::GUIEventAdapter* ea = osgGA::GUIEventAdapter::getAccumulatedEventState().get();
+            if (pick.callback->buttonPressed(button, *ea, pick.info)) {
                 _contacts[contact].activeCallbacks[button].push_back(pick.callback);
                 return;
             }
@@ -170,8 +171,9 @@ public:
         while (!callbacks.empty()) {
             auto& cb = callbacks.front();
             const SGSceneryPick* pick = getPick(pickList, cb);
-            osgGA::GUIEventAdapter* hackTmp = nullptr;
-            cb->buttonReleased(button, *hackTmp, pick ? &pick->info : nullptr);
+            // FIXME HACK
+            osgGA::GUIEventAdapter* ea = osgGA::GUIEventAdapter::getAccumulatedEventState().get();
+            cb->buttonReleased(button, *ea, pick ? &pick->info : nullptr);
 
             callbacks.pop_front();
         }
