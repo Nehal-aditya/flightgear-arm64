@@ -115,6 +115,14 @@ FGKinemat::FGKinemat(FGFCS* fcs, Element* element)
 
   bind(element);
 
+  if (!OutputNodes.empty() && OutputNodes[0].valid()) {
+      auto var = SGIKVariable::getFromProperty(OutputNodes[0].get());
+      if (var) {
+          var->hintMinValue(Detents.front());
+          var->hintMaxValue(Detents.back());
+      }
+  }
+
   try {
     if (!OutputNodes.empty() && OutputNodes[0].valid() &&
             !InputNodes.empty() && InputNodes[0].valid()/* &&
