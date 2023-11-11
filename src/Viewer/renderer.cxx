@@ -17,6 +17,7 @@
 #include <osg/Camera>
 #include <osg/CullFace>
 #include <osg/CullStack>
+#include <osg/Depth>
 #include <osg/GraphicsContext>
 #include <osg/Group>
 #include <osg/Hint>
@@ -30,6 +31,8 @@
 
 #include <simgear/ephemeris/ephemeris.hxx>
 #include <simgear/scene/material/EffectCullVisitor.hxx>
+#include <simgear/scene/material/Pass.hxx>
+#include <simgear/scene/material/Technique.hxx>
 #include <simgear/scene/model/SGIKLink.hxx>
 #include <simgear/scene/sky/sky.hxx>
 #include <simgear/scene/tgdb/GroundLightManager.hxx>
@@ -985,13 +988,41 @@ LinksPick handlePickLinkIntersections(Intersections& intersections,
                                       const IntersectionCameraInfo& hitCamInfo)
 {
     LinksPick result{};
+    for (auto &hit: intersections) {
+        const osg::NodePath& np = hit.nodePath;
 
-    if (!intersections.empty()) {
-        auto hit = intersections.begin();
-        const osg::NodePath& np = hit->nodePath;
+        // If hit is an EffectGeode, check whether depth mask is ever on, which
+        // would hint that the Geode is a solid physical object.
+        if (!np.empty()) {
+            auto* effectGeode = dynamic_cast<simgear::EffectGeode*>(np.back());
+            if (effectGeode) {
+                simgear::Effect* effect = effectGeode->getEffect();
+                if (effect) {
+                    // FIXME, what if no techniques, what if no passes, what if
+                    // no depth attributes?
+                    bool skipHit = true;
+                    for (auto& technique: effect->techniques) {
+                        for (auto& pass: technique->passes) {
+                            auto* attrib = pass->getAttribute(osg::StateAttribute::DEPTH);
+                            auto* depth = dynamic_cast<osg::Depth*>(attrib);
+                            if (!depth)
+                                continue;
+                            if (depth->getWriteMask()) {
+                                skipHit = false;
+                                goto done;
+                            }
+                        }
+                    }
+done:
+                    if (skipHit)
+                        continue;
+                }
+            }
+        }
+
         int rootIndex = -1;
 
-        result.wgs84 = hit->getWorldIntersectPoint();
+        result.wgs84 = hit.getWorldIntersectPoint();
         result.cameraInfo = hitCamInfo.cameraInfo;
         result.lineSegment[0] = hitCamInfo.lineSegment[0];
         result.lineSegment[1] = hitCamInfo.lineSegment[1];
