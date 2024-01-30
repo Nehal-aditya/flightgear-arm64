@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.11)
 
 set(osgXR_MAJOR_VERSION 0)
 set(osgXR_MINOR_VERSION 5)
-set(osgXR_PATCH_VERSION 3)
-set(osgXR_SOVERSION 6)
+set(osgXR_PATCH_VERSION 4)
+set(osgXR_SOVERSION 7)
 
 set(osgXR_VERSION "${osgXR_MAJOR_VERSION}.${osgXR_MINOR_VERSION}.${osgXR_PATCH_VERSION}")
 
@@ -12,6 +12,8 @@ project(osgXR
         VERSION     ${osgXR_VERSION}
         DESCRIPTION "OpenXR integration for OpenSceneGraph applications"
 )
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 if(CMAKE_PROJECT_NAME STREQUAL osgXR)
     # Normal top level project build, install package components
@@ -25,7 +27,7 @@ if(CMAKE_PROJECT_NAME STREQUAL osgXR)
     option(OSGXR_WARNINGS "Enable compiler warnings for osgXR" OFF)
 
     find_package(OpenGL REQUIRED)
-    find_package(OpenSceneGraph REQUIRED COMPONENTS osgViewer osgUtil)
+    find_package(OpenSceneGraph 3.6 REQUIRED COMPONENTS osgViewer osgUtil)
 
     # Source files in src/
     add_subdirectory(src)

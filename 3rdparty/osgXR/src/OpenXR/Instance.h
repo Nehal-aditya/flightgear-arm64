@@ -7,6 +7,7 @@
 #include "Quirks.h"
 
 #include <map>
+#include <set>
 #include <vector>
 
 #include <osg/Referenced>
@@ -33,8 +34,6 @@ class Instance : public osg::Referenced
 {
     public:
 
-        static Instance *instance();
-
         Instance();
         virtual ~Instance();
 
@@ -42,8 +41,10 @@ class Instance : public osg::Referenced
 
         static void invalidateLayers();
         static void invalidateExtensions();
+        static std::vector<std::string> getExtensionNames();
         static bool hasLayer(const char *name);
-        static bool hasExtension(const char *name);
+        static bool hasExtension(const char *name,
+                                 uint32_t *outVersion = nullptr);
 
         // Instance initialisation
 
@@ -52,21 +53,21 @@ class Instance : public osg::Referenced
             _layerValidation = layerValidation;
         }
 
-        void setDebugUtils(bool debugUtils)
-        {
-            _debugUtils = debugUtils;
-        }
-
         void setDefaultDebugCallback(OpenXR::DebugUtilsCallback *callback);
 
-        void setDepthInfo(bool depthInfo)
+        void enableExtension(const std::string &extension)
         {
-            _depthInfo = depthInfo;
+            _extensions.insert(extension);
         }
 
-        void setVisibilityMask(bool visibilityMask)
+        void disableExtension(const std::string &extension)
         {
-            _visibilityMask = visibilityMask;
+            _extensions.erase(extension);
+        }
+
+        bool isExtensionEnabled(const std::string &extension)
+        {
+            return _extensions.find(extension) != _extensions.end();
         }
 
         typedef enum {
@@ -91,6 +92,12 @@ class Instance : public osg::Referenced
         inline bool lost() const
         {
             return _lost;
+        }
+
+        /// Get the selected API version, or 0 if !valid()
+        inline XrVersion getApiVersion() const
+        {
+            return _apiVersion;
         }
 
         bool check(XrResult result, const char *actionMsg) const;
@@ -138,21 +145,6 @@ class Instance : public osg::Referenced
         }
 
         // Extensions
-
-        bool supportsDebugUtils() const
-        {
-            return _supportsDebugUtils;
-        }
-
-        bool supportsCompositionLayerDepth() const
-        {
-            return _supportsCompositionLayerDepth;
-        }
-
-        bool supportsVisibilityMask() const
-        {
-            return _supportsVisibilityMask;
-        }
 
         PFN_xrVoidFunction getProcAddr(const char *name) const;
 
@@ -252,9 +244,7 @@ class Instance : public osg::Referenced
 
         // Setup data
         bool _layerValidation;
-        bool _debugUtils;
-        bool _depthInfo;
-        bool _visibilityMask;
+        std::set<std::string> _extensions;
 
         // Default debug callback to configure
         osg::ref_ptr<DebugUtilsCallback> _defaultDebugCallback;
@@ -264,11 +254,8 @@ class Instance : public osg::Referenced
         XrInstance _instance;
         mutable bool _lost;
         mutable Result _lastError;
+        XrVersion _apiVersion;
 
-        // Extension presence
-        bool _supportsDebugUtils;
-        bool _supportsCompositionLayerDepth;
-        bool _supportsVisibilityMask;
         // Extension functions
         PFN_xrGetOpenGLGraphicsRequirementsKHR _xrGetOpenGLGraphicsRequirementsKHR = nullptr;
         PFN_xrSetDebugUtilsObjectNameEXT _xrSetDebugUtilsObjectNameEXT = nullptr;
