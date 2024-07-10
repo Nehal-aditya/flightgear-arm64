@@ -274,14 +274,55 @@ void VRManager::onStopped()
     }
 }
 
+static osgXR::View::Flags getPassVRFlags(const simgear::compositor::Pass *pass)
+{
+    bool isScene = (pass->type == "scene");
+    bool isMultiviewQuad = (pass->type == "quad" && pass->multiview == "true");
+    bool isWidthScaled = (pass->viewport_width_scale != 0.0f);
+    bool isHeightScaled = (pass->viewport_height_scale != 0.0f);
+    // NOTE: isToFb may change after osgXR has made changes.
+    // Whether getPassVRFlags() returns 0 must not change as a result.
+    bool isToFb = (pass->camera->getRenderTargetImplementation() == osg::Camera::FRAME_BUFFER);
+
+    osgXR::View::Flags flags = osgXR::View::CAM_NO_BITS;
+
+    // If camera renders to the frame buffer, redirect to XR.
+    if ((isScene || isMultiviewQuad) && isToFb)
+        flags |= osgXR::View::CAM_TOXR_BIT;
+
+    if (isScene && (isToFb || (isWidthScaled && isHeightScaled))) {
+        // If scene is rendered to a scaled viewport, perform multiview scene
+        // rendering with shading.
+        flags |= osgXR::View::CAM_MVR_SCENE_BIT;
+        flags |= osgXR::View::CAM_MVR_SHADING_BIT;
+    } else if (isMultiviewQuad) {
+        // If multiview quad is rendered, perform multiview shading
+        flags |= osgXR::View::CAM_MVR_SHADING_BIT;
+
+        if (!(flags & osgXR::View::CAM_TOXR_BIT)) {
+            // Fixed size MVR results in identically sized viewports
+            if (!isWidthScaled)
+                flags |= osgXR::View::CAM_MVR_FIXED_WIDTH_BIT;
+            if (!isHeightScaled)
+                flags |= osgXR::View::CAM_MVR_FIXED_HEIGHT_BIT;
+        }
+    }
+
+    return flags;
+}
+
 void VRManager::preReloadCompositor(CameraGroup *cgroup, CameraInfo *info)
 {
     osgXR::View *xrView = _xrViews[info];
 
     auto& passes = info->compositor->getPassList();
-    for (auto& pass: passes)
-        if (pass->type == "scene")
+    for (auto& pass: passes) {
+        // osgXR may change camera's render target implementation (isToFb), but
+        // it shouldn't change whether flags == 0
+        auto flags = getPassVRFlags(pass);
+        if (flags)
             xrView->removeSlave(pass->camera);
+    }
 }
 
 void VRManager::postReloadCompositor(CameraGroup *cgroup, CameraInfo *info)
@@ -289,9 +330,11 @@ void VRManager::postReloadCompositor(CameraGroup *cgroup, CameraInfo *info)
     osgXR::View *xrView = _xrViews[info];
 
     auto& passes = info->compositor->getPassList();
-    for (auto& pass: passes)
-        if (pass->type == "scene")
-            xrView->addSlave(pass->camera);
+    for (auto& pass: passes) {
+        auto flags = getPassVRFlags(pass);
+        if (flags)
+            xrView->addSlave(pass->camera, flags);
+    }
 }
 
 }
