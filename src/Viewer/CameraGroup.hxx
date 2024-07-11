@@ -83,6 +83,9 @@ struct CameraInfo : public osg::Referenced
     /** Properties of the camera. @see CameraGroup::Flags.
      */
     unsigned flags;
+    /** Multiview rendering properties.
+     */
+    simgear::compositor::Compositor::MVRInfo mvr;
     /** Physical size parameters.
      */
     double physicalWidth = 0;
