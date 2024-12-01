@@ -6,10 +6,8 @@
 #include <cstdint>
 #include <string>
 
+#include <simgear/props/propsfwd.hxx>
 #include <simgear/structure/SGWeakReferenced.hxx>
-
-// forward decls
-class SGPropertyNode;
 
 /**
  * An XML-configured dialog box.
@@ -86,6 +84,8 @@ public:
 
     WindowStyle windowStyle() const;
     bool isFlagSet(WindowFlags f) const;
+
+    virtual void runCallback(const std::string& name, SGPropertyNode_ptr args = {}) = 0;
 
 protected:
     /**

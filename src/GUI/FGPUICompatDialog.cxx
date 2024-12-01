@@ -196,6 +196,27 @@ void FGPUICompatDialog::bringToFront()
     _peer->callMethod<void>("bringToFront");
 }
 
+void FGPUICompatDialog::runCallback(const std::string& name, SGPropertyNode_ptr args)
+{
+    auto nas = globals->get_subsystem<FGNasalSys>();
+    if (!nas)
+        return;
+
+    SGPropertyNode* nasalNode = _props->getNode("nasal");
+    if (!nasalNode)
+        return;
+
+    auto callbackNode = nasalNode->getChild(name);
+    if (!callbackNode) {
+        SG_LOG(SG_GUI, SG_DEV_ALERT, "FGPUICompatDialog::runCallback: no Nasal callback '" << name << "' defined on dialog " << _name);
+        return;
+    }
+
+    auto s = callbackNode->getStringValue();
+    auto fileName = _module.c_str();
+    nas->handleCommand(_module.c_str(), fileName, s.c_str(), args.get());
+}
+
 const char* FGPUICompatDialog::getName()
 {
     return _name.c_str();

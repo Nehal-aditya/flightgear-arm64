@@ -138,6 +138,8 @@ public:
      */
     PUICompatObjectRef widgetByName(const std::string& name) const;
 
+    void runCallback(const std::string& name, SGPropertyNode_ptr args) override;
+
 private:
     friend naRef f_makeDialogPeer(const nasal::CallContext& ctx);
     friend naRef f_dialogRootObject(FGPUICompatDialog& dialog, naContext c);
