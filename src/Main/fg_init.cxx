@@ -58,6 +58,10 @@
 #include <simgear/scene/tgdb/VPBTechnique.hxx>
 #include <simgear/scene/tsync/terrasync.hxx>
 
+#ifdef SG_TORRENT
+#include <simgear/io/torrent.hxx>
+#endif
+
 #include <simgear/package/Root.hxx>
 #include <simgear/package/Package.hxx>
 #include <simgear/package/Install.hxx>
@@ -979,6 +983,13 @@ void fgOutputSettings()
     SG_LOG( SG_GENERAL, SG_INFO, "scenery-search-paths = \n\t" << SGPath::join(globals->get_fg_scenery(), "\n\t") );
 }
 
+#ifdef SG_TORRENT
+static simgear::HTTP::Client* s_getHttpClient()
+{
+    return globals->get_subsystem_mgr()->get_subsystem<FGHTTPClient>()->client();
+}
+#endif
+
 // This is the top level init routine which calls all the other
 // initialization routines.  If you are adding a subsystem to flight
 // gear, its initialization call should located in this routine.
@@ -1025,6 +1036,15 @@ void fgCreateSubsystems(bool duringReset) {
             mgr->add<FGHTTPClient>();
         }
         mgr->add<FGDNSClient>();
+
+        #ifdef SG_TORRENT
+        mgr->add(simgear::Torrent::staticSubsystemClassId(),
+                new simgear::Torrent(
+                        fgGetNode("/sim/torrent", true),
+                        s_getHttpClient
+                        )
+                );
+        #endif
 
         // Initialize the weather modeling subsystem
         mgr->add<FGEnvironmentMgr>();
