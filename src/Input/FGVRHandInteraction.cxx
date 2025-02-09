@@ -25,12 +25,16 @@
 #include <Main/fg_props.hxx>
 #include <Viewer/VRManager.hxx>
 
+#include <simgear/scene/material/Effect.hxx>
+#include <simgear/scene/material/EffectGeode.hxx>
 #include <simgear/scene/model/SGIKLink.hxx>
 #include <simgear/scene/util/OsgMath.hxx>
 #include <simgear/scene/util/RenderConstants.hxx>
+#include <simgear/scene/util/SGReaderWriterOptions.hxx>
 #include <simgear/scene/util/SGSceneUserData.hxx>
 
 #include <osg/ref_ptr>
+#include <osgDB/Registry>
 
 using namespace flightgear;
 
@@ -39,6 +43,31 @@ typedef SGSharedPtr<SGPickCallback> SGPickCallbackPtr;
 typedef std::list<SGPickCallbackPtr> SGPickCallbackList;
 
 // FGVRHandInteraction::Private
+
+namespace {
+    class Hand : public osgXR::Hand
+    {
+    public:
+        Hand(const std::shared_ptr<osgXR::HandPose> &pose,
+             simgear::Effect *effect) :
+            osgXR::Hand(pose),
+            _effect(effect)
+        {
+        }
+        virtual ~Hand() = default;
+
+    protected:
+        osg::Geode *generateGeode() override
+        {
+            auto *geode = new simgear::EffectGeode();
+            geode->setEffect(_effect);
+            return geode;
+        }
+
+    private:
+        osg::ref_ptr<simgear::Effect> _effect;
+    };
+}
 
 class FGVRHandInteraction::Private
 {
@@ -52,7 +81,7 @@ public:
     std::shared_ptr<FGVRHand> _handPose;
 
     /// Visible hand node.
-    osg::ref_ptr<osgXR::Hand> _hand;
+    osg::ref_ptr<Hand> _hand;
 
     struct Contact {
         //struct SGSceneryPick pick;
@@ -71,6 +100,8 @@ public:
 
     /// Contact points (5 fingers + palm).
     Contact _contacts[6];
+
+    osg::ref_ptr<simgear::SGReaderWriterOptions> _options;
 
     SGSceneryPicks handlePickIntersections(const osg::NodePath& np,
                                            const osg::Vec3f& grabPos)
@@ -205,6 +236,7 @@ FGVRHandInteraction::FGVRHandInteraction(FGVRInput* input,
     std::string namePrefix = mode->getPath() + " " + _name + " " + subactionPath + " ";
 
     _private->_input = input;
+    _private->_options = simgear::SGReaderWriterOptions::copyOrCreate(osgDB::Registry::instance()->getOptions());
 
     osgXR::HandPose::Hand hand;
     if (subactionPath == "/user/hand/left") {
@@ -218,6 +250,11 @@ FGVRHandInteraction::FGVRHandInteraction(FGVRInput* input,
         return;
     }
 
+    simgear::Effect *effect = nullptr;
+    const std::string eff_file = node->getStringValue("effect");
+    if (!eff_file.empty())
+        effect = makeEffect(eff_file, true, _private->_options);
+
     VRManager* manager = VRManager::instance();
     auto* localSpaceGroup = input->getLocalSpaceGroup();
 
@@ -225,7 +262,7 @@ FGVRHandInteraction::FGVRHandInteraction(FGVRInput* input,
 
     _private->_handPose = std::make_shared<FGVRHand>(localSpaceGroup, _private->_handTracking);
 
-    _private->_hand = new osgXR::Hand(_private->_handPose);
+    _private->_hand = new Hand(_private->_handPose, effect);
     _private->_hand->setNodeMask(~simgear::PICK_BIT);
     _private->_hand->setName(namePrefix + "hand");
 
