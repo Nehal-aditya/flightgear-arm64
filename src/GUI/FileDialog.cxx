@@ -102,11 +102,28 @@ public:
     
     void onFileDialogDone(FGFileDialog* instance, const SGPath& aPath) override
     {
+        const auto usage = instance->usage();
+        bool ok = false;
+
+        if (usage == FGFileDialog::USE_OPEN_FILE) {
+            ok =SGPath::addAllowedPath(aPath.utf8Str(), SGPath::Permissions{true, false});
+        } else if (usage == FGFileDialog::USE_SAVE_FILE) {
+            ok = SGPath::addAllowedPath(aPath.utf8Str(), SGPath::Permissions{false, true});
+        } else if (usage == FGFileDialog::USE_CHOOSE_DIR) {
+            ok = SGPath::addAllowedDirectoryHierarchy(aPath.utf8Str(), SGPath::Permissions{true, true});
+        }
+
         auto sys = globals->get_subsystem<FGNasalSys>();
         
         naContext ctx = naNewContext();
         naRef args[1];
-        args[0] = nasal::to_nasal(ctx, aPath);
+
+        if (ok) {
+            args[0] = nasal::to_nasal(ctx, aPath);            
+        } else {
+            SG_LOG(SG_IO, SG_DEV_ALERT, "FileDialog selected path was not allowed:" << aPath);
+            args[0] = naNil();
+        }
         
         sys->callMethod(func, object, 1, args, naNil() /* locals */);
         naFreeContext(ctx);

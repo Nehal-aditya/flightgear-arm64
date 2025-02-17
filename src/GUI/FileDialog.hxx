@@ -52,6 +52,9 @@ public:
     { return _showHidden; }
     void setShowHidden(bool show);
     
+    Usage usage() const
+    { return _usage; }
+
     /**
      * Destructor.
      */
