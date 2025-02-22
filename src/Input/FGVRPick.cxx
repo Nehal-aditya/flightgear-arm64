@@ -23,13 +23,22 @@
 #include <Main/fg_props.hxx>
 #include <Viewer/renderer.hxx>
 
+#include <simgear/scene/material/Effect.hxx>
+#include <simgear/scene/material/EffectGeode.hxx>
 #include <simgear/scene/util/OsgMath.hxx>
+#include <simgear/scene/util/RenderConstants.hxx>
+#include <simgear/scene/util/SGReaderWriterOptions.hxx>
 
 #include <osg/Geode>
 #include <osg/LineWidth>
-#include <osg/Material>
 #include <osg/MatrixTransform>
 #include <osg/ref_ptr>
+#include <osg/Shape>
+#include <osg/ShapeDrawable>
+#include <osgDB/Registry>
+
+typedef SGSharedPtr<SGPickCallback> SGPickCallbackPtr;
+typedef std::list<SGPickCallbackPtr> SGPickCallbackList;
 
 using namespace flightgear;
 
@@ -42,14 +51,32 @@ public:
     void buttonDown(unsigned int button, FGRenderer::PickList& pickList);
     void buttonUp(unsigned int button);
     void update(double dt);
+    bool picking() const;
 
     FGVRInput* _input;
     osg::ref_ptr<osg::Switch> _pickSwitch;
-    osg::ref_ptr<osg::Geode> _pickGeode;
-    osg::ref_ptr<osg::Geometry> _pickGeom;
-    osg::ref_ptr<osg::Vec3Array> _pickVerts;
-    osg::ref_ptr<osg::StateSet> _stateSetMiss;
-    osg::ref_ptr<osg::StateSet> _stateSetHit;
+    osg::ref_ptr<simgear::EffectGeode> _pickGeode;
+    osg::ref_ptr<osg::ShapeDrawable> _pickGeom;
+    osg::ref_ptr<osg::Capsule> _pickShape;
+    osg::ref_ptr<simgear::Effect> _effectMiss;
+    osg::ref_ptr<simgear::Effect> _effectHit;
+    osg::ref_ptr<simgear::Effect> _effectGrab;
+
+    struct Contact {
+        //struct SGSceneryPick pick;
+        osg::observer_ptr<osg::Node> rootNode;
+        // FIXME save pointing...
+        SGIKLink* ikLink;
+        std::shared_ptr<SGIKContactSpringStatic> contact;
+        // Contact distance
+        double distance;
+
+        // Normal pick callbacks
+        std::map<int, SGPickCallbackList> activeCallbacks;
+    };
+
+    /// Contact point
+    Contact _contact;
 
 protected:
     SGSceneryPick _hoverPick;
@@ -108,27 +135,16 @@ void FGVRPick::Private::update(double dt)
             pick.callback->update(dt, keyModState);
 }
 
+bool FGVRPick::Private::picking() const
+{
+    for (auto& pick : _buttonPicks)
+        if (pick.callback.valid())
+            return true;
+    return false;
+}
+
 
 // FGVRPick
-
-static osg::StateSet* createPickStateSet(const osg::Vec4f& color, float width)
-{
-    int forceOff = osg::StateAttribute::OFF | osg::StateAttribute::PROTECTED;
-    osg::StateSet* ss = new osg::StateSet;
-
-    // It should look like some sort of laser
-    ss->setMode(GL_LIGHTING, forceOff);
-    if (width != 1.0f)
-        ss->setAttribute(new osg::LineWidth(width));
-
-    // Material setup
-    osg::Material* material = new osg::Material;
-    material->setColorMode(osg::Material::OFF);
-    material->setDiffuse(osg::Material::FRONT_AND_BACK, color);
-    ss->setAttribute(material);
-
-    return ss;
-}
 
 FGVRPick::FGVRPick(FGVRInput* input,
                    FGVRInput::Mode* mode,
@@ -137,34 +153,38 @@ FGVRPick::FGVRPick(FGVRInput* input,
                    SGPropertyNode* statusNode)
     : ModeProcess(mode, subaction, node, statusNode),
       _pose(mode, subaction, getInputNode("pose")),
+      _grab(mode, subaction, getInputNode("grab")),
       _mouseLeft(mode, subaction, getInputNode("mouse-left-click")),
       _mouseMiddle(mode, subaction, getInputNode("mouse-middle-click")),
       _reach(node->getDoubleValue("reach", 5.0f)),
       _private(std::make_unique<Private>())
 {
-    // Create buffers for a simple line
-    osg::Vec3Array* vertices = _private->_pickVerts = new osg::Vec3Array(2);
-    osg::DrawArrays* prim = new osg::DrawArrays(osg::PrimitiveSet::LINE_STRIP, 0, 2);
-
     // Create a geometry for the line
-    osg::Geometry* pickGeom = _private->_pickGeom = new osg::Geometry;
-    pickGeom->setVertexArray(vertices);
-    pickGeom->addPrimitiveSet(prim);
+    osg::ShapeDrawable* pickGeom = _private->_pickGeom = new osg::ShapeDrawable;
     pickGeom->setUseDisplayList(false);
 
     // Create a geode for the line
-    osg::Geode* pickGeode = _private->_pickGeode = new osg::Geode;
+    simgear::EffectGeode* pickGeode = _private->_pickGeode = new simgear::EffectGeode;
     pickGeode->addDrawable(pickGeom);
 
-    // Hard code hit & miss style for now
-    _private->_stateSetMiss = createPickStateSet(osg::Vec4f(1.0f, 0.0f, 0.0f, 1.0f),
-                                                 2);
-    _private->_stateSetHit = createPickStateSet(osg::Vec4f(0.0f, 1.0f, 0.0f, 1.0f),
-                                                3);
-    pickGeode->setStateSet(_private->_stateSetMiss);
+    // Get the effects
+    std::string eff_file = node->getStringValue("miss-effect");
+    osg::ref_ptr<simgear::SGReaderWriterOptions> options
+        = simgear::SGReaderWriterOptions::copyOrCreate(osgDB::Registry::instance()->getOptions());
+    if (!eff_file.empty()) {
+        simgear::Effect* effect = _private->_effectMiss = makeEffect(eff_file, true, options);
+        pickGeode->setEffect(effect);
+    }
+    eff_file = node->getStringValue("hit-effect");
+    if (!eff_file.empty())
+        _private->_effectHit = makeEffect(eff_file, true, options);
+    eff_file = node->getStringValue("grab-effect");
+    if (!eff_file.empty())
+        _private->_effectGrab = makeEffect(eff_file, true, options);
 
     // Switch on and off
     osg::Switch* sw = _private->_pickSwitch = new osg::Switch();
+    sw->setNodeMask(~simgear::PICK_BIT);
     sw->addChild(pickGeode);
 
     // Add it to the local space group
@@ -185,59 +205,158 @@ void FGVRPick::postinit(SGPropertyNode* node,
 
 void FGVRPick::update(double dt)
 {
-    FGRenderer::PickList pickList;
-    osgXR::ActionPose::Location location;
+    //FGRenderer::PickList pickList;
+    osgXR::ActionPose::Location pose;
 
-    bool active = _pose.getPoseValue(location) &&
-                  location.isPositionValid() && location.isOrientationValid();
+    bool active = _pose.getPoseValue(pose) &&
+                  pose.isPositionValid() && pose.isOrientationValid();
     _private->_pickSwitch->setValue(0, active);
     if (active) {
-        // get line segment in scene space
-        osg::Vec3d start, end;
-        start = location.getPosition();
-        end = start + location.getOrientation() * osg::Vec3d(0, 0, -_reach);
-        // Keep a copy of local ray
-        (&_private->_pickVerts->front())[0] = start;
-        (&_private->_pickVerts->front())[1] = end;
-        auto& invMatrix = _private->_input->getLocalSpaceGroup()->getMatrix();
-        start = start * invMatrix;
-        end = end * invMatrix;
-
-        // perform the pick
-        pickList = globals->get_renderer()->pick(start, end);
-
-        if (pickList.empty()) {
-            _private->_pickGeode->setStateSet(_private->_stateSetMiss);
-        } else {
-            _private->_pickGeode->setStateSet(_private->_stateSetHit);
-
-            // Find vector to first item
-            end = toOsg(pickList.front().info.wgs84);
-            auto& matrix = _private->_input->getLocalSpaceGroup()->getInverseMatrix();
-            (&_private->_pickVerts->front())[1] = end * matrix;
-        }
-        _private->_pickGeom->setVertexArray(_private->_pickVerts);
-
+#if 0
         // Handle hovering
         _private->hover(pickList);
+#endif
+        // Calculate pick line segment in local space
+        auto& localMatrix = _private->_input->getLocalSpaceGroup()->getMatrix();
+        osg::Vec3d startLocal = pose.getPosition();
+        osg::Vec3d aimVecLocal = pose.getOrientation() * osg::Vec3d(0.0, 0.0, -1.0);
+        double pickLength = _reach;
+        osg::Vec3d endLocal = startLocal + aimVecLocal * pickLength;
 
-        // Handle inputs
-        bool value, changed;
-        if (_mouseLeft.getBoolValue(value, &changed) && changed) {
-            if (value)
-                _private->buttonDown(0, pickList);
-            else
-                _private->buttonUp(0);
-        }
-        if (_mouseMiddle.getBoolValue(value, &changed) && changed) {
-            if (value)
-                _private->buttonDown(1, pickList);
-            else
-                _private->buttonUp(1);
+        // If grab in progress, just update contact point
+        bool grab;
+        bool grabChanged;
+        _grab.getBoolValue(grab, &grabChanged);
+        if (grab && !grabChanged && _private->_contact.contact &&
+                _private->_contact.rootNode.valid()) {
+            //std::cout << "Ongoing grab" << std::endl;
+            auto nodePaths = _private->_contact.rootNode->getParentalNodePaths();
+            if (!nodePaths.empty()) {
+                nodePaths.front().pop_back();
+                auto rootMatrix = computeWorldToLocal(nodePaths.front());
+
+                // Update spring destination relative to IK root, using new aim
+                // pose
+                pickLength = _private->_contact.distance;
+                endLocal = startLocal + aimVecLocal * pickLength;
+                osg::Vec3d endGlobal = endLocal * localMatrix;
+                osg::Vec3d endRoot = endGlobal * rootMatrix;
+                /*
+                   std::cout << "  endLocal " << endLocal.x() << "," << endLocal.y() << "," << endLocal.z() << std::endl;
+                   std::cout << "  endGlobal " << endGlobal.x() << "," << endGlobal.y() << "," << endGlobal.z() << std::endl;
+                   std::cout << "  endRoot " << endRoot.x() << "," << endRoot.y() << "," << endRoot.z() << std::endl;
+                   */
+                _private->_contact.contact->setSpringPositionRoot(endRoot);
+            }
+        } else {
+            // Get line segment in global scene space
+            osg::Vec3d endGlobal = endLocal * localMatrix;
+            osg::Vec3d startGlobal = startLocal * localMatrix;
+
+            // Perform the pick
+            auto pickLinks = globals->get_renderer()->pickLinks(startGlobal, endGlobal);
+            if (pickLinks.rootNode) {
+                //std::cout << "Picking: hit " << grab << std::endl;
+                // It hits something
+                _private->_pickGeode->setEffect(_private->_effectHit);
+
+                // Update line segment to stop at first item
+                auto& localMatrixInv = _private->_input->getLocalSpaceGroup()->getInverseMatrix();
+                endGlobal = pickLinks.wgs84;
+                endLocal = pickLinks.wgs84 * localMatrixInv;
+                pickLength = (endLocal - startLocal).length();
+            } else {
+                //std::cout << "Picking: miss " << grab << std::endl;
+                _private->_pickGeode->setEffect(_private->_effectMiss);
+                // FIXME maybe wgs84 still valid?
+            }
+
+            // Start grabbing something reversible
+            if (grab && grabChanged && pickLinks.reversible) {
+                auto* ik = pickLinks.linkPath.back().link;
+                // If top link is different to last time, clear contact and update
+                if (ik != _private->_contact.ikLink) {
+                    if (_private->_contact.contact)
+                        _private->_contact.contact->setStale();
+                    _private->_contact.contact = nullptr;
+                    _private->_contact.ikLink = ik;
+                }
+                // Create a new spring contact
+                if (!_private->_contact.contact) {
+                    _private->_contact.contact = std::make_shared<SGIKContactSpringStatic>();
+                    std::cout << "Creating contact " << _private->_contact.contact << std::endl;
+                    ik->addContact(_private->_contact.contact, pickLinks.linkPath);
+                } else {
+                    std::cout << "Updating contact " << _private->_contact.contact << std::endl;
+                }
+
+                // Set contact position relative to IK tip (for IK calculations)
+                auto contactPosTip = pickLinks.wgs84 * pickLinks.tipMatrix;
+                _private->_contact.contact->setContactPositionTip(contactPosTip);
+
+                // Set spring destination to match
+                osg::Vec3d contactPosRoot = endGlobal * pickLinks.rootMatrix;
+                _private->_contact.contact->setSpringPositionRoot(contactPosRoot);
+                _private->_contact.contact->setForce(10.0f, 1.0f);
+
+                // Update root node pointer
+                _private->_contact.rootNode = pickLinks.rootNode;
+                _private->_contact.distance = pickLength;
+
+                _private->_pickGeode->setEffect(_private->_effectGrab);
+            } else if (grabChanged && !grab) {
+                // No contact, make existing contact stale
+                if (_private->_contact.contact) {
+                    std::cout << "Dropping contact " << _private->_contact.contact << std::endl;
+                    _private->_contact.contact->setStale();
+                    _private->_contact.contact = nullptr;
+                    _private->_contact.ikLink = nullptr;
+#if 0
+                } else if (!grab && grabsChanged &&
+                           grabNodes[grab] && grabPositions[grab]) {
+                    // If grab finished, execute the mouse up event
+                    _private->finishPick(grab, 0, *grabNodes[grab], *grabPositions[grab]);
+#endif
+                }
+            }
+
+#if 0
+            // If grab started
+            if (grab && grabChanged &&
+                grabNodes[grab] && grabPositions[grab]) {
+                // Fall back to normal mouse clicks
+            }
+#endif
+
+#if 0
+            // Fall back to mouse emulation
+            if (_mouseLeft.getBoolValue(value, &changed) && changed) {
+                if (value)
+                    _private->buttonDown(0, pickList);
+                else
+                    _private->buttonUp(0);
+            }
+            if (_mouseMiddle.getBoolValue(value, &changed) && changed) {
+                if (value)
+                    _private->buttonDown(1, pickList);
+                else
+                    _private->buttonUp(1);
+            }
+
+            // Update active pick callbacks
+            _private->update(dt);
+
+            // Use grab effect if any pick callbacks in use
+            if (_private->picking())
+                _private->_pickGeode->setEffect(_private->_effectGrab);
+#endif
         }
 
-        // Update active pick callbacks
-        _private->update(dt);
+        // Create/update the capsule for the pick ray
+        osg::Capsule* pickShape = _private->_pickShape = new osg::Capsule(startLocal + (endLocal - startLocal)/2,
+                                                                          0.001f, pickLength);
+        pickShape->setRotation(pose.getOrientation());
+        _private->_pickGeom->setShape(pickShape);
     }
 }
 
@@ -245,6 +364,11 @@ void FGVRPick::deactivate()
 {
     _pose.deactivate();
     _private->_pickSwitch->setValue(0, false);
+
+    if (_grab.getLastBoolValue()) {
+        _grab.deactivate();
+        // FIXME release
+    }
 
     if (_mouseLeft.getLastBoolValue()) {
         _mouseLeft.deactivate();

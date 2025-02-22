@@ -52,6 +52,8 @@ public:
 protected:
     /// The pose input to aim the pick.
     FGVRInput::ModeProcessInput _pose;
+    /// Boolean input to grab
+    FGVRInput::ModeProcessInput _grab;
     /// Boolean input to emulate mouse left click
     FGVRInput::ModeProcessInput _mouseLeft;
     /// Boolean input to emulate mouse middle click
