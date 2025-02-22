@@ -1047,9 +1047,70 @@ LinksPick FGRenderer::pickLinks(const osg::Vec2& windowPos)
                               intersections, &hitCamInfo))
         return LinksPick{};
 
-    LinksPick ret = handlePickLinkIntersections(intersections, hitCamInfo);
+    return handlePickLinkIntersections(intersections, hitCamInfo);
+}
 
-    return ret;
+LinksPick handlePickLinkIntersections(LineStripIntersections& intersections)
+{
+    LinksPick result{};
+    for (LineStripIntersections::iterator hit = intersections.begin(),
+             e = intersections.end();
+         hit != e;
+         ++hit) {
+        const osg::NodePath& np = hit->nodePath;
+
+        // If hit is an EffectGeode, check whether depth mask is ever on, which
+        // would hint that the Geode is a solid physical object.
+        if (!np.empty()) {
+            auto* effectGeode = dynamic_cast<simgear::EffectGeode*>(np.back());
+            if (effectGeode) {
+                simgear::Effect* effect = effectGeode->getEffect();
+                if (effect) {
+                    // FIXME, what if no techniques, what if no passes, what if
+                    // no depth attributes?
+                    bool skipHit = true;
+                    for (auto& technique: effect->techniques) {
+                        for (auto& pass: technique->passes) {
+                            auto* attrib = pass->getAttribute(osg::StateAttribute::DEPTH);
+                            auto* depth = dynamic_cast<osg::Depth*>(attrib);
+                            if (!depth)
+                                continue;
+                            if (depth->getWriteMask()) {
+                                skipHit = false;
+                                goto done;
+                            }
+                        }
+                    }
+done:
+                    if (skipHit)
+                        continue;
+                }
+            }
+        }
+
+        int rootIndex = -1;
+
+        result.wgs84 = hit->getWorldIntersectPoint();
+
+        SGIKLink::nodePathToLinks(np, result.linkPath, rootIndex,
+                                  result.rootMatrix, result.tipMatrix,
+                                  result.reversible);
+        if (rootIndex >= 0)
+            result.rootNode = np[rootIndex];
+        break;
+    }
+
+    return result;
+}
+
+LinksPick FGRenderer::pickLinks(const std::vector<osg::Vec3d>& lineStrip)
+{
+    LineStripIntersections intersections;
+
+    if (!computeSceneIntersections(CameraGroup::getDefault(), lineStrip, intersections))
+        return LinksPick();
+
+    return handlePickLinkIntersections(intersections);
 }
 
 bool FGRenderer::windowToLineSegment(const osg::Vec2& windowPos,

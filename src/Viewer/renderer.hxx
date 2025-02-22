@@ -107,6 +107,11 @@ public:
     PickList pick(const osg::Plane& plane, const osg::Polytope& polytope);
 
     LinksPick pickLinks(const osg::Vec2& windowPos);
+    LinksPick pickLinks(const std::vector<osg::Vec3d>& lineStrip);
+    LinksPick pickLinks(const osg::Vec3d& start, const osg::Vec3d& end)
+    {
+        return pickLinks({start, end});
+    }
     // FIXME unused
     bool windowToLineSegment(const osg::Vec2& windowPos,
                              const flightgear::CameraInfo* camInfo,
