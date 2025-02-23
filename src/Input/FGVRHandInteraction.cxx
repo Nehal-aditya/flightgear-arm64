@@ -310,17 +310,17 @@ void FGVRHandInteraction::update(double dt)
     const osg::NodePath* grabNodes[6];
     int grabJoints[6];
     const osg::Vec3f* grabPositions[6];
-    const osg::Vec3f* grabNormals[6];
+    //const osg::Vec3f* grabNormals[6];
     for (unsigned int i = 0; i < 5; ++i) {
         grabNodes[i] = _private->_handPose->getFingerTouchNodePath(i);
         grabJoints[i] = _private->_handPose->getFingerTouchJoint(i);
         grabPositions[i] = _private->_handPose->getFingerTouchPosition(i);
-        grabNormals[i] = _private->_handPose->getFingerTouchNormal(i);
+        //grabNormals[i] = _private->_handPose->getFingerTouchNormal(i);
     }
     grabNodes[5] = _private->_handPose->getPalmTouchNodePath();
     grabJoints[5] = _private->_handPose->getPalmTouchJoint();
     grabPositions[5] = _private->_handPose->getPalmTouchPosition();
-    grabNormals[5] = _private->_handPose->getPalmTouchNormal();
+    //grabNormals[5] = _private->_handPose->getPalmTouchNormal();
 
     //auto highlight = globals->get_subsystem<Highlight>();
     //int higlight_num_props = 0;
