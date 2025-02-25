@@ -90,6 +90,7 @@ class VRManager : public osgXR::Manager
         static VRManager *instance();
 
         void syncProperties();
+        void syncExtensions();
         void syncReadOnlyProperties();
         void syncSettingProperties();
 
@@ -135,9 +136,12 @@ class VRManager : public osgXR::Manager
 
         // Properties
 
+        class Extension;
+
         SGPropObjBool _propXrLayersValidation;
         SGPropObjBool _propXrExtensionsDepthInfo;
         SGPropObjBool _propXrExtensionsVisibilityMask;
+        std::map<std::string, osg::ref_ptr<Extension>> _propXrExtensions;
         SGPropObjString _propXrRuntimeName;
         SGPropObjString _propXrSystemName;
 

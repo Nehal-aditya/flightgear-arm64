@@ -18,6 +18,7 @@
 #include "WindowBuilder.hxx"
 #include "renderer.hxx"
 
+#include <osgXR/Extension>
 #include <osgXR/Settings>
 
 #include <simgear/scene/util/RenderConstants.hxx>
@@ -36,6 +37,55 @@ using namespace compositor;
 // If its initialisation completes after main() calls atexit(fgExitCleanup),
 // then its destruction should take place before fgExitCleanup() is called.
 static osg::ref_ptr<VRManager> managerInstance;
+
+class VRManager::Extension : public osgXR::Extension
+{
+    public:
+        Extension(VRManager *manager,
+                  SGPropertyNode *node,
+                  const std::string &name) :
+            osgXR::Extension(manager, name),
+            _propAvailable(node, "available"),
+            _propVersion(node, "version"),
+            _propEnabled(node, "enable"),
+            _propActive(node, "active")
+        {
+            _propActive = false;
+            if (!_propEnabled.node())
+                _propEnabled = false;
+        }
+
+        void syncProperties(VRManager *_manager)
+        {
+            // Update properties from osgXR
+            uint32_t version;
+            _propAvailable = getAvailable(&version);
+            _propVersion = version;
+
+            // Enable extension from property. This allows required extensions
+            // to be explicitly enabled before VR is started.
+            if (_propEnabled)
+                _manager->enableExtension(this);
+        }
+
+        // Overrides from osgXR::Extension
+        void onChanged() override
+        {
+            // Update whether the extension is active
+            _propActive = getEnabled();
+        }
+
+    protected:
+
+        /// Whether the extension is available.
+        SGPropObjBool _propAvailable;
+        /// The version number of the extension.
+        SGPropObjInt _propVersion;
+        /// Whether the extension should be explicitly enabled.
+        SGPropObjBool _propEnabled;
+        /// Whether the extension is currently enabled.
+        SGPropObjBool _propActive;
+};
 
 VRManager::VRManager() :
     _reloadCompositorCallback(new ReloadCompositorCallback(this)),
@@ -80,6 +130,7 @@ VRManager::VRManager() :
         view->apply(this);
     }
 
+    syncExtensions();
     syncReadOnlyProperties();
 
     _propEnabled.node(true)->addChangeListener(&_listenerEnabled, true);
@@ -127,6 +178,24 @@ void VRManager::syncProperties()
         syncReadOnlyProperties();
         syncSettingProperties();
     }
+}
+
+void VRManager::syncExtensions()
+{
+    // Create a property node for each available OpenXR extension, managed by
+    // instances of VRManager::Extension.
+    SGPropertyNode *extsNode = fgGetNode("/sim/vr/openxr/extensions", true);
+    for (auto name : getExtensionNames()) {
+        auto it = _propXrExtensions.find(name);
+        if (it == _propXrExtensions.end()) {
+            SGPropertyNode *node = extsNode->getNode(name, true);
+            _propXrExtensions[name] = new Extension(this, node, name);
+        }
+    }
+
+    // Synchronise properties
+    for (const auto& [name, ext] : _propXrExtensions)
+        ext->syncProperties(this);
 }
 
 void VRManager::syncReadOnlyProperties()
