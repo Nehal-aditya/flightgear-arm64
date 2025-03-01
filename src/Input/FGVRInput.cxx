@@ -57,6 +57,12 @@ FGVRInput::Subaction::Subaction(osgXR::Manager* manager,
 void FGVRInput::Subaction::setup(SGPropertyNode* node)
 {
     _modesNode = node->getNode("modes", false);
+
+    _propInteractionProfile = SGPropObjString(node, "interaction-profile");
+    // Ensure the node exists so it can be tested
+    _propInteractionProfile.node(true);
+
+    syncProperties();
 }
 
 std::string FGVRInput::Subaction::getPresetMode(const std::string& id)
@@ -105,6 +111,24 @@ void FGVRInput::Subaction::update(double dt)
     // Note this may change the mode stack
     for (unsigned int i = 0; i < _modeStack.size(); ++i)
         _modeStack[i]->update(this, dt);
+}
+
+void FGVRInput::Subaction::onProfileChanged(osgXR::InteractionProfile *newProfile)
+{
+    _interactionProfile = newProfile;
+
+    syncProperties();
+}
+
+void FGVRInput::Subaction::syncProperties()
+{
+    // Update interaction-profile node
+    if (_propInteractionProfile.node()) {
+        if (_interactionProfile.valid())
+            _propInteractionProfile = _interactionProfile->getVendor() + "/" + _interactionProfile->getType();
+        else
+            _propInteractionProfile = "";
+    }
 }
 
 // FGVRInput::ActionSet

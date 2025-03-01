@@ -139,6 +139,18 @@ public:
         void update(double dt);
 
     protected:
+        // osgXR::Subaction overrides
+        void onProfileChanged(osgXR::InteractionProfile *newProfile) override;
+
+        /// Sync subaction properties.
+        void syncProperties();
+
+        /// Current interaction profile.
+        osg::ref_ptr<osgXR::InteractionProfile> _interactionProfile;
+
+        /// Property node for current interaction profile.
+        SGPropObjString _propInteractionProfile;
+
         /// Preset modes node.
         SGPropertyNode_ptr _modesNode;
 
