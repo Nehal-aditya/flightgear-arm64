@@ -142,7 +142,12 @@ class VRManager : public osgXR::Manager
         SGPropObjBool _propXrExtensionsDepthInfo;
         SGPropObjBool _propXrExtensionsVisibilityMask;
         std::map<std::string, osg::ref_ptr<Extension>> _propXrExtensions;
+        SGPropObjInt _propXrApiVersionMajor;
+        SGPropObjInt _propXrApiVersionMinor;
         SGPropObjString _propXrRuntimeName;
+        SGPropObjInt _propXrRuntimeVersionMajor;
+        SGPropObjInt _propXrRuntimeVersionMinor;
+        SGPropObjInt _propXrRuntimeVersionPatch;
         SGPropObjString _propXrSystemName;
 
         SGPropObjString _propStateString;

@@ -92,7 +92,12 @@ VRManager::VRManager() :
     _propXrLayersValidation("/sim/vr/openxr/layers/validation"),
     _propXrExtensionsDepthInfo("/sim/vr/openxr/extensions/depth-info"),
     _propXrExtensionsVisibilityMask("/sim/vr/openxr/extensions/visibility-mask"),
+    _propXrApiVersionMajor("/sim/vr/openxr/version/major"),
+    _propXrApiVersionMinor("/sim/vr/openxr/version/minor"),
     _propXrRuntimeName("/sim/vr/openxr/runtime/name"),
+    _propXrRuntimeVersionMajor("/sim/vr/openxr/runtime/version/major"),
+    _propXrRuntimeVersionMinor("/sim/vr/openxr/runtime/version/minor"),
+    _propXrRuntimeVersionPatch("/sim/vr/openxr/runtime/version/patch"),
     _propXrSystemName("/sim/vr/openxr/system/name"),
     _propStateString("/sim/vr/state-string"),
     _propPresent("/sim/vr/present"),
@@ -200,10 +205,18 @@ void VRManager::syncExtensions()
 
 void VRManager::syncReadOnlyProperties()
 {
+    auto apiVersion = getApiVersion();
+    auto runtimeVersion = getRuntimeVersion();
+
     _propXrLayersValidation = hasValidationLayer();
     _propXrExtensionsDepthInfo = hasDepthInfoExtension();
     _propXrExtensionsVisibilityMask = hasVisibilityMaskExtension();
+    _propXrApiVersionMajor = apiVersion.getMajor();
+    _propXrApiVersionMinor = apiVersion.getMinor();
     _propXrRuntimeName = getRuntimeName();
+    _propXrRuntimeVersionMajor = runtimeVersion.getMajor();
+    _propXrRuntimeVersionMinor = runtimeVersion.getMinor();
+    _propXrRuntimeVersionPatch = runtimeVersion.getPatch();
     _propXrSystemName = getSystemName();
 
     _propStateString = getStateString();
