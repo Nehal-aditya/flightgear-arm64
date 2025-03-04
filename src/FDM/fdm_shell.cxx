@@ -404,9 +404,14 @@ void FDMShell::createImplementation()
     if (fdmUnavailable)
     {
         // FDM type is known, but its support was disabled at compile-time.
-        throw sg_exception(string("Support for flight model '") + model
-                + ("' is not available with this binary (deprecated/disabled).\n"
-                   "If you still need it, please rebuild FlightGear and enable its support."));
+      flightgear::fatalMessageBoxThenExit(
+          "Deprecated Flight Model",
+          std::string("Support for flight model '") + model +
+            "' is not available with this binary (deprecated/disabled).\n"
+            "If you still need it, please rebuild FlightGear and enable its support.\n\n"
+            "Important: The LaRCsim and UIUC flight models will be completely removed in a future major release.",
+          "Please consider migrating to a supported flight model."
+      );
     }
 }
 
