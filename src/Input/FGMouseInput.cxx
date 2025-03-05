@@ -788,9 +788,10 @@ void FGMouseInput::processMotion(int x, int y, const osgGA::GUIEventAdapter* ea)
     flightgear::eventToWindowCoords(ea, windowPos.x(), windowPos.y());
 
     // omly do hover picks if no buttons are down
-    if (ea->getButtonMask() == 0) {
+    // FIXME oh, we use that for dragging
+    //if (ea->getButtonMask() == 0) {
         d->scheduleHoverPick(windowPos);
-    }
+    //}
 
     // mouse has moved, so we may need to issue tooltip-timeout command again
     d->tooltipTimeoutDone = false;
