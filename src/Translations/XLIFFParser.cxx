@@ -246,9 +246,7 @@ void XLIFFParser::finishTransUnit(bool hasPlural)
         checkNumberOfPluralForms(_targetTexts.size());
         _currentResource->setTargetTexts(std::move(_basicId), _index,
                                          std::move(_targetTexts));
-    } else {
-        assert(_targetTexts.size() > 0);
-
+    } else if (!_targetTexts.empty()) { // the 'target' element is optional
         _currentResource->setFirstTargetText(std::move(_basicId), _index,
                                              std::move(_targetTexts[0]));
     }
