@@ -25,8 +25,6 @@
 
 #include <memory>
 
-class FGVRInput;
-
 class FGVRHand : public osgXR::HandPose
 {
     public:
@@ -40,9 +38,19 @@ class FGVRHand : public osgXR::HandPose
         // Reimplemented from osgXR::HandPose
         void advance(float dt) override;
 
+        // Configuration
+
         void setFingerHoverDistance(unsigned int finger, float hoverDistance)
         {
             _fingersRange[finger].hoverDistance = hoverDistance;
+        }
+
+        void setFingerPoke(unsigned int finger, float minCurl, float maxCurl,
+                           float minNormalDot)
+        {
+            _fingersRange[finger].pokeMinCurl = minCurl;
+            _fingersRange[finger].pokeMaxCurl = maxCurl;
+            _fingersRange[finger].pokeMinNormalDot = minNormalDot;
         }
 
         void setFingerFreeze(unsigned int finger, bool freeze);
@@ -67,9 +75,34 @@ class FGVRHand : public osgXR::HandPose
             return !_wristRange.touchNodes.empty();
         }
 
+        bool isFingerPoking(unsigned int finger) const
+        {
+            return _fingersRange[finger].touchPoke;
+        }
+
         bool isFingerTouching(unsigned int finger) const
         {
             return !_fingersRange[finger].touchNodes.empty();
+        }
+
+        float getPalmTouchForce() const
+        {
+            return _wristRange.force;
+        }
+
+        float getFingerTouchForce(unsigned int finger) const
+        {
+            return _fingersRange[finger].force;
+        }
+
+        float getPalmTouchForceRef() const
+        {
+            return _wristRange.forceRef;
+        }
+
+        float getFingerTouchForceRef(unsigned int finger) const
+        {
+            return _fingersRange[finger].forceRef;
         }
 
         const osg::NodePath* getPalmTouchNodePath() const
@@ -128,9 +161,20 @@ class FGVRHand : public osgXR::HandPose
             return &_fingersRange[finger].touchNormal;
         }
 
+        float getFingerPinch(unsigned int finger) const
+        {
+            return _fingersPinch[finger];
+        }
+
         typedef struct {
             /// Hover distance when autosqueezing.
             float hoverDistance = 0.0f;
+            /// Minimum finger curl for poking.
+            float pokeMinCurl = 1.0f;
+            /// Maximum finger curl for poking.
+            float pokeMaxCurl = -1.0f;
+            /// Normal dot product threshold for poking.
+            float pokeMinNormalDot = 1.0f;
             /// Freeze these joints.
             bool freeze = false;
 
@@ -143,6 +187,9 @@ class FGVRHand : public osgXR::HandPose
 
             float frozenValue = 0;
             float curValue = 0;
+            float force = 0.0f;
+            float forceRef = 0.0f;
+            bool touchPoke = false;
 
             osg::NodePath touchNodes;
             bool hasPosition;
@@ -166,6 +213,8 @@ class FGVRHand : public osgXR::HandPose
         RangeState _fingersRange[5];
         /// Range state for wrist.
         RangeState _wristRange;
+        /// Pinch values for each finger (thumb gives max value).
+        float _fingersPinch[5];
 
         // Debugging
 

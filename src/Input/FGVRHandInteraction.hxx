@@ -49,6 +49,8 @@ public:
     void deactivate() override;
 
 protected:
+    /// Last grab values.
+    bool _lastGrabs[6];
     /// The boolean input for palm grab.
     FGVRInput::ModeProcessInput _grabPalm;
     /// The boolean inputs for finger grabs.

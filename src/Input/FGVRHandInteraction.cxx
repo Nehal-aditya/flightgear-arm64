@@ -83,6 +83,21 @@ public:
     /// Visible hand node.
     osg::ref_ptr<Hand> _hand;
 
+    // Grabbing behaviour
+
+    /// Threshold of finger/thumb pinching to grab (0..1).
+    float _pinchGrabMinPinch;
+    /// Threshold of finger curl for curl grabbing.
+    float _curlGrabMinCurl;
+    /// Threshold of finger force (curl past contact) for curl grabbing
+    float _curlGrabMinForce;
+    /// Min finger curl for poking
+    float _pokeGrabMinCurl;
+    /// Max finger curl for poking
+    float _pokeGrabMaxCurl;
+    /// Threshold of dot product of normal to poke direction
+    float _pokeGrabMinNormalDot;
+
     struct Contact {
         //struct SGSceneryPick pick;
         osg::observer_ptr<osg::Node> rootNode;
@@ -220,6 +235,7 @@ FGVRHandInteraction::FGVRHandInteraction(FGVRInput* input,
                                          SGPropertyNode* node,
                                          SGPropertyNode* statusNode)
     : ModeProcess(mode, subaction, node, statusNode),
+      _lastGrabs{},
       _grabPalm(mode, subaction, getInputNode("grab-palm")),
       _grabFingers{
           FGVRInput::ModeProcessInput(mode, subaction, getInputNode("grab-thumb")),
@@ -255,6 +271,13 @@ FGVRHandInteraction::FGVRHandInteraction(FGVRInput* input,
     if (!eff_file.empty())
         effect = makeEffect(eff_file, true, _private->_options);
 
+    _private->_pinchGrabMinPinch = node->getFloatValue("pinch-grab/min-pinch", 2.0f);
+    _private->_curlGrabMinCurl = node->getFloatValue("curl-grab/min-curl", -1.0f);
+    _private->_curlGrabMinForce = node->getFloatValue("curl-grab/min-force", 1.0f);
+    _private->_pokeGrabMinCurl = node->getFloatValue("poke-grab/min-curl", 1.0f);
+    _private->_pokeGrabMaxCurl = node->getFloatValue("poke-grab/max-curl", -1.0f);
+    _private->_pokeGrabMinNormalDot = node->getFloatValue("poke-grab/min-normal-dot", 1.0f);
+
     VRManager* manager = VRManager::instance();
     auto* localSpaceGroup = input->getLocalSpaceGroup();
 
@@ -284,6 +307,7 @@ void FGVRHandInteraction::update(double dt)
 {
     bool grabs[6] = {};
     bool grabsChanged[6] = {};
+    bool grabsPoke[6] = {};
     bool thumbDown = false;
     bool thumbDownChanged = false;
     osg::Vec2f thumbPos;
@@ -293,6 +317,9 @@ void FGVRHandInteraction::update(double dt)
     for (unsigned int i = 0; i < 5; ++i) {
         _grabFingers[i].getBoolValue(grabs[i], &grabsChanged[i]);
         //_private->_handPose->setFingerHoverDistance(i, grabs[i] ? 0.0f : 0.01f);
+        _private->_handPose->setFingerPoke(i, _private->_pokeGrabMinCurl,
+                                           _private->_pokeGrabMaxCurl,
+                                           _private->_pokeGrabMinNormalDot);
     }
     _grabPalm.getBoolValue(grabs[5], &grabsChanged[5]);
     _thumbDown.getBoolValue(thumbDown, &thumbDownChanged);
@@ -300,6 +327,7 @@ void FGVRHandInteraction::update(double dt)
         hasThumbPos = _thumbPosition.getVector2fValue(thumbPos, &thumbPosChanged);
 
     if (hasThumbPos) {
+        //std::cout << "Thumbpos " << thumbPos.x() << ", " << thumbPos.y() << std::endl;
         _private->_handPose->setThumbPosition(thumbPos);
     } else {
         _private->_handPose->clearThumbPosition();
@@ -307,36 +335,96 @@ void FGVRHandInteraction::update(double dt)
 
     _private->_handPose->advance(dt);
 
+    float grabForce[6];
+    float grabForceRef[6];
+    bool grabPoking[5];
+    float grabPinch[5];
     const osg::NodePath* grabNodes[6];
     int grabJoints[6];
     const osg::Vec3f* grabPositions[6];
-    //const osg::Vec3f* grabNormals[6];
+    const osg::Vec3f* grabNormals[6];
     for (unsigned int i = 0; i < 5; ++i) {
+        grabForce[i] = _private->_handPose->getFingerTouchForce(i);
+        grabForceRef[i] = _private->_handPose->getFingerTouchForceRef(i);
+        grabPoking[i] = _private->_handPose->isFingerPoking(i);
+        grabPinch[i] = _private->_handPose->getFingerPinch(i);
         grabNodes[i] = _private->_handPose->getFingerTouchNodePath(i);
         grabJoints[i] = _private->_handPose->getFingerTouchJoint(i);
         grabPositions[i] = _private->_handPose->getFingerTouchPosition(i);
-        //grabNormals[i] = _private->_handPose->getFingerTouchNormal(i);
+        grabNormals[i] = _private->_handPose->getFingerTouchNormal(i);
     }
+    grabForce[5] = _private->_handPose->getPalmTouchForce();
+    grabForceRef[5] = _private->_handPose->getPalmTouchForceRef();
     grabNodes[5] = _private->_handPose->getPalmTouchNodePath();
     grabJoints[5] = _private->_handPose->getPalmTouchJoint();
     grabPositions[5] = _private->_handPose->getPalmTouchPosition();
-    //grabNormals[5] = _private->_handPose->getPalmTouchNormal();
+    grabNormals[5] = _private->_handPose->getPalmTouchNormal();
 
     //auto highlight = globals->get_subsystem<Highlight>();
     //int higlight_num_props = 0;
 
     auto& localMatrix = _private->_input->getLocalSpaceGroup()->getMatrix();
+    /*std::cout << "pinch " << grabPinch[0] << ", "
+        << grabPinch[1] << ", "
+        << grabPinch[2] << ", "
+        << grabPinch[3] << ", "
+        << grabPinch[4] << std::endl;*/
+    unsigned int pinchFinger = 0;
+    float pinch = 0.0f;
+    for (unsigned int finger = 1; finger < 5; ++finger)
+        if (grabPinch[finger] > pinch) {
+            pinchFinger = finger;
+            pinch = grabPinch[finger];
+        }
+    if (0 && pinchFinger > 0)
+        std::cout << "pinch " << pinchFinger << " " << pinch << std::endl;
+    if (0)
+        std::cout << "pinch " << grabPinch[0] << ", "
+            << grabPinch[1] << ", "
+            << grabPinch[2] << ", "
+            << grabPinch[3] << ", "
+            << grabPinch[4] << std::endl;
+
+    // Finger tracking based grabbing
+    for (unsigned int grab = 1; grab < 5; ++grab) {
+        // Curling finger through object
+        if (grabForceRef[grab] > _private->_curlGrabMinCurl &&
+                grabForce[grab] > _private->_curlGrabMinForce) {
+            //std::cout << "Curl " << grab << std::endl;
+            grabs[grab] = true;
+        }
+        // Pinch based grabbing
+        if (grabPinch[grab] >= _private->_pinchGrabMinPinch) {
+            //std::cout << "Pinch " << grab << std::endl;
+            grabs[0] = true;
+            grabs[grab] = true;
+        }
+        // Poke based grabbing
+        if (!grabs[grab] && grabPoking[grab]) {
+            //std::cout << "Poke " << grab << std::endl;
+            grabs[grab] = true;
+            grabsPoke[grab] = true;
+        }
+
+        grabsChanged[grab] = (grabs[grab] != _lastGrabs[grab]);
+        _lastGrabs[grab] = grabs[grab];
+    }
 
     for (unsigned int grab = 0; grab < 6; ++grab) {
         SGIKLink::LinkPath ikLinks;
         int rootIndex = -1;
         osg::Matrix rootMatrix, tipMatrix;
         bool reversible = false;
+
+#if 0
+        if (grab == 1)
+            std::cout << "grabForce[" << grab << "]:" << grabForce[grab] << " grab:" << grabs[grab] << " changed:" << grabsChanged[grab] << std::endl;
+#endif
+
 #if 0
         if (grabsChanged[grab])
             std::cout << "Grab " << grab << " = " << grabs[grab] << " (changed: " << grabsChanged[grab] << ")" << std::endl;
 #endif
-
         if (grabs[grab] && !grabsChanged[grab]) {
             // Grab in progress, so we should just update contact point
             if (_private->_contacts[grab].contact && _private->_contacts[grab].rootNode.valid()) {

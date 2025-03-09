@@ -28,6 +28,8 @@
 #include <osg/Material>
 #include <osg/Point>
 
+#include <algorithm>
+
 #define NUM_INTERSECTION_SEGMENTS 8
 
 // Debug
@@ -43,7 +45,7 @@
 //#define DRAW_WRIST_INTERSECTIONS
 
 // Shows finger vs scene mesh intersection ranges
-#define DRAW_SQUEEZE_INTERSECTIONS (finger == 1)
+//#define DRAW_SQUEEZE_INTERSECTIONS (finger == 1)
 //#define DRAW_SQUEEZE_INTERSECTIONS true
 
 // Log finger movement decisions
@@ -64,9 +66,18 @@
 
 using flightgear::CameraGroup;
 
+static const osgXR::HandPose::Joint fingerTipJoints[5] = {
+    osgXR::HandPose::JOINT_THUMB_TIP,
+    osgXR::HandPose::JOINT_INDEX_TIP,
+    osgXR::HandPose::JOINT_MIDDLE_TIP,
+    osgXR::HandPose::JOINT_RING_TIP,
+    osgXR::HandPose::JOINT_LITTLE_TIP
+};
+
 FGVRHand::FGVRHand(osg::MatrixTransform* localSpaceGroup,
                    const std::shared_ptr<osgXR::HandPose>& parent) :
     _parent(parent),
+    _fingersPinch{0},
     _localSpaceGroup(localSpaceGroup)
 {
     // Allow fingers to stretch back at the proximal joint
@@ -75,6 +86,10 @@ FGVRHand::FGVRHand(osg::MatrixTransform* localSpaceGroup,
     _ranges.extendX(JOINT_MIDDLE_PROXIMAL, M_PI * 30 / 180);
     _ranges.extendX(JOINT_RING_PROXIMAL, M_PI * 30 / 180);
     _ranges.extendX(JOINT_LITTLE_PROXIMAL, M_PI * 30 / 180);
+
+    // Allow thumb to move laterally
+    _ranges.extendY(JOINT_THUMB_METACARPAL, M_PI * -45 / 180);
+    _ranges.extendY(JOINT_THUMB_METACARPAL, M_PI * 15 / 180);
 
     // Allow wrist to bend both ways to avoid collisions
     _ranges.extendX(JOINT_WRIST, M_PI * -80 / 180);
@@ -230,7 +245,43 @@ static void boundingBoxToPolytope(const osg::BoundingBoxd& bb,
         polytope.set(planes);
 }
 
-class FGVRMeshInstant : public FGVRCollision::Strip::Instant
+class FGVRMeshSweepInstant : public FGVRCollision::Sweep::Instant
+{
+    public:
+        typedef FGVRCollision::Sweep::Instant Super;
+
+        osg::NodePath nodePath;
+        osg::Drawable* drawable;
+
+        FGVRMeshSweepInstant() :
+            Super(0.0f)
+        {
+        }
+
+        FGVRMeshSweepInstant(const Super& super) :
+            Super(super)
+        {
+        }
+
+        FGVRMeshSweepInstant(const Super& super, const MeshesKey& key) :
+            Super(super),
+            nodePath(key.first),
+            drawable(key.second)
+        {
+        }
+
+        FGVRMeshSweepInstant(const Super& super,
+                             const CollisionMeshes& meshes) :
+            Super(super)
+        {
+            auto* meshId = super.staticId.as<CollisionMeshes>();
+            auto key = meshes.getItem(meshId->index).getMetadata();
+            nodePath = key.first;
+            drawable = key.second;
+        }
+};
+
+class FGVRMeshStripInstant : public FGVRCollision::Strip::Instant
 {
     public:
         typedef FGVRCollision::Strip::Instant Super;
@@ -239,18 +290,18 @@ class FGVRMeshInstant : public FGVRCollision::Strip::Instant
         osg::Drawable* drawable;
         unsigned int joint;
 
-        FGVRMeshInstant() :
+        FGVRMeshStripInstant() :
             Super(0.0f, 0)
         {
         }
 
-        FGVRMeshInstant(const Super& super) :
+        FGVRMeshStripInstant(const Super& super) :
             Super(super)
         {
         }
 
-        FGVRMeshInstant(const Super& super, const MeshesKey& key,
-                        unsigned int joint) :
+        FGVRMeshStripInstant(const Super& super, const MeshesKey& key,
+                             unsigned int joint) :
             Super(super),
             nodePath(key.first),
             drawable(key.second),
@@ -258,9 +309,9 @@ class FGVRMeshInstant : public FGVRCollision::Strip::Instant
         {
         }
 
-        FGVRMeshInstant(const Super& super,
-                        const CollisionMeshes& meshes,
-                        const BonesStrip& bonesStrip) :
+        FGVRMeshStripInstant(const Super& super,
+                             const CollisionMeshes& meshes,
+                             const BonesStrip& bonesStrip) :
             Super(super)
         {
             auto* meshId = super.staticId.as<CollisionMeshes>();
@@ -272,7 +323,7 @@ class FGVRMeshInstant : public FGVRCollision::Strip::Instant
         }
 };
 #if 0
-typedef FGVRCollision::TIntersection<FGVRMeshInstant> FGVRMeshIntersection;
+typedef FGVRCollision::TIntersection<FGVRMeshStripInstant> FGVRMeshIntersection;
 typedef FGVRCollision::TIntersections<FGVRMeshIntersection> FGVRMeshIntersections;
 #endif
 
@@ -308,12 +359,15 @@ class JointRangeState
         }
 
         float handleIntersections(const CollisionMeshes& meshes,
+                                  const FGVRCollision::SphereSweep* pokeSweep,
                                   const BonesStrip& bonesStrip,
                                   bool debugLog = false,
                                   osg::Geometry* debugGeom = nullptr,
                                   int debugBone = -1);
 
-        float advance(const BonesStrip& bonesStrip,
+        float advance(const FGVRCollision::SphereSweep* pokeSweep,
+                      unsigned int sweepJoint,
+                      const BonesStrip& bonesStrip,
                       float dt);
 
     protected:
@@ -324,7 +378,8 @@ class JointRangeState
 
         // Dynamic variables
         float _targetValue;
-        FGVRMeshInstant _clearanceHits[2];
+        FGVRMeshSweepInstant _pokeHit;
+        FGVRMeshStripInstant _clearanceHits[2];
 
         FGVRHand::RangeState *_state;
 };
@@ -340,8 +395,8 @@ unsigned int intersect(const CollisionMeshes& meshes,
         FGVRCollision::StripIntersections tempIntersections(intersections);
         ret += FGVRCollision::intersect(pair.second, sweep, tempIntersections);
         for (auto hit: tempIntersections) {
-            FGVRMeshInstant entry(hit.entry, pair.first);
-            FGVRMeshInstant exit(hit.exit, pair.first);
+            FGVRMeshStripInstant entry(hit.entry, pair.first);
+            FGVRMeshStripInstant exit(hit.exit, pair.first);
             FGVRMeshIntersection modHit(entry, exit);
             intersections.insertIntersection(modHit);
         }
@@ -351,11 +406,55 @@ unsigned int intersect(const CollisionMeshes& meshes,
 #endif
 
 float JointRangeState::handleIntersections(const CollisionMeshes& meshes,
+                                           const FGVRCollision::SphereSweep* pokeSweep,
                                            const BonesStrip& bonesStrip,
                                            bool debugLog,
                                            osg::Geometry* debugGeom,
                                            int debugBone)
 {
+    _pokeHit.hasPosition = false;
+    _state->touchPoke = false;
+    if (pokeSweep && _state->curValue >= _state->pokeMinCurl && _state->curValue <= _state->pokeMaxCurl) {
+        // Intersect sweep of finger tip from distal to tip joint
+        auto intersections = intersect(meshes, *pokeSweep);
+        if (debugLog) {
+            std::cout << "curValue: " << _state->curValue << std::endl;
+        }
+        for (auto& hit: intersections) {
+            if (debugLog) {
+                std::cout << " [" << hit.entry.ratio << " " << hit.exit.ratio << "]" << std::endl;
+                std::cout << " " << hit.entry.source << std::endl;
+            }
+            if (!hit.entry.atMin()) {
+                if (hit.entry.hasPosition) {
+                    auto norm = hit.entry.normal;
+                    auto dir = pokeSweep->sweep.end.position -
+                               pokeSweep->sweep.start.position;
+                    // FIXME normalisation of normal is necessary, double check
+                    // if something wrong in collision code
+                    norm.normalize();
+                    dir.normalize();
+                    if (debugLog)
+                        std::cout << "poke " << (dir * norm) << " at " << hit.entry.ratio << std::endl;
+                    if (dir * norm <= -_state->pokeMinNormalDot) {
+                        // Only mark as poking if touching
+                        // Still freeze even if not
+                        //if (hit.entry.ratio < 1.0f) {
+                            _state->touchPoke = true;
+                        //}
+                        _state->clearance[0] = _state->curValue;
+                        _state->clearance[1] = _state->curValue;
+                        _clearanceHits[0].hasPosition = false;
+                        _clearanceHits[1].hasPosition = false;
+                        _pokeHit = FGVRMeshSweepInstant(hit.entry, meshes);
+                        return _state->curValue;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
     // If frozen, revert to frozen value
     if (_state->freeze)
         return _state->curValue = _state->frozenValue;
@@ -424,7 +523,7 @@ float JointRangeState::handleIntersections(const CollisionMeshes& meshes,
         if (intersectionExit <= _state->curValue) {
             // _state->curValue after intersection
             _state->clearance[0] = intersectionExit;
-            _clearanceHits[0] = FGVRMeshInstant(hit.exit, meshes, bonesStrip);
+            _clearanceHits[0] = FGVRMeshStripInstant(hit.exit, meshes, bonesStrip);
         } else if (intersectionEntry < _state->curValue) {
             // _state->curValue inside intersection
             float downward = intersectionExit - _state->curValue;
@@ -432,7 +531,7 @@ float JointRangeState::handleIntersections(const CollisionMeshes& meshes,
             static const float maxFingerJump = 0.2f;
             if (intersectionExit < maxRatio && downward <= upward) {
                 _state->clearance[0] = intersectionExit;
-                _clearanceHits[0] = FGVRMeshInstant(hit.exit, meshes, bonesStrip);
+                _clearanceHits[0] = FGVRMeshStripInstant(hit.exit, meshes, bonesStrip);
                 // Don't jump too far
                 if (downward < maxFingerJump) {
                     // push down
@@ -442,14 +541,14 @@ float JointRangeState::handleIntersections(const CollisionMeshes& meshes,
                 } else {
                     // Stuck!
                     _state->clearance[1] = intersectionEntry;
-                    _clearanceHits[1] = FGVRMeshInstant(hit.entry, meshes, bonesStrip);
+                    _clearanceHits[1] = FGVRMeshStripInstant(hit.entry, meshes, bonesStrip);
                     if (debugLog)
                         std::cout << "  stuck in intersection (down)" << std::endl;
                     break;
                 }
             } else if (intersectionEntry > minRatio && upward <= downward) {
                 _state->clearance[1] = intersectionEntry;
-                _clearanceHits[1] = FGVRMeshInstant(hit.entry, meshes, bonesStrip);
+                _clearanceHits[1] = FGVRMeshStripInstant(hit.entry, meshes, bonesStrip);
                 // Don't jump too far
                 if (upward < maxFingerJump) {
                     // push up
@@ -461,7 +560,7 @@ float JointRangeState::handleIntersections(const CollisionMeshes& meshes,
                 } else {
                     // Stuck!
                     _state->clearance[0] = intersectionExit;
-                    _clearanceHits[0] = FGVRMeshInstant(hit.exit, meshes, bonesStrip);
+                    _clearanceHits[0] = FGVRMeshStripInstant(hit.exit, meshes, bonesStrip);
                     if (debugLog)
                         std::cout << "  stuck in intersection (up)" << std::endl;
                     break;
@@ -469,15 +568,15 @@ float JointRangeState::handleIntersections(const CollisionMeshes& meshes,
             } else {
                 _state->clearance[0] = intersectionExit;
                 _state->clearance[1] = intersectionEntry;
-                _clearanceHits[0] = FGVRMeshInstant(hit.exit, meshes, bonesStrip);
-                _clearanceHits[1] = FGVRMeshInstant(hit.entry, meshes, bonesStrip);
+                _clearanceHits[0] = FGVRMeshStripInstant(hit.exit, meshes, bonesStrip);
+                _clearanceHits[1] = FGVRMeshStripInstant(hit.entry, meshes, bonesStrip);
                 _state->atLimit = (downward < upward) ? 1 : -1;;
                 if (debugLog)
                     std::cout << "  limited " << _state->atLimit << std::endl;
             }
         } else if (_state->clearance[1] >= maxRatio) {
             _state->clearance[1] = intersectionEntry;
-            _clearanceHits[1] = FGVRMeshInstant(hit.entry, meshes, bonesStrip);
+            _clearanceHits[1] = FGVRMeshStripInstant(hit.entry, meshes, bonesStrip);
         }
     }
     if (debugVertices) {
@@ -518,17 +617,42 @@ float JointRangeState::handleIntersections(const CollisionMeshes& meshes,
     return _state->curValue;
 }
 
-float JointRangeState::advance(const BonesStrip& bonesStrip,
+float JointRangeState::advance(const FGVRCollision::SphereSweep* pokeSweep,
+                               unsigned int sweepJoint,
+                               const BonesStrip& bonesStrip,
                                float dt)
 {
+    if (_pokeHit.hasPosition) {
+        _state->touchJoint = sweepJoint;
+        _state->touchNodes = _pokeHit.nodePath;
+        _state->hasPosition = _pokeHit.hasPosition;
+        if (_state->hasPosition) {
+            _state->touchPosition = _pokeHit.position;
+            _state->touchNormal = _pokeHit.normal;
+        } else {
+#if 0
+            std::cout << "NO TOUCH POS from ";
+            if (_clearanceHits[1].source)
+                std::cout << _clearanceHits[1].source << std::endl;
+            else
+                std::cout << "null" << std::endl;
+#endif
+        }
+        return _state->curValue;
+    }
+
     const float maxRatio = bonesStrip.getMaxRatio();
     bool shouldOverride = false;
     bool limitedDownwards = false;
     _state->touchNodes.clear();
     if (_state->freeze) {
+        // FIXME imprecise
+        if (_state->force)
+            _state->force = _targetValue - _state->forceRef;
         return _state->curValue;
     }
 
+    _state->force = 0.0f;
     if (_state->clearance[0] > _state->clearance[1]) {
         // If stuck, target current squeeze (don't change it)
         _targetValue = _state->curValue;
@@ -542,10 +666,14 @@ float JointRangeState::advance(const BonesStrip& bonesStrip,
         limitedDownwards = true;
     } else if (_targetValue < _state->clearance[0]) {
         // don't target upwards beyond clearance
+        _state->forceRef = _state->clearance[0];
+        _state->force = _targetValue - _state->forceRef;
         _targetValue = _state->clearance[0];
         shouldOverride = true;
     } else if (_targetValue >= _state->clearance[1]) {
         // don't target downwards beyond clearance
+        _state->forceRef = _state->clearance[1];
+        _state->force = _targetValue - _state->forceRef;
         _targetValue = _state->clearance[1];
         shouldOverride = true;
         limitedDownwards = true;
@@ -605,31 +733,16 @@ float JointRangeState::advance(const BonesStrip& bonesStrip,
 class SqueezeGenFingers
 {
     public:
-        SqueezeGenFingers(float wristBend = 0.0f,
-                          std::optional<float> thumbX = std::nullopt,
-                          std::optional<float> thumbY = std::nullopt) :
-            SqueezeGenFingers(wristBend, thumbX, thumbY, 0.0f, 1.0f)
-        {
-        }
-
-        SqueezeGenFingers(float wristBend,
-                          std::optional<float> thumbX,
-                          std::optional<float> thumbY,
-                          float fingerSqueeze0,
-                          float fingerSqueeze1) :
-            _wristBend(wristBend),
-            _thumbX(thumbX),
-            _thumbY(thumbY),
-            _fingerSqueeze0(fingerSqueeze0),
-            _fingerSqueezeRange(fingerSqueeze1 - fingerSqueeze0)
+        SqueezeGenFingers(const osgXR::HandPose::SqueezeValues *initSqueeze) :
+            _initSqueeze(initSqueeze),
+            _fingerSqueeze0(0.0f),
+            _fingerSqueezeRange(1.0f)
         {
         }
 
         void initSqueeze(osgXR::HandPose::SqueezeValues& outSqueeze) const
         {
-            outSqueeze.setWristBend(_wristBend);
-            outSqueeze.setThumbX(_thumbX);
-            outSqueeze.setThumbY(_thumbY);
+            outSqueeze = *_initSqueeze;
         }
 
         void updateSqueeze(osgXR::HandPose::SqueezeValues& outSqueeze,
@@ -640,9 +753,7 @@ class SqueezeGenFingers
         }
 
     protected:
-        float _wristBend;
-        std::optional<float> _thumbX;
-        std::optional<float> _thumbY;
+        const osgXR::HandPose::SqueezeValues *_initSqueeze;
         float _fingerSqueeze0;
         float _fingerSqueezeRange;
 };
@@ -650,21 +761,10 @@ class SqueezeGenFingers
 class SqueezeGenWrist
 {
     public:
-        SqueezeGenWrist(float fingerSqueeze = 0.0f,
-                        std::optional<float> thumbX = std::nullopt,
-                        std::optional<float> thumbY = std::nullopt) :
-            SqueezeGenWrist(fingerSqueeze, thumbX, thumbY, 0.0f, 1.0f)
-        {
-        }
-
-        SqueezeGenWrist(float fingerSqueeze,
-                        std::optional<float> thumbX,
-                        std::optional<float> thumbY,
-                        float wristBend0,
-                        float wristBend1) :
-            _fingerSqueeze(fingerSqueeze),
-            _thumbX(thumbX),
-            _thumbY(thumbY),
+        SqueezeGenWrist(const osgXR::HandPose::SqueezeValues *initSqueeze,
+                        float wristBend0 = 0.0f,
+                        float wristBend1 = 1.0f) :
+            _initSqueeze(initSqueeze),
             _wristBend0(wristBend0),
             _wristBendRange(wristBend1 - wristBend0)
         {
@@ -672,10 +772,7 @@ class SqueezeGenWrist
 
         void initSqueeze(osgXR::HandPose::SqueezeValues& outSqueeze) const
         {
-            outSqueeze.setFingersSqueeze(osgXR::HandPose::FINGER_ALL_BITS,
-                                         _fingerSqueeze);
-            outSqueeze.setThumbX(_thumbX);
-            outSqueeze.setThumbY(_thumbY);
+            outSqueeze = *_initSqueeze;
         }
 
         void updateSqueeze(osgXR::HandPose::SqueezeValues& outSqueeze,
@@ -685,9 +782,7 @@ class SqueezeGenWrist
         }
 
     protected:
-        float _fingerSqueeze;
-        std::optional<float> _thumbX;
-        std::optional<float> _thumbY;
+        const osgXR::HandPose::SqueezeValues *_initSqueeze;
         float _wristBend0;
         float _wristBendRange;
 };
@@ -769,6 +864,28 @@ static void buildCollisionBonesStrip(unsigned int numStripNodes,
     }
 }
 
+// For distal -> tip sphere sweep collisions (poking)
+// joint must have a parent joint
+static void buildCollisionSphereSweep(const osgXR::HandPose& pose,
+                                      unsigned int numSweeps,
+                                      std::vector<FGVRCollision::SphereSweep>* sweeps,
+                                      const osgXR::HandPose::Joint* joints)
+{
+    for (unsigned int sweep = 0; sweep < numSweeps; ++sweep) {
+        int parentJoint = osgXR::HandPose::getJointParent(joints[sweep]);
+        assert(parentJoint >= 0);
+
+        auto &loc1 = pose.getJointLocation((osgXR::HandPose::Joint)parentJoint);
+        auto &loc2 = pose.getJointLocation(joints[sweep]);
+
+        auto vec = loc2.getPosition() - loc1.getPosition();
+        auto pos2 = loc1.getPosition() + vec*1.0f;
+
+        sweeps->emplace_back(loc2.getRadius(),
+                             loc1.getPosition(), pos2);
+    }
+}
+
 osg::Geometry* FGVRHand::initDebugGeom()
 {
 #ifdef USE_DEBUG_GEOM
@@ -828,6 +945,10 @@ void FGVRHand::advance(float dt)
         // FIXME duplication
     }
 
+    // Reset pinch values
+    for (unsigned int finger = 0; finger < 5; ++finger)
+        _fingersPinch[finger] = 0.0f;
+
     if (_parent->isActive()) {
         // Create debug geometry
 #ifdef USE_DEBUG_GEOM
@@ -838,17 +959,49 @@ void FGVRHand::advance(float dt)
         // Extend the possible ranges of the joints based on the current pose
         _ranges.extend(*this);
 #if 0
-        std::cout << "thumb: [" << _ranges.getMinJointAngle(osgXR::HandPose::JOINT_THUMB_PROXIMAL).x()
-                        << ".." << _ranges.getMaxJointAngle(osgXR::HandPose::JOINT_THUMB_PROXIMAL).x()
-                         << " " << _ranges.getMinJointAngle(osgXR::HandPose::JOINT_THUMB_PROXIMAL).y()
-                        << ".." << _ranges.getMaxJointAngle(osgXR::HandPose::JOINT_THUMB_PROXIMAL).y()
-                         << " " << _ranges.getMinJointAngle(osgXR::HandPose::JOINT_THUMB_PROXIMAL).z()
-                        << ".." << _ranges.getMaxJointAngle(osgXR::HandPose::JOINT_THUMB_PROXIMAL).z()
+        std::cout << "index prox: [" << _ranges.getMinJointAngle(osgXR::HandPose::JOINT_INDEX_PROXIMAL).x()
+                        << ".." << _ranges.getMaxJointAngle(osgXR::HandPose::JOINT_INDEX_PROXIMAL).x()
+                         << " " << _ranges.getMinJointAngle(osgXR::HandPose::JOINT_INDEX_PROXIMAL).y()
+                        << ".." << _ranges.getMaxJointAngle(osgXR::HandPose::JOINT_INDEX_PROXIMAL).y()
+                         << " " << _ranges.getMinJointAngle(osgXR::HandPose::JOINT_INDEX_PROXIMAL).z()
+                        << ".." << _ranges.getMaxJointAngle(osgXR::HandPose::JOINT_INDEX_PROXIMAL).z()
+                        << "]" << std::endl;
+        std::cout << "index intermediate: [" << _ranges.getMinJointAngle(osgXR::HandPose::JOINT_INDEX_INTERMEDIATE).x()
+                        << ".." << _ranges.getMaxJointAngle(osgXR::HandPose::JOINT_INDEX_INTERMEDIATE).x()
+                         << " " << _ranges.getMinJointAngle(osgXR::HandPose::JOINT_INDEX_INTERMEDIATE).y()
+                        << ".." << _ranges.getMaxJointAngle(osgXR::HandPose::JOINT_INDEX_INTERMEDIATE).y()
+                         << " " << _ranges.getMinJointAngle(osgXR::HandPose::JOINT_INDEX_INTERMEDIATE).z()
+                        << ".." << _ranges.getMaxJointAngle(osgXR::HandPose::JOINT_INDEX_INTERMEDIATE).z()
+                        << "]" << std::endl;
+        std::cout << "index distal: [" << _ranges.getMinJointAngle(osgXR::HandPose::JOINT_INDEX_DISTAL).x()
+                        << ".." << _ranges.getMaxJointAngle(osgXR::HandPose::JOINT_INDEX_DISTAL).x()
+                         << " " << _ranges.getMinJointAngle(osgXR::HandPose::JOINT_INDEX_DISTAL).y()
+                        << ".." << _ranges.getMaxJointAngle(osgXR::HandPose::JOINT_INDEX_DISTAL).y()
+                         << " " << _ranges.getMinJointAngle(osgXR::HandPose::JOINT_INDEX_DISTAL).z()
+                        << ".." << _ranges.getMaxJointAngle(osgXR::HandPose::JOINT_INDEX_DISTAL).z()
                         << "]" << std::endl;
 #endif
 
+        // Calculate raw pinch values
+        auto thumbLoc = getJointLocation(JOINT_THUMB_TIP);
+        if (thumbLoc.isPositionValid()) {
+            for (unsigned int finger = FINGER_INDEX; finger <= FINGER_LITTLE; ++finger) {
+                auto fingerLoc = getJointLocation(fingerTipJoints[finger]);
+                if (fingerLoc.isPositionValid()) {
+                    // Calculate distance between finger and thumb
+                    float dist = (fingerLoc.getPosition() - thumbLoc.getPosition()).length();
+                    dist = dist - thumbLoc.getRadius() - fingerLoc.getRadius();
+                    // 5cm -> 0
+                    // 0cm -> 1
+                    _fingersPinch[finger] = std::clamp(1.0f - dist/0.05f, 0.0f, 1.0f);
+                    if (_fingersPinch[finger] > _fingersPinch[FINGER_THUMB])
+                        _fingersPinch[FINGER_THUMB] = _fingersPinch[finger];
+                }
+            }
+        }
+
         // Calculate the squeeze values of the tracked pose
-        SqueezeValues trackedSqueeze(*_parent, _ranges);
+        osgXR::HandPose::SqueezeValues trackedSqueeze(*_parent, _ranges);
         osgXR::HandPose tempPose(*this);
         unsigned int jointMask = 0;
 
@@ -862,8 +1015,10 @@ void FGVRHand::advance(float dt)
 #else
         unsigned int handJointMask = JOINT_MIDDLE_PROXIMAL_BIT;
 #endif
+        SqueezeValues tempSqueeze = _squeeze;
+        tempSqueeze.setFingersSqueeze(osgXR::HandPose::FINGER_ALL_BITS, 0.0f);
         buildCollisionBonesStrip(NUM_INTERSECTION_SEGMENTS,
-                                 SqueezeGenWrist(0.0f, _squeeze.getThumbX(), _squeeze.getThumbY()),
+                                 SqueezeGenWrist(&tempSqueeze),
                                  0.0f, 1.0f, tempPose, _ranges, &dim, 1,
                                  &wristStrip, &handJointMask);
         int wristDebugBone = getDebugBone(handJointMask, JOINT_MIDDLE_PROXIMAL);
@@ -922,9 +1077,9 @@ void FGVRHand::advance(float dt)
 #else
         osg::Geometry *wristDebugGeom = nullptr;
 #endif
-        wristState.handleIntersections(meshes, wristStrip,
+        wristState.handleIntersections(meshes, nullptr, wristStrip,
                                        false, wristDebugGeom, wristDebugBone);
-        float wristBend = wristState.advance(wristStrip, dt);
+        float wristBend = wristState.advance(nullptr, 0, wristStrip, dt);
         if (!_wristRange.freeze) {
             _squeeze.setWristBend(wristBend);
             jointMask |= JOINT_WRIST_BIT;
@@ -955,30 +1110,35 @@ void FGVRHand::advance(float dt)
 #endif
             if (!_wristRange.freeze && wristRange > 0.0f) {
                 unsigned int stripNodes = 2 + std::floor(wristRange * NUM_INTERSECTION_SEGMENTS);
+                tempSqueeze = _squeeze;
+                tempSqueeze.setFingersSqueeze(osgXR::HandPose::FINGER_ALL_BITS, 0.0f);
                 buildCollisionBonesStrip(stripNodes,
-                                         SqueezeGenWrist(0.0f,
-                                                         _squeeze.getThumbX(),
-                                                         _squeeze.getThumbY(),
+                                         SqueezeGenWrist(&tempSqueeze,
                                                          _squeeze.getWristBend(),
-                                                         _squeeze.getWristBend() + 1.0f), -wristRange, 0.0f,
+                                                         _squeeze.getWristBend() + 1.0f),
+                                         -wristRange, 0.0f,
                                          tempPose, _ranges, &dim,
                                          4, fingerSqueezeStrips+1, fingerJointMasks+1);
             }
             // Append collision sweeps of finger bones over squeeze range
             // (0 to 1), with wrist bend unchanged.
+            tempSqueeze = _squeeze;
             buildCollisionBonesStrip(NUM_INTERSECTION_SEGMENTS,
-                                     SqueezeGenFingers(_squeeze.getWristBend(),
-                                                       _squeeze.getThumbX(),
-                                                       _squeeze.getThumbY()),
+                                     SqueezeGenFingers(&tempSqueeze),
                                      0.0f, 1.0f,
                                      tempPose, _ranges, &dim,
                                      5, fingerSqueezeStrips, fingerJointMasks);
+
+            // Build collision sweeps from distal to finger tips for poking.
+            std::vector<FGVRCollision::SphereSweep> pokeSweeps;
+            pokeSweeps.reserve(5);
+            buildCollisionSphereSweep(*this, 5, &pokeSweeps, fingerTipJoints);
 
             JointRangeState fingerRangeStates[5];
             float maxWristPushback = 0.0f;
             for (unsigned int finger = 0; finger < 5; ++finger) {
                 auto& rangeState = fingerRangeStates[finger];
-                rangeState = JointRangeState(true, 10.0f, 2.0f, &_fingersRange[finger]);
+                rangeState = JointRangeState(false, 10.0f, 2.0f, &_fingersRange[finger]);
 
                 // Find finger squeeze values
                 rangeState.setTargetValue(trackedSqueeze.getFingerSqueeze((Finger)finger));
@@ -987,7 +1147,8 @@ void FGVRHand::advance(float dt)
 #else
                 osg::Geometry *fingerDebugGeom = nullptr;
 #endif
-                float fingerSqueeze = rangeState.handleIntersections(meshes, fingerSqueezeStrips[finger],
+                float fingerSqueeze = rangeState.handleIntersections(meshes,
+                                                                     &pokeSweeps[finger], fingerSqueezeStrips[finger],
                                                                      DEBUG_FINGER_MOVEMENT, fingerDebugGeom, 2);
 #if 0
                 std::cout << "#" << attempt << " finger " << finger << " squeeze: " << fingerSqueeze << std::endl;
@@ -1023,11 +1184,16 @@ void FGVRHand::advance(float dt)
             // Advance fingers
             for (unsigned int finger = 0; finger < 5; ++finger) {
                 auto& rangeState = fingerRangeStates[finger];
-                float fingerSqueeze = rangeState.advance(fingerSqueezeStrips[finger], dt);
+                float fingerSqueeze = rangeState.advance(&pokeSweeps[finger],
+                                                         fingerTipJoints[finger],
+                                                         fingerSqueezeStrips[finger],
+                                                         dt);
 #if 0
                 std::cout << "!" << attempt << " finger " << finger << " squeeze: " << fingerSqueeze << std::endl;
 #endif
                 _squeeze.setFingerSqueeze((Finger)finger, std::max(0.0f, fingerSqueeze));
+                // Take splay from tracking
+                _squeeze.setFingerSplay((Finger)finger, trackedSqueeze.getFingerSplay((Finger)finger));
                 jointMask |= fingerJointMasks[finger];
             }
             // And we're done
