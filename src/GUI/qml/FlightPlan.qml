@@ -137,7 +137,9 @@ Item {
                 PopupChoice {
                     id: flightRules
                     label: qsTr("Flight rules:")
-                    model: [qsTr("VFR"), qsTr("IFR")] // initially IFR (Y), initially VFR (Z)
+                    model: StringListModel{
+                        values: [qsTr("VFR"), qsTr("IFR")] // initially IFR (Y), initially VFR (Z)
+                    }
 
                     Component.onCompleted: {
                         select(_launcher.flightPlan.flightRules);
@@ -153,11 +155,14 @@ Item {
                 PopupChoice {
                     id: flightType
                     label: qsTr("Flight type:")
-                    model: [qsTr("Scheduled"),
+                    model: StringListModel{
+                        values: [
+                            qsTr("Scheduled"),
                             qsTr("Non-scheduled"),
                             qsTr("General aviation"),
                             qsTr("Military"),
                             qsTr("Other")]
+                    }
 
                     Component.onCompleted: {
                         select(_launcher.flightPlan.flightType);
@@ -177,10 +182,13 @@ Item {
                 PopupChoice {
                     id: wakeTurbulenceCategory
                     label: qsTr("Wake turbulence category:")
-                    model: [qsTr("Light"),
+                    model: StringListModel{
+                        values:[
+                            qsTr("Light"),
                             qsTr("Medium"),
                             qsTr("Heavy"),
                             qsTr("Jumbo")]
+                    }
                 }
 
                 // equipment
@@ -314,9 +322,12 @@ Item {
                 PopupChoice {
                     id: routeNetwork
                     label: qsTr("Using")
-                    model: [qsTr("High-level (Jet) airways"),
+                    model: StringListModel{
+                        values:[
+                            qsTr("High-level (Jet) airways"),
                             qsTr("Low-level (Victor) airways"),
                             qsTr("High- & low-level airways")]
+                    }
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
