@@ -48,7 +48,7 @@ void printState(State* s)
 }
 #endif
 
-Model::Model()
+Model::Model(Airplane* parent) : _parent(parent)
 {
     _integrator.setBody(&_body);
     _integrator.setEnvironment(this);

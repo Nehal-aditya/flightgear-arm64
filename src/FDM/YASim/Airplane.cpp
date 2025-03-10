@@ -20,7 +20,7 @@ namespace yasim {
 // gadgets
 inline float abs(float f) { return f<0 ? -f : f; }
 
-Airplane::Airplane()
+Airplane::Airplane() : _model(this)
 {
 }
 

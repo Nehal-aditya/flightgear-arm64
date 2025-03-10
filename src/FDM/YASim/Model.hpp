@@ -8,24 +8,21 @@
 #include "Turbulence.hpp"
 #include "Rotor.hpp"
 #include "Atmosphere.hpp"
+#include "YASim_fwd.hpp"
+
 #include <simgear/props/props.hxx>
 
 namespace yasim {
 
-// Declare the types whose pointers get passed around here
-class Integrator;
-class Thruster;
-class Surface;
-class Rotorpart;
-class Gear;
-class Ground;
-class Hook;
-class Launchbar;
-class Hitch;
-
 class Model : public BodyEnvironment {
 public:
-    Model();
+    /**
+     * Constructor for Model instances
+     *
+     * @param parent  pointer to the Airplane instance the Model is a data
+     *                member of
+     */
+    Model(Airplane* parent);
     virtual ~Model();
 
     RigidBody* getBody() { return &_body; }
@@ -85,6 +82,9 @@ private:
     void calcGearForce(Gear* g, float* v, float* rot, float* ground);
     float gearFriction(float wgt, float v, Gear* g);
     void localWind(const float* pos, const yasim::State* s, float* out, float alt, bool is_rotor = false);
+
+    /// Pointer to the Airplane instance this Model is a data member of
+    Airplane* _parent;
 
     Integrator _integrator;
     RigidBody _body;
