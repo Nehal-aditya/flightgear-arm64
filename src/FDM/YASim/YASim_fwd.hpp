@@ -10,6 +10,8 @@
 
 namespace yasim {
 
+enum class YASIM_VERSION : int;
+
 class Airplane;
 class Atmosphere;
 class BodyEnvironment;

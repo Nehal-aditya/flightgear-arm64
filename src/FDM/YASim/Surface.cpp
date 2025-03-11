@@ -228,7 +228,7 @@ void Surface::calcForce(const float* v, const float rho, float mach, float* out,
     // coordinates. Since out[] is now the force vector and is
     // roughly parallel with Z, the small-angle approximation
     // must change its X component.
-    if( _version->isVersionOrNewer( Version::YASIM_VERSION_32 )) {
+    if( _version->isVersionOrNewer( YASIM_VERSION::V_32 )) {
         out[0] += incidence * out[2];
     } else {
         out[2] -= incidence * out[0];
@@ -299,7 +299,7 @@ float Surface::stallFunc(float* v)
 
     // consider slat position, moves the stall aoa some degrees
     if(i == 0) {
-        if( _version->isVersionOrNewer( Version::YASIM_VERSION_32 )) {
+        if( _version->isVersionOrNewer( YASIM_VERSION::V_32 )) {
             _stallAlpha += _slatPos * _slatAlpha;
         } else {
             _stallAlpha += _slatAlpha;

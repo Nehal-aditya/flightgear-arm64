@@ -328,7 +328,7 @@ void FGFDM::parseAirplane(const XMLAttributes* a)
     }
     _airplane.setEmptyWeight(f);
     if(a->hasAttribute("version")) { _airplane.setVersion(a->getValue("version")); }
-    if( !_airplane.isVersionOrNewer( Version::YASIM_VERSION_CURRENT ) ) {
+    if( !_airplane.isVersionOrNewer( YASIM_VERSION::CURRENT ) ) {
         SG_LOG(SG_FLIGHT, SG_DEV_ALERT, "This aircraft does not use the latest yasim configuration version.");
     }
     _airplane.setDesiredCGRangeInPercentOfMAC(attrf(a, "cg-min", 0.25f), attrf(a, "cg-max", 0.3f));
@@ -609,7 +609,7 @@ void FGFDM::parseWing(const XMLAttributes* a, const char* type, Airplane* airpla
 
 
     float camber = attrf(a, "camber", 0);
-    if (!airplane->isVersionOrNewer(Version::YASIM_VERSION_2017_2) && (camber == 0)) {
+    if (!airplane->isVersionOrNewer(YASIM_VERSION::V_2017_2) && (camber == 0)) {
         SG_LOG(SG_FLIGHT, SG_DEV_WARN, "YASIM warning: versions before 2017.2 are buggy for wings with camber=0");
     }
 
@@ -1151,7 +1151,7 @@ void FGFDM::parseFuselage(const XMLAttributes* a)
     b[2] = attrf(a, "bz");
     float taper = attrf(a, "taper", 1);
     float mid = attrf(a, "midpoint", 0.5);
-    if (_airplane.isVersionOrNewer(Version::YASIM_VERSION_32)) {
+    if (_airplane.isVersionOrNewer(YASIM_VERSION::V_32)) {
         // A fuselage's "midpoint" XML attribute is defined from the
             // fuselage's front end, but the Fuselage object's internal
             // "mid" attribute is actually defined from the rear end.

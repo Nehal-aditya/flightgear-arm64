@@ -354,7 +354,7 @@ float Airplane::compileFuselage(Fuselage* f)
         if(frac < f->mid)
             scale = f->taper+(1-f->taper) * (frac / f->mid);
         else {
-            if( isVersionOrNewer( YASIM_VERSION_32 ) ) {
+            if( isVersionOrNewer( YASIM_VERSION::V_32 ) ) {
                 // Correct calculation of width for fuselage taper.
                 scale = 1 - (1-f->taper) * (frac - f->mid) / (1 - f->mid);
             } else {
@@ -380,7 +380,7 @@ float Airplane::compileFuselage(Fuselage* f)
         // However, this greatly underestimates a fuselage's lateral drag.
         float sideDrag = len/wid;
 
-        if ( isVersionOrNewer( YASIM_VERSION_32 ) ) {
+        if ( isVersionOrNewer( YASIM_VERSION::V_32 ) ) {
             // New YASim assumes a fixed lateral drag coefficient of 0.5.
             // This will not be multiplied by the solver drag factor, because
             // that factor is tuned to match the drag in the direction of
@@ -398,13 +398,13 @@ float Airplane::compileFuselage(Fuselage* f)
             sideDrag = 0.5;
         }
         float dragCoefficient = scale*segWgt*f->_cx;
-        if( isVersionOrNewer( YASIM_VERSION_32 ) ) {
+        if( isVersionOrNewer( YASIM_VERSION::V_32 ) ) {
                 dragCoefficient = scale*segWgt;
         }
 
         // Make a Surface too
         Surface* s = new Surface(this, pos, dragCoefficient);
-        if( isVersionOrNewer( YASIM_VERSION_32 ) ) {
+        if( isVersionOrNewer( YASIM_VERSION::V_32 ) ) {
                 s->setDragCoefficient(f->_cx);
         }
         s->setYDrag(sideDrag*f->_cy);
@@ -604,7 +604,7 @@ void Airplane::compile(bool verbose)
         float gespan = 0;
         gespan = _wing->getSpan();
         _wing->getBase(pos);
-        if(!isVersionOrNewer( Version::YASIM_VERSION_2017_2 )) {
+        if(!isVersionOrNewer( YASIM_VERSION::V_2017_2 )) {
           //old code
           //float span = _length * Math::cos(_sweep) * Math::cos(_dihedral);
           //span = 2*(span + Math::abs(_base[2]));
@@ -803,7 +803,7 @@ void Airplane::applyDragFactor(float factor)
         Fuselage* f = (Fuselage*)_fuselages.get(i);
         for(int j=0; j<f->surfs.size(); j++) {
             Surface* s = (Surface*)f->surfs.get(j);
-            if( isVersionOrNewer( YASIM_VERSION_32 ) ) {
+            if( isVersionOrNewer( YASIM_VERSION::V_32 ) ) {
                 // For new YASim, the solver drag factor is only applied to
                 // the X axis for Fuselage Surfaces.
                 // The solver is tuning the coefficient for longitudinal drag,

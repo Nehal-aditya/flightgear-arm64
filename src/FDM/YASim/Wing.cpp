@@ -455,7 +455,7 @@ void Wing::WingSection::newSurface(Version* _version, float* pos, float* orient,
         s->setStallWidth(1, _stallParams.width * 0.5f);
     } else {
       s->setStall(1, stallAoA);
-      if( _version->isVersionOrNewer( Version::YASIM_VERSION_2017_2 )) {
+      if( _version->isVersionOrNewer( YASIM_VERSION::V_2017_2 )) {
         // what was presumably meant
         s->setStallWidth(1, _stallParams.width);
       } else {
