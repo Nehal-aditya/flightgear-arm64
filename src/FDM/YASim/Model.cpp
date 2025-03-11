@@ -3,6 +3,7 @@
 #  include "config.h"
 #endif
 
+#include "Airplane.hpp"
 #include "Atmosphere.hpp"
 #include "Thruster.hpp"
 #include "Math.hpp"
@@ -497,6 +498,16 @@ void Model::localWind(const float* pos, const yasim::State* s, float* out, float
         _rotorgear.getDownWash(pos,lv,tmp);
         Math::add3(out,tmp, out);    //  + downwash
     }
+}
+
+bool Model::isVersion(YASIM_VERSION version) const
+{
+    return _parent->isVersion(version);
+}
+
+bool Model::isVersionOrNewer(YASIM_VERSION version) const
+{
+    return _parent->isVersionOrNewer(version);
 }
 
 }; // namespace yasim

@@ -77,6 +77,12 @@ public:
     virtual void calcForces(State* s);
     virtual void newState(State* s);
 
+protected:
+    /// Check the YASim version using the parent Airplane member function
+    bool isVersion(YASIM_VERSION version) const;
+    /// Return true if the YASim version is greater than or equal to @a version
+    bool isVersionOrNewer(YASIM_VERSION version) const;
+
 private:
     void initRotorIteration();
     void calcGearForce(Gear* g, float* v, float* rot, float* ground);
