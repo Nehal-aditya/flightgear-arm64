@@ -166,7 +166,7 @@ class FGVRHand : public osgXR::HandPose
             return _fingersPinch[finger];
         }
 
-        typedef struct {
+         struct RangeState {
             /// Hover distance when autosqueezing.
             float hoverDistance = 0.0f;
             /// Minimum finger curl for poking.
@@ -197,7 +197,7 @@ class FGVRHand : public osgXR::HandPose
             osg::Vec3f touchNormal;
 
             unsigned int touchJoint;
-        } RangeState;
+        } ;
 
     protected:
 

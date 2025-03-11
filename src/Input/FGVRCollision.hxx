@@ -37,14 +37,16 @@ namespace FGVRCollision
 typedef osg::Vec3f Position;
 typedef osg::Vec3f Vector;
 
-typedef struct : public ShapeInfo {
-    typedef struct {
+struct PointInfo : public ShapeInfo {
+    struct SweepData
+    {
         Position position;
-    } SweepData;
+    } ;
 
     enum {
         shouldCheckBounds = 1,
     };
+
     static osg::BoundingBox getBounds(const FixedData& fixed,
                                       const SweepData& sweep)
     {
@@ -52,7 +54,8 @@ typedef struct : public ShapeInfo {
         bb.expandBy(sweep.position);
         return bb;
     }
-} PointInfo;
+};
+
 typedef TShape<PointInfo> RawPoint;
 class Point : public RawPoint
 {
@@ -78,11 +81,13 @@ typedef TShape<PolygonInfo> RawPolygon;
 typedef TSweep<PolygonInfo> RawPolygonSweep;
 
 struct PolygonInfo : public ShapeInfo {
-    typedef struct {
+    struct FixedData
+    {
         unsigned char numVertices;
-    } FixedData;
+    } ;
 
-    typedef struct {
+    struct SharedSweepData
+    {
         Position vertices[6];
         // cache
         mutable unsigned int cacheStep = 0;
@@ -91,7 +96,8 @@ struct PolygonInfo : public ShapeInfo {
         mutable float edgeNormalOffsets[6];
         mutable bool boundingBoxSet = false;
         mutable osg::BoundingBox boundingBox;
-    } SharedSweepData;
+    };
+
     typedef std::shared_ptr<SharedSweepData> SweepData;
 
     typedef struct Id {
@@ -197,11 +203,13 @@ struct MeshInfo : public ShapeInfo
     typedef RawPolygon::FixedData PolygonFixedData;
     typedef RawPolygon::SweepData PolygonSweepData;
 
-    typedef struct {
+    struct FixedData
+    {
         std::vector<PolygonFixedData> polygons;
-    } FixedData;
+    } ;
 
-    typedef struct {
+    struct SweepData
+    {
         std::vector<PointSweepData> points;
         std::vector<LineSweepData> edges;
         std::vector<PolygonSweepData> polygons;
@@ -224,6 +232,7 @@ struct MeshInfo : public ShapeInfo
                 return position.z() < other.position.z();
             }
         } VertexInfo;
+
         typedef struct EdgeInfo {
             unsigned int vertexIndices[2];
 
@@ -246,7 +255,7 @@ struct MeshInfo : public ShapeInfo
         // Build stats
         unsigned int _statsVerts = 0;
         unsigned int _statsEdges = 0;
-    } SweepData;
+    };
 
     typedef struct Id {
         enum : unsigned int {
@@ -405,7 +414,7 @@ class Mesh : public TCompound<MeshInfo, REF>
 
 // Spheres
 
-typedef struct : public ShapeInfo {
+struct SphereInfo : public ShapeInfo {
     typedef struct {
         float radius;
     } FixedData;
@@ -424,7 +433,8 @@ typedef struct : public ShapeInfo {
                                         fixed.radius));
         return bb;
     }
-} SphereInfo;
+};
+
 typedef TShape<SphereInfo> RawSphere;
 class Sphere : public RawSphere
 {

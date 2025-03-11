@@ -20,6 +20,11 @@
 
 #include <osg/Quat>
 
+// MSVC work-around
+#if !defined(__PRETTY_FUNCTION__) && !defined(__GNUC__)
+#define __PRETTY_FUNCTION__ __FUNCSIG__
+#endif
+
 using namespace FGVRCollision;
 
 unsigned int FGVRCollision::boundsCheck<1>::stats[2] = {};

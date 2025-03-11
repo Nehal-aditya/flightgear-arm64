@@ -751,12 +751,14 @@ class TStrip : public Strip
         typedef typename SHAPE::SweepData SingleSweepData;
         typedef typename SHAPE::FixedData FixedData;
         typedef typename SHAPE::ShapeRef SingleShapeRef;
-        typedef struct {
+        struct SharedSweepData
+        {
             std::vector<float> ratios;
             std::vector<SingleSweepData> strip;
             mutable bool boundingBoxSet = false;
             mutable osg::BoundingBox boundingBox;
-        } SharedSweepData;
+        };
+
         typedef std::shared_ptr<SharedSweepData> SweepData;
         typedef typename SHAPE::Id SingleId;
         typedef struct Id {
@@ -1166,7 +1168,7 @@ unsigned int rawIntersect(const SHAPE& shape, const TSweep<TCompound<SWEEP, COMP
                           typename SHAPE::Id* shapeId, typename TSweep<TCompound<SWEEP, COMPOUND_REF>>::Id* sweepId)
 {
     TCompoundSweepFunctor<SHAPE, SWEEP> functor{shape, intersections, shapeId, 0};
-    sweep.template perPart(functor, sweepId);
+    sweep.perPart(functor, sweepId);
     return functor.total;
 }
 // Shape x TSweep<TMetadata<TCompound>>
@@ -1176,7 +1178,7 @@ unsigned int rawIntersect(const SHAPE& shape, const TSweep<TMetadata<TCompound<S
                           typename SHAPE::Id* shapeId, typename TSweep<TCompound<SWEEP, COMPOUND_REF>>::Id* sweepId)
 {
     TCompoundSweepFunctor<SHAPE, SWEEP> functor{shape, intersections, shapeId, 0};
-    sweep.template perPart(functor, sweepId);
+    sweep.perPart(functor, sweepId);
     return functor.total;
 }
 
@@ -1188,7 +1190,7 @@ unsigned int rawIntersect(const SHAPE& shape, const TSweep<TGroup<SWEEP, GROUP_R
                           typename SHAPE::Id* shapeId, typename TSweep<TGroup<SWEEP, GROUP_REF>>::Id* sweepId)
 {
     TCompoundSweepFunctor<SHAPE, SWEEP> functor{shape, intersections, shapeId, 0};
-    sweep.template perPart(functor, sweepId);
+    sweep.perPart(functor, sweepId);
     return functor.total;
 }
 
@@ -1217,7 +1219,7 @@ unsigned int rawIntersect(const TCompound<SHAPE, SHAPE_REF>& compound, const SWE
                           typename TCompound<SHAPE, SHAPE_REF>::Id* compoundId, typename SWEEP::Id* sweepId)
 {
     TCompoundShapeFunctor<SWEEP> functor{sweep, intersections, sweepId, 0};
-    compound.template perPart(functor, compoundId);
+    compound.perPart(functor, compoundId);
     return functor.total;
 }
 
