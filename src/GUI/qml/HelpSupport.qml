@@ -40,7 +40,7 @@ Item {
                 color: Style.baseTextColor
                 wrapMode: Text.WordWrap
 
-                readonly property var pdfManualLink: "href=\"http://flightgear.sourceforge.net/manual/next\""
+                readonly property var pdfManualLink: "href=\"https://www.flightgear.org/support/manual\""
                 readonly property var shortRefLink: "href=\"" +  _launcher.urlToDataPath("Docs/FGShortRef.html") +  "\""
 
                 text: qsTr("<p>FlightGear is open source software, developed entirely by volunteers. " +

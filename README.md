@@ -37,7 +37,7 @@ Releases of FlightGear can be downloaded from our [website](https://www.flightge
 > contributing to the project.
 >
 > In the meantime, the `docs-mini/` directory, the [FlightGear Wiki](https://wiki.flightgear.org),
-> and the [FlightGear Manual](https://flightgear.sourceforge.net/manual/2020.3/en/getstart-en.html)
+> and the [FlightGear Manual](https://www.flightgear.org/support/manual)
 > can be used. However, they should be cross-referenced for outdated or inaccurate information.
 
 ## License
