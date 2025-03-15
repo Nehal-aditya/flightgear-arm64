@@ -4,10 +4,15 @@
 # LIBEVENT_INCLUDE_DIR
 
 set(libEvent_target "_no_target_")
+if(WIN32 OR APPLE)
+	FIND_PATH(LIBEVENT_INCLUDE_DIR event2/event.h 
+		PATH_SUFFIXES include 
+		HINTS ${ADDITIONAL_LIBRARY_PATHS})
 
-if(WIN32)
-	FIND_PATH(LIBEVENT_INCLUDE_DIR event2/event.h PATH_SUFFIXES include HINTS ${ADDITIONAL_LIBRARY_PATHS})
-	FIND_LIBRARY(LIBEVENT_LIB NAMES event_core PATH_SUFFIXES lib HINTS ${ADDITIONAL_LIBRARY_PATHS})
+	FIND_LIBRARY(LIBEVENT_LIB NAMES event_core 
+		PATH_SUFFIXES lib 
+		HINTS ${ADDITIONAL_LIBRARY_PATHS})
+
 	if (LIBEVENT_INCLUDE_DIR AND LIBEVENT_LIB)
 		add_library(libEvent UNKNOWN IMPORTED)
 		set_target_properties(libEvent PROPERTIES
@@ -30,4 +35,4 @@ else()
 		# use a global property instead
 		set(libEvent_target "PkgConfig::libEvent")
 	endif()
-endif(WIN32)
+endif()
