@@ -3,9 +3,15 @@
 # LIBEVENT_LIB
 # LIBEVENT_INCLUDE_DIR
 
-if(WIN32)
-	FIND_PATH(LIBEVENT_INCLUDE_DIR event2/event.h PATH_SUFFIXES include HINTS ${ADDITIONAL_LIBRARY_PATHS})
-	FIND_LIBRARY(LIBEVENT_LIB NAMES event_core PATH_SUFFIXES lib HINTS ${ADDITIONAL_LIBRARY_PATHS})
+if(WIN32 OR APPLE)
+	FIND_PATH(LIBEVENT_INCLUDE_DIR event2/event.h 
+		PATH_SUFFIXES include 
+		HINTS ${ADDITIONAL_LIBRARY_PATHS})
+
+	FIND_LIBRARY(LIBEVENT_LIB NAMES event_core 
+		PATH_SUFFIXES lib 
+		HINTS ${ADDITIONAL_LIBRARY_PATHS})
+
 	if (LIBEVENT_INCLUDE_DIR AND LIBEVENT_LIB)
 		add_library(libEvent::libEvent UNKNOWN IMPORTED)
 		set_target_properties(libEvent::libEvent PROPERTIES
@@ -27,4 +33,4 @@ else()
 	if(libEvent_FOUND AND NOT TARGET libEvent::libEvent)
 		add_library(libEvent::libEvent ALIAS PkgConfig::libEvent)
 	endif()
-endif(WIN32)
+endif()

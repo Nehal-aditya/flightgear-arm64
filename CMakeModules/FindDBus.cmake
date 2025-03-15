@@ -4,7 +4,28 @@
 # DBUS_INCLUDE_DIR
 
 if(WIN32 OR APPLE)
-	FIND_PATH(DBUS_INCLUDE_DIRS dbus/dbus.h PATH_SUFFIXES include HINTS ${ADDITIONAL_LIBRARY_PATHS})
+	FIND_PATH(DBUS_INCLUDE_DIRS dbus/dbus.h 
+		PATH_SUFFIXES  include include/dbus-1.0 
+		HINTS ${ADDITIONAL_LIBRARY_PATHS})
+
+	find_path(arch_deps dbus/dbus-arch-deps.h 
+		NO_DEFAULT_PATH
+		PATHS ${DBUS_INCLUDE_DIRS})
+
+	if (NOT arch_deps) 
+		message(STATUS "Looking for dbus-arch-deps.h in lib/ prefix")
+
+		FIND_PATH(DBUS_LIB_INCLUDE_DIRS dbus/dbus-arch-deps.h 
+			PATH_SUFFIXES lib/dbus-1.0/include 
+			HINTS ${ADDITIONAL_LIBRARY_PATHS})
+
+		if (NOT DBUS_LIB_INCLUDE_DIRS)
+			message(STATUS "Couldn't find DBus dbus/dbus-arch-deps.h header")
+			# fail the check below by clearing the include dirs variable
+			unset(DBUS_INCLUDE_DIRS CACHE)
+		endif()
+	endif()
+
 	FIND_LIBRARY(DBUS_LIBRARIES NAMES dbus-1 
 		PATH_SUFFIXES lib 
 		HINTS ${ADDITIONAL_LIBRARY_PATHS})
@@ -16,6 +37,10 @@ if(WIN32 OR APPLE)
 			INTERFACE_INCLUDE_DIRECTORIES "${DBUS_INCLUDE_DIRS}"
 			IMPORTED_LOCATION "${DBUS_LIBRARIES}"
 		)
+
+		if (DBUS_LIB_INCLUDE_DIRS)
+			set_property(TARGET DBus::DBus APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${DBUS_LIB_INCLUDE_DIRS}")
+		endif()
 
 		set(HAVE_DBUS 1)
 	endif()
