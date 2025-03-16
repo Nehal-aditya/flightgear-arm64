@@ -129,6 +129,20 @@ Item {
 
                 wrapMode: Text.WordWrap
 
+                text: qsTr("FlightGear will automatically download scenery as you fly. " +
+                    "Downloaded scenery is stored on your computer. " + 
+                    "The scenery can occupy a large amount of storage space. " +
+                    "If you prefer to download scenery manually, please turn off the 'Download scenery automatically' option." 
+                           )
+            }
+
+
+            Text {
+                width: parent.width
+                font.pixelSize: Style.baseFontPixelSize * 1.5
+                color: "white"
+                wrapMode: Text.WordWrap
+
                 text: qsTr("FlightGear can automatically report crashes and errors to the development team, " +
                            "which helps to improve the software for everyone. This reporting is anonymous but " +
                            "contains information such as the aircraft in use, your operating system and graphics driver. " +
