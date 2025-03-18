@@ -94,7 +94,7 @@ Item {
         font.pixelSize: Style.subHeadingFontPixelSize
 
         onClicked: {
-            _launcher.launchUrl("http://home.flightgear.org/about/");
+            _launcher.launchUrl("https://www.flightgear.org/about/license");
         }
     }
 
