@@ -272,6 +272,7 @@ FGRenderer::init()
     _xpos               = fgGetNode("/sim/startup/xpos", true);
     _ypos               = fgGetNode("/sim/startup/ypos", true);
     _splash_alpha       = fgGetNode("/sim/startup/splash-alpha", true);
+    _splashHiddenSignal = fgGetNode("/sim/signals/splash-hidden", true);
 
     _altitude_ft        = fgGetNode("/position/altitude-ft", true);
 
@@ -472,6 +473,9 @@ FGRenderer::update()
 {
     if (!_position_finalized || !_scenery_loaded->getBoolValue()) {
         _splash_alpha->setDoubleValue(1.0);
+        if (_splashHiddenSignal->getBoolValue()) {
+            _splashHiddenSignal->setBoolValue(false);
+        }
 
         if (!_maximum_texture_size) {
             osg::Camera* guiCamera = getGUICamera(CameraGroup::getDefault());
@@ -499,6 +503,7 @@ FGRenderer::update()
         FGScenerySwitchCallback::scenery_enabled = (sAlpha<1.0);
 
         if (sAlpha <= 0.0) {
+            _splashHiddenSignal->setBoolValue(true);
             flightgear::addSentryBreadcrumb("splash-screen fade out complete", "info");
         }
 

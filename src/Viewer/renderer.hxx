@@ -128,6 +128,7 @@ private:
 
     SGPropertyNode_ptr _scenery_loaded, _position_finalized;
     SGPropertyNode_ptr _splash_alpha;
+    SGPropertyNode_ptr _splashHiddenSignal;
     SGPropertyNode_ptr _textures;
     SGPropertyNode_ptr _cloud_status, _visibility_m;
     SGPropertyNode_ptr _xsize, _ysize;
