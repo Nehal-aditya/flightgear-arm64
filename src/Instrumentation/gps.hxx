@@ -90,9 +90,9 @@ public:
     bool canFlyBy() const override;
     double maxFlyByTurnAngleDeg() const override;
 
-    simgear::optional<LegData> previousLegData() override;
-    
-    simgear::optional<double> nextLegTrack() override;
+    std::optional<LegData> previousLegData() override;
+
+    std::optional<double> nextLegTrack() override;
 
     double turnRadiusNm(double groundSpeedKnots) override;
 private:
@@ -419,8 +419,8 @@ private:
     bool _searchNames; ///< set if we're searching names instead of idents
 #endif
 
-    simgear::optional<RNAV::LegData> _wp0Data;
-    
+    std::optional<RNAV::LegData> _wp0Data;
+
     std::unique_ptr<flightgear::WayptController> _wayptController;
 
     flightgear::WayptRef _prevWaypt;

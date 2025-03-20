@@ -25,9 +25,9 @@
 #define _OPTIONS_HXX
 
 #include <memory>
+#include <optional>
 #include <string>
 
-#include <simgear/misc/simgear_optional.hxx>
 #include <simgear/misc/strutils.hxx>
 
 // forward decls
@@ -123,7 +123,7 @@ public:
    * --fullscreen no       =>  checkBoolOptionSet("fullscreen")  =>  false
    * {none of the above}   =>  checkBoolOptionSet("fullscreen")  =>  no value
    */
-  simgear::optional<bool> checkBoolOptionSet(const std::string& key) const;
+  std::optional<bool> checkBoolOptionSet(const std::string& key) const;
 
   /**
    * An overlay on checkBoolOptionSet, except that when the user has not used
@@ -213,7 +213,7 @@ public:
    * --fullscreen no       =>  checkForBoolArg(argc, argv, "fullscreen")  =>  false
    * {none of the above}   =>  checkForBoolArg(argc, argv, "fullscreen")  =>  no value
    */
-  static simgear::optional<bool> checkForBoolArg(int argc, char* argv[], const std::string& checkArg);
+  static std::optional<bool> checkForBoolArg(int argc, char* argv[], const std::string& checkArg);
 
   /**
    * Return true when user explicitly enabled boolean option, otherwise false.
@@ -268,18 +268,18 @@ public:
 
       // The 'fromConfigFile' parameter indicates whether the option comes from a
       // config file or directly from the command line.
-      int parseOption(const std::string& s, const simgear::optional<std::string>& val, bool fromConfigFile);
+      int parseOption(const std::string& s, const std::optional<std::string>& val, bool fromConfigFile);
 
       int parseConfigOption(const SGPath &path, bool fromConfigFile);
 
-      std::string getValueForBooleanOption(const std::string& str, const std::string& option, const simgear::optional<std::string>& value);
+      std::string getValueForBooleanOption(const std::string& str, const std::string& option, const std::optional<std::string>& value);
 
       /**
        * Since option values can be separated by a space, we check what is in
        * the next parameter and return a string value if the current option
        * requires a value and the value does not start with a "-" character.
        */
-      static simgear::optional<std::string> getValueFromNextParam(int index, int argc, char** argv);
+      static std::optional<std::string> getValueFromNextParam(int index, int argc, char** argv);
 
       void processArgResult(int result);
 

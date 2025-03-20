@@ -2380,7 +2380,7 @@ OptionResult Options::init(int argc, char** argv, const SGPath& appDataPath)
 {
 // first, process the command line
   bool inOptions = true;
-  simgear::optional<std::string> value;
+  std::optional<std::string> value;
 
   for (int i=1; i<argc; ++i) {
       // important : on first run after the Gatekeeper quarantine flag is
@@ -2526,7 +2526,7 @@ getOptionParamType(string option)
     return ParamType::NONE;
 }
 
-simgear::optional<std::string> Options::getValueFromNextParam(int index, int argc, char** argv)
+std::optional<std::string> Options::getValueFromNextParam(int index, int argc, char** argv)
 {
     if (index + 1 >= argc) {
         // No more arguments, return empty value
@@ -2711,7 +2711,7 @@ void Options::readConfig(const SGPath& path)
         continue;
     }
 
-    simgear::optional<std::string> value;
+    std::optional<std::string> value;
     const size_t space = line.find(' ');
     const size_t equal = line.find('=');
     if (space != string::npos && space < equal) {
@@ -2747,7 +2747,7 @@ bool Options::paramToBool(const std::string& param)
  *                   the option separated by a space instead of the '=' character.
  *                   Otherwise val has no value.
  */
-int Options::parseOption(const string& s, const simgear::optional<std::string>& val, bool fromConfigFile)
+int Options::parseOption(const string& s, const std::optional<std::string>& val, bool fromConfigFile)
 {
   if ((s == "--help") || (s=="-h")) {
     return FG_OPTIONS_HELP;
@@ -2817,7 +2817,7 @@ int Options::parseOption(const string& s, const simgear::optional<std::string>& 
   }
 }
 
-string Options::getValueForBooleanOption(const string& str, const string& option, const simgear::optional<std::string>& value)
+string Options::getValueForBooleanOption(const string& str, const string& option, const std::optional<std::string>& value)
 {
     if (simgear::strutils::starts_with(str, option + "=")) {
         // We have option with "=", get value after "=" sign
@@ -2956,7 +2956,7 @@ string_list Options::valuesForOption(const std::string& key) const
   return result;
 }
 
-simgear::optional<bool> Options::checkBoolOptionSet(const string &key) const
+std::optional<bool> Options::checkBoolOptionSet(const string& key) const
 {
     if (isOptionSet("enable-" + key)) {
         return true; // explicitly enabled
@@ -2986,13 +2986,13 @@ simgear::optional<bool> Options::checkBoolOptionSet(const string &key) const
 
 bool Options::isBoolOptionEnable(const string &key) const
 {
-    const simgear::optional<bool> value = checkBoolOptionSet(key);
+    const std::optional<bool> value = checkBoolOptionSet(key);
     return value.has_value() && value.value() == true;
 }
 
 bool Options::isBoolOptionDisable(const string &key) const
 {
-    const simgear::optional<bool> value = checkBoolOptionSet(key);
+    const std::optional<bool> value = checkBoolOptionSet(key);
     return value.has_value() && value.value() == false;
 }
 
@@ -3596,7 +3596,7 @@ bool Options::checkForArg(int argc, char* argv[], const char* checkArg)
     return false;
 }
 
-simgear::optional<bool> Options::checkForBoolArg(int argc, char* argv[], const string& checkArg)
+std::optional<bool> Options::checkForBoolArg(int argc, char* argv[], const string& checkArg)
 {
     for (int i = 0; i < argc; ++i) {
         char* arg = argv[i];
@@ -3623,7 +3623,7 @@ simgear::optional<bool> Options::checkForBoolArg(int argc, char* argv[], const s
             return false; // explicitly disabled
         }
 
-        simgear::optional<std::string> value;
+        std::optional<std::string> value;
         const size_t equal = option.find("=");
         if (equal == string::npos) {
             value = getValueFromNextParam(i, argc, argv);
@@ -3651,13 +3651,13 @@ simgear::optional<bool> Options::checkForBoolArg(int argc, char* argv[], const s
 
 bool Options::checkForArgEnable(int argc, char* argv[], const string& checkArg)
 {
-    const simgear::optional<bool> value = checkForBoolArg(argc, argv, checkArg);
+    const std::optional<bool> value = checkForBoolArg(argc, argv, checkArg);
     return value.has_value() && value.value() == true;
 }
 
 bool Options::checkForArgDisable(int argc, char* argv[], const string& checkArg)
 {
-    const simgear::optional<bool> value = checkForBoolArg(argc, argv, checkArg);
+    const std::optional<bool> value = checkForBoolArg(argc, argv, checkArg);
     return value.has_value() && value.value() == false;
 }
 
@@ -3674,7 +3674,7 @@ std::string Options::getArgValue(int argc, char* argv[], const char* checkArg)
             const auto alen = strlen(arg);
             if ((alen - len) < 2) {
                 // no value after the =, or missing = entirely
-                simgear::optional<std::string> value = getValueFromNextParam(i, argc, argv);
+                std::optional<std::string> value = getValueFromNextParam(i, argc, argv);
                 return value.has_value() ? value.value() : "";
             }
 

@@ -10,15 +10,15 @@
 
 #include <simgear/compiler.h>
 
-#include <string>
 #include <fstream>
+#include <optional>
+#include <string>
 #include <vector>
 
 #include <simgear/debug/ErrorReportingCallback.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/io/iostreams/sgstream.hxx>
 #include <simgear/math/sg_random.hxx>
-#include <simgear/misc/simgear_optional.hxx>
 #include <simgear/props/props.hxx>
 #include <simgear/props/props_io.hxx>
 #include <simgear/sg_inlines.h>
@@ -132,7 +132,7 @@ split_value (double full_value, const char * mask,
  * @return std::optional<T> 
  */
 template <class T>
-static simgear::optional<T>
+static std::optional<T>
 getValueIndirect(const SGPropertyNode* node, const std::string& name, const std::string& indirectName = {})
 {
     auto indirectNode = node->getChild(indirectName.empty() ? (name + "-prop") : indirectName);

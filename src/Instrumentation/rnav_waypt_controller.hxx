@@ -24,8 +24,9 @@
 
 #pragma once
 
+#include <optional>
+
 #include <Navaids/waypoint.hxx>
-#include <simgear/misc/simgear_optional.hxx>
 
 namespace flightgear
 {
@@ -103,14 +104,14 @@ public:
   /**
    * device leg previous waypoint position(eg, from route manager)
    */
-  virtual simgear::optional<LegData> previousLegData()
+    virtual std::optional<LegData> previousLegData()
     {
-        return simgear::optional<LegData>();
+        return std::optional<LegData>();
     }
-    
-    virtual simgear::optional<double> nextLegTrack()
+
+    virtual std::optional<double> nextLegTrack()
     {
-        return simgear::optional<double>{};
+        return std::optional<double>{};
     }
      
   /**
@@ -186,14 +187,14 @@ public:
    * states
    */
   virtual std::string status() const;
-    
-    virtual simgear::optional<RNAV::LegData> legData() const
-    {
-        // defer to our subcontroller if it exists
-        if (_subController)
-            return _subController->legData();
-        
-        return simgear::optional<RNAV::LegData>();
+
+  virtual std::optional<RNAV::LegData> legData() const
+  {
+      // defer to our subcontroller if it exists
+      if (_subController)
+          return _subController->legData();
+
+      return std::optional<RNAV::LegData>();
     }
     
   /**

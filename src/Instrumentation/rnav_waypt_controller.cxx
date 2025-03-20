@@ -506,7 +506,7 @@ public:
     }
   }
 
-  simgear::optional<RNAV::LegData> legData() const override
+  std::optional<RNAV::LegData> legData() const override
   {
     RNAV::LegData r;
     r.position = _waypt->position();

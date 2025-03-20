@@ -715,8 +715,10 @@ naRef initNasalCanvas(naRef globals, naContext c)
     canvas_module.createHash("Spacer")
                  .set("new", &f_newSpacerItem);
 
-  //----------------------------------------------------------------------------
-  // Window
+    canvas_module.set("MAX_SIZE", sc::LayoutItem::MAX_SIZE.x());
+
+    //----------------------------------------------------------------------------
+    // Window
 
     NasalWindow::init("canvas.Window")
         .bases<NasalElement>()

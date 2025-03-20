@@ -694,7 +694,7 @@ int fgInitConfig ( int argc, char **argv, bool reinit )
     }
 
     // allow command line to override
-    const simgear::optional<bool> devOption = options->checkBoolOptionSet("developer");
+    const std::optional<bool> devOption = options->checkBoolOptionSet("developer");
     if (devOption.has_value()) { // User specified the developer option
         developerMode = devOption.value();
     }

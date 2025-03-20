@@ -497,7 +497,7 @@ double GPS::maxFlyByTurnAngleDeg() const
     return _config.maxFlyByTurnAngleDeg();
 }
 
-simgear::optional<double> GPS::nextLegTrack()
+std::optional<double> GPS::nextLegTrack()
 {
     auto next = _route->nextLeg();
     if (!next)
@@ -506,7 +506,7 @@ simgear::optional<double> GPS::nextLegTrack()
     return next->courseDeg();
 }
 
-simgear::optional<RNAV::LegData> GPS::previousLegData()
+std::optional<RNAV::LegData> GPS::previousLegData()
 {
   // if the previous controller computed valid data,
   // use that. This ensures fly-by turns work out, especially
