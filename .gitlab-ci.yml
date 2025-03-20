@@ -106,7 +106,7 @@ macos-build:
   before_script:
       - export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
       - export HOMEBREW_NO_INSTALL_CLEANUP=1
-      - brew install ninja cmake boost c-ares
+      - brew install ninja cmake boost
   script:
     # ensure we use our FreeType and not the one from Homebrew
     # ours is UB, HomeBrew's is not
