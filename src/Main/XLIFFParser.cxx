@@ -59,12 +59,6 @@ void XLIFFParser::startElement(const char *name, const XMLAttributes &atts)
 
         _source.clear();
         _target.clear();
-        const char* ac = atts.getValue("approved");
-        if (!ac || !strcmp(ac, "")) {
-            _approved = false;
-        } else {
-            _approved = simgear::strutils::to_bool(std::string{ac});
-        }
     } else if (tag == "group") {
         _resource = atts.getValue("resname");
         if (_resource.empty()) {
@@ -99,9 +93,8 @@ void XLIFFParser::finishTransUnit()
         return;
     }
 
-    if (!_approved || _target.empty()) {
-        // skip un-approved or missing translations
-        return;
+    if (_target.empty()) {
+        return;                 // skip missing translations
     }
     
     const auto slashPos = _unitId.find('/');

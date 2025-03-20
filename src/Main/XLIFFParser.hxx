@@ -48,7 +48,6 @@ private:
     std::string _text;
     std::string _unitId, _resource;
     std::string _source, _target;
-    bool _approved = false;
 };
 
 }
