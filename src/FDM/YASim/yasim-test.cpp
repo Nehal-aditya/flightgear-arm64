@@ -256,8 +256,8 @@ void yasim_graph_detailed(Airplane* a, const float alt, const float kts, Airplan
     float speed = kts * KTS2MPS;
     float acc[3] {0,0,0};
     float cl_max = 0, cd_min = 1e6, ld_max = 0;
-    int   cl_max_deg = 0, cd_min_deg = 0, ld_max_deg = 0;
-    
+    // int   cl_max_deg = 0, cd_min_deg = 0, ld_max_deg = 0;
+
     printf("aoa\tlift\tdrag\tLD\n");
     for(float  deg=-2.0; deg<=25.0 ; deg+= 0.10 ) {
         float aoa = deg * DEG2RAD;
@@ -268,15 +268,15 @@ void yasim_graph_detailed(Airplane* a, const float alt, const float kts, Airplan
         
         if (cd_min > drag) {
             cd_min = drag;
-            cd_min_deg = deg;
+            // cd_min_deg = deg;
         }
         if (cl_max < lift) {
             cl_max = lift;
-            cl_max_deg = deg;
+            // cl_max_deg = deg;
         }
         if (ld_max < ld) {
             ld_max= ld;
-            ld_max_deg = deg;
+            // ld_max_deg = deg;
         }    
         printf("%-2.1f\t%-2.3f\t%-2.3f\t%-2.3f\n", deg, lift, drag, ld);
     }
@@ -290,7 +290,7 @@ void yasim_drag_detailed(Airplane* a, const float aoa, const float alt, Airplane
     _setup(a, cfgID, alt);
     
     float cd_min = 1e6;
-    int cd_min_kts = 0;
+    // int cd_min_kts = 0;
     float acc[3] {0,0,0};
     
     printf("knots\tdrag\n");    
@@ -299,7 +299,7 @@ void yasim_drag_detailed(Airplane* a, const float aoa, const float alt, Airplane
         float drag = acc[0] * (-1/9.8);        
         if (cd_min > drag) {
             cd_min = drag;
-            cd_min_kts = kts;
+            // cd_min_kts = kts;
         }
         printf("%-2.3f\t%-2.3f\n", kts, drag);
     }
