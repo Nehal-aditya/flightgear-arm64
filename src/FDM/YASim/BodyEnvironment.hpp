@@ -1,7 +1,6 @@
 #ifndef _BODYENVIRONMENT_HPP
 #define _BODYENVIRONMENT_HPP
 
-#include "RigidBody.hpp"
 #include "Math.hpp"
 
 namespace yasim {

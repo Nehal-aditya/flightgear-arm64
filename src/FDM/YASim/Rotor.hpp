@@ -3,8 +3,6 @@
 
 #include "Vector.hpp"
 #include "Rotorpart.hpp"
-#include "Integrator.hpp"
-#include "RigidBody.hpp"
 #include "BodyEnvironment.hpp"
 
 namespace yasim {

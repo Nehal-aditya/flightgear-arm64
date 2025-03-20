@@ -1,7 +1,6 @@
 #ifndef _VECTOR_HPP
 #define _VECTOR_HPP
 
-#include <stdio.h>
 #include <cassert>
 
 namespace yasim {

@@ -1,7 +1,6 @@
 #ifndef _RIGIDBODY_HPP
 #define _RIGIDBODY_HPP
 #include <simgear/props/props.hxx>
-#include "Vector.hpp"
 #include "Math.hpp"
 
 namespace yasim {

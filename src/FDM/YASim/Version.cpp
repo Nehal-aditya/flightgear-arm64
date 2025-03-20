@@ -2,11 +2,15 @@
 #  include "config.h"
 #endif
 
-#include "Version.hpp"
+#include <algorithm>
+#include <ostream>
+#include <string>
+#include <type_traits>
+#include <vector>
+
 #include <simgear/debug/logstream.hxx>
 
-#include <ostream>
-#include <type_traits>
+#include "Version.hpp"
 
 namespace yasim {
     

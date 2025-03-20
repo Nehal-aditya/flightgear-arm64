@@ -4,7 +4,6 @@
 #include <string>
 
 #include <simgear/props/props.hxx>
-#include "yasim-common.hpp"
 #include "Vector.hpp"
 
 namespace yasim {

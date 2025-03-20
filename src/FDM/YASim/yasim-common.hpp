@@ -1,9 +1,6 @@
 #ifndef _YASIM_COMMON_HPP
 #define _YASIM_COMMON_HPP
 
-#include <string>
-#include <vector>
-#include <algorithm>
 /*
  common file for YASim wide constants and static helper functions
  */
@@ -32,7 +29,7 @@ namespace yasim {
     static const float K2DEGF = 1.8f;
     static const float K2DEGFOFFSET = -459.4f;
     static const float CIN2CM = 1.6387064e-5f;
-    
+
     static const float NM2FTLB = (1/(LBS2N*FT2M));
     static const float SLUG2KG = 14.59390f;
 

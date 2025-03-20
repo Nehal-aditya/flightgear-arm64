@@ -1,9 +1,8 @@
 #ifndef _VERSION_HPP
 #define _VERSION_HPP
 
+#include <string>
 #include <type_traits>
-
-#include "yasim-common.hpp"
 
 namespace yasim {
 
