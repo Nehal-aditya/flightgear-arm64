@@ -30,8 +30,8 @@
 using namespace osg;
 using namespace std;
 
-namespace flightgear
-{
+namespace flightgear {
+
 ref_ptr<WindowSystemAdapter> WindowSystemAdapter::_wsa;
 
 void GraphicsContextOperation::operator()(GraphicsContext* gc)
@@ -55,14 +55,28 @@ WindowSystemAdapter::registerWindow(GraphicsContext* gc,
     return window;
 }
 
-GraphicsWindow* WindowSystemAdapter::findWindow(const string& name)
+GraphicsWindow* WindowSystemAdapter::findWindow(const string& name) const
 {
-    for (WindowVector::iterator iter = windows.begin(), e = windows.end();
-         iter != e;
-         ++iter) {
-        if ((*iter)->name == name)
-            return iter->get();
+    auto it = std::find_if(windows.begin(), windows.end(),
+                           [&name](const auto& window) {
+                               return window->name == name;
+                           });
+    if (it == windows.end()) {
+        return nullptr;
     }
-    return 0;
+    return (*it).get();
 }
+
+GraphicsWindow* WindowSystemAdapter::getGUIWindow() const
+{
+    auto it = std::find_if(windows.begin(), windows.end(),
+                           [](const auto& window) {
+                               return window->flags & GraphicsWindow::GUI;
+                           });
+    if (it == windows.end()) {
+        return nullptr;
+    }
+    return (*it).get();
 }
+
+} // namespace flightgear

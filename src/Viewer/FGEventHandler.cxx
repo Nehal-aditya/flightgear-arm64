@@ -108,8 +108,12 @@ FGEventHandler::eventToViewport(const osgGA::GUIEventAdapter& ea, osgGA::GUIActi
 {
     WindowType  ret = WindowType_NONE;
     
-    flightgear::WindowBuilder* window_builder = flightgear::WindowBuilder::getWindowBuilder();
-    flightgear::GraphicsWindow* main_window = window_builder->getDefaultWindow();
+    flightgear::WindowSystemAdapter* wsa = flightgear::WindowSystemAdapter::getWSA();
+    flightgear::GraphicsWindow* main_window = wsa->getGUIWindow();
+    if (!main_window) {
+        // GUI window is still not available, skip the event
+        return WindowType_NONE;
+    }
 
     x = -1;
     y = -1;

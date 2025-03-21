@@ -1676,8 +1676,9 @@ std::shared_ptr<SviewView> SviewCreate(SGPropertyNode* config)
         
         // osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
         // assert(wsi);
-        flightgear::WindowBuilder* window_builder = flightgear::WindowBuilder::getWindowBuilder();
-        flightgear::GraphicsWindow* main_window = window_builder->getDefaultWindow();
+        flightgear::WindowSystemAdapter* wsa = flightgear::WindowSystemAdapter::getWSA();
+        flightgear::GraphicsWindow* main_window = wsa->getGUIWindow();
+        assert(main_window); // The GUI window must exist
         osg::ref_ptr<osg::GraphicsContext> main_gc = main_window->gc;
         const osg::GraphicsContext::Traits* main_traits = main_gc->getTraits();
 

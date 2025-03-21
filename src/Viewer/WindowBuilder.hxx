@@ -27,6 +27,9 @@ class SGPropertyNode;
 
 namespace flightgear
 {
+
+const char DEFAULT_WINDOW_NAME[] = "FlightGear";
+
 class GraphicsWindow;
 /** Singleton Builder class for creating a GraphicsWindow from property
  * nodes. This involves initializing an osg::GraphicsContext::Traits
@@ -47,23 +50,11 @@ public:
      * @param winNode The window's root property node
      * @return a graphics window.
      */
-    GraphicsWindow* buildWindow(const SGPropertyNode* winNode, bool isMainWindow=false);
-    /** Get a window whose properties come from FlightGear's
-     * command line arguments and their defaults. The window is opened
-     * if it has not been already.
-     * @return the default graphics window
-     */
-    GraphicsWindow* getDefaultWindow();
-    /** Get the name used to look up the default window.
-     */
-    const std::string& getDefaultWindowName() { return defaultWindowName; }
+    GraphicsWindow* buildWindow(const SGPropertyNode* winNode);
 
     static void setPoseAsStandaloneApp(bool b);
 protected:
     WindowBuilder();
-
-    osg::GraphicsContext* attemptToCreateGraphicsContext(
-        const std::string& contextVersion, unsigned int profileMask) const;
 
     void setFullscreenTraits(const SGPropertyNode* winNode, osg::GraphicsContext::Traits* traits);
     bool setWindowedTraits(const SGPropertyNode* winNode, osg::GraphicsContext::Traits* traits);
@@ -73,18 +64,11 @@ protected:
     void makeDefaultTraits();
     
     osg::ref_ptr<osg::GraphicsContext::Traits> defaultTraits;
-    int defaultCounter;
     bool usingQtGraphicsWindow = false;
     
     static osg::ref_ptr<WindowBuilder> windowBuilder;
-    static std::string defaultWindowName;
     static bool poseAsStandaloneApp;
 };
-
-/** Silly function for making the default window and camera
- * names. This concatenates a string with in integer.
- */
-std::string makeName(const std::string& prefix, int num);
 
 }
 #endif

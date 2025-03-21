@@ -19,11 +19,8 @@
 #include "WindowBuilder.hxx"
 #include "WindowSystemAdapter.hxx"
 #include <Main/fg_props.hxx>
-#include <osg/Version>
 
 #include <GUI/MessageBox.hxx>
-
-#include <sstream>
 
 #if defined(SG_MAC)
     #include <osgViewer/api/Cocoa/GraphicsWindowCocoa>
@@ -39,18 +36,40 @@ void fgqt_setPoseAsStandaloneApp(bool b)
     flightgear::WindowBuilder::setPoseAsStandaloneApp(b);
 }
 
-namespace flightgear
+namespace {
+
+/// Helper function to set a value only if a given property exists.
+/// Returns 1 if the value was modified, 0 if not.
+template <typename T>
+inline int setFromProperty(T& place, const SGPropertyNode* node, const std::string& name)
 {
-string makeName(const string& prefix, int num)
-{
-    stringstream stream;
-    stream << prefix << num;
-    return stream.str();
+    const SGPropertyNode* prop = node->getNode(name);
+    if (prop) {
+        place = prop->getValue<T>();
+        return 1;
+    }
+    return 0;
 }
 
-ref_ptr<WindowBuilder> WindowBuilder::windowBuilder;
+/// Helper function to create a graphics context for a given OpenGL version.
+GraphicsContext* attemptToCreateGraphicsContext(const GraphicsContext::Traits* traits,
+                                                const std::string& contextVersion,
+                                                unsigned int profileMask)
+{
+    // We copy the traits object locally here because it gets deleted if
+    // context creation is unsuccessful.
+    ref_ptr<GraphicsContext::Traits> copy =
+        new GraphicsContext::Traits(*traits);
+    copy->glContextVersion = contextVersion;
+    copy->glContextProfileMask = profileMask;
+    return GraphicsContext::createGraphicsContext(copy);
+}
 
-string WindowBuilder::defaultWindowName("FlightGear");
+} // anonymous namespace
+
+namespace flightgear {
+
+ref_ptr<WindowBuilder> WindowBuilder::windowBuilder;
 
 // default to true (historical behaviour), we will clear the flag if
 // we run another GUI.
@@ -61,7 +80,7 @@ void WindowBuilder::initWindowBuilder()
     windowBuilder = new WindowBuilder();
 }
 
-WindowBuilder::WindowBuilder() : defaultCounter(0)
+WindowBuilder::WindowBuilder()
 {
     makeDefaultTraits();
 }
@@ -82,18 +101,16 @@ void WindowBuilder::makeDefaultTraits()
     auto traits = defaultTraits.get();
     traits->readDISPLAY();
     traits->setUndefinedScreenDetailsToDefaultScreen();
+    traits->vsync = fgGetBool("/sim/rendering/vsync-enable", traits->vsync);
+    traits->doubleBuffer = true;
+    traits->mipMapGeneration = true;
 
-    // Should be configurable by the Compositor on a per-window basis
+    // TODO: Should be configurable by the Compositor on a per-window basis
     // traits->red = traits->green = traits->blue = cbits;
     // traits->depth = zbits;
     // traits->stencil = 8;
     // traits->sampleBuffers = fgGetInt("/sim/rendering/multi-sample-buffers", traits->sampleBuffers);
     // traits->samples = fgGetInt("/sim/rendering/multi-samples", traits->samples);
-
-    traits->vsync = fgGetBool("/sim/rendering/vsync-enable", traits->vsync);
-    traits->doubleBuffer = true;
-    traits->mipMapGeneration = true;
-    traits->windowName = defaultWindowName;
 
     const bool wantFullscreen = fgGetBool("/sim/startup/fullscreen");
     unsigned screenwidth = 0;
@@ -123,62 +140,6 @@ void WindowBuilder::makeDefaultTraits()
         }
         SG_LOG(SG_VIEW,SG_DEBUG,"Using initial window size: " << w << " x " << h);
     }
-}
-    
-} // of namespace flightgear
-
-namespace
-{
-// Helper functions that set a value based on a property if it exists,
-// returning 1 if the value was set.
-
-inline int setFromProperty(string& place, const SGPropertyNode* node,
-                            const char* name)
-{
-    const SGPropertyNode* valNode = node->getNode(name);
-    if (valNode) {
-        place = valNode->getStringValue();
-        return 1;
-    }
-    return 0;
-}
-
-inline int setFromProperty(int& place, const SGPropertyNode* node,
-                            const char* name)
-{
-    const SGPropertyNode* valNode = node->getNode(name);
-    if (valNode) {
-        place = valNode->getIntValue();
-        return 1;
-    }
-    return 0;
-}
-
-inline int setFromProperty(bool& place, const SGPropertyNode* node,
-                            const char* name)
-{
-    const SGPropertyNode* valNode = node->getNode(name);
-    if (valNode) {
-        place = valNode->getBoolValue();
-        return 1;
-    }
-    return 0;
-}
-}
-
-namespace flightgear
-{
-
-GraphicsContext* WindowBuilder::attemptToCreateGraphicsContext(
-    const std::string& contextVersion, unsigned int profileMask) const
-{
-    // We create the traits object locally here because it gets deleted if
-    // context creation is unsuccessful.
-    GraphicsContext::Traits* traits = new GraphicsContext::Traits(*defaultTraits);
-    setMacPoseAsStandaloneApp(traits);
-    traits->glContextVersion = contextVersion;
-    traits->glContextProfileMask = profileMask;
-    return GraphicsContext::createGraphicsContext(traits);
 }
 
 void WindowBuilder::setFullscreenTraits(const SGPropertyNode* winNode, GraphicsContext::Traits* traits)
@@ -237,33 +198,37 @@ void WindowBuilder::setMacPoseAsStandaloneApp(GraphicsContext::Traits* traits) c
 #endif
 }
     
-GraphicsWindow* WindowBuilder::buildWindow(const SGPropertyNode* winNode, bool isMainWindow)
+GraphicsWindow* WindowBuilder::buildWindow(const SGPropertyNode* winNode)
 {
     WindowSystemAdapter* wsa = WindowSystemAdapter::getWSA();
+
     string windowName;
-    if (winNode->hasChild("window-name"))
+    if (winNode->hasChild("window-name")) {
         windowName = winNode->getStringValue("window-name");
-    else if (winNode->hasChild("name"))
+    } else if (winNode->hasChild("name")) {
         windowName = winNode->getStringValue("name");
-    if (isMainWindow) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Changing defaultWindowName from "
-                << defaultWindowName << " to " << windowName);
-        defaultWindowName = windowName;
+    } else {
+        SG_LOG(SG_VIEW, SG_WARN, "WindowBuilder::buildWindow: Window needs a name");
+        return nullptr;
     }
-    GraphicsWindow* result = 0;
-    if (!windowName.empty()) {
-        // look for an existing window and return that
-        result = wsa->findWindow(windowName);
-        if (result)
-            return result;
+
+    // look for an existing window and return that
+    GraphicsWindow* result = wsa->findWindow(windowName);
+    if (result) {
+        return result;
     }
-    auto traits = new GraphicsContext::Traits(*defaultTraits);
+
+    // There is no existing window with this name, so create it from scratch.
+    // Copy the default traits and modify them according to the window props.
+    ref_ptr<GraphicsContext::Traits> traits =
+        new GraphicsContext::Traits(*defaultTraits);
 
     // Attempt to share context with the window that was created first
     if (!wsa->windows.empty())
         traits->sharedContext = wsa->windows.front()->gc;
 
-    int traitsSet = setFromProperty(traits->hostName, winNode, "host-name");
+    [[maybe_unused]] int traitsSet = 0;
+    traitsSet |= setFromProperty(traits->hostName, winNode, "host-name");
     traitsSet |= setFromProperty(traits->displayNum, winNode, "display");
     traitsSet |= setFromProperty(traits->screenNum, winNode, "screen");
 
@@ -276,42 +241,17 @@ GraphicsWindow* WindowBuilder::buildWindow(const SGPropertyNode* winNode, bool i
     }
     traitsSet |= setFromProperty(traits->x, winNode, "x");
     traitsSet |= setFromProperty(traits->y, winNode, "y");
-    if (!windowName.empty() && windowName != traits->windowName) {
-        traits->windowName = windowName;
-        traitsSet = 1;
-    } else if (traitsSet) {
-        traits->windowName = makeName("FlightGear", defaultCounter++);
-    }
+
+    // The window title matches the internal window name by default
+    traits->windowName = windowName;
+    traitsSet |= setFromProperty(traits->windowName, winNode, "title");
 
     setMacPoseAsStandaloneApp(traits);
 
-    bool drawGUI = false;
-    traitsSet |= setFromProperty(drawGUI, winNode, "gui");
-    if (traitsSet) {
-        GraphicsContext* gc = GraphicsContext::createGraphicsContext(traits);
-        if (gc) {
-            GraphicsWindow* window = WindowSystemAdapter::getWSA()
-                ->registerWindow(gc, traits->windowName);
-            if (drawGUI)
-                window->flags |= GraphicsWindow::GUI;
-            return window;
-        } else {
-            return 0;
-        }
-    } else {
-        // XXX What if the window has no traits, but does have a name?
-        // We should create a "default window" registered with that name.
-        return getDefaultWindow();
-    }
-}
-
-GraphicsWindow* WindowBuilder::getDefaultWindow()
-{
-    GraphicsWindow* defaultWindow
-        = WindowSystemAdapter::getWSA()->findWindow(defaultWindowName);
-    if (defaultWindow)
-        return defaultWindow;
-
+    // Create a graphics context for this window.
+    // This is where we choose which OpenGL version to use.
+    // We also set the #version string for shaders in the display settings based
+    // on the chosen OpenGL version.
     auto display_settings = osg::DisplaySettings::instance();
     GraphicsContext* gc = nullptr;
 
@@ -320,14 +260,14 @@ GraphicsWindow* WindowBuilder::getDefaultWindow()
     // on MacOS (max version there is 4.1). We can optionally take advantage of
     // 4.3 features like compute shaders.
     display_settings->setValue("FG_GLSL_VERSION", "#version 430 core");
-    gc = attemptToCreateGraphicsContext("4.3", 0x1);
+    gc = attemptToCreateGraphicsContext(traits, "4.3", 0x1);
 #endif
 
     if (!gc) {
         // 4.3 is unsupported, so try with 4.1. This version is required, i.e.
         // we crash if we can't successfully create an OpenGL context.
         display_settings->setValue("FG_GLSL_VERSION", "#version 410 core");
-        gc = attemptToCreateGraphicsContext("4.1", 0x1);
+        gc = attemptToCreateGraphicsContext(traits, "4.1", 0x1);
         if (!gc) {
             flightgear::fatalMessageBoxThenExit(
                 "Unable to create OpenGL 4.1 core profile context",
@@ -338,13 +278,11 @@ GraphicsWindow* WindowBuilder::getDefaultWindow()
         }
     }
 
-    // Copy the winning OpenGL version to the default traits so subsequent
-    // windows can use it.
-    defaultTraits->glContextVersion = gc->getTraits()->glContextVersion;
-    defaultTraits->glContextProfileMask = gc->getTraits()->glContextProfileMask;
+    // Cache the newly created window using the internal name
+    // (because traits->windowName can be custom).
+    result = WindowSystemAdapter::getWSA()->registerWindow(gc, windowName);
 
-    defaultWindow = WindowSystemAdapter::getWSA()->registerWindow(gc, defaultWindowName);
-    return defaultWindow;
+    return result;
 }
 
 void WindowBuilder::setPoseAsStandaloneApp(bool b)

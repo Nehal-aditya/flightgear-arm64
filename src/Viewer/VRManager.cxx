@@ -220,9 +220,8 @@ void VRManager::doCreateView(osgXR::View *xrView)
 
     // Construct a property tree for the camera
     SGPropertyNode_ptr camNode = new SGPropertyNode;
-    WindowBuilder *windowBuilder = WindowBuilder::getWindowBuilder();
     setValue(camNode->getNode("window/name", true),
-             windowBuilder->getDefaultWindowName());
+             flightgear::DEFAULT_WINDOW_NAME);
 
     // Build a camera
     CameraGroup *cgroup = CameraGroup::getDefault();

@@ -115,7 +115,11 @@ public:
      * @param name the window name
      * @return the window or 0
      */
-    GraphicsWindow* findWindow(const std::string& name);
+    GraphicsWindow* findWindow(const std::string& name) const;
+    /** Get the first window marked as GUI (there should only be one).
+     * @return the first window with GUI in its flags or nullptr
+     */
+    GraphicsWindow* getGUIWindow() const;
     /** Get the global WindowSystemAdapter
      * @return the adapter
      */

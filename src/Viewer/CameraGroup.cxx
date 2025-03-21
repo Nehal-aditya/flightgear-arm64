@@ -568,7 +568,7 @@ void CameraGroup::buildSplashCamera(SGPropertyNode* cameraNode,
                                             : 0);
     if (!window && windowNode) {
         // New style window declaration / definition
-        window = wBuild->buildWindow(windowNode, true /*isMainWindow*/);
+        window = wBuild->buildWindow(windowNode);
     }
 
     if (!window) { // buildWindow can fail
@@ -640,13 +640,16 @@ void CameraGroup::buildGUICamera(SGPropertyNode* cameraNode,
                                         : 0);
     if (!window && windowNode) {
         // New style window declaration / definition
-        window = wBuild->buildWindow(windowNode, true /*isMainWindow*/);
+        window = wBuild->buildWindow(windowNode);
     }
 
     if (!window) { // buildWindow can fail
         SG_LOG(SG_VIEW, SG_WARN, "CameraGroup::buildGUICamera: failed to build a window");
         return;
     }
+
+    // Mark the window as containing the GUI
+    window->flags |= GraphicsWindow::GUI;
 
     Camera* camera = new Camera;
     camera->setName( "GUICamera" );
@@ -995,10 +998,9 @@ void CameraGroup::buildDefaultGroup(osgViewer::View* viewer)
             }
         }
         if (!masterCamera) {
-            WindowBuilder *windowBuilder = WindowBuilder::getWindowBuilder();
             masterCamera = cgroupNode->getChild("camera", cameras.size(), true);
             setValue(masterCamera->getNode("window/name", true),
-                     windowBuilder->getDefaultWindowName());
+                     flightgear::DEFAULT_WINDOW_NAME);
             // Use VR mirror compositor when VR is enabled.
             setValue(masterCamera->getNode("vr-mirror", true), true);
         }
