@@ -104,11 +104,12 @@ void WindowBuilder::makeDefaultTraits()
     traits->vsync = fgGetBool("/sim/rendering/vsync-enable", traits->vsync);
     traits->doubleBuffer = true;
     traits->mipMapGeneration = true;
+    // Request a stencil buffer because paths on the Canvas desktop require it
+    traits->stencil = 8;
 
     // TODO: Should be configurable by the Compositor on a per-window basis
     // traits->red = traits->green = traits->blue = cbits;
     // traits->depth = zbits;
-    // traits->stencil = 8;
     // traits->sampleBuffers = fgGetInt("/sim/rendering/multi-sample-buffers", traits->sampleBuffers);
     // traits->samples = fgGetInt("/sim/rendering/multi-samples", traits->samples);
 
