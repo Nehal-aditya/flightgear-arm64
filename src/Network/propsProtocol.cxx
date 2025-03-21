@@ -37,6 +37,8 @@
 #include <string>
 #include <vector>
 
+#include <Main/fg_props.hxx>
+
 
 using std::ends;
 using std::stringstream;
@@ -360,6 +362,25 @@ void FGProps::PropsChannel::foundTerminator()
                         push(text.str().c_str());
                     }
                 }
+            } else if (command == "about") {
+                stringstream aboutinfo;
+                aboutinfo << "/sim/version/flightgear: "      << fgGetString("/sim/version/flightgear") << endl;
+                aboutinfo << "Sentry.io UUID: "               << fgGetString("/sim/crashreport/sentry-user-id") << endl;
+                aboutinfo << "/sim/version/simgear: "         << fgGetString("/sim/version/simgear") << endl;
+                aboutinfo << "/sim/version/openscenegraph: "  << fgGetString("/sim/version/openscenegraph") << endl;
+                aboutinfo << "/sim/version/build-id: "        << fgGetString("/sim/version/build-id") << endl;
+                aboutinfo << "/sim/version/build-number: "    << fgGetString("/sim/version/build-number") << endl;
+                aboutinfo << "/sim/version/build-type: "      << fgGetString("/sim/version/build-type") << endl;
+                aboutinfo << "/sim/version/revision: "        << fgGetString("/sim/version/revision") << endl;
+                aboutinfo << "/sim/rendering/gl-vendor: "       << fgGetString("/sim/rendering/gl-vendor") << endl;
+                aboutinfo << "/sim/rendering/gl-renderer: "     << fgGetString("/sim/rendering/gl-renderer") << endl;
+                aboutinfo << "/sim/rendering/gl-version: "      << fgGetString("/sim/rendering/gl-version") << endl;
+                aboutinfo << "/sim/rendering/gl-shading-language-version: " << fgGetString("/sim/rendering/gl-shading-language-version") << endl;
+                aboutinfo << "/sim/rendering/max-texture-size: "   << fgGetString("/sim/rendering/max-texture-size") << endl;
+                aboutinfo << "/sim/rendering/depth-buffer-bits: "  << fgGetString("/sim/rendering/depth-buffer-bits") << endl;
+                aboutinfo << ends;
+                push(aboutinfo.str().c_str());
+                push(getTerminator());
             } else if (command == "dump") {
                 stringstream buf;
                 if (tokens.size() <= 1) {
@@ -646,6 +667,7 @@ void FGProps::PropsChannel::foundTerminator()
                 const char* msg = "\
 Valid commands are:\r\n\
 \r\n\
+about              prints system and version information, useful for debugging\r\n\
 cd <dir>           cd to a directory, '..' to move back\r\n\
 data               switch to raw data mode\r\n\
 dump               dump current state (in xml)\r\n\
