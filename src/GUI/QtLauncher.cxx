@@ -403,13 +403,17 @@ void initApp(int& argc, char** argv, bool doInitQSettings)
 
         QTranslator* fallbackTranslator = new QTranslator(static_qApp.get());
         if (!fallbackTranslator->load(QLatin1String(":/FlightGear_en_US.qm"))) {
-            qWarning() << "Failed to load default (en) translations";
+            qWarning() << "Failed to load the built-in launcher fallback"
+                       << "translation (English). If you compiled FlightGear"
+                       << "yourself, you may want to pass -DFG_DATA_DIR to"
+                       << "CMake so as to allow the FlightGear build system"
+                       << "to find FGData.";
             delete fallbackTranslator;
         } else {
             static_qApp->installTranslator(fallbackTranslator);
         }
 
-        // check for --langauge=xx option and prefer that over QLocale
+        // check for --language=xx option and prefer that over QLocale
         // detection of the locale if it exists
         auto lang = simgear::strutils::replace(
             Options::getArgValue(argc, argv, "--language"),
@@ -422,7 +426,7 @@ void initApp(int& argc, char** argv, bool doInitQSettings)
                 qInfo() << "Loaded translations based on --language from:" << localeFile;
                 static_qApp->installTranslator(translator);
             } else {
-                qInfo() << "--langauge was set, but no translations found at:" << localeFile;
+                qInfo() << "--language was set, but no translations found at:" << localeFile;
                 delete translator;
             }
         } else {
