@@ -104,17 +104,12 @@ namespace simgear { class Dir; }
  *     situation), and will possibly load more later from the current
  *     aircraft and add-ons.
  *
- * XXX: FGLocale::selectLanguage() sets /sim/intl/current-locale to the value
- * of _currentLocaleString. I think the _languageId value would be more useful
- * for most uses, including locale-dependent font selection (e.g., for the
- * splash screen or Canvas GUI). For instance, if we make no difference
- * betweeen fr_FR, fr_BE, and fr_CA for the sake of translations, all of them
- * are mapped to the same /sim/intl/locale[n] node which is characterized by
- * its 'language-id' value; OTOH, all these “locales” would have their own
- * value of _currentLocaleString, despite using the same XLIFF files (using
- * the plural here because XLIFF files can be loaded from several domains:
- * 'core', 'current-aircraft' and 'addons/⟨addonId⟩').
- *
+ * FGLocale::selectLanguage() sets /sim/intl/current-locale to the value of
+ * _currentLocaleString and /sim/intl/current-language-id to the value of
+ * _languageId. The latter determines which XLIFF files are going to be
+ * loaded, if any. Therefore, if a font has to be chosen according to the
+ * selected language, getLanguageId() or /sim/intl/current-language-id should
+ * be appropriate.
  *
  * Resource vs. context
  * --------------------
@@ -148,6 +143,12 @@ public:
     /**
      * Return the value of _languageId, which uniquely identifies the language
      * for the LanguageInfo class (handling of plural forms...).
+     *
+     * @return "default" for the default translation; else, the string value
+     *         of the /sim/intl/locale[n]/language-id node where
+     *         /sim/intl/locale[n] corresponds to the selected locale
+     *
+     * @sa getPreferredLanguage()
      */
     std::string getLanguageId() const;
 
@@ -161,8 +162,7 @@ public:
      *  have an encoding specifier, while values returned by
      *  getPreferredLanguage() never have that.
      *
-     *  XXX getLanguageId() is probably more useful; remove
-     *  getPreferredLanguage() or change its semantics?
+     *  @sa getLanguageId()
      */
     std::string getPreferredLanguage() const;
 

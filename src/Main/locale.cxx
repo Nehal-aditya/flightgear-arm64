@@ -258,6 +258,8 @@ bool FGLocale::selectLanguage(const std::string& language)
     // /sim/intl/locale[n]/language-id. Otherwise (default translation),
     // _languageId is set to "default".
     _languageId = findLanguageId();
+    // Record it in /sim/intl/current-language-id
+    _intl->getChild("current-language-id", 0, true)->setStringValue(_languageId);
 
     if (_currentLocale &&
         _currentLocale->getNode("core", 0, true)->hasChild("xliff")) {
