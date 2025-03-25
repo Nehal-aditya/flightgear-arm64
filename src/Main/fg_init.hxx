@@ -35,6 +35,24 @@ class SGPath;
 // Return the current base package version
 std::string fgBasePackageVersion(const SGPath& path);
 
+/**
+ * @brief structure holding parsed info from <base-package>/base_package.json
+ * 
+ */
+struct FGBasePackageInfo {
+    std::string buildDate;
+    std::string gitRevision;
+};
+
+/**
+ * @brief Parse the base package info JSON
+ * 
+ * @param path 
+ * @return std::optional<FGBasePackageInfo> 
+ */
+std::optional<FGBasePackageInfo>
+fgBasePackageInfo(const SGPath& path);
+
 SGPath fgHomePath();
 
 enum InitHomeResult

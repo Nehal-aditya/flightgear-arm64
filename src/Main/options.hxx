@@ -290,6 +290,10 @@ public:
       // The 'fromConfigFile' parameter indicates whether the option comes from a
       // config file or directly from the command line.
       int parseOption(const std::string& s, const simgear::optional<std::string>& val, bool fromConfigFile);
+        /**
+       * @brief print various pieces of runtime information about the setup / system
+       */
+        void showInfo() const;
 
       int parseConfigOption(const SGPath &path, bool fromConfigFile);
 
