@@ -31,6 +31,13 @@ void delayedSentryInit();
 
 bool isSentryEnabled();
 
+/**
+ * @brief retrive the anonymous user ID (a UUID) for this installation.
+ *
+ * The UUID is generated on first-run and stored in FG_HOME in a text file.  
+ */
+std::string sentryUserId();
+
 void addSentryBreadcrumb(const std::string& msg, const std::string& level);
 
 void addSentryTag(const char* tag, const char* value);

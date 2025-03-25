@@ -260,6 +260,18 @@ bool sentrySendError(const SGPropertyNode* args, SGPropertyNode* root)
     return true;
 }
 
+std::string sentryUserId()
+{
+    const auto uuidPath = fgHomePath() / "sentry_uuid.txt";
+    if (!uuidPath.exists()) {
+        return {};
+    }
+
+    std::string uuid;
+    sg_ifstream f(uuidPath);
+    std::getline(f, uuid);
+    return uuid;
+}
 
 void initSentry()
 {
@@ -337,6 +349,10 @@ void initSentry()
         simgear::setErrorReportCallback(sentrySimgearReportCallback);
 
         std::set_new_handler(sentryReportBadAlloc);
+
+        // expose the anonymous user UUID to the property tree, so users
+        // can share it if they wish
+        fgSetString("/sim/crashreport/sentry-user-id", uuid);
     } else {
         SG_LOG(SG_GENERAL, SG_WARN, "Failed to init Sentry reporting");
         static_sentryEnabled = false;
@@ -526,6 +542,11 @@ void shutdownSentry()
 
 void delayedSentryInit()
 {
+}
+
+std::string sentryUserId()
+{
+    return {};
 }
 
 bool isSentryEnabled()

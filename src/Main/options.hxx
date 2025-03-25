@@ -49,62 +49,62 @@ namespace flightgear
 /// option processing can have various result values
 /// depending on what the user requested. Note processOptions only
 /// returns a subset of these.
-enum OptionResult
-{
-    FG_OPTIONS_OK = 0,
-    FG_OPTIONS_HELP,
-    FG_OPTIONS_ERROR,
-    FG_OPTIONS_EXIT,
-    FG_OPTIONS_VERBOSE_HELP,
-    FG_OPTIONS_SHOW_AIRCRAFT,
-    FG_OPTIONS_SHOW_SOUND_DEVICES,
-    FG_OPTIONS_NO_DEFAULT_CONFIG
-};
-    
-class Options
-{
-private:
-  Options();
-  
-public:
-  static Options* sharedInstance();
+    enum OptionResult {
+        FG_OPTIONS_OK = 0,
+        FG_OPTIONS_HELP,
+        FG_OPTIONS_ERROR,
+        FG_OPTIONS_EXIT,
+        FG_OPTIONS_VERBOSE_HELP,
+        FG_OPTIONS_SHOW_AIRCRAFT,
+        FG_OPTIONS_SHOW_SOUND_DEVICES,
+        FG_OPTIONS_SHOW_INFO,
+        FG_OPTIONS_NO_DEFAULT_CONFIG
+    };
 
-    /**
+    class Options
+    {
+    private:
+        Options();
+
+    public:
+        static Options* sharedInstance();
+
+        /**
      * Delete the entire options object. Use with a degree of care, no code
      * should ever be caching the Options pointer but this has not actually been
      * checked across the whole code :)
      */
-    static void reset();
+        static void reset();
 
-  ~Options();
-  
-  /**
+        ~Options();
+
+        /**
    * pass command line arguments, read default config files
    */
-  OptionResult init(int argc, char* argv[], const SGPath& appDataPath);
+        OptionResult init(int argc, char* argv[], const SGPath& appDataPath);
 
-  /**
+        /**
     * parse a config file (eg, .fgfsrc) 
     */
-  void readConfig(const SGPath& path);
-  
-  /**
+        void readConfig(const SGPath& path);
+
+        /**
     * read the value for an option, if it has been set
     */
-  std::string valueForOption(const std::string& key, const std::string& defValue = std::string()) const;
-  
-  /**
+        std::string valueForOption(const std::string& key, const std::string& defValue = std::string()) const;
+
+        /**
     * return all values for a multi-valued option
     */
-  string_list valuesForOption(const std::string& key) const;
-  
-  /**
+        string_list valuesForOption(const std::string& key) const;
+
+        /**
     * Check if a particular option has been set (so far).
     * For boolean option please use isBoolOptionEnable or isBoolOptionDisable.
     */
-  bool isOptionSet(const std::string& key) const;
-  
-  /**
+        bool isOptionSet(const std::string& key) const;
+
+        /**
    * Check if the user has specified a given boolean option.
    * We need to return 3 states:
    * *  1 - the user has explicitly enabled the option,
@@ -125,51 +125,51 @@ public:
    */
   std::optional<bool> checkBoolOptionSet(const std::string& key) const;
 
-  /**
+        /**
    * An overlay on checkBoolOptionSet, except that when the user has not used
    * the option at all then false is returned.
    * For non-boolean option please use isOptionSet.
    */
-  bool isBoolOptionEnable(const std::string &key) const;
+        bool isBoolOptionEnable(const std::string& key) const;
 
-  /**
+        /**
    * An overlay on checkBoolOptionSet, to check whether user used the option
    * with explicitly disable it.
    * For non-boolean option please use isOptionSet.
    */
-  bool isBoolOptionDisable(const std::string &key) const;
+        bool isBoolOptionDisable(const std::string& key) const;
 
-  /**
+        /**
     * set an option value, assuming it is not already set (or multiple values
     * are permitted)
     * This can be used to inject option values, eg based upon environment variables
     */
-  int addOption(const std::string& key, const std::string& value);
+        int addOption(const std::string& key, const std::string& value);
 
-  /**
+        /**
    * set an option, overwriting any existing value which might be set
    */
-  int setOption(const std::string& key, const std::string& value);
+        int setOption(const std::string& key, const std::string& value);
 
-  void clearOption(const std::string& key);
+        void clearOption(const std::string& key);
 
-  /**
+        /**
    * apply option values to the simulation state
    * (set properties, etc). 
    */
-  OptionResult processOptions();
+        OptionResult processOptions();
 
-    /**
+        /**
      * process command line options relating to scenery / aircraft / data paths
      */
-    void initPaths();
+        void initPaths();
 
-  /**
+        /**
    * init the aircraft options
    */
-  OptionResult initAircraft();
-  
-  /**
+        OptionResult initAircraft();
+
+        /**
    * should defualt configuration files be loaded and processed or not?
    * There's many configuration files we have historically read by default
    * on startup - fgfs.rc in various places and so on.
@@ -177,23 +177,23 @@ public:
    * expicitly listed files are read Expose
    * the value of the option here.
    */
-  bool shouldLoadDefaultConfig() const;
+        bool shouldLoadDefaultConfig() const;
 
-    /**
+        /**
      * when using the built-in launcher, we disable the default config files.
      * explicitly loaded confg files are still permitted.
      */
-    void setShouldLoadDefaultConfig(bool load);
+        void setShouldLoadDefaultConfig(bool load);
 
-  /**
+        /**
    * Check if the arguments array contains a particular string (with a '--' or
    * '-' prefix).
    * Used by early startup code before Options object is created.
    * For boolean option please use checkForBoolArg or checkForArgEnable/checkForArgDisable.
    */
-  static bool checkForArg(int argc, char* argv[], const char* arg);
+        static bool checkForArg(int argc, char* argv[], const char* arg);
 
-  /**
+        /**
    * Check if the user has specified a given boolean option.
    * Used by early startup code before Options object is created.
    * We need to return 3 states:
@@ -215,19 +215,19 @@ public:
    */
   static std::optional<bool> checkForBoolArg(int argc, char* argv[], const std::string& checkArg);
 
-  /**
+        /**
    * Return true when user explicitly enabled boolean option, otherwise false.
    * Used by early startup code before Options object is created.
    */
-  static bool checkForArgEnable(int argc, char* argv[], const std::string& checkArg);
+        static bool checkForArgEnable(int argc, char* argv[], const std::string& checkArg);
 
-  /**
+        /**
    * Return true when user explicitly disabled boolean option by set false value.
    * Used by early startup code before Options object is created.
    */
-  static bool checkForArgDisable(int argc, char* argv[], const std::string& checkArg);
+        static bool checkForArgDisable(int argc, char* argv[], const std::string& checkArg);
 
-  /**
+        /**
    * @brief getArgValue - get the value of an argument if it exists, or
    * an empty string otherwise
    * @param argc
@@ -235,68 +235,74 @@ public:
    * @param checkArg : arg to look for, with '--' prefix
    * @return value following '=' until the next white space
    */
-  static std::string getArgValue(int argc, char* argv[], const char* checkArg);
+        static std::string getArgValue(int argc, char* argv[], const char* checkArg);
 
 
-      SGPath platformDefaultRoot() const;
+        SGPath platformDefaultRoot() const;
 
-      /**
+        /**
        * @brief extractOptions - extract the currently set options as
        * a string array. This can be used to examine what options were
        * requested / set so far.
        * @return
        */
-      string_list extractOptions() const;
+        string_list extractOptions() const;
 
-      /**
+        /**
         @brief the actual download dir in use, which may be the default or a user-supplied value
      */
-      SGPath actualDownloadDir();
+        SGPath actualDownloadDir();
 
-      /**
+        /**
        * Convert string to bool for boolean options. When param cannot be recognized as bool then
        * the true is returned.
        */
-      static bool paramToBool(const std::string& param);
+        static bool paramToBool(const std::string& param);
 
-  private:
-      void showUsage() const;
-      void showVersion() const;
-      // Write info such as FG version, FG_ROOT, FG_HOME, scenery paths, aircraft
-      // paths, etc. to stdout in JSON format, using the UTF-8 encoding.
-      void printJSONReport() const;
+    private:
+        void showUsage() const;
+        void showVersion() const;
 
-      // The 'fromConfigFile' parameter indicates whether the option comes from a
-      // config file or directly from the command line.
-      int parseOption(const std::string& s, const std::optional<std::string>& val, bool fromConfigFile);
+        /**
+       * @brief print various pieces of runtime information about the setup / system
+       */
+        void showInfo() const;
 
-      int parseConfigOption(const SGPath &path, bool fromConfigFile);
+        // Write info such as FG version, FG_ROOT, FG_HOME, scenery paths, aircraft
+        // paths, etc. to stdout in JSON format, using the UTF-8 encoding.
+        void printJSONReport() const;
 
-      std::string getValueForBooleanOption(const std::string& str, const std::string& option, const std::optional<std::string>& value);
+        // The 'fromConfigFile' parameter indicates whether the option comes from a
+        // config file or directly from the command line.
+        int parseOption(const std::string& s, const std::optional<std::string>& val, bool fromConfigFile);
 
-      /**
+        int parseConfigOption(const SGPath& path, bool fromConfigFile);
+
+        std::string getValueForBooleanOption(const std::string& str, const std::string& option, const std::optional<std::string>& value);
+
+        /**
        * Since option values can be separated by a space, we check what is in
        * the next parameter and return a string value if the current option
        * requires a value and the value does not start with a "-" character.
        */
-      static std::optional<std::string> getValueFromNextParam(int index, int argc, char** argv);
+        static std::optional<std::string> getValueFromNextParam(int index, int argc, char** argv);
 
-      void processArgResult(int result);
+        void processArgResult(int result);
 
-      /**
+        /**
      * Setup the root base, and check it's valid. If
      * the root package was not found or is the incorrect version,
      * returns FG_OPTIONS_ERROR. Argv/argv
      * are passed since we might potentially show a GUI dialog at this point
      * to help the user our (finding a base package), and hence need to init Qt.
      */
-      OptionResult setupRoot(int argc, char** argv);
+        OptionResult setupRoot(int argc, char** argv);
 
 
-      class OptionsPrivate;
-      std::unique_ptr<OptionsPrivate> p;
-};
-  
+        class OptionsPrivate;
+        std::unique_ptr<OptionsPrivate> p;
+    };
+
 } // of namespace flightgear
 
 void fgSetDefaults();

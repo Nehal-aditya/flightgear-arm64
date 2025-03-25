@@ -66,23 +66,24 @@
 #include <GUI/QtLauncher.hxx>
 #endif
 
-#include <AIModel/AIManager.hxx>
-#include <Add-ons/AddonManager.hxx>
-#include <Main/locale.hxx>
-#include <Navaids/NavDataCache.hxx>
-#include "globals.hxx"
+#include "AircraftDirVisitorBase.hxx"
 #include "fg_init.hxx"
 #include "fg_os.hxx"
 #include "fg_props.hxx"
-#include "options.hxx"
-#include "main.hxx"
+#include "globals.hxx"
 #include "locale.hxx"
+#include "main.hxx"
+#include "options.hxx"
+#include <AIModel/AIManager.hxx>
+#include <Add-ons/AddonManager.hxx>
+#include <Environment/presets.hxx>
+#include <Main/locale.hxx>
+#include <Main/sentryIntegration.hxx>
+#include <Navaids/NavDataCache.hxx>
+#include <Network/HTTPClient.hxx>
+#include <Network/http/httpd.hxx>
 #include <Viewer/view.hxx>
 #include <Viewer/viewmgr.hxx>
-#include <Environment/presets.hxx>
-#include <Network/http/httpd.hxx>
-#include <Network/HTTPClient.hxx>
-#include "AircraftDirVisitorBase.hxx"
 
 #include <osg/Version>
 #include <flightgearBuildId.h>
@@ -1972,6 +1973,7 @@ const std::initializer_list<OptionDesc> fgOptionArray = {
     {"parking-id",                   ParamType::REGULAR,  OptionType::OPT_FUNC,    "", false, "", fgOptParkpos },
     {"parkpos",                      ParamType::REGULAR,  OptionType::OPT_FUNC,    "", false, "", fgOptParkpos },
     {"version",                      ParamType::VAL_BOOL, OptionType::OPT_BOOL,    "", true, "", nullptr },
+    {"info",                         ParamType::VAL_BOOL, OptionType::OPT_BOOL,    "", true, "", nullptr },
     {"json-report",                  ParamType::VAL_BOOL, OptionType::OPT_BOOL,    "", true, "", nullptr },
     {"fgviewer",                     ParamType::NONE,     OptionType::OPT_IGNORE,  "", false, "", 0},
     {"no-default-config",            ParamType::VAL_BOOL, OptionType::OPT_IGNORE,  "", false, "", 0},
@@ -3186,6 +3188,9 @@ OptionResult Options::processOptions()
   } else if (isOptionSet("version")) {
     showVersion();
     return FG_OPTIONS_EXIT;
+  } else if (isOptionSet("info")) {
+      showInfo();
+      return FG_OPTIONS_EXIT;
   }
 
   return FG_OPTIONS_OK;
@@ -3341,14 +3346,33 @@ void Options::showVersion() const
     cout << "Revision: " << REVISION << endl;
     cout << "Build-Date: " << BUILD_DATE << endl;
     cout << "Build-Type: " << FG_BUILD_TYPE << endl;
-    cout << "FG_ROOT=" << globals->get_fg_root().utf8Str() << endl;
-    cout << "FG_HOME=" << globals->get_fg_home().utf8Str() << endl;
-    cout << "FG_SCENERY=";
-
-    PathList scn = globals->get_fg_scenery();
-    cout << SGPath::join(scn, SGPath::pathListSep) << endl;
     cout << "SimGear version: " << SG_STRINGIZE(SIMGEAR_VERSION) << endl;
     cout << "OSG version: " << osgGetVersion() << endl;
+
+    const auto fgRootPath = globals->get_fg_root();
+    cout << "Base Package (FGData) at " << fgRootPath << " is version:" << fgBasePackageVersion(fgRootPath) << endl;
+    const auto fgDataInfo = fgBasePackageInfo(fgRootPath);
+    if (fgDataInfo) {
+        cout << "\tbuilt on " << fgDataInfo.value().buildDate << endl;
+        cout << "\tfrom FGData Git revision: " << fgDataInfo.value().gitRevision << endl;
+    }
+}
+
+void Options::showInfo() const
+{
+    cout << "FlightGear version: " << FLIGHTGEAR_VERSION << endl;
+
+    cout << "Sentry.io UUID: " << flightgear::sentryUserId() << endl;
+
+    // paths
+    cout << "FG_ROOT=" << globals->get_fg_root() << endl;
+    cout << "FG_HOME=" << globals->get_fg_home() << endl;
+    cout << "FG_SCENERY=";
+    PathList scn = globals->get_fg_scenery();
+    cout << SGPath::join(scn, SGPath::pathListSep) << endl;
+
+    cout << "Download-directory: " << globals->get_download_dir() << endl;
+    cout << "TerraSync-directory: " << globals->get_terrasync_dir() << endl;
 }
 
 // Print a report using JSON syntax on the standard output, encoded in UTF-8.
@@ -3377,6 +3401,7 @@ void Options::printJSONReport() const
   cJSON_AddStringToObject(generalNode, "version", FLIGHTGEAR_VERSION);
   cJSON_AddStringToObject(generalNode, "build date", BUILD_DATE);
   cJSON_AddStringToObject(generalNode, "build type", FG_BUILD_TYPE);
+  cJSON_AddStringToObject(generalNode, "build revision", REVISION);
 
   cJSON *configNode = cJSON_CreateObject();
   cJSON_AddItemToObject(rootNode, "config", configNode);
@@ -3400,6 +3425,9 @@ void Options::printJSONReport() const
 
   cJSON_AddStringToObject(configNode, "autosave file",
                           globals->autosaveFilePath().utf8Str().c_str());
+
+  const auto sentryUid = fgGetString("sim/crashreport/sentry-user-id");
+  cJSON_AddStringToObject(configNode, "Sentry.io UUID", sentryUid.c_str());
 
   // Get the ordered lists of apt.dat, fix.dat and nav.dat files used by the
   // NavCache
@@ -3430,6 +3458,7 @@ void Options::printJSONReport() const
     string key = NavDataCache::datTypeStr[datType] + ".dat files";
     cJSON_AddItemToObject(navDataNode, key.c_str(), datPathsNode);
   }
+
 
   // Print the JSON tree to the standard output
   char *report = cJSON_Print(rootNode);

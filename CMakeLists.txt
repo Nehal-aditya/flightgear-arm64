@@ -217,7 +217,7 @@ option(ENABLE_FGQCANVAS  "Set to ON to build the Qt-based remote canvas applicat
 option(ENABLE_DEMCONVERT "Set to ON to build the dem conversion tool (default)" ON)
 option(ENABLE_HID_INPUT  "Set to ON to build HID-based input code" ${EVENT_INPUT_DEFAULT})
 option(ENABLE_PLIB_JOYSTICK  "Set to ON to enable legacy joystick code (default)" ON)
-option(ENABLE_SWIFT      "Set to ON to build the swift module" ON)
+option(ENABLE_SWIFT      "Set to ON to build the swift module" OFF)
 option(ENABLE_SENTRY     "Set to ON to build the Sentry.io crash reporting" ON)
 
 option(CHECK_FOR_QT5        "Set to ON to attempt to look for Qt5" ON)

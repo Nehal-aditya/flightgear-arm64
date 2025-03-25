@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
+#include "cJSON.h"
 #include <config.h>
 
 #include <simgear/compiler.h>
@@ -163,6 +164,29 @@ string fgBasePackageVersion(const SGPath& base_path) {
     in >> version;
 
     return version;
+}
+
+std::optional<FGBasePackageInfo> fgBasePackageInfo(const SGPath& path)
+{
+    SGPath p = path / "base_package.json";
+    if (!p.exists()) {
+        return {};
+    }
+
+    sg_ifstream in(p);
+    if (!in.is_open()) {
+        return {};
+    }
+
+    const auto content = in.read_all();
+    cJSON* json = cJSON_Parse(content.c_str());
+
+    FGBasePackageInfo r;
+    r.buildDate = cJSON_GetObjectItem(json, "build-date")->valuestring;
+    r.gitRevision = cJSON_GetObjectItem(json, "fgdata-sha")->valuestring;
+
+    cJSON_Delete(json);
+    return r;
 }
 
 class FindAndCacheAircraft : public AircraftDirVistorBase
