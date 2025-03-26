@@ -48,6 +48,7 @@
 
 #include "QtLauncher.hxx"
 #include "SettingsWrapper.hxx"
+#include "UpdateDownloadedFGData.hxx"
 
 #include <condition_variable>
 #include <simgear/io/iostreams/sgstream.hxx>
@@ -316,6 +317,10 @@ SetupRootDialog::SetupRootDialog(PromptState prompt) :
 
     updatePromptText();
 
+    if (prompt == NeedToUpdateDownloadedData) {
+        m_ui->downloadButton->setText(tr("Update"));
+    }
+
     m_networkManager = new QNetworkAccessManager(this);
     m_networkManager->setRedirectPolicy(QNetworkRequest::NoLessSafeRedirectPolicy);
 }
@@ -325,6 +330,12 @@ bool SetupRootDialog::runDialog(bool usingDefaultRoot)
     SetupRootDialog::PromptState prompt =
         usingDefaultRoot ? DefaultPathCheckFailed : ExplicitPathCheckFailed;
     return runDialog(prompt);
+}
+
+bool SetupRootDialog::runUpdateDialog(bool usingDefaultRoot)
+{
+    SG_UNUSED(usingDefaultRoot);
+    return runDialog(SetupRootDialog::PromptState::NeedToUpdateDownloadedData);
 }
 
 bool SetupRootDialog::runDialog(PromptState prompt)
@@ -359,6 +370,15 @@ flightgear::SetupRootResult SetupRootDialog::restoreUserSelectedRoot(SGPath& sgp
     }
 
     if (path.isEmpty()) {
+        if (downloadedDataExistsButStale()) {
+            bool ok = runDialog(NeedToUpdateDownloadedData);
+            if (!ok) {
+                return flightgear::SetupRootResult::UserExit;
+            }
+
+            // assume update worked, fall through
+        } 
+
         return flightgear::SetupRootResult::UseDefault;
     }
 
@@ -459,6 +479,27 @@ bool SetupRootDialog::downloadedDataAcceptable()
     return validatePath(dlRoot) && validateVersion(dlRoot);
 }
 
+bool SetupRootDialog::downloadedDataExistsButStale()
+{
+    SGPath r = flightgear::Options::sharedInstance()->downloadedDataRoot();
+    QString dlRoot = QString::fromStdString(r.utf8Str());
+    if (!validatePath(dlRoot)) {
+        return false;
+    }
+
+    std::string minBasePackageVersion = std::to_string(FLIGHTGEAR_MAJOR_VERSION) + "." + std::to_string(FLIGHTGEAR_MINOR_VERSION) + "." + std::to_string(static_basePackagePatchLevel);
+    std::string ver = fgBasePackageVersion(r);
+
+    // major or minor mismatch, we can't use it
+    // this 'should' be impossible given how we comput downloadedDataRoot
+    if (simgear::strutils::compare_versions(minBasePackageVersion, ver, 2) != 0) {
+        return false;
+    }
+
+    // update needed if the on-disk base package version is *lower* than static_basePackagePatchLevel
+    return  simgear::strutils::compare_versions(minBasePackageVersion, ver) < 0;
+}
+
 SetupRootDialog::~SetupRootDialog()
 {
 
@@ -494,6 +535,11 @@ void SetupRootDialog::onBrowse()
 
 void SetupRootDialog::onDownload()
 {
+    if (m_promptState == NeedToUpdateDownloadedData) {
+        onUpdate();
+        return;
+    }
+
     m_promptState = DownloadingExtractingArchive;
     updatePromptText();
 
@@ -527,6 +573,38 @@ void SetupRootDialog::onDownload()
     installThread->start();
 }
 
+void SetupRootDialog::onUpdate()
+{
+    m_promptState = UpdatingViaTerrasync;
+    updatePromptText();
+
+    m_ui->contentsPages->setCurrentIndex(1);
+
+    auto updateThread = new UpdateFGData(this);
+    connect(updateThread, &UpdateFGData::downloadProgress, this, [this](quint64 cur, quint64 total) {
+        m_ui->downloadProgress->setValue(cur);
+        m_ui->downloadProgress->setMaximum(total);
+
+        const int curMb = cur / (1024 * 1024);
+        const int totalMb = total / (1024 * 1024);
+        const int percent = total > 0 ? ((cur * 100) / total) : 0;
+        m_ui->downloadText->setText(tr("Downloaded %1 of %2 MB (%3%)").arg(curMb).arg(totalMb).arg(percent));
+    });
+
+    connect(updateThread, &UpdateFGData::installProgress, this, [this](QString s, int percent) {
+        m_ui->installText->setText(tr("Update %1% complete.\nExtracting %2").arg(percent).arg(s));
+        m_ui->installProgress->setValue(percent);
+    });
+
+    connect(updateThread, &UpdateFGData::failed, this, [this](QString s) {
+        m_ui->downloadText->setText(tr("Update failed: %1").arg(s));
+    });
+
+    connect(updateThread, &UpdateFGData::finished, this, [this]() {
+        accept();
+    });
+}
+
 // void SetupRootDialog::onUseDefaults()
 // {
 //     SGPath r = flightgear::Options::sharedInstance()->platformDefaultRoot();
@@ -543,8 +621,7 @@ void SetupRootDialog::updatePromptText()
     QString curRoot = QString::fromStdString(globals->get_fg_root().utf8Str());
     switch (m_promptState) {
     case DefaultPathCheckFailed:
-        t = tr("This copy of FlightGear does not include the base data files. " \
-               "Please select a suitable folder containing a previously download set of files.");
+        t = tr("FlightGear needs to download additional data files. This can be done automatically by pressing 'Download', or you can download them yourself and select their location.");
         break;
 
     case ExplicitPathCheckFailed:
@@ -583,6 +660,15 @@ void SetupRootDialog::updatePromptText()
 
     case DownloadingExtractingArchive:
         t = tr("Please wait while the data files are downloaded, extracted and verified.");
+        break;
+
+
+    case UpdatingViaTerrasync:
+        t = tr("Please wait while the data files are updatd and verified.");
+        break;
+
+    case NeedToUpdateDownloadedData:
+        t = tr("The data files need to be updated to version %1. Please press 'Update', or if you prefer, manually download the correct data files and then select them.");
         break;
     }
 

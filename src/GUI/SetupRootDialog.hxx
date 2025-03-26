@@ -44,6 +44,8 @@ public:
 
     static bool runDialog(bool usingDefaultRoot);
 
+    static bool runUpdateDialog(bool usingDefaultRoot);
+
     static flightgear::SetupRootResult restoreUserSelectedRoot(SGPath& path);
 
     static void askRootOnNextLaunch();
@@ -54,18 +56,21 @@ private slots:
     void onBrowse();
 
     void onDownload();
-
+    void onUpdate();
+    
     void updatePromptText();
 private:
     enum PromptState {
         DefaultPathCheckFailed,
         ExplicitPathCheckFailed,
         VersionCheckFailed,
+        NeedToUpdateDownloadedData,
         ManualChoiceRequested,
         ChoseInvalidLocation,
         ChoseInvalidVersion,
         ChoseInvalidArchive,
-        DownloadingExtractingArchive
+        DownloadingExtractingArchive,
+        UpdatingViaTerrasync
     };
 
     SetupRootDialog(PromptState prompt);
@@ -77,6 +82,7 @@ private:
 
     static bool defaultRootAcceptable();
     static bool downloadedDataAcceptable();
+    static bool downloadedDataExistsButStale();
 
     PromptState m_promptState;
     QScopedPointer<Ui::SetupRootDialog> m_ui;

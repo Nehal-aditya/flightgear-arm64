@@ -70,11 +70,15 @@ namespace flightgear
 
     bool showSetupRootDialog(bool usingDefaultRoot);
 
+    bool showUpdateRootDialog(bool usingDefaultRoot);
+
+
     enum class SetupRootResult {
         RestoredOk,
         UserExit,
         UserSelected,
-        UseDefault
+        UseDefault,
+        UpdateRequired
     };
 
     SetupRootResult restoreUserSelectedRoot(SGPath& path);

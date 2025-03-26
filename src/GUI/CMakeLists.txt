@@ -119,6 +119,7 @@ if (HAVE_QT)
                             NavaidDiagram.hxx
                             SetupRootDialog.cxx
                             SetupRootDialog.hxx
+                            UpdateDownloadedFGData.hxx
                             AircraftItemModel.hxx
                             AircraftItemModel.cxx
                             CatalogListModel.cxx

@@ -801,6 +801,12 @@ bool showSetupRootDialog(bool usingDefaultRoot)
     return SetupRootDialog::runDialog(usingDefaultRoot);
 }
 
+bool showUpdateRootDialog(bool usingDefaultRoot)
+{
+    return SetupRootDialog::runUpdateDialog(usingDefaultRoot);
+}
+
+
 SetupRootResult restoreUserSelectedRoot(SGPath& path)
 {
     return SetupRootDialog::restoreUserSelectedRoot(path);
