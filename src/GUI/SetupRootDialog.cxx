@@ -664,7 +664,7 @@ void SetupRootDialog::updatePromptText()
 
 
     case UpdatingViaTerrasync:
-        t = tr("Please wait while the data files are updatd and verified.");
+        t = tr("Please wait while the data files are updated and verified.");
         break;
 
     case NeedToUpdateDownloadedData:
