@@ -3392,42 +3392,42 @@ void Options::printJSONReport() const
   // (such as the removal, renaming or semantic change of a member). Of
   // course, incompatible changes should only be considered as a last
   // recourse.
-  cJSON_AddNumberToObject(metaNode, "format major version", 1);
-  cJSON_AddNumberToObject(metaNode, "format minor version", 0);
+  cJSON_AddNumberToObject(metaNode, "formatMajorVersion", 2);
+  cJSON_AddNumberToObject(metaNode, "formatMinorVersion", 0);
 
   cJSON *generalNode = cJSON_CreateObject();
   cJSON_AddItemToObject(rootNode, "general", generalNode);
   cJSON_AddStringToObject(generalNode, "name", "FlightGear");
   cJSON_AddStringToObject(generalNode, "version", FLIGHTGEAR_VERSION);
-  cJSON_AddStringToObject(generalNode, "build date", BUILD_DATE);
-  cJSON_AddStringToObject(generalNode, "build type", FG_BUILD_TYPE);
-  cJSON_AddStringToObject(generalNode, "build revision", REVISION);
+  cJSON_AddStringToObject(generalNode, "buildDate", BUILD_DATE);
+  cJSON_AddStringToObject(generalNode, "buildType", FG_BUILD_TYPE);
+  cJSON_AddStringToObject(generalNode, "buildRevision", REVISION);
 
   cJSON *configNode = cJSON_CreateObject();
   cJSON_AddItemToObject(rootNode, "config", configNode);
-  cJSON_AddStringToObject(configNode, "FG_ROOT",
+  cJSON_AddStringToObject(configNode, "fgRoot",
                           globals->get_fg_root().utf8Str().c_str());
-  cJSON_AddStringToObject(configNode, "FG_HOME",
+  cJSON_AddStringToObject(configNode, "fgHome",
                           globals->get_fg_home().utf8Str().c_str());
 
   cJSON *sceneryPathsNode = p->createJSONArrayFromPathList(globals->get_fg_scenery());
-  cJSON_AddItemToObject(configNode, "scenery paths", sceneryPathsNode);
+  cJSON_AddItemToObject(configNode, "sceneryPaths", sceneryPathsNode);
 
   cJSON *aircraftPathsNode = p->createJSONArrayFromPathList(
     globals->get_aircraft_paths());
-  cJSON_AddItemToObject(configNode, "aircraft paths", aircraftPathsNode);
+  cJSON_AddItemToObject(configNode, "aircraftPaths", aircraftPathsNode);
 
-  cJSON_AddStringToObject(configNode, "TerraSync directory",
+  cJSON_AddStringToObject(configNode, "terrasyncPath",
                           globals->get_terrasync_dir().utf8Str().c_str());
 
-  cJSON_AddStringToObject(configNode, "download directory",
+  cJSON_AddStringToObject(configNode, "downloadPath",
                           globals->get_download_dir().utf8Str().c_str());
 
-  cJSON_AddStringToObject(configNode, "autosave file",
+  cJSON_AddStringToObject(configNode, "autosavePath",
                           globals->autosaveFilePath().utf8Str().c_str());
 
   const auto sentryUid = fgGetString("sim/crashreport/sentry-user-id");
-  cJSON_AddStringToObject(configNode, "Sentry.io UUID", sentryUid.c_str());
+  cJSON_AddStringToObject(configNode, "sentryUUID", sentryUid.c_str());
 
   // Get the ordered lists of apt.dat, fix.dat and nav.dat files used by the
   // NavCache
@@ -3437,7 +3437,7 @@ void Options::printJSONReport() const
   }
 
   cJSON *navDataNode = cJSON_CreateObject();
-  cJSON_AddItemToObject(rootNode, "navigation data", navDataNode);
+  cJSON_AddItemToObject(rootNode, "navData", navDataNode);
 
   // Write each list to the JSON tree
   for (const auto& datType: {NavDataCache::DATFILETYPE_APT,
@@ -3455,7 +3455,7 @@ void Options::printJSONReport() const
                    std::cend(datFilesInfo.paths), std::begin(datFiles), map);
 
     cJSON *datPathsNode = p->createJSONArrayFromPathList(datFiles);
-    string key = NavDataCache::datTypeStr[datType] + ".dat files";
+    string key = NavDataCache::datTypeStr[datType] + "DatPaths";
     cJSON_AddItemToObject(navDataNode, key.c_str(), datPathsNode);
   }
 
