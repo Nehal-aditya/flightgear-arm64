@@ -967,6 +967,7 @@ void reloadCompositors(CameraGroup *cgroup)
         viewer_base->startThreading();
     }
     fgSetBool("/sim/rendering/compositor-reload-required", false);
+    fgSetBool("/sim/signals/compositor-reload", true);
 }
 
 void CameraGroup::buildDefaultGroup(osgViewer::View* viewer)
