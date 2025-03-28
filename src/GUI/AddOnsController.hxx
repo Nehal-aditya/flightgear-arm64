@@ -46,9 +46,6 @@ public:
     Q_INVOKABLE QString addSceneryPath() const;
     Q_INVOKABLE QString addAddOnModulePath() const;
 
-    // we would ideally do this in-page, but needs some extra work
-    Q_INVOKABLE QString installCustomScenery();
-
     Q_INVOKABLE void openDirectory(QString path);
 
     bool isOfficialHangarRegistered();

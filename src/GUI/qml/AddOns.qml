@@ -281,41 +281,6 @@ Item {
                     }
                 }
             }
-
-            Item {
-                width: parent.width
-                height: Math.max(installTarballText.implicitHeight, installTarballButton.height)
-                Button {
-                    id: installTarballButton
-                    text: qsTr("Install add-on scenery")
-
-                    onClicked: {
-                        var path = _addOns.installCustomScenery();
-                        if (path !== "") {
-                            // insert into scenery paths if not already present
-
-
-                            // not found, add it
-                            _addOns.sceneryPaths.appendPath(path);
-                        }
-                    }
-                }
-
-                StyledText {
-                    id: installTarballText
-                    anchors {
-                        left: installTarballButton.right
-                        right: parent.right
-                        leftMargin: Style.margin
-                    }
-
-                    wrapMode: Text.WordWrap
-                    text: qsTr("If you have downloaded scenery manually from the official FlightGear website, " +
-                               "you can use this button to extract and install it into a suitable folder. " +
-                               "(Scenery downloaded this way should have a file name such as 'w40n020.tar.gz')"
-                               )
-                }
-            } // of install-tarbal item
         } // of column
     } // of Flickable
 

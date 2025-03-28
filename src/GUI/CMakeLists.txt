@@ -82,7 +82,6 @@ if (HAVE_QT)
       message(STATUS "Using Qt5 version of the macros")
       # Qt < 5.15 
       qt5_wrap_ui(uic_sources SetupRootDialog.ui
-        InstallSceneryDialog.ui
         )
       qt5_add_resources(qrc_sources resources.qrc)
 
@@ -93,7 +92,6 @@ if (HAVE_QT)
       message(STATUS "Using Qt6 version of the macros")
       # Qt 6 versions
       qt_wrap_ui(uic_sources SetupRootDialog.ui
-        InstallSceneryDialog.ui
         )
       qt_add_resources(qrc_sources resources.qrc)
 
@@ -128,8 +126,6 @@ if (HAVE_QT)
                             QtMessageBox.hxx
                             QtFileDialog.cxx
                             QtFileDialog.hxx
-                            InstallSceneryDialog.hxx
-                            InstallSceneryDialog.cxx
                             LocationController.cxx
                             LocationController.hxx
                             LauncherArgumentTokenizer.cxx
