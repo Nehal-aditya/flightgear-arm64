@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 #ifndef ADDONSCONTROLLER_HXX
 #define ADDONSCONTROLLER_HXX
 
@@ -45,9 +47,6 @@ public:
     Q_INVOKABLE QString addAircraftPath() const;
     Q_INVOKABLE QString addSceneryPath() const;
     Q_INVOKABLE QString addAddOnModulePath() const;
-
-    // we would ideally do this in-page, but needs some extra work
-    Q_INVOKABLE QString installCustomScenery();
 
     Q_INVOKABLE void openDirectory(QString path);
 

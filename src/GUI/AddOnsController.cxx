@@ -23,7 +23,6 @@
 #include "Add-ons/addon_fwd.hxx"
 #include "AddonsModel.hxx"
 #include "CatalogListModel.hxx"
-#include "InstallSceneryDialog.hxx"
 #include "LaunchConfig.hxx"
 #include "LauncherMainWindow.hxx"
 #include "LocalAircraftCache.hxx"
@@ -264,18 +263,6 @@ QString AddOnsController::addSceneryPath() const
 
     m_sceneryPaths->appendPath(path);
     return path;
-}
-
-QString AddOnsController::installCustomScenery()
-{
-    auto settings = flightgear::getQSettings();
-    QString downloadDir = settings.value("download-dir").toString();
-    InstallSceneryDialog dlg(nullptr, downloadDir);
-    if (dlg.exec() == QDialog::Accepted) {
-        return dlg.sceneryPath();
-    }
-
-    return {};
 }
 
 void AddOnsController::openDirectory(QString path)
