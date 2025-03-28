@@ -264,7 +264,9 @@ Item {
                         Connections
                         {
                             target: _launcher.mpServersModel
-                            onCurrentIndexChanged: mpServer.selectedIndex = _launcher.mpServersModel.currentIndex
+                            function onCurrentIndexChanged() { 
+                                mpServer.selectedIndex = _launcher.mpServersModel.currentIndex
+                            }
                         }
                     },
 
