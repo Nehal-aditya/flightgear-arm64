@@ -786,6 +786,15 @@ void CameraGroup::setCameraCullMasks(osg::Node::NodeMask nm)
     }
 }
 
+void CameraGroup::setLODScale(float scale)
+{
+    for (auto& info : _cameras) {
+        if (info->flags & CameraInfo::GUI)
+            continue;
+        info->compositor->setLODScale(scale);
+    }
+}
+
 void CameraGroup::resized()
 {
     for (const auto &info : _cameras)

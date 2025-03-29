@@ -204,6 +204,9 @@ public:
     /** Set the cull mask on all non-GUI cameras
      */
     void setCameraCullMasks(osg::Node::NodeMask nm);
+    /** Set the LOD scale on all non-GUI cameras
+     */
+    void setLODScale(float scale);
     /** Update camera properties after a resize event.
      */
     void resized();

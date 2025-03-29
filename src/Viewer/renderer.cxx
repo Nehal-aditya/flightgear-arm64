@@ -135,6 +135,16 @@ public:
     }
 };
 
+class LODScaleListener : public SGPropertyChangeListener {
+public:
+    void valueChanged(SGPropertyNode* node) override {
+        auto* cg = CameraGroup::getDefault();
+        if (cg) {
+            cg->setLODScale(node->getFloatValue());
+        }
+    }
+};
+
 class FGHintUpdateCallback : public osg::StateAttribute::Callback {
 public:
     FGHintUpdateCallback(const char* configNode) :
@@ -288,6 +298,7 @@ FGRenderer::init()
     addChangeListener(new PointSpriteListener,  "/sim/rendering/point-sprites");
     addChangeListener(new DistanceAttenuationListener, "/sim/rendering/distance-attenuation");
     addChangeListener(new DirectionalLightsListener, "/sim/rendering/triangle-directional-lights");
+    addChangeListener(new LODScaleListener, "/sim/rendering/lod-scale");
 
     // Setup texture compression
     std::string tc = fgGetString("/sim/rendering/texture-compression");
