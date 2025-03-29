@@ -162,6 +162,8 @@ if (HAVE_QT)
                             LauncherPackageDelegate.cxx
                             LauncherNotificationsController.hxx
                             LauncherNotificationsController.cxx
+                            QtDNSClient.hxx
+                            QtDNSClient.cxx
                             ${uic_sources}
                             ${qrc_sources}
                             ${qml_sources})

@@ -1,8 +1,11 @@
 #pragma once
 
+#include "config.h"
+
 // Qt
 #include <QTimer>
 
+#include <GUI/QtDNSClient.hxx>
 #include <Main/options.hxx>
 
 #include <simgear/io/HTTPClient.hxx>
@@ -10,25 +13,43 @@
 
 using simgear::HTTPRepository;
 
+
 class UpdateFGData : public QObject
 {
     Q_OBJECT
 public:
-    UpdateFGData(QObject* pr) : QObject(pr)
+    UpdateFGData(QObject* pr) : QObject(pr),
+                                m_dns(new QtDNSClient(this, "fgdata"))
     {
         m_updateTimer.setInterval(20);
-        connect(&m_updateTimer, &QTimer::timeout, this, &UpdateFGData::onPeriodic);
 
+        connect(m_dns, &QtDNSClient::finished, [this]() {
+            auto baseServer = m_dns->result();
+            baseServer += QString("/fgdata_%1_%2").arg(FLIGHTGEAR_MAJOR_VERSION).arg(FLIGHTGEAR_MINOR_VERSION);
+            m_updateServerUri = baseServer.toStdString();
+            qInfo() << Q_FUNC_INFO << "will update from" << baseServer;
+            createRepository();
+        });
+
+        connect(m_dns, &QtDNSClient::failed, [this](QString msg) {
+            emit failed(tr("Update of data files failed due to a DNS error: %1").arg(msg));
+        });
+
+        m_dns->makeDNSRequest();
+    }
+
+    void createRepository()
+    {
         const auto rp = flightgear::Options::sharedInstance()->downloadedDataRoot();
-     
         m_repo.reset(new simgear::HTTPRepository(rp, &m_http));
-        m_repo->setBaseUrl("https://us1mirror.flightgear.org/terrasync/fgdata/fgdata_2024_1");
-
+        m_repo->setBaseUrl(m_updateServerUri);
         m_repo->update();
+
+        connect(&m_updateTimer, &QTimer::timeout, this, &UpdateFGData::onUpdateRepo);
         m_updateTimer.start();
     }
 
-    void onPeriodic()
+    void onUpdateRepo()
     {
         m_repo->process();
         m_http.update();
@@ -66,16 +87,16 @@ signals:
     void failed(QString message);
 
 private:
+    QtDNSClient* m_dns;
+    std::string m_updateServerUri;
+
     QTimer m_updateTimer;
 
     std::unique_ptr<simgear::HTTPRepository> m_repo;
     simgear::HTTP::Client m_http;
 
-    quint64 m_totalSize = 0;
-    quint64 m_extractedBytes = 0;
     QUrl m_downloadUrl;
 
-    bool m_done = false;
     bool m_error = false;
 };
 

@@ -49,8 +49,8 @@
 #include "QtLauncher.hxx"
 #include "SettingsWrapper.hxx"
 #include "UpdateDownloadedFGData.hxx"
+#include <GUI/QtDNSClient.hxx>
 
-#include <condition_variable>
 #include <simgear/io/iostreams/sgstream.hxx>
 #include <simgear/io/untar.hxx>
 #include <simgear/misc/sg_dir.hxx>
@@ -64,7 +64,8 @@ class InstallFGDataThread : public QThread
     Q_OBJECT
 public:
     InstallFGDataThread(QObject* pr, QNetworkAccessManager* nam) : QThread(pr),
-                                                                   m_networkManager(nam)
+                                                                   m_networkManager(nam),
+                                                                   m_dns(new QtDNSClient(this, "dl_fgdata"))
     {
         const auto rp = flightgear::Options::sharedInstance()->downloadedDataRoot();
         // ensure we remove any existing data, since it failed validation
@@ -83,18 +84,26 @@ public:
         // +1 to include the leading /
         m_pathPrefixLength = m_downloadPath.utf8Str().length() + 1;
 
-        m_urlTemplates = QStringList()
-                         << "https://flightgear-download.b-cdn.net/release-%1/FlightGear-%2.%3-data.txz"
-                         << "http://mirrors.ibiblio.org/flightgear/ftp/release-%1/FlightGear-%2.%3-data.txz"
-                         << "https://download.flightgear.org/release-%1/FlightGear-%2.%3-data.txz"
-                         << "https://sourceforge.net/projects/flightgear/files/release-%1/FlightGear-%2.%3-data.txz/download";
+        connect(m_dns, &QtDNSClient::finished, [this]() {
+            m_servers = m_dns->results();
+            startRequest();
+        });
 
-        startRequest();
+        connect(m_dns, &QtDNSClient::failed, [this](QString msg) {
+            m_error = true;
+            emit failed(tr("Download of data files failed due to a DNS error: %1").arg(msg));
+        });
+
+        m_dns->makeDNSRequest();
     }
 
     void startRequest()
     {
-        QString templateUrl = m_urlTemplates.front();
+        QString templateUrl = m_servers.front() + QStringLiteral("/release-%1/FlightGear-%2.%3-data.txz");
+        // deal with SF download syntax
+        if (templateUrl.startsWith("https://sourceforge.net/")) {
+            templateUrl += QStringLiteral("/download");
+        }
 
         QString majorMinorVersion = QString(FLIGHTGEAR_MAJOR_MINOR_VERSION);
         m_downloadUrl = QUrl(templateUrl.arg(majorMinorVersion).arg(majorMinorVersion).arg(static_basePackagePatchLevel));
@@ -103,6 +112,7 @@ public:
 
         QNetworkRequest req{m_downloadUrl};
         req.setMaximumRedirectsAllowed(5);
+        // important to get correct behaviour form SourceForge
         req.setRawHeader("user-agent", "flighgtear-installer");
 
         m_download = m_networkManager->get(req);
@@ -114,7 +124,6 @@ public:
         // this means the extraction work is done asynchronously with the
         // download
         connect(m_download, &QNetworkReply::readyRead, this, &InstallFGDataThread::processBytes);
-
         connect(m_download, &QNetworkReply::finished, this, &InstallFGDataThread::onReplyFinished);
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
@@ -222,8 +231,8 @@ public:
 
         // don't need to delete, onReplyFinished will also fire
 
-        m_urlTemplates.pop_front();
-        if (m_urlTemplates.empty()) {
+        m_servers.pop_front();
+        if (m_servers.empty()) {
             m_error = true;
             emit failed(m_download->errorString());
         } else {
@@ -271,7 +280,9 @@ signals:
     void failed(QString message);
 
 private:
-    QStringList m_urlTemplates;
+    QNetworkAccessManager* m_networkManager = nullptr;
+    QtDNSClient* m_dns = nullptr;
+    QStringList m_servers;
     std::mutex m_mutex;
     std::condition_variable m_bufferWait;
     QByteArray m_buffer;
@@ -286,7 +297,6 @@ private:
     std::unique_ptr<simgear::ArchiveExtractor> m_archive;
     bool m_error = false;
     uint32_t m_pathPrefixLength = 0;
-    QNetworkAccessManager* m_networkManager = nullptr;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////
@@ -668,7 +678,9 @@ void SetupRootDialog::updatePromptText()
         break;
 
     case NeedToUpdateDownloadedData:
-        t = tr("The data files need to be updated to version %1. Please press 'Update', or if you prefer, manually download the correct data files and then select them.");
+        t = tr("The data files need to be updated to version %1. "
+               "Please press 'Update', or if you prefer, manually download the correct data files and then select them.")
+                .arg(QString::fromLatin1(FLIGHTGEAR_VERSION));
         break;
     }
 
