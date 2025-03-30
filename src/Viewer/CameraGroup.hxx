@@ -76,10 +76,7 @@ struct CameraInfo : public osg::Referenced
     };
 
     CameraInfo(unsigned flags_)     :
-        flags(flags_),
-        physicalWidth(0), physicalHeight(0), bezelHeightTop(0),
-        bezelHeightBottom(0), bezelWidthLeft(0), bezelWidthRight(0),
-        relativeCameraParent(0), reloadCompositorCallback(nullptr) { }
+        flags(flags_) { }
     /** The name as given in the config file.
      */
     std::string name;
@@ -88,16 +85,16 @@ struct CameraInfo : public osg::Referenced
     unsigned flags;
     /** Physical size parameters.
      */
-    double physicalWidth;
-    double physicalHeight;
-    double bezelHeightTop;
-    double bezelHeightBottom;
-    double bezelWidthLeft;
-    double bezelWidthRight;
+    double physicalWidth = 0;
+    double physicalHeight = 0;
+    double bezelHeightTop = 0;
+    double bezelHeightBottom = 0;
+    double bezelWidthLeft = 0;
+    double bezelWidthRight = 0;
     /** Non-owning reference to the parent camera for relative camera
      * configurations.
      */
-    const CameraInfo *relativeCameraParent;
+    const CameraInfo *relativeCameraParent = nullptr;
     /** The reference points in the parents projection space.
      */
     osg::Vec2d parentReference[2];
