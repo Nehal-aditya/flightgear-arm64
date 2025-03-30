@@ -59,6 +59,32 @@ using namespace std::chrono_literals;
 
 const quint32 static_basePackagePatchLevel = 1;
 
+namespace {
+    /**
+     * @brief Calculates a progress percentage from the current and total values.
+     *
+     * Computes (current / total) × 100 using integer math. The result is clamped
+     * to the range [0, 100] and rounded down. If @p total is zero, returns 0.
+     *
+     * @param current The current progress value (e.g. bytes downloaded).
+     * @param total   The total value representing 100% completion.
+     * @return An integer percentage between 0 and 100.
+     */
+    int calculateProgressPercentage(quint64 current, quint64 total) {
+
+        constexpr int max_percent = 100;
+
+        if (total == 0) {
+            return 0;
+        }
+
+        // Compute percentage and clamp to avoid overflow or narrowing
+        const quint64 percent = std::min((current * max_percent) / total, static_cast<quint64>(max_percent));
+
+        return static_cast<int>(percent);
+    }
+}
+
 class InstallFGDataThread : public QThread
 {
     Q_OBJECT
@@ -190,7 +216,7 @@ public:
                 m_extractedBytes += localBytes.size();
             }
 
-            const int percent = (m_totalSize > 0) ? (m_extractedBytes * 100) / m_totalSize : 0;
+            const int percent = calculateProgressPercentage(m_extractedBytes, m_totalSize);
 
             auto fullPathStr = m_archive->mostRecentExtractedPath().utf8Str();
             fullPathStr.erase(0, m_pathPrefixLength);
@@ -556,14 +582,16 @@ void SetupRootDialog::onDownload()
     m_ui->contentsPages->setCurrentIndex(1);
 
     auto installThread = new InstallFGDataThread(this, m_networkManager);
-    connect(installThread, &InstallFGDataThread::downloadProgress, this, [this](quint64 cur, quint64 total) {
-        m_ui->downloadProgress->setValue(cur);
+    connect(installThread, &InstallFGDataThread::downloadProgress, this, [this](quint64 current, quint64 total) {
+        m_ui->downloadProgress->setValue(current);
         m_ui->downloadProgress->setMaximum(total);
 
-        const int curMb = cur / (1024 * 1024);
-        const int totalMb = total / (1024 * 1024);
-        const int percent = (cur * 100) / total;
-        m_ui->downloadText->setText(tr("Downloaded %1 of %2 MB (%3%)").arg(curMb).arg(totalMb).arg(percent));
+        const quint64 currentMb = current / (1024 * 1024);
+        const quint64 totalMb = total / (1024 * 1024);
+
+        const int percent = calculateProgressPercentage(current, total);
+
+        m_ui->downloadText->setText(tr("Downloaded %1 of %2 MB (%3%)").arg(currentMb).arg(totalMb).arg(percent));
     });
 
     connect(installThread, &InstallFGDataThread::installProgress, this, [this](QString s, int percent) {
