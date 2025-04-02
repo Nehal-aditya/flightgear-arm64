@@ -302,13 +302,20 @@ find_package(OpenSceneGraph 3.6.0 REQUIRED
 ##############################################################################
 ## Sentry.io setup
 if (ENABLE_SENTRY)
-find_package(sentry QUIET)
+    find_package(sentry QUIET)
 
-set(sentry_api_key "https://b10d9504e71244a7a86ba6c93acf6412@o372956.ingest.sentry.io/5188535")
-if (TARGET sentry::sentry)
-    message(STATUS "Sentry.io crash reporting enabled")
-    set(HAVE_SENTRY 1)
-endif()
+    # Worth nothing that while this *looks* sketchy, DSNs are fundamentally public ingestion
+    # endpoints and not truly protectable secrets.
+    set(sentry_api_key "https://b10d9504e71244a7a86ba6c93acf6412@o372956.ingest.sentry.io/5188535")
+
+    if (TARGET sentry::sentry)
+        message(STATUS "Sentry.io crash reporting enabled")
+        set(HAVE_SENTRY 1)
+    else()
+        message(STATUS "Sentry.io crash reporting disabled, Sentry SDK not found")
+    endif()
+else()
+    message(STATUS "Sentry.io crash reporting disabled")
 endif (ENABLE_SENTRY)
 
 ##############################################################################
