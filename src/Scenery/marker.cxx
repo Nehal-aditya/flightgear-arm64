@@ -69,26 +69,14 @@ osg::Node* fgCreateMarkerNode(const osgText::String& label, float font_size, flo
         vtx->push_back(osg::Vec3f(-font_size * 0.125, 0, pin_height - top_spacing));
         rgb->push_back(transparent);
 
-        vtx->push_back(osg::Vec3f(0, 0, tip_height));
-        rgb->push_back(solid);
-
         vtx->push_back(osg::Vec3f(0, font_size * 0.125, pin_height - top_spacing));
         rgb->push_back(transparent);
-
-        vtx->push_back(osg::Vec3f(0, 0, tip_height));
-        rgb->push_back(solid);
 
         vtx->push_back(osg::Vec3f(font_size * 0.125, 0, pin_height - top_spacing));
         rgb->push_back(transparent);
 
-        vtx->push_back(osg::Vec3f(0, 0, tip_height));
-        rgb->push_back(solid);
-
         vtx->push_back(osg::Vec3f(0, -font_size * 0.125, pin_height - top_spacing));
         rgb->push_back(transparent);
-
-        vtx->push_back(osg::Vec3f(0, 0, tip_height));
-        rgb->push_back(solid);
 
         vtx->push_back(osg::Vec3f(-font_size * 0.125, 0, pin_height - top_spacing));
         rgb->push_back(transparent);
@@ -96,7 +84,7 @@ osg::Node* fgCreateMarkerNode(const osgText::String& label, float font_size, flo
         pinGeo->setVertexArray(vtx);
         pinGeo->setColorArray(rgb, osg::Array::BIND_PER_VERTEX);
         pinGeo->setNormalArray(nor, osg::Array::BIND_OVERALL);
-        pinGeo->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUAD_STRIP, 0, vtx->size()));
+        pinGeo->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLE_FAN, 0, vtx->size()));
         geoNode->addDrawable(pinGeo);
 
         osg::ref_ptr<simgear::SGReaderWriterOptions> opt;
