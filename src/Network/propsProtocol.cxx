@@ -680,13 +680,13 @@ pwd                display your current path\r\n\
 quit               terminate connection\r\n\
 run <command>      run built in command\r\n\
 set <var> <val>    set String <var> to a new <val>\r\n\
-setb <var> <val>   set Bool <var> to a new <val> only work with the foling value 0, 1, true, false\r\n\
+setb <var> <val>   set Bool <var> to a new <val> only work with the following value 0, 1, true, false\r\n\
 setd <var> <val>   set Double <var> to a new <val>\r\n\
 setf <var> <val>   alias for setd\r\n\
 seti <var> <val>   set Int <var> to a new <val>\r\n\
 del <var> <nod>    delete <nod> in <var>\r\n\
 subscribe <var>	   subscribe to property changes \r\n\
-unsubscribe <var>  unscubscribe from property changes (var must be the property name/path used by subscribe)\r\n\
+unsubscribe <var>  unsubscribe from property changes (var must be the property name/path used by subscribe)\r\n\
 nasal [EOF <marker>]  execute arbitrary Nasal code (simulator must be running with Nasal allowed from sockets)\r\n\
 ";
                 push(msg);
