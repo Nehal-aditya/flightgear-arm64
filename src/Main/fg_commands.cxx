@@ -36,6 +36,7 @@
 #include <Network/HTTPClient.hxx>
 #include <Viewer/viewmgr.hxx>
 #include <Viewer/view.hxx>
+#include <Viewer/VRManager.hxx>
 #include <Environment/presets.hxx>
 #include <Navaids/NavDataCache.hxx>
 #include <GUI/gui.h>
@@ -1095,6 +1096,30 @@ static bool do_reload_nasal_module(const SGPropertyNode* arg, SGPropertyNode*)
     return nasalSys->reloadModuleFromFile(arg->getStringValue("module"));
 }
 
+// VR related commands
+
+#ifndef ENABLE_OSGXR
+
+static bool
+no_vr_support(const SGPropertyNode* arg, SGPropertyNode* root)
+{
+    SG_LOG(SG_GENERAL, SG_ALERT,
+           "No VR support! Rebuild fgfs with VR enabled.");
+    return false;
+}
+
+#define do_vr_recenter no_vr_support
+
+#else // ENABLE_OSGXR
+
+static bool
+do_vr_recenter(const SGPropertyNode* arg, SGPropertyNode* root)
+{
+    return flightgear::VRManager::instance()->recenter();
+}
+
+#endif // ENABLE_OSGXR
+
 
 ////////////////////////////////////////////////////////////////////////
 // Command setup.
@@ -1156,6 +1181,8 @@ static struct {
 
     {"video-start", do_video_start},
     {"video-stop", do_video_stop},
+
+    {"vr-recenter", do_vr_recenter},
 
     {0, 0} // zero-terminated
 };
