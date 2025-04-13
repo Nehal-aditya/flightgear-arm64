@@ -41,6 +41,7 @@ set(osgXR_SRCS
     OpenXR/GraphicsBinding.cpp
     OpenXR/Instance.cpp
     OpenXR/InteractionProfile.cpp
+    OpenXR/ManagedSpace.cpp
     OpenXR/Path.cpp
     OpenXR/Quirks.cpp
     OpenXR/Session.cpp

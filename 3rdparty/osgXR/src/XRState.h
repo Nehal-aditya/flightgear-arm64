@@ -450,11 +450,16 @@ class XRState : public OpenXR::EventHandler
         /// Perform a regular update.
         void update();
 
+        /// Recenter the local space.
+        bool recenterLocalSpace();
+
         // Extending OpenXR::EventManager
         void onInstanceLossPending(OpenXR::Instance *instance,
                                    const XrEventDataInstanceLossPending *event) override;
         void onInteractionProfileChanged(OpenXR::Session *session,
                                          const XrEventDataInteractionProfileChanged *event) override;
+        void onReferenceSpaceChangePending(OpenXR::Session *session,
+                                           const XrEventDataReferenceSpaceChangePending *event) override;
         void onSessionStateChanged(OpenXR::Session *session,
                                    const XrEventDataSessionStateChanged *event) override;
         void onSessionStateStart(OpenXR::Session *session) override;
