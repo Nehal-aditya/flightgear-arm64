@@ -6,6 +6,7 @@
  */
 
 #include "config.h"
+#include "fg_props.hxx"
 
 #include "ErrorReporter.hxx"
 
@@ -167,10 +168,12 @@ public:
     SGTimeStamp _nextShowTimeout;
     bool _haveDonePostInit = false;
 
+    bool _enabled = true;
     SGPropertyNode_ptr _enabledNode;
     SGPropertyNode_ptr _displayNode;
     SGPropertyNode_ptr _activeErrorNode;
     SGPropertyNode_ptr _mpReportNode;
+    bool _popupEnabled = true;
 
     using ErrorContext = std::map<std::string, std::string>;
     /**
@@ -265,6 +268,10 @@ public:
 
         // log it once we know it's not a duplicate
         SG_LOG(SG_GENERAL, SG_WARN, "Error:" << static_errorTypeIds.at(static_cast<int>(type)) << " from " << static_errorIds.at(static_cast<int>(code)) << "::" << details << "\n\t" << location.asString());
+
+        if (!_enabled) {
+            return;
+        }
 
         it->lastErrorTime.stamp();
         _reportsDirty = true;
@@ -782,9 +789,10 @@ void ErrorReporter::init()
     const auto disableInDeveloperMode = !d->_enabledNode->getParent()->getBoolValue("enable-in-developer-mode");
     const auto dd = developerMode && disableInDeveloperMode;
 
-    if (dd || !d->_enabledNode) {
+
+    if (dd || !d->_enabledNode->getBoolValue()) {
         SG_LOG(SG_GENERAL, SG_INFO, "Error reporting disabled");
-        simgear::setFailureCallback(simgear::FailureCallback());
+        d->_enabled = false;
         simgear::setErrorContextCallback(simgear::ContextCallback());
         if (d->_logCallbackRegistered) {
             sglog().removeCallback(d->_logCallback.get());
@@ -803,6 +811,8 @@ void ErrorReporter::init()
 
     const auto aircraftPath = SGPath::fromUtf8(fgGetString("/sim/aircraft-dir"));
     d->_aircraftDirectoryName = aircraftPath.file();
+
+    d->_popupEnabled = fgGetBool("/sim/error-report/enable-popup", false);
 }
 
 void ErrorReporter::update(double dt)
@@ -815,7 +825,7 @@ void ErrorReporter::update(double dt)
     {
         std::lock_guard<std::mutex> g(d->_lock);
 
-        if (!d->_enabledNode->getBoolValue()) {
+        if (!d->_enabled) {
             return;
         }
 
@@ -895,7 +905,7 @@ void ErrorReporter::update(double dt)
         pauseArgs->setBoolValue("force-pause", true);
         globals->get_commands()->execute("do_pause", pauseArgs);
 #endif
-    } else if (showPopup) {
+    } else if (showPopup && d->_popupEnabled) {
         SGPropertyNode_ptr popupArgs(new SGPropertyNode);
         popupArgs->setIntValue("index", d->_activeReportIndex);
         globals->get_commands()->execute("show-error-notification-popup", popupArgs, nullptr);
@@ -904,7 +914,7 @@ void ErrorReporter::update(double dt)
 
 void ErrorReporter::shutdown()
 {
-    if (d->_enabledNode) {
+    if (d->_enabled) {
         globals->get_commands()->removeCommand("dismiss-error-report");
         globals->get_commands()->removeCommand("save-error-report-data");
         globals->get_commands()->removeCommand("show-error-report");
