@@ -525,7 +525,7 @@ void FGMouseInput::update(double dt)
         }
     }
 
-    if ((mode == 0) && d->hoverPickScheduled) {
+    if (modeValid && m.modes[mode].pass_through && d->hoverPickScheduled) {
         d->doHoverPick(d->hoverPos);
         d->hoverPickScheduled = false;
     }
@@ -686,7 +686,9 @@ void FGMouseInput::processMotion(int x, int y, const osgGA::GUIEventAdapter* ea)
         modeIndex = 3;
     }
 
-    if (modeIndex == 0) {
+    mouse_mode& mode = m.modes[modeIndex];
+
+    if (mode.pass_through) {
         osg::Vec2d windowPos;
         flightgear::eventToWindowCoords(ea, windowPos.x(), windowPos.y());
 
@@ -698,8 +700,6 @@ void FGMouseInput::processMotion(int x, int y, const osgGA::GUIEventAdapter* ea)
         // mouse has moved, so we may need to issue tooltip-timeout command again
         d->tooltipTimeoutDone = false;
     }
-
-    mouse_mode& mode = m.modes[modeIndex];
 
     if (d->haveWarped) {
         // don't fire mouse-movement events at the first update after warping
