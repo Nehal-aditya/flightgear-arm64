@@ -77,6 +77,7 @@ auto exception_messageWhitelist = {
 #if defined(HAVE_SENTRY) && !defined(BUILDING_TESTSUITE)
 
 static bool static_sentryEnabled = false;
+static std::string static_sentryUUID;
 
 #include <sentry.h>
 
@@ -262,15 +263,18 @@ bool sentrySendError(const SGPropertyNode* args, SGPropertyNode* root)
 
 std::string sentryUserId()
 {
+    if (!static_sentryUUID.empty()) {
+        return static_sentryUUID;
+    }
+
     const auto uuidPath = fgHomePath() / "sentry_uuid.txt";
     if (!uuidPath.exists()) {
         return {};
     }
 
-    std::string uuid;
     sg_ifstream f(uuidPath);
-    std::getline(f, uuid);
-    return uuid;
+    std::getline(f, static_sentryUUID);
+    return static_sentryUUID;
 }
 
 void initSentry()
@@ -315,10 +319,10 @@ void initSentry()
     bool generateUuid = true;
     std::string uuid;
     if (uuidPath.exists()) {
-        sg_ifstream f(uuidPath);
-        std::getline(f, uuid);
+        sentryUserId(); // will cache into static_sentryUUID as a side-effect
+
         // if we read enough bytes, that this is a valid UUID, then accept it
-        if ( uuid.length() >= 36) {
+        if ( static_sentryUUID.length() >= 36) {
             generateUuid = false;
         }
     }
@@ -331,16 +335,16 @@ void initSentry()
         sentry_uuid_as_string(&su, bytes);
         bytes[37] = 0;
 
-        uuid = std::string{bytes};
+        static_sentryUUID = std::string{bytes};
         // write it back to disk for next time
         sg_ofstream f(uuidPath);
-        f << uuid << std::endl;
+        f << static_sentryUUID << std::endl;
     }
 
     if (sentry_init(options) == 0) {
         static_sentryEnabled = true;
         sentry_value_t user = sentry_value_new_object();
-        sentry_value_t userUuidV = sentry_value_new_string(uuid.c_str());
+        sentry_value_t userUuidV = sentry_value_new_string(static_sentryUUID.c_str());
         sentry_value_set_by_key(user, "id", userUuidV);
         sentry_set_user(user);
 
@@ -349,10 +353,6 @@ void initSentry()
         simgear::setErrorReportCallback(sentrySimgearReportCallback);
 
         std::set_new_handler(sentryReportBadAlloc);
-
-        // expose the anonymous user UUID to the property tree, so users
-        // can share it if they wish
-        fgSetString("/sim/crashreport/sentry-user-id", uuid);
     } else {
         SG_LOG(SG_GENERAL, SG_WARN, "Failed to init Sentry reporting");
         static_sentryEnabled = false;
@@ -374,6 +374,10 @@ void delayedSentryInit()
 
     globals->get_commands()->addCommand("sentry-report", &sentryReportCommand);
     globals->get_commands()->addCommand("sentry-exception", &sentrySendError);
+
+    // expose the anonymous user UUID to the property tree, so users
+    // can share it if they wish
+    fgSetString("/sim/crashreport/sentry-user-id", static_sentryUUID);
 }
 
 void shutdownSentry()
