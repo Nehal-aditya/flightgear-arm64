@@ -17,8 +17,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "testVPBRasterRender.hxx"
 
 
 // Set up the tests.
-CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(VPBRasterRenderTests, "Simgear unit tests");

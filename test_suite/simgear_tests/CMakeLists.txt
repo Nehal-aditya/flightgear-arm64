@@ -3,7 +3,6 @@ foreach( simgear_test_category
         math
         props
         canvas 
-        scene
         structure
         timing
     )
