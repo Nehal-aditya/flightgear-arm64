@@ -17,8 +17,7 @@
 //
 // $Id$
 
-#ifndef STARTUP_CONTROLLER_HXX
-#define STARTUP_CONTROLLER_HXX
+#pragma once
 
 #include <Airports/airports_fwd.hxx>
 
@@ -59,8 +58,6 @@ public:
             double heading, double speed, double alt, double dt);
 
     virtual void render(bool);
-    virtual std::string getName();
+    virtual std::string getName() const;
     virtual void update(double dt);
 };
-
-#endif

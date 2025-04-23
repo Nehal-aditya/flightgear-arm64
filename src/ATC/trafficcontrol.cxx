@@ -60,115 +60,129 @@ using std::string;
  * ActiveRunway
  **************************************************************************/
 
-ActiveRunway::ActiveRunway(const std::string& r, int cc) :
-    rwy(r)
+ActiveRunwayQueue::ActiveRunwayQueue(const std::string& apt, const std::string& r, int cc) :
+    icao(apt),rwy(r)
 {
+    SG_LOG(SG_ATC, SG_DEBUG, "ActiveRunway " << icao << "/" << r << " " << cc );
     currentlyCleared = cc;
     distanceToFinal = 6.0 * SG_NM_TO_METER;
 };
 
-void ActiveRunway::removeFromDepartureQueue(int id) {
-    if (id!=currentlyCleared) {
-        printDepartureQueue();
-        SG_LOG(SG_ATC, SG_WARN, "Not cleared id being removed from DepartureQueue " << id << " currently cleared " << currentlyCleared);
-    } else {
-        setCleared(0);
-        updateDepartureQueue();
-        printDepartureQueue();
+void ActiveRunwayQueue::removeFromQueue(int id) {
+    SG_LOG(SG_ATC, SG_DEBUG, "Removed from RunwayQueue " << rwy << " " << id );
+    auto it = std::find_if(runwayQueue.begin(), runwayQueue.end(), [id](const SGSharedPtr<FGTrafficRecord> acft) {
+        return acft->getId() == id;
+    });
+    if (it == runwayQueue.end()) {
+        SG_LOG(SG_ATC, SG_WARN, "Erasing non existant aircraft " << rwy << " " << id );
+        printRunwayQueue();
+        return;
     }
+    runwayQueue.erase(it);
+    setCleared(0);
 }
 
-void ActiveRunway::updateDepartureQueue()
+void ActiveRunwayQueue::updateDepartureQueue()
 {
-    departureQueue.erase(departureQueue.begin());
+    SG_LOG(SG_ATC, SG_WARN, "updateDepartureQueue " << runwayQueue.size());
+    runwayQueue.erase(runwayQueue.begin());
+    SG_LOG(SG_ATC, SG_WARN, "updateDepartureQueue " << runwayQueue.size());
 }
 
 /**
-* Fetch next slot for the active runway
-* @param eta time of slot requested
+* Fetch next slot for the active runway. 
+* @param trafficRecord traffic record containing the arrival time
 * @return newEta: next slot available; starts at eta paramater
-* and adds separation as needed
+* and adds SEPARATION as needed
 */
-time_t ActiveRunway::requestTimeSlot(time_t eta)
+void ActiveRunwayQueue::requestTimeSlot(SGSharedPtr<FGTrafficRecord> trafficRecord)
 {
+    time_t eta = trafficRecord->getPlannedArrivalTime();
     time_t newEta = 0;
 
+    if (get( trafficRecord->getId())==nullptr) {
+        // Push to end. We will resort
+        runwayQueue.push_back(trafficRecord);
+    }
+
+
     // if the aircraft is the first arrival, add to the vector and return eta directly
-    if (estimatedArrivalTimes.empty()) {
-        estimatedArrivalTimes.push_back(eta);
-        SG_LOG(SG_ATC, SG_BULK, getRunwayName() << " Checked eta slots, using " << eta);
-        return eta;
+    if (runwayQueue.empty()) {
+        newEta = eta;
+        SG_LOG(SG_ATC, SG_DEBUG, icao << "/" << getRunwayName() << " Checked eta slots, using " << eta);
     } else {
         // First check the already assigned slots to see where we need to fit the flight in
-        SG_LOG(SG_ATC, SG_BULK, getRunwayName() << " Checking eta slots " << eta << " : " << estimatedArrivalTimes.size() << " Timediff : " << (eta - globals->get_time_params()->get_cur_time()));
+        SG_LOG(SG_ATC, SG_DEBUG, icao << "/" << getRunwayName() << " Checking eta slots " << eta << " : " << runwayQueue.size() << " Timediff : " << (eta - globals->get_time_params()->get_cur_time()));
 
         // is this needed - just a debug output?
-        TimeVectorIterator i;
-        for (i = estimatedArrivalTimes.begin();
-                i != estimatedArrivalTimes.end(); ++i) {
-            SG_LOG(SG_ATC, SG_BULK, "Stored time : " << (*i));
+        std::vector<SGSharedPtr<FGTrafficRecord>>::iterator i;
+        for (i = runwayQueue.begin();
+                i != runwayQueue.end(); ++i) {
+            SG_LOG(SG_ATC, SG_DEBUG, "Stored time : " << (*i)->getPlannedArrivalTime());
         }
 
-        // if the flight is before the first scheduled slot + separation
-        time_t separation = 60;
-        i = estimatedArrivalTimes.begin();
-        if ((eta + separation) < (*i)) {
+        // if the flight is before the first scheduled slot + SEPARATION
+        i = runwayQueue.begin();
+        if ((eta + SEPARATION) < (*i)->getPlannedArrivalTime()) {
             newEta = eta;
-            SG_LOG(SG_ATC, SG_BULK, "Storing at beginning");
-            SG_LOG(SG_ATC, SG_DEBUG, "Done. New ETA : " << newEta );
-            slotHousekeeping(newEta);
-            return newEta;
+            SG_LOG(SG_ATC, SG_DEBUG, "Added to start. New ETA : " << newEta );
+            trafficRecord->setRunwaySlot(newEta);
+            resort();
+            printRunwayQueue();
+            return;
         }
 
         // else, look through the rest of the slots
         bool found = false;
-        while ((i != estimatedArrivalTimes.end()) && (!found)) {
-            TimeVectorIterator j = i + 1;
+        while ((i != runwayQueue.end()) && (!found)) {
+            std::vector<SGSharedPtr<FGTrafficRecord>>::iterator j = i + 1;
 
-            // if the flight is after the last scheduled slot check if separation is needed
-            if (j == estimatedArrivalTimes.end()) {
-                if (((*i) + separation) < eta) {
-                    SG_LOG(SG_ATC, SG_BULK, "Storing at end");
+            // if the flight is after the last scheduled slot check if SEPARATION is needed
+            if (j == runwayQueue.end()) {
+                if (((*i)->getPlannedArrivalTime() + SEPARATION) < eta) {
+                    SG_LOG(SG_ATC, SG_DEBUG, "Storing at end");
                     newEta = eta;
                 } else {
-                    newEta = (*i) + separation;
-                    SG_LOG(SG_ATC, SG_BULK, "Storing at end + separation");
+                    newEta = (*i)->getPlannedArrivalTime() + SEPARATION;
+                    SG_LOG(SG_ATC, SG_DEBUG, "Storing at end + SEPARATION");
                 }
-                SG_LOG(SG_ATC, SG_DEBUG, "Done. New ETA : " << newEta << " Timediff : " << (newEta-eta));
-                slotHousekeeping(newEta);
-                return newEta;
+                SG_LOG(SG_ATC, SG_DEBUG, "End. New ETA : " << newEta << " Timediff : " << (newEta-eta));
+                trafficRecord->setRunwaySlot(newEta);
+                resort();
+                printRunwayQueue();
+                return;
             } else {
                 // potential slot found
                 // check the distance between the previous and next slots
-                // distance must be greater than 2* separation
-                if ((((*j) - (*i)) > (separation * 2))) {
+                // distance must be greater than 2* SEPARATION
+                if ((((*j)->getPlannedArrivalTime() - (*i)->getPlannedArrivalTime()) > (SEPARATION * 2))) {
                     // now check whether this slot is usable:
                     // eta should fall between the two points
                     // i.e. eta > i AND eta < j
                     SG_LOG(SG_ATC, SG_DEBUG, "Found potential slot after " << (*i));
-                    if (eta > (*i) && (eta < (*j))) {
+                    if (eta > (*i)->getPlannedArrivalTime() && (eta < (*j)->getPlannedArrivalTime())) {
                         found = true;
-                        if (eta < ((*i) + separation)) {
-                            newEta = (*i) + separation;
-                            SG_LOG(SG_ATC, SG_BULK, "Using  original" << (*i) << " + separation ");
+                        if (eta < ((*i)->getPlannedArrivalTime() + SEPARATION)) {
+                            newEta = (*i)->getPlannedArrivalTime() + SEPARATION;
+                            SG_LOG(SG_ATC, SG_DEBUG, "Using  original" << (*i)->getPlannedArrivalTime() << " + SEPARATION ");
                         } else {
                             newEta = eta;
-                            SG_LOG(SG_ATC, SG_BULK, "Using original after " << (*i));
+                            SG_LOG(SG_ATC, SG_DEBUG, "Using original after " << (*i)->getPlannedArrivalTime());
                         }
-                    } else if (eta < (*i)) {
+                    } else if (eta < (*i)->getPlannedArrivalTime()) {
                         found = true;
-                        newEta = (*i) + separation;
-                        SG_LOG(SG_ATC, SG_BULK, "Using delayed slot after " << (*i));
+                        newEta = (*i)->getPlannedArrivalTime() + SEPARATION;
+                        SG_LOG(SG_ATC, SG_DEBUG, "Using delayed slot after " << (*i)->getPlannedArrivalTime());
                     }
                     /*
-                       if (((*j) - separation) < eta) {
+                       if (((*j) - SEPARATION) < eta) {
                        found = true;
-                       if (((*i) + separation) < eta) {
+                       if (((*i) + SEPARATION) < eta) {
                        newEta = eta;
                        SG_LOG(SG_ATC, SG_BULK, "Using original after " << (*i));
                        } else {
-                       newEta = (*i) + separation;
-                       SG_LOG(SG_ATC, SG_BULK, "Using  " << (*i) << " + separation ");
+                       newEta = (*i) + SEPARATION;
+                       SG_LOG(SG_ATC, SG_BULK, "Using  " << (*i) << " + SEPARATION ");
                        }
                        } */
                 }
@@ -177,71 +191,104 @@ time_t ActiveRunway::requestTimeSlot(time_t eta)
         }
     }
 
-    SG_LOG(SG_ATC, SG_DEBUG, "Done. New ETA : " << newEta);
-    slotHousekeeping(newEta);
-    return newEta;
+    SG_LOG(SG_ATC, SG_DEBUG, "Done. New ETA : " << newEta << " " << rwy << " Size : " << runwayQueue.size() << " " << trafficRecord->getCallsign() );
+    trafficRecord->setRunwaySlot(newEta);
+    resort();
+    printRunwayQueue();
 }
 
-void ActiveRunway::slotHousekeeping(time_t newEta)
+/**
+* Update the first and move all records backwards. 
+* @param trafficRecord traffic record containing the arrival time
+* @return newEta: next slot available; starts at eta paramater
+* and adds SEPARATION as needed
+*/
+void ActiveRunwayQueue::updateFirst(SGSharedPtr<FGTrafficRecord> trafficRecord, time_t newETA)
 {
-    // add the slot to the vector and resort the vector
-    estimatedArrivalTimes.push_back(newEta);
-    sort(estimatedArrivalTimes.begin(), estimatedArrivalTimes.end());
-
-    // do some housekeeping : remove any slots that are past
+    time_t eta = trafficRecord->getPlannedArrivalTime();
     time_t now = globals->get_time_params()->get_cur_time();
 
-    TimeVectorIterator i = estimatedArrivalTimes.begin();
-    while (i != estimatedArrivalTimes.end()) {
-        if ((*i) < now) {
-            SG_LOG(SG_ATC, SG_BULK, "Deleting timestamp " << (*i) << " (now = " << now << "). ");
-            estimatedArrivalTimes.erase(i);
-            i = estimatedArrivalTimes.begin();
+    newETA = std::max(newETA, now);
+
+    SG_LOG(SG_ATC, SG_DEBUG, "Update First " << eta << " " << newETA << " " << now << " " << rwy << " Leg " << trafficRecord->getLeg() << " Size : " << runwayQueue.size() << " " << trafficRecord->getCallsign() );
+
+    time_t diff = 0;
+
+    for (SGSharedPtr<FGTrafficRecord> queueRecord: runwayQueue) {
+        if (trafficRecord->getId() == queueRecord->getId()) {
+           diff = newETA - eta;
+           diff = std::max((time_t)0, diff);
+           SG_LOG(SG_ATC, SG_DEBUG, queueRecord->getCallsign() << "(" << queueRecord->getId() << ")" << " Diff " << diff );
+           trafficRecord->setPlannedArrivalTime(newETA);
+           queueRecord->setRunwaySlot(queueRecord->getRunwaySlot() + diff);
         } else {
-            i++;
+           queueRecord->setRunwaySlot(queueRecord->getRunwaySlot() + diff);
+           SG_LOG(SG_ATC, SG_DEBUG, queueRecord->getCallsign() << "(" << queueRecord->getId() << ")" << " Diff " << diff );
         }
     }
+    printRunwayQueue();
 }
 
 /** Output the contents of the departure queue vector nicely formatted*/
-void ActiveRunway::printDepartureQueue()
+void ActiveRunwayQueue::printRunwayQueue() const
 {
-    SG_LOG(SG_ATC, SG_DEBUG, "Departure queue for " << rwy << ": ");
-    for (auto acft : departureQueue) {
-        SG_LOG(SG_ATC, SG_DEBUG, "     " << acft->getCallSign() << " " << acft->getTakeOffStatus());
-        SG_LOG(SG_ATC, SG_DEBUG, " " << acft->_getLatitude() << " " << acft->_getLongitude() << acft->getSpeed() << " " << acft->getAltitude());
+    assert(rwy);
+    assert(runwayQueue);
+
+    time_t now = globals->get_time_params()->get_cur_time();
+
+    SG_LOG(SG_ATC, SG_DEBUG, "Runway Queue for " << icao << "/" << rwy << " Size : " << runwayQueue.size());
+    for (auto acft : runwayQueue) {
+        SG_LOG(SG_ATC, SG_DEBUG, " " << acft->getCallsign() << "(" << acft->getId() << ") Leg : " << acft->getLeg() << " Diff : " << acft->getRunwaySlot() - now << " " << acft->getRunwaySlot() << " " << acft->getPlannedArrivalTime() << " " << acft->getPos().getLatitudeDeg() << " " << acft->getPos().getLongitudeDeg()  << " Speed " << acft->getSpeed() << " Elevation " << acft->getPos().getElevationM());
     }
 
 }
 
 /** Fetch the first aircraft in the departure queue with a certain status */
-SGSharedPtr<FGAIAircraft>ActiveRunway::getFirstOfStatus(int stat) const
+const SGSharedPtr<FGTrafficRecord>ActiveRunwayQueue::get(int id) const
 {
-    auto it = std::find_if(departureQueue.begin(), departureQueue.end(), [stat](const SGSharedPtr<FGAIAircraft>& acft) {
+    auto it = std::find_if(runwayQueue.begin(), runwayQueue.end(), [id](const SGSharedPtr<FGTrafficRecord> acft) {
+        return acft->getId() == id;
+    });
+
+    if (it == runwayQueue.end()) {
+        return nullptr;
+    }
+
+    return *it;
+}
+
+/** Fetch the first aircraft in the departure queue with a certain status */
+const SGSharedPtr<FGTrafficRecord>ActiveRunwayQueue::getFirstOfStatus(int stat) const
+{
+    auto it = std::find_if(runwayQueue.begin(), runwayQueue.end(), [stat](const SGSharedPtr<FGTrafficRecord> acft) {
         return acft->getTakeOffStatus() == stat;
     });
 
-    if (it == departureQueue.end()) {
+    if (it == runwayQueue.end()) {
         return {};
     }
 
     return *it;
 }
 
-SGSharedPtr<FGAIAircraft> ActiveRunway::getFirstAircraftInDepartureQueue() const
+const SGSharedPtr<FGTrafficRecord> ActiveRunwayQueue::getFirstAircraftInDepartureQueue() const
 {
-    if (departureQueue.empty()) {
-        return {};
+    // printRunwayQueue();
+    if (runwayQueue.empty()) {
+        return nullptr;
     }
 
-    return departureQueue.front();
+    return *runwayQueue.begin();
 };
 
-void ActiveRunway::addToDepartureQueue(FGAIAircraft *ac)
+void ActiveRunwayQueue::addToQueue(SGSharedPtr<FGTrafficRecord> ac)
 {
     assert(ac);
     assert(!ac->getDie());
-    departureQueue.push_back(ac);
+    ac->setTakeOffStatus(AITakeOffStatus::QUEUED);
+    runwayQueue.push_back(std::move(ac));
+    printRunwayQueue();
 };
 
 
@@ -250,7 +297,7 @@ void ActiveRunway::addToDepartureQueue(FGAIAircraft *ac)
  **************************************************************************/
 
 FGTrafficRecord::FGTrafficRecord():
-        id(0), waitsForId(0),
+        id(0),
         currentPos(0),
         leg(0),
         frequencyId(0),
@@ -272,22 +319,10 @@ void FGTrafficRecord::setPositionAndIntentions(int pos,
 {
     SG_LOG(SG_AI, SG_BULK, "Traffic record position: " << pos);
     currentPos = pos;
-    if (!intentions.empty()) {
-        intVecIterator i = intentions.begin();
-        if ((*i) != currentPos) {
-            SG_LOG(SG_ATC, SG_ALERT,
-                   "Error in FGTrafficRecord::setPositionAndIntentions at " << SG_ORIGIN << ", " << (*i));
-        }
-        intentions.erase(i);
-    } else {
-        //FGAIFlightPlan::waypoint* const wpt= route->getCurrentWaypoint();
-        int size = route->getNrOfWayPoints();
-        SG_LOG(SG_ATC, SG_DEBUG, "Setting pos to " << currentPos << " and intentions");
-        for (int i = 2; i < size; i++) {
-            int val = route->getRouteIndex(i);
-            intentions.push_back(val);
-        }
+    if (runway=="" && route) {
+        setRunway(route->getRunway());
     }
+    
 }
 
 void FGTrafficRecord::setAircraft(FGAIAircraft *ref)
@@ -366,13 +401,21 @@ bool FGTrafficRecord::checkPositionAndIntentions(FGTrafficRecord & other)
 }
 
 void FGTrafficRecord::setPositionAndHeading(double lat, double lon,
-        double hdg, double spd,
-        double alt)
+                                            double hdg, double spd,
+                                            double alt, int leg)
 {
     this->pos = SGGeod::fromDegFt(lon, lat, alt);
+    if (heading != 0 && spd != 0) {
+        headingDiff = SGMiscd::normalizePeriodic(-180, 180, heading - hdg);
+    } else {
+        headingDiff = 0;
+    }
     heading = hdg;
     speed = spd;
     altitude = alt;
+    if (leg>AILeg::UNKNOWN) {
+        this->leg = leg;
+    }
 }
 
 int FGTrafficRecord::crosses(FGGroundNetwork * net,
@@ -573,6 +616,7 @@ FGATCInstruction::FGATCInstruction()
     speed = 0;
     heading = 0;
     alt = 0;
+    waitsForId = 0;
 }
 
 bool FGATCInstruction::hasInstruction() const

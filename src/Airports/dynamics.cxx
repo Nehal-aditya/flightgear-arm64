@@ -144,6 +144,7 @@ FGParking* ParkingAssignment::parking() const
  * searching for available parkings. This allows us to reject parkings
  * which we might not have marked as occupied, but which an object is
  * neverthless close to; such as the primary user or MP aircraft.
+ * FIXME should be replaced by AirportGroundRadar
  */
 class NearbyAIObjectCache
 {
@@ -210,11 +211,17 @@ FGAirportDynamics::~FGAirportDynamics()
 }
 
 
-// Initialization required after XMLRead
+/**
+ * Initialization required after XMLRead
+ */ 
 void FGAirportDynamics::init()
 {
-    groundController.setTowerController(&towerController);
-    groundController.init();
+    groundRadar = new AirportGroundRadar(_ap);
+
+    startupController.setAirportGroundRadar(groundRadar);
+    towerController.setAirportGroundRadar(groundRadar);
+    approachController.setAirportGroundRadar(groundRadar);
+    groundController.setAirportGroundRadar(groundRadar);
 }
 
 FGParking* FGAirportDynamics::innerGetAvailableParking(double radius, const std::string& flType,
@@ -824,10 +831,31 @@ void FGAirportDynamics::getActiveRunway(const std::string& trafficType,
                                         int action, std::string& runway,
                                         double heading)
 {
+    //FIXME must allign with FGAirport::findBestRunwayForHeading
+
     bool ok = innerGetActiveRunway(trafficType, action, runway, heading);
     if (!ok || runway.empty()) {
         runway = chooseRunwayFallback();
     }
+}
+
+ActiveRunwayQueue *FGAirportDynamics::getRunwayQueue(const string& name)
+{
+    ActiveRunwayVecIterator rwy = activeRunways.begin();
+    if (activeRunways.size()) {
+        while (rwy != activeRunways.end()) {
+            if (rwy->getRunwayName().find(name) != std::string::npos) {
+                break;
+            }
+            ++rwy;
+        }
+    }
+    if (rwy == activeRunways.end()) {
+        ActiveRunwayQueue aRwy(_ap->getId(), name, 0);        
+        activeRunways.push_back(aRwy);
+        rwy = activeRunways.end() - 1;
+    }
+    return &(*rwy);
 }
 
 std::string FGAirportDynamics::chooseRunwayFallback()

@@ -166,6 +166,8 @@ void TrafficTests::testPushback()
                                                           aiAircraft->getAcType(),
                                                           aiAircraft->getCompany()));
 
+    fp->setGate(parking);
+
     CPPUNIT_ASSERT_EQUAL(fp->isValidPlan(), true);
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
@@ -1058,22 +1060,56 @@ void TrafficTests::testPushforwardParkYBBNRepeatGaDelayed()
 
     FGAirport* departure = aiAircraft->getTrafficRef()->getDepartureAirport();
     FGAirportDynamicsRef departureDynamics = departure->getDynamics();
-    ActiveRunway* activeDepartureRunway = departureDynamics->getApproachController()->getRunway("01");
-    time_t newDeparture = activeDepartureRunway->requestTimeSlot(aiAircraft->GetFlightPlan()->getStartTime());
+    ActiveRunwayQueue* activeDepartureRunway = departureDynamics->getRunwayQueue("01");
+    time_t newDeparture = 0;
+    {
+        FGTrafficRecord* rec = new FGTrafficRecord();
+        rec->setId(-1);
+
+        rec->setPlannedArrivalTime(newDeparture);
+        SGSharedPtr<FGTrafficRecord> sharedRec = static_cast<FGTrafficRecord*>(rec);
+ 
+        activeDepartureRunway->requestTimeSlot(sharedRec);
+        newDeparture = sharedRec->getRunwaySlot();
+    }
 // See that the wait queue is filled
     for (size_t i = 0; i < 10; i++)
     {
-        newDeparture = activeDepartureRunway->requestTimeSlot(newDeparture);
+        FGTrafficRecord* rec = new FGTrafficRecord();
+        rec->setId(-1);
+
+        rec->setPlannedArrivalTime(newDeparture);
+        SGSharedPtr<FGTrafficRecord> sharedRec = static_cast<FGTrafficRecord*>(rec);
+ 
+        activeDepartureRunway->requestTimeSlot(sharedRec);
+        newDeparture = sharedRec->getRunwaySlot();
     }
 
     FGAirport* arrival = aiAircraft->getTrafficRef()->getArrivalAirport();
     FGAirportDynamicsRef arrivalDynamics = arrival->getDynamics();
-    ActiveRunway* activeYSSYRunway = arrivalDynamics->getApproachController()->getRunway("16R");
-    time_t newArrival = activeYSSYRunway->requestTimeSlot(aiAircraft->GetFlightPlan()->getStartTime());
+    ActiveRunwayQueue* activeYSSYRunway = arrivalDynamics->getRunwayQueue("16R");
+    time_t newArrival = 0;
+    {
+        FGTrafficRecord* rec = new FGTrafficRecord();
+        rec->setId(-1);
+
+        rec->setPlannedArrivalTime(newArrival);
+        SGSharedPtr<FGTrafficRecord> sharedRec = static_cast<FGTrafficRecord*>(rec);
+ 
+        activeYSSYRunway->requestTimeSlot(sharedRec);
+        newArrival = sharedRec->getRunwaySlot();
+    }
 // See that the wait queue is filled
     for (size_t i = 0; i < 100; i++)
     {
-        newArrival = activeYSSYRunway->requestTimeSlot(newArrival);
+        FGTrafficRecord* rec = new FGTrafficRecord();
+        rec->setId(i);
+
+        rec->setPlannedArrivalTime(newArrival);
+        SGSharedPtr<FGTrafficRecord> sharedRec = static_cast<FGTrafficRecord*>(rec);
+ 
+        activeYSSYRunway->requestTimeSlot(sharedRec);
+        newArrival = sharedRec->getRunwaySlot();
     }
 
     aiAircraft = flyAI(aiAircraft, "flight_ga_YSSY_YBBN_park_repeatdelayed" + std::to_string(departureTime));

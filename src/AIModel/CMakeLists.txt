@@ -32,6 +32,7 @@ set(HEADERS
 	AIBase.hxx
 	AIBaseAircraft.hxx
 	AICarrier.hxx
+	AIConstants.hxx
 	AIEscort.hxx
 	AIFlightPlan.hxx
 	AIGroundVehicle.hxx

@@ -190,11 +190,13 @@ void FGAIFlightPlan::createWaypoints(FGAIAircraft* ac,
     time_t timeDiff = now - start;
     leg = AILeg::STARTUP_PUSHBACK;
 
-    if ((timeDiff > 60) && (timeDiff < 1500))
-        leg = AILeg::TAXI;
-    else if ((timeDiff >= 1500) && (timeDiff < 2000))
+    if ((timeDiff > 60) && (timeDiff < 500))
+        leg = AILeg::RUNWAY_TAXI;
+    else if ((timeDiff >= 500) && (timeDiff < 600))
         leg = AILeg::TAKEOFF;
-    else if (timeDiff >= 2000) {
+    else if ((timeDiff >= 600) && (timeDiff < 1000))
+        leg = AILeg::CLIMB;
+    else if (timeDiff >= 1000) {
         if (remainingTime > 2000) {
             leg = AILeg::CRUISE;
         } else {
@@ -646,3 +648,35 @@ bool FGAIFlightPlan::empty() const
 {
     return waypoints.empty();
 }
+
+/**
+ * Calculates the predicted runtime to enable calculation
+ * of the arrival at the end.
+ */
+
+time_t FGAIFlightPlan::calcArrivalTimes() const
+{
+    time_t runtime = 0;
+
+    if (waypoints.cbegin() == waypoints.cend()) {
+        return 0;
+    }
+    auto previousWP = (*waypoints.cbegin());
+
+    for(const auto wp : waypoints) {
+        SGGeod lastPos = previousWP->getPos();
+        SGGeod currentPos = wp->getPos();
+        double dist_m = SGGeodesy::distanceM(lastPos, currentPos);            
+        double speed_mps = wp->getSpeed()  * SG_KT_TO_MPS;
+        double time_s = dist_m / speed_mps;
+        runtime += time_s;
+        previousWP = wp;
+        if (getLeg() == AILeg::HOLD_PATTERN) {
+            SG_LOG(SG_AI, SG_DEBUG, "Runtime : " << runtime << " " << dist_m );
+        }
+    }
+    SG_LOG(SG_AI, SG_DEBUG, "Runtime : " << runtime << " " << getLeg() );
+    
+    return runtime;
+}
+

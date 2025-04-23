@@ -23,6 +23,7 @@
 
 #include <list>
 #include <map>
+#include <algorithm>
 #include <vector>
 #include <string>
 #include <ctime> // for time_t

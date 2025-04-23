@@ -9,20 +9,30 @@
 
 #include <set>
 
+#include <simgear/structure/SGReferenced.hxx>
 #include <simgear/structure/SGWeakReferenced.hxx>
 #include <simgear/timing/timestamp.hxx>
 
 #include <ATC/ApproachController.hxx>
+#include <ATC/EnRouteController.hxx>
 #include <ATC/GroundController.hxx>
 #include <ATC/StartupController.hxx>
 #include <ATC/TowerController.hxx>
 #include <ATC/trafficcontrol.hxx>
+#include <ATC/AirportGroundRadar.hxx>
 
 #include "airports_fwd.hxx"
 #include "parking.hxx"
 #include "runwayprefs.hxx"
 
 
+namespace RunwayAction {
+    enum Type {
+        TAKEOFF = 1,
+        LANDING = 2
+    };
+    }
+    
 class ParkingAssignment
 {
 public:
@@ -57,6 +67,12 @@ private:
     ParkingSet occupiedParkings;
 
     FGRunwayPreference rwyPrefs;
+
+    /**Controls all AI actifity at one airport*/
+    SGSharedPtr<AirportGroundRadar> groundRadar;
+    /**Currently active runways with ATC.*/
+    ActiveRunwayVec activeRunways;
+
     FGStartupController startupController;
     FGTowerController towerController;
     FGApproachController approachController;
@@ -170,4 +186,6 @@ public:
     int updateAtisSequence(int interval, bool forceUpdate);
 
     void setRwyUse(const FGRunwayPreference& ref);
+
+    ActiveRunwayQueue* getRunwayQueue(const std::string& name);
 };

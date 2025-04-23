@@ -19,6 +19,7 @@
 
 // forward decls
 class SGPath;
+class ParkingAssignment;
 
 class FGAIWaypoint
 {
@@ -257,12 +258,18 @@ private:
     bool isValid;
     FGAirportRef departure, arrival;
 
+    time_t calcArrivalTimes() const;
+
     void createPushBackFallBack(FGAIAircraft*, bool, FGAirport*, double radius, const std::string&, const std::string&, const std::string&);
+    bool createTakeoffTaxi(FGAIAircraft*, bool firstFlight, FGAirport* apt, double radius, const std::string& fltType, const std::string& acType, const std::string& airline);
     bool createClimb(FGAIAircraft*, bool, FGAirport*, FGAirport* arrival, double, double, const std::string&);
     bool createCruise(FGAIAircraft*, bool, FGAirport*, FGAirport*, const SGGeod& current, double, double, const std::string&);
     bool createDescent(FGAIAircraft*, FGAirport*, const SGGeod& current, double speed, double alt, const std::string&, double distance);
     bool createHold(FGAIAircraft*, FGAirport*, const SGGeod& current, double speed, double alt, const std::string&, double distance);
     bool createLanding(FGAIAircraft*, FGAirport*, const std::string&);
+    bool createLandingTaxi(FGAIAircraft*, FGAirport* apt, double radius, const std::string& fltType, const std::string& acType, const std::string& airline);
+    void createDefaultLandingTaxi(FGAIAircraft*, FGAirport* aAirport);
+    void createDefaultTakeoffTaxi(FGAIAircraft*, FGAirport* aAirport, FGRunway* aRunway);
     bool createParking(FGAIAircraft*, FGAirport*, double radius);
     void deleteWaypoints();
     void resetWaypoints();
@@ -273,10 +280,6 @@ private:
     void createArc(FGAIAircraft* ac, const SGGeod& center, int startAngle, int endAngle, int increment, int radius, double aElev, double altDiff, double aSpeed, const char* pattern);
     /**Create a line flightplan from start with dist and altitude diff*/
     void createLine(FGAIAircraft* ac, const SGGeod& startPoint, double azimuth, double dist, double aElev, double dAlt, double vDescent, const char* pattern);
-    bool createLandingTaxi(FGAIAircraft*, FGAirport* apt, double radius, const std::string& fltType, const std::string& acType, const std::string& airline);
-    void createDefaultLandingTaxi(FGAIAircraft*, FGAirport* aAirport);
-    void createDefaultTakeoffTaxi(FGAIAircraft*, FGAirport* aAirport, FGRunway* aRunway);
-    bool createTakeoffTaxi(FGAIAircraft*, bool firstFlight, FGAirport* apt, double radius, const std::string& fltType, const std::string& acType, const std::string& airline);
 
     double getTurnRadius(double, bool);
 

@@ -56,11 +56,11 @@ bool FGAIFlightPlan::create(FGAIAircraft* ac, FGAirport* dep,
                             const string& airline, double distance)
 {
     if (legNr <= AILeg::TAKEOFF)
-        SG_LOG(SG_AI, SG_BULK, "Create Leg " << legNr << " " << (firstFlight ? "First" : "") << " Old Leg " << getLeg() << " At Airport : " << dep->getId());
+        SG_LOG(SG_AI, SG_DEBUG, "Create Leg " << legNr << " " << (firstFlight ? "First" : "") << " Old Leg " << getLeg() << " At Airport : " << dep->getId());
     else if (legNr <= AILeg::APPROACH)
-        SG_LOG(SG_AI, SG_BULK, "Create Leg " << legNr << " " << (firstFlight ? "First" : "") << " Old Leg " << getLeg() << " Departure Airport : " << dep->getId() << " Arrival Airport : " << arr->getId());
+        SG_LOG(SG_AI, SG_DEBUG, "Create Leg " << legNr << " " << (firstFlight ? "First" : "") << " Old Leg " << getLeg() << " Departure Airport : " << dep->getId() << " Arrival Airport : " << arr->getId());
     else
-        SG_LOG(SG_AI, SG_BULK, "Create Leg " << legNr << " " << (firstFlight ? "First" : "") << " Old Leg " << getLeg() << " At Airport : " << arr->getId());
+        SG_LOG(SG_AI, SG_DEBUG, "Create Leg " << legNr << " " << (firstFlight ? "First" : "") << " Old Leg " << getLeg() << " At Airport : " << arr->getId());
 
     bool retVal = true;
     int currWpt = wpt_iterator - waypoints.begin();
@@ -69,7 +69,7 @@ bool FGAIFlightPlan::create(FGAIAircraft* ac, FGAirport* dep,
         retVal = createPushBack(ac, firstFlight, dep,
                                 radius, fltType, aircraftType, airline);
         break;
-    case AILeg::TAXI:
+    case AILeg::RUNWAY_TAXI:
         retVal = createTakeoffTaxi(ac, firstFlight, dep, radius, fltType,
                                    aircraftType, airline);
         break;
@@ -87,7 +87,7 @@ bool FGAIFlightPlan::create(FGAIAircraft* ac, FGAirport* dep,
         retVal = createDescent(ac, arr, SGGeod::fromDeg(longitude, latitude), speed, alt, fltType,
                                distance);
         break;
-    case AILeg::HOLD:
+    case AILeg::HOLD_PATTERN:
         retVal = createHold(ac, arr, SGGeod::fromDeg(longitude, latitude), speed, alt, fltType,
                             distance);
         break;
@@ -200,7 +200,7 @@ void FGAIFlightPlan::createArc(FGAIAircraft* ac, const SGGeod& center, int start
 
 void FGAIFlightPlan::createLine(FGAIAircraft* ac, const SGGeod& startPoint, double azimuth, double dist, double aElev, double dAlt, double vDescent, const char* pattern)
 {
-    double nPoints = dist / (vDescent * 2);
+    double nPoints = dist / (vDescent * 4);
     char buffer[20];
     double distIncrement = (dist / nPoints);
 
@@ -299,6 +299,10 @@ void FGAIFlightPlan::createDefaultTakeoffTaxi(FGAIAircraft* ac,
     pushBackWaypoint(wpt);
 }
 
+/**
+ * Creates a flightplan for AILeg::TAXI
+ */
+
 bool FGAIFlightPlan::createTakeoffTaxi(FGAIAircraft* ac, bool firstFlight,
                                        FGAirport* apt,
                                        double radius,
@@ -324,11 +328,11 @@ bool FGAIFlightPlan::createTakeoffTaxi(FGAIAircraft* ac, bool firstFlight,
     if (activeRunway.empty()) {
         // cerr << "Getting runway for " << ac->getTrafficRef()->getCallSign() << " at " << apt->getId() << endl;
         double depHeading = ac->getTrafficRef()->getCourse();
-        apt->getDynamics()->getActiveRunway(rwyClass, 1, activeRunway,
+        apt->getDynamics()->getActiveRunway(rwyClass, RunwayAction::TAKEOFF, activeRunway,
                                             depHeading);
     }
     FGRunway* rwy = apt->getRunwayByIdent(activeRunway);
-    SG_LOG(SG_AI, SG_BULK, "Taxi to " << apt->getId() << "/" << activeRunway);
+    SG_LOG(SG_AI, SG_DEBUG, "Taxi to " << apt->getId() << "/" << activeRunway);
     assert(rwy != NULL);
     SGGeod runwayTakeoff = rwy->pointOnCenterlineDisplaced(5.0);
 
@@ -451,7 +455,10 @@ bool FGAIFlightPlan::createTakeoffTaxi(FGAIAircraft* ac, bool firstFlight,
     wpt->setFlaps(0.5f);
     pushBackWaypoint(wpt);
 
-    //cerr << "[done]" << endl;
+    time_t now = globals->get_time_params()->get_cur_time();
+
+    arrivalTime = now + calcArrivalTimes();
+   //cerr << "[done]" << endl;
     return true;
 }
 
@@ -478,6 +485,9 @@ void FGAIFlightPlan::createDefaultLandingTaxi(FGAIAircraft* ac,
                              ac->getPerformance()->vTaxi());
         pushBackWaypoint(wpt);
     }
+    time_t now = globals->get_time_params()->get_cur_time();
+
+    arrivalTime = now + calcArrivalTimes();
 }
 
 bool FGAIFlightPlan::createLandingTaxi(FGAIAircraft* ac,
@@ -548,6 +558,9 @@ bool FGAIFlightPlan::createLandingTaxi(FGAIAircraft* ac,
     }
     SG_LOG(SG_AI, SG_BULK, "Created taxi from " << runwayNode->getIndex() << " to " << gate.parking()->ident() << " at " << apt->getId());
 
+    time_t now = globals->get_time_params()->get_cur_time();
+
+    arrivalTime = now + calcArrivalTimes();
     return true;
 }
 
@@ -611,7 +624,7 @@ bool FGAIFlightPlan::createTakeOff(FGAIAircraft* ac,
     if (firstFlight) {
         const string& rwyClass = getRunwayClassFromTrafficType(fltType);
         double dHeading = ac->getTrafficRef()->getCourse();
-        apt->getDynamics()->getActiveRunway(rwyClass, 1, activeRunway, dHeading);
+        apt->getDynamics()->getActiveRunway(rwyClass, RunwayAction::TAKEOFF, activeRunway, dHeading);
     }
 
     // this is Sentry issue FLIGHTGEAR-DS : happens after reposition,
@@ -680,6 +693,9 @@ bool FGAIFlightPlan::createTakeOff(FGAIAircraft* ac,
     wpt = createInAir(ac, "2500'", climbOutPoint2, airportElev + 2500, vClimbBelow10000);
     pushBackWaypoint(wpt);
 
+    time_t now = globals->get_time_params()->get_cur_time();
+
+    arrivalTime = now + calcArrivalTimes();
     return true;
 }
 
@@ -697,7 +713,7 @@ bool FGAIFlightPlan::createClimb(FGAIAircraft* ac, bool firstFlight,
     if (firstFlight) {
         const string& rwyClass = getRunwayClassFromTrafficType(fltType);
         double dHeading = ac->getTrafficRef()->getCourse();
-        apt->getDynamics()->getActiveRunway(rwyClass, 1, activeRunway, dHeading);
+        apt->getDynamics()->getActiveRunway(rwyClass, RunwayAction::TAKEOFF, activeRunway, dHeading);
     }
 
     if (sid) {
@@ -734,12 +750,12 @@ bool FGAIFlightPlan::createClimb(FGAIAircraft* ac, bool firstFlight,
             FGAIWaypoint* wpt = createInAir(ac, "5000ft climb", climb1, 5000, vClimb);
             pushBackWaypoint(wpt);
             int rightAngle = headingDiffRunway > 0 ? 90 : -90;
-            int firstTurnIncrement = headingDiffRunway > 0 ? 2 : -2;
+            int firstTurnIncrement = headingDiffRunway > 0 ? 4 : -4;
 
             SGGeod firstTurnCenter = SGGeodesy::direct(climb1, ac->getTrueHeadingDeg() + rightAngle, initialTurnRadius);
-            createArc(ac, firstTurnCenter, ac->_getHeading() - rightAngle, course - rightAngle, firstTurnIncrement, initialTurnRadius, 5000, 100, vClimb, "climb-out%03d");
+            createArc(ac, firstTurnCenter, ac->_getHeading() - rightAngle, course - rightAngle, firstTurnIncrement, initialTurnRadius, 5000, 100, vClimb, "climb-out-%03d");
             SGGeod climb2 = SGGeodesy::direct(cur, course, 20 * SG_NM_TO_METER);
-            wpt = createInAir(ac, "18000ft climb", waypoints.back()->getPos(), 18000, vClimb);
+            wpt = createInAir(ac, "18000ft climb", climb2, 18000, vClimb);
             pushBackWaypoint(wpt);
         }
     }
@@ -771,7 +787,7 @@ bool FGAIFlightPlan::createDescent(FGAIAircraft* ac,
     //Beginning of Descent
     const string& rwyClass = getRunwayClassFromTrafficType(fltType);
     double heading = ac->getTrueHeadingDeg();
-    apt->getDynamics()->getActiveRunway(rwyClass, 2, activeRunway, heading);
+    apt->getDynamics()->getActiveRunway(rwyClass, RunwayAction::LANDING, activeRunway, heading);
     if (!apt->hasRunwayWithIdent(activeRunway)) {
         SG_LOG(SG_AI, SG_WARN, ac->getCallSign() << "| FGAIFlightPlan::createDescent: No such runway " << activeRunway << " at " << apt->ident());
         return false;
@@ -794,8 +810,7 @@ bool FGAIFlightPlan::createDescent(FGAIAircraft* ac,
     //double finalTurnRadius = getTurnRadius(vApproach, true);
 
     // get length of the downwind leg for the intended runway
-    double distanceOut = apt->getDynamics()->getApproachController()->getRunway(rwy->name())->getApproachDistance(); //12 * SG_NM_TO_METER;
-    //time_t previousArrivalTime=  apt->getDynamics()->getApproachController()->getRunway(rwy->name())->getEstApproachTime();
+    double distanceOut = apt->getDynamics()->getRunwayQueue(rwy->name())->getApproachDistance(); //12 * SG_NM_TO_METER;
 
     // tells us the direction we have to turn
     const double headingDiffRunway = SGMiscd::normalizePeriodic(-180, 180, ac->getTrueHeadingDeg() - rwy->headingDeg());
@@ -805,12 +820,12 @@ bool FGAIFlightPlan::createDescent(FGAIAircraft* ac,
     }
 
     SGGeod initialTarget = rwy->pointOnCenterline(-distanceOut);
-    SGGeod otherRwyEnd = rwy->pointOnCenterline(rwy->lengthM());
+//    SGGeod otherRwyEnd = rwy->pointOnCenterline(rwy->lengthM());
     SGGeod secondaryTarget =
         rwy->pointOffCenterline(-2 * distanceOut, lateralOffset);
     SGGeod secondHoldCenter =
         rwy->pointOffCenterline(-3 * distanceOut, lateralOffset);
-    SGGeod refPoint = rwy->pointOnCenterline(0);
+//    SGGeod refPoint = rwy->pointOnCenterline(0);
     double distance = SGGeodesy::distanceM(current, initialTarget);
     double azimuth = SGGeodesy::courseDeg(current, initialTarget);
     double secondaryAzimuth = SGGeodesy::courseDeg(current, secondaryTarget);
@@ -941,7 +956,8 @@ bool FGAIFlightPlan::createDescent(FGAIAircraft* ac,
 
     time_t now = globals->get_time_params()->get_cur_time();
 
-    arrivalTime = now;
+    arrivalTime = now + calcArrivalTimes();
+    
     //choose a distance to the runway such that it will take at least 60 seconds more
     // time to get there than the previous aircraft.
     // Don't bother when aircraft need to be repositioned, because that marks the initialization phased...
@@ -967,7 +983,7 @@ bool FGAIFlightPlan::createHold(FGAIAircraft* ac,
     // double vApproach = ac->getPerformance()->vApproach();
     double initialTurnRadius = getTurnRadius(vDescent, true);
     double dHeading = ac->getTrueHeadingDeg();
-    apt->getDynamics()->getActiveRunway(rwyClass, 2, activeRunway,
+    apt->getDynamics()->getActiveRunway(rwyClass, RunwayAction::LANDING, activeRunway,
                                         dHeading);
     if (!apt->hasRunwayWithIdent(activeRunway)) {
         SG_LOG(SG_AI, SG_WARN, ac->getCallSign() << "| FGAIFlightPlan::createHold: No such runway " << activeRunway << " at " << apt->ident());
@@ -975,7 +991,7 @@ bool FGAIFlightPlan::createHold(FGAIAircraft* ac,
     }
     FGRunwayRef rwy = apt->getRunwayByIdent(activeRunway);
     double currentAltitude = waypoints.back()->getAltitude();
-    double distanceOut = apt->getDynamics()->getApproachController()->getRunway(rwy->name())->getApproachDistance(); //12 * SG_NM_TO_METER;
+    double distanceOut = apt->getDynamics()->getRunwayQueue(rwy->name())->getApproachDistance(); //12 * SG_NM_TO_METER;
     double lateralOffset = initialTurnRadius;
 
     SGGeod secondaryTarget = rwy->pointOffCenterline(-2 * distanceOut, lateralOffset);
@@ -985,6 +1001,9 @@ bool FGAIFlightPlan::createHold(FGAIAircraft* ac,
               currentAltitude, 0, vDescent, "hold_1_%03d");
     createArc(ac, secondHoldCenter, rwy->headingDeg() + 90, rwy->headingDeg() - 90, 5, initialTurnRadius,
               currentAltitude, 0, vDescent, "hold_2_%03d");
+
+    time_t now = globals->get_time_params()->get_cur_time();
+    arrivalTime = now + calcArrivalTimes();
 
     return true;
 }
@@ -1011,7 +1030,7 @@ static double runwayGlideslopeTouchdownDistance(FGRunway* rwy)
 }
 
 /*******************************************************************
- * CreateLanding (Leg 7)
+ * CreateLanding (Leg 8)
  * Create a flight path from the "permission to land" point (currently
    hardcoded at 5000 meters from the threshold) to the threshold, at
    a standard glide slope angle of 3 degrees.
@@ -1073,7 +1092,7 @@ bool FGAIFlightPlan::createLanding(FGAIAircraft* ac, FGAirport* apt,
     // deceleration point, 500' above touchdown elevation - slow from approach speed
     // to touchdown speed
     double decelPoint = -((500 * SG_FEET_TO_METER) / tanGlideslope) + touchdownDistance;
-    wpt = createInAir(ac, "500' decel", rwy->pointOnCenterline(-decelPoint),
+    wpt = createInAir(ac, "500 ft decel", rwy->pointOnCenterline(-decelPoint),
                       currElev + 500, vTouchdown);
     wpt->setGear_down(true);
     wpt->setFlaps(1.0f);
@@ -1117,6 +1136,7 @@ bool FGAIFlightPlan::createLanding(FGAIAircraft* ac, FGAirport* apt,
         return true;
     }
 
+    // We project down the runway and then search for an exit
     coord = rwy->pointOnCenterline(mindist);
     FGTaxiNodeRef tn;
     if (gn->getVersion() > 0) {
@@ -1126,12 +1146,15 @@ bool FGAIFlightPlan::createLanding(FGAIAircraft* ac, FGAirport* apt,
     }
 
     if (tn) {
-        wpt = createOnRunway(ac, buffer, tn->geod(), currElev, vTaxi);
+        wpt = createOnRunway(ac, "runwayexit", tn->geod(), currElev, vTaxi);
         wpt->setFlaps(1.0f);
         wpt->setSpeedBrakes(1.0f);
         wpt->setSpoilers(0.0f);
         pushBackWaypoint(wpt);
     }
+
+    time_t now = globals->get_time_params()->get_cur_time();
+    arrivalTime = now + calcArrivalTimes();
 
     return true;
 }
@@ -1245,7 +1268,7 @@ const char* FGAIFlightPlan::getRunwayClassFromTrafficType(const string& fltType)
 double FGAIFlightPlan::getTurnRadius(double speed, bool inAir)
 {
     double turn_radius;
-    if (inAir == false) {
+    if (!inAir) {
         turn_radius = ((360 / 30) * fabs(speed)) / (2 * M_PI);
     } else {
         turn_radius = 0.1911 * speed * speed; // an estimate for 25 degrees bank

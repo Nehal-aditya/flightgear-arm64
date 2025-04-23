@@ -31,6 +31,7 @@
 #include <ATC/TowerController.hxx>
 
 class FGAirportDynamics;
+class AirportGroundRadar;
 
 
 /**************************************************************************************
@@ -39,17 +40,16 @@ class FGAirportDynamics;
 class FGGroundController : public FGATCController
 {
 private:
-
     bool hasNetwork;
     bool networkInitialized;
     int count;
     int version;
 
-    FGTowerController *towerController;
     /**Returns the frequency to be used. */
     int getFrequency();
 
 
+    void             signOff(int id);
     void checkSpeedAdjustment(int id, double lat, double lon,
                               double heading, double speed, double alt);
     void checkHoldPosition(int id, double lat, double lon,
@@ -68,19 +68,16 @@ public:
     bool exists() {
         return hasNetwork;
     };
-    void setTowerController(FGTowerController *twrCtrlr) {
-        towerController = twrCtrlr;
-    };
-
 
     virtual void announcePosition(int id, FGAIFlightPlan *intendedRoute, int currentRoute,
                                   double lat, double lon, double hdg, double spd, double alt,
                                   double radius, int leg, FGAIAircraft *aircraft);
     virtual void updateAircraftInformation(int id, SGGeod geod, double heading, double speed, double alt, double dt);
+    virtual void handover(SGSharedPtr<FGTrafficRecord> aiObject, int leg);
 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             bool checkForCircularWaits(int id);
     virtual void render(bool);
-    virtual std::string getName();
+    virtual std::string getName() const;
     virtual void update(double dt);
 
     void addVersion(int v) {version = v; };

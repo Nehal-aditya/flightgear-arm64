@@ -1,26 +1,16 @@
-// Extracted from trafficcontrol.hxx - classes to manage AIModels based air traffic control
-// Written by Durk Talsma, started September 2006.
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+/*
+ * SPDX-FileName: ATCController.hxx
+ * SPDX-FileComment: Extracted from trafficrecord.hxx - Implementation of AIModels ATC code.
+ * SPDX-FileCopyrightText: Copyright (C) 2006 Durk Talsma
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 
 #ifndef ATC_CONTROLLER_HXX
 #define ATC_CONTROLLER_HXX
 
 #include <Airports/airports_fwd.hxx>
+
+#include <random>
 
 #include <osg/Geode>
 #include <osg/Geometry>
@@ -33,6 +23,7 @@
 #include <simgear/structure/SGReferenced.hxx>
 #include <simgear/structure/SGSharedPtr.hxx>
 
+#include <ATC/AirportGroundRadar.hxx>
 #include <ATC/trafficcontrol.hxx>
 
 namespace ATCMessageState
@@ -46,28 +37,30 @@ namespace ATCMessageState
         // 2 = "Acknowledge "Resume taxi".
         ACK_RESUME_TAXI,
         // 3 = "Issue TaxiClearance"
-        TAXI_CLEARED = 3,
+        TAXI_CLEARED,
         // 4 = Acknowledge Taxi Clearance"
-        ACK_TAXI_CLEARED = 4,
+        ACK_TAXI_CLEARED,
         // 5 = Post acknowlegde taxiclearance: Start taxiing
-        START_TAXI = 5,
+        START_TAXI,
         // 6 = Report runway
-        REPORT_RUNWAY = 6,
+        REPORT_RUNWAY,
         // 7 = Acknowledge report runway
-        ACK_REPORT_RUNWAY = 7,
+        ACK_REPORT_RUNWAY,
         // 8 = Switch tower frequency
-        SWITCH_GROUND_TOWER = 8,
+        SWITCH_GROUND_TOWER,
         // 9 = Acknowledge switch tower frequency
-        ACK_SWITCH_GROUND_TOWER = 9,
+        ACK_SWITCH_GROUND_TOWER,
         // 10 = Cleared for takeoff
         CLEARED_TAKEOFF,
         ACK_CLEARED_TAKEOFF,
         ANNOUNCE_ARRIVAL,
         ACK_ARRIVAL,
-        HOLD,
+        HOLD_PATTERN,
         CLEARED_TO_LAND,
         ACK_CLEARED_TO_LAND,
-        LANDING_TAXI
+        LANDING_TAXI,
+        SWITCH_TOWER_TO_GROUND,
+        HOLD_POSITION
     };
 }
 
@@ -87,16 +80,19 @@ protected:
     bool available;
     time_t lastTransmission;
     TrafficVector activeTraffic;
-
+    std::default_random_engine generator;
     double dt_count;
     osg::Group* group;
     FGAirportDynamics *parent = nullptr;
+    /*Shared Groundradar. All controllers of an airport share it.*/
+    SGSharedPtr<AirportGroundRadar> airportGroundRadar;
+
 
     std::string formatATCFrequency3_2(int );
     std::string genTransponderCode(const std::string& fltRules);
     bool isUserAircraft(FGAIAircraft*);
     void clearTrafficControllers();
-    TrafficVectorIterator searchActiveTraffic(int id);
+    TrafficVectorIterator searchActiveTraffic(int id) const;
     void eraseDeadTraffic();
     /**Returns the frequency to be used. */
     virtual int getFrequency() = 0;
@@ -131,16 +127,21 @@ public:
         MSG_HOLD,
         MSG_ACKNOWLEDGE_HOLD,
         MSG_CLEARED_TO_LAND,
-        MSG_ACKNOWLEDGE_CLEARED_TO_LAND
+        MSG_ACKNOWLEDGE_CLEARED_TO_LAND,
+        MSG_TAXI_PARK,
+        MSG_ACKNOWLEDGE_TAXI_PARK
     } AtcMsgId;
 
     typedef enum {
         ATC_AIR_TO_GROUND,
         ATC_GROUND_TO_AIR
     } AtcMsgDir;
+
     FGATCController();
     virtual ~FGATCController();
     void init();
+    void setAirportGroundRadar(SGSharedPtr<AirportGroundRadar> groundRadar);
+
 
     virtual void announcePosition(int id, FGAIFlightPlan *intendedRoute, int currentRoute,
                                   double lat, double lon,
@@ -151,6 +152,9 @@ public:
     bool checkTransmissionState(int minState, int MaxState, TrafficVectorIterator i, time_t now, AtcMsgId msgId,
                                 AtcMsgDir msgDir);
 
+    SGSharedPtr<FGTrafficRecord> getRecord(int id) const;
+    virtual void handover(SGSharedPtr<FGTrafficRecord> aiObject, int leg);
+     
     virtual void signOff(int id);
     bool hasInstruction(int id);
     FGATCInstruction getInstruction(int id);
@@ -171,7 +175,7 @@ public:
     void transmit(FGTrafficRecord *rec, FGAirportDynamics *parent, AtcMsgId msgId, AtcMsgDir msgDir, bool audible);
     std::string getGateName(FGAIAircraft *aircraft);
     virtual void render(bool) = 0;
-    virtual std::string getName()  = 0;
+    virtual std::string getName() const = 0;
     virtual void update(double) = 0;
 
 

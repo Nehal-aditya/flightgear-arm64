@@ -42,7 +42,6 @@
 class FGTowerController : public FGATCController
 {
 private:
-    ActiveRunwayVec activeRunways;
     /**Returns the frequency to be used. */
     int getFrequency();
 
@@ -61,7 +60,7 @@ public:
             double heading, double speed, double alt, double dt);
 
     virtual void render(bool);
-    virtual std::string getName();
+    virtual std::string getName() const;
     virtual void update(double dt);
 };
 

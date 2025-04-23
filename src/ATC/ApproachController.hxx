@@ -42,7 +42,6 @@
 class FGApproachController : public FGATCController
 {
 private:
-    ActiveRunwayVec activeRunways;
     /**Returns the frequency to be used. */
     int getFrequency();
 public:
@@ -57,11 +56,8 @@ public:
             double heading, double speed, double alt, double dt);
 
     virtual void render(bool);
-    virtual std::string getName();
+    virtual std::string getName() const;
     virtual void update(double dt);
-
-    ActiveRunway* getRunway(const std::string& name);
-
 };
 
 #endif

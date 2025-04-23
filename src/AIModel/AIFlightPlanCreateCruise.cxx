@@ -304,7 +304,7 @@ bool FGAIFlightPlan::createCruise(FGAIAircraft *ac, bool firstFlight, FGAirport 
 
   const string& rwyClass = getRunwayClassFromTrafficType(fltType);
   double heading = ac->getTrafficRef()->getCourse();
-  arr->getDynamics()->getActiveRunway(rwyClass, 2, activeRunway, heading);
+  arr->getDynamics()->getActiveRunway(rwyClass, RunwayAction::LANDING, activeRunway, heading);
   if (!arr->hasRunwayWithIdent(activeRunway)) {
     SG_LOG(SG_AI, SG_WARN, ac->getCallSign() << " cruise to" << arr->getId() << activeRunway << " not active");
     return false;
@@ -313,7 +313,7 @@ bool FGAIFlightPlan::createCruise(FGAIAircraft *ac, bool firstFlight, FGAirport 
   FGRunway* rwy = arr->getRunwayByIdent(activeRunway);
   assert( rwy != NULL );
   // begin descent 110km out
-  double distanceOut = arr->getDynamics()->getApproachController()->getRunway(rwy->name())->getApproachDistance();    //12 * SG_NM_TO_METER;
+  double distanceOut = arr->getDynamics()->getRunwayQueue(rwy->name())->getApproachDistance();    //12 * SG_NM_TO_METER;
 
   SGGeod beginDescentPoint     = rwy->pointOnCenterline(-3*distanceOut);
   SGGeod secondaryDescentPoint = rwy->pointOnCenterline(0);

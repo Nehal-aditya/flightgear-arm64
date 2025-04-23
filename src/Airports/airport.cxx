@@ -210,6 +210,7 @@ FGHelipadRef FGAirport::getHelipadByIdent(const std::string& aIdent) const
 //------------------------------------------------------------------------------
 FGRunwayRef FGAirport::findBestRunwayForHeading(double aHeading, struct FindBestRunwayForHeadingParams * parms ) const
 {
+  //FIXME must allign with FGAirportDynamics::getActiveRunway
   loadRunways();
 
   FGRunway* result = NULL;

@@ -91,7 +91,7 @@ public:
 
     double getHeading() const;
 
-    int getIndex()
+    int getIndex() const
     {
         return index;
     }
@@ -195,14 +195,6 @@ private:
 
     FGTaxiNodeRef findNodeByIndex(int index) const;
 
-    //void printRoutingError(string);
-
-    void checkSpeedAdjustment(int id, double lat, double lon,
-                              double heading, double speed, double alt);
-    void checkHoldPosition(int id, double lat, double lon,
-                           double heading, double speed, double alt);
-
-
     void addSegment(const FGTaxiNodeRef& from, const FGTaxiNodeRef& to);
     void addParking(const FGParkingRef& park);
 
@@ -263,7 +255,6 @@ public:
 
     FGTaxiNodeRef findNearestNode(const SGGeod& aGeod) const;
     FGTaxiNodeRef findNearestNodeOnRunwayEntry(const SGGeod& aGeod) const;
-    /**Returns the nearest node in that is in direction of runway heading. Falls back to ones behind aircraft*/
     FGTaxiNodeRef findNearestNodeOnRunwayExit(const SGGeod& aGeod, FGRunway* aRunway = NULL) const;
 
     FGTaxiNodeRef findNearestNodeOffRunway(const SGGeod& aGeod, FGRunway* aRunway, double distanceM) const;

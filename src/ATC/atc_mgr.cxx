@@ -30,7 +30,7 @@
 #include <Scenery/scenery.hxx>
 #include <Main/globals.hxx>
 #include <Main/fg_props.hxx>
-#include <AIModel/AIAircraft.hxx>
+#include <AIModel/AIConstants.hxx>
 #include <AIModel/AIManager.hxx>
 #include <Traffic/Schedule.hxx>
 #include <Traffic/SchedFlight.hxx>
@@ -47,6 +47,7 @@ Constructor, initializes values to private boolean and FGATCController instances
 FGATCManager::FGATCManager() :
     controller(NULL),
     prevController(NULL),
+    enRouteController(NULL),
     networkVisible(false),
     initSucceeded(false)
 {
@@ -85,6 +86,8 @@ void FGATCManager::postinit()
     auto aiManager = globals->get_subsystem<FGAIManager>();
     auto userAircraft = aiManager->getUserAircraft();
     string callsign = userAircraft->getCallSign();
+
+    enRouteController = new EnRouteController();
 
     double aircraftRadius = 40; // note that this is currently hardcoded to a one-size-fits all JumboJet value. Should change later.
 
@@ -189,7 +192,6 @@ void FGATCManager::postinit()
             string fltType = "ga";
             fp->setRunway(runway);
             fp->createTakeOff(userAircraft, false, dcs->parent(), userAircraft->getGeodPos(), 0, fltType);
-            userAircraft->setTakeOffStatus(AITakeOffStatus::QUEUED);
         } else {
             // We're on the ground somewhere. Handle this case later.
 
@@ -248,6 +250,7 @@ void FGATCManager::shutdown()
     userAircraftTrafficRef.reset();
     userAircraftScheduledFlight.reset();
     _routeManagerDestinationAirportNode.clear();
+    delete enRouteController;
 }
 
 void FGATCManager::reposition()
@@ -349,6 +352,7 @@ void FGATCManager::update ( double time ) {
         SG_LOG(SG_ATC, SG_BULK, "User aircraft currently at leg : " << fp->getLeg());
     }
 
+    //FIXME Should be extracted to a UserAircraft class
     // Call getATCController method; returns what FGATCController presently controls the user aircraft
     // - e.g. FGStartupController
     // controller = user_ai_ac->getATCController();
@@ -376,7 +380,7 @@ void FGATCManager::update ( double time ) {
                 if (userAircraftTrafficRef->getDepartureAirport()->getDynamics())
                     controller = userAircraftTrafficRef->getDepartureAirport()->getDynamics()->getStartupController();
                 break;
-            case AILeg::TAXI:              // Taxiing to runway
+            case AILeg::RUNWAY_TAXI:              // Taxiing to runway
                 if (userAircraftTrafficRef->getDepartureAirport()->getDynamics()->getGroundController()->exists())
                     controller = userAircraftTrafficRef->getDepartureAirport()->getDynamics()->getGroundController();
                 break;
@@ -438,7 +442,9 @@ void FGATCManager::update ( double time ) {
         if (controller) {
             // render the path for the present controller if the ground network is set to visible
             controller->render(networkVisible);
-            SG_LOG(SG_ATC, SG_BULK, "Adding ground network to the scenegraph::update");
+            if (networkVisible) {
+               SG_LOG(SG_ATC, SG_BULK, "Adding ground network to the scenegraph::update");
+            }
         }
 
         // reset previous controller for next update() iteration
@@ -449,6 +455,10 @@ void FGATCManager::update ( double time ) {
    for (AtcVecIterator atc = activeStations.begin(); atc != activeStations.end(); ++atc) {
        (*atc)->update(time);
    }
+}
+
+FGATCController *FGATCManager::getEnRouteController() {
+   return enRouteController;
 }
 
 
