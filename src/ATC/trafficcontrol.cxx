@@ -232,9 +232,6 @@ void ActiveRunwayQueue::updateFirst(SGSharedPtr<FGTrafficRecord> trafficRecord, 
 /** Output the contents of the departure queue vector nicely formatted*/
 void ActiveRunwayQueue::printRunwayQueue() const
 {
-    assert(rwy);
-    assert(runwayQueue);
-
     time_t now = globals->get_time_params()->get_cur_time();
 
     SG_LOG(SG_ATC, SG_DEBUG, "Runway Queue for " << icao << "/" << rwy << " Size : " << runwayQueue.size());
@@ -285,7 +282,8 @@ const SGSharedPtr<FGTrafficRecord> ActiveRunwayQueue::getFirstAircraftInDepartur
 void ActiveRunwayQueue::addToQueue(SGSharedPtr<FGTrafficRecord> ac)
 {
     assert(ac);
-    assert(!ac->getDie());
+    assert(!ac->getAircraft());
+    assert(!ac->getAircraft()->getDie());
     ac->setTakeOffStatus(AITakeOffStatus::QUEUED);
     runwayQueue.push_back(std::move(ac));
     printRunwayQueue();
