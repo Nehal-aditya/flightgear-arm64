@@ -407,7 +407,6 @@ class Node {
         SG_LOG(SG_ATC, SG_BULK, "Query Quadtree " << queryBox.getMin().x() << "\t" << queryBox.getMin().y() << "\t" 
         << queryBox.getMax().x() << "\t" << queryBox.getMax().y()
         << " depth " << depth << " Leaf : " << (isLeaf()?"true":"false"));
-        assert(queryBox.contains(bounds.x(), bounds.y()));
         for (auto value : data)
         {
             auto pos = getBoxFunction(value);
