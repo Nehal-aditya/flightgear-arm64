@@ -68,6 +68,11 @@ public:
     bool enabled() const;
     const std::string& type() const;
 
+    const std::string& name() const
+    {
+        return _name;
+    }
+
     void setVisible(bool v);
     void setEnabled(bool e);
 
