@@ -22,42 +22,39 @@
 class FGWindowsMenuBar : public FGMenuBar
 {
 public:
-  /**
-   * Constructor.
-   */
-  FGWindowsMenuBar();
-  virtual ~FGWindowsMenuBar() = default;
-  
-  
-  /**
-   * Initialize the menu bar from $FG_ROOT/gui/menubar.xml
-   */
-  virtual void init();
-  
-  /**
-   * Make the menu bar visible.
-   */
-  virtual void show();
-  
-  
-  /**
-   * Make the menu bar invisible.
-   */
-  virtual void hide();
-  
-  
-  /**
-   * Test whether the menu bar is visible.
-   */
-  virtual bool isVisible() const;
+    /**
+     * Constructor.
+     */
+    FGWindowsMenuBar();
+    ~FGWindowsMenuBar() override = default;
 
-  void setHideIfOverlapsWindow(bool hide) override;
+    /**
+     * Initialize the menu bar from $FG_ROOT/gui/menubar.xml
+     */
+    void init() override;
 
-  bool getHideIfOverlapsWindow() const override;
+    /**
+     * Make the menu bar visible.
+     */
+    void show() override;
 
-  std::vector<SGBindingList> getItemBindings() const;
-  
+    /**
+     * Make the menu bar invisible.
+     */
+    void hide() override;
+
+    /**
+     * Test whether the menu bar is visible.
+     */
+    bool isVisible() const override;
+
+    void setHideIfOverlapsWindow(bool hide) override;
+
+    bool getHideIfOverlapsWindow() const override;
+
+    std::vector<SGBindingList> getItemBindings() const;
+
 private:
-  class WindowsMenuBarPrivate;
-  std::unique_ptr<WindowsMenuBarPrivate> _p;
+    class WindowsMenuBarPrivate;
+    std::unique_ptr<WindowsMenuBarPrivate> _p;
 };
