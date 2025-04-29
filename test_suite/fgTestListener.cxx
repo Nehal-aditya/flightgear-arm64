@@ -77,29 +77,32 @@ void fgTestListener::endTest(CppUnit::Test *test)
     }
     cerr.flush();
 
+    // Set up the data structure.
+    TestDataCapt test_data;
+    test_data.name = test->getName();
+    test_data.timing = clock() - m_time;
+    test_data.failure = m_failure;
+    test_data.error = m_error;
+    
     // Store the captured IO for any failed tests.
     if (m_failure && !debug) {
-        // Set up the data structure.
-        TestIOCapt test_io;
-        test_io.name = test->getName();
-
         // Standard IO.
-        test_io.stdio = capt.str();
+        test_data.stdio = capt.str();
 
         // The simgear logstreams.
         capturedIO &obj = getIOstreams();
-        test_io.log_class = obj.log_class;
-        test_io.log_priority = obj.log_priority;
-        test_io.sg_interleaved = obj.sg_interleaved.str();
-        test_io.sg_bulk_only = obj.sg_bulk_only.str();
-        test_io.sg_debug_only = obj.sg_debug_only.str();
-        test_io.sg_info_only = obj.sg_info_only.str();
-        test_io.sg_warn_only = obj.sg_warn_only.str();
-        test_io.sg_alert_only = obj.sg_alert_only.str();
+        test_data.log_class = obj.log_class;
+        test_data.log_priority = obj.log_priority;
+        test_data.sg_interleaved = obj.sg_interleaved.str();
+        test_data.sg_bulk_only = obj.sg_bulk_only.str();
+        test_data.sg_debug_only = obj.sg_debug_only.str();
+        test_data.sg_info_only = obj.sg_info_only.str();
+        test_data.sg_warn_only = obj.sg_warn_only.str();
+        test_data.sg_alert_only = obj.sg_alert_only.str();
 
         // Add the test's IO to the list.
-        io_capt.push_back(test_io);
     }
+    test_data_records.push_back(test_data);
 }
 
 // Override the base class function to capture IO streams.

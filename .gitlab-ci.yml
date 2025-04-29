@@ -145,7 +145,7 @@ test:
   script:
     - cd $BUILD_DIR
     - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CI_PROJECT_DIR/osg-dist/lib
-    - ./test_suite/fgfs_test_suite --fg-root $CI_PROJECT_DIR/testFGData
+    - ./test_suite/fgfs_test_suite --fg-root $CI_PROJECT_DIR/testFGData --junit
   needs:
     - job: linux-build
       artifacts: false
@@ -157,8 +157,18 @@ test:
       job: linux-build
       ref: $OSG_REF
       artifacts: true
+  artifacts:
+    when: always
+    paths:
+      - $BUILD_DIR/FGData_tests_junit.xml 
+      - $BUILD_DIR/Simgear_unit_tests_junit.xml 
+      - $BUILD_DIR/System_tests_junit.xml 
+      - $BUILD_DIR/Unit_tests_junit.xml
+    reports:
+      junit: build/*_junit.xml
   cache:
     paths:
       - $BUILD_DIR
+
 
 

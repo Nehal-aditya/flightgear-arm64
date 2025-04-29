@@ -284,7 +284,7 @@ int main(int argc, char **argv)
     int         status_gui=-1, status_simgear=-1, status_system=-1, status_unit=-1, status_fgdata=-1;
     bool        run_system=false, run_unit=false, run_gui=false, run_simgear=false, run_fgdata=false;
     bool        logSplit=false;
-    bool        timings=false, ctest_output=false, debug=false, printSummary=true, help=false;
+    bool        timings=false, ctest_output=false, junit_output=false, debug=false, printSummary=true, help=false;
     char        *subset_system=NULL, *subset_unit=NULL, *subset_gui=NULL, *subset_simgear=NULL, *subset_fgdata=NULL;
     bool        failure=false;
     char        firstchar;
@@ -378,6 +378,10 @@ int main(int argc, char **argv)
         } else if (arg == "-c" || arg == "--ctest") {
             ctest_output = true;
 
+        // JUnit suitable output.
+        } else if (arg == "-j" || arg == "--junit") {
+            junit_output = true;
+
         // Debug output.
         } else if (arg == "-d" || arg == "--debug") {
             debug = true;
@@ -430,15 +434,15 @@ int main(int argc, char **argv)
 
     // Execute each of the test suite categories.
     if (run_system)
-        status_system = testRunner("System tests", "System / functional tests", subset_system, timings, ctest_output, debug);
+        status_system = testRunner("System tests", "System / functional tests", subset_system, timings, ctest_output, junit_output, debug);
     if (run_unit)
-        status_unit = testRunner("Unit tests", "Unit tests", subset_unit, timings, ctest_output, debug);
+        status_unit = testRunner("Unit tests", "Unit tests", subset_unit, timings, ctest_output, junit_output, debug);
     if (run_gui && 0) // Disabled as there are no GUI tests yet.
-        status_gui = testRunner("GUI tests", "GUI tests", subset_gui, timings, ctest_output, debug);
+        status_gui = testRunner("GUI tests", "GUI tests", subset_gui, timings, ctest_output, junit_output, debug);
     if (run_simgear)
-        status_simgear = testRunner("Simgear unit tests", "Simgear unit tests", subset_simgear, timings, ctest_output, debug);
+        status_simgear = testRunner("Simgear unit tests", "Simgear unit tests", subset_simgear, timings, ctest_output, junit_output, debug);
     if (run_fgdata)
-        status_fgdata = testRunner("FGData tests", "FGData tests", subset_fgdata, timings, ctest_output, debug);
+        status_fgdata = testRunner("FGData tests", "FGData tests", subset_fgdata, timings, ctest_output, junit_output, debug);
 
     // Summary printout.
     if (printSummary && !ctest_output)

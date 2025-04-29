@@ -23,6 +23,7 @@ set(TESTSUITE_SOURCES
     bootstrap.cxx
     dataStore.cxx
     fgCompilerOutputter.cxx
+    fgJunitOutputter.cxx
     fgTestListener.cxx
     fgTestRunner.cxx
     formatting.cxx
@@ -33,6 +34,7 @@ set(TESTSUITE_HEADERS
     ${TESTSUITE_HEADERS}
     dataStore.hxx
     fgCompilerOutputter.hxx
+    fgJunitOutputter.hxx
     fgTestListener.hxx
     fgTestRunner.hxx
     formatting.hxx

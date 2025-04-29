@@ -32,7 +32,7 @@ using namespace std;
 
 
 // Create a new class instance.
-fgCompilerOutputter * fgCompilerOutputter::defaultOutputter(CppUnit::TestResultCollector *result, vector<TestIOCapt> *capt, const clock_t *clock, CppUnit::OStream &stream)
+fgCompilerOutputter * fgCompilerOutputter::defaultOutputter(CppUnit::TestResultCollector *result, vector<TestDataCapt> *capt, const clock_t *clock, CppUnit::OStream &stream)
 {
     return new fgCompilerOutputter(result, capt, clock, stream);
 }
@@ -42,8 +42,8 @@ fgCompilerOutputter * fgCompilerOutputter::defaultOutputter(CppUnit::TestResultC
 void fgCompilerOutputter::printFailureDetail(CppUnit::TestFailure *failure)
 {
     // Declarations.
-    TestIOCapt test_io;
-    vector<TestIOCapt>::iterator test_iter;
+    TestDataCapt test_data;
+    vector<TestDataCapt>::iterator test_iter;
 
     // Initial separator.
 #ifdef _WIN32
@@ -63,26 +63,26 @@ void fgCompilerOutputter::printFailureDetail(CppUnit::TestFailure *failure)
         return;
 
     // The captured IO for this test.
-    test_iter = find_if(io_capt->begin(), io_capt->end(), matchTestName(failure->failedTestName()));
-    if (test_iter != io_capt->end())
-        test_io = *test_iter;
+    test_iter = find_if(test_data_records->begin(), test_data_records->end(), matchTestName(failure->failedTestName()));
+    if (test_iter != test_data_records->end())
+        test_data = *test_iter;
 
     // SG_LOG IO streams.
-    if (!test_io.sg_interleaved.empty())
-        fgCompilerOutputter::printIOStreamMessages("SG_LOG, "+test_io.log_class+" class, "+test_io.log_priority+" priority", test_io.sg_interleaved, true);
-    if (!test_io.sg_bulk_only.empty())
-        fgCompilerOutputter::printIOStreamMessages("SG_LOG, "+test_io.log_class+" class, SG_BULK only priority", test_io.sg_bulk_only);
-    if (!test_io.sg_debug_only.empty())
-        fgCompilerOutputter::printIOStreamMessages("SG_LOG, "+test_io.log_class+" class, SG_DEBUG only priority", test_io.sg_debug_only);
-    if (!test_io.sg_info_only.empty())
-        fgCompilerOutputter::printIOStreamMessages("SG_LOG, "+test_io.log_class+" class, SG_INFO only priority", test_io.sg_info_only);
-    if (!test_io.sg_warn_only.empty())
-        fgCompilerOutputter::printIOStreamMessages("SG_LOG, "+test_io.log_class+" class, SG_WARN only priority", test_io.sg_warn_only);
-    if (!test_io.sg_alert_only.empty())
-        fgCompilerOutputter::printIOStreamMessages("SG_LOG, "+test_io.log_class+" class, SG_ALERT only priority", test_io.sg_alert_only);
+    if (!test_data.sg_interleaved.empty())
+        fgCompilerOutputter::printIOStreamMessages("SG_LOG, "+test_data.log_class+" class, "+test_data.log_priority+" priority", test_data.sg_interleaved, true);
+    if (!test_data.sg_bulk_only.empty())
+        fgCompilerOutputter::printIOStreamMessages("SG_LOG, "+test_data.log_class+" class, SG_BULK only priority", test_data.sg_bulk_only);
+    if (!test_data.sg_debug_only.empty())
+        fgCompilerOutputter::printIOStreamMessages("SG_LOG, "+test_data.log_class+" class, SG_DEBUG only priority", test_data.sg_debug_only);
+    if (!test_data.sg_info_only.empty())
+        fgCompilerOutputter::printIOStreamMessages("SG_LOG, "+test_data.log_class+" class, SG_INFO only priority", test_data.sg_info_only);
+    if (!test_data.sg_warn_only.empty())
+        fgCompilerOutputter::printIOStreamMessages("SG_LOG, "+test_data.log_class+" class, SG_WARN only priority", test_data.sg_warn_only);
+    if (!test_data.sg_alert_only.empty())
+        fgCompilerOutputter::printIOStreamMessages("SG_LOG, "+test_data.log_class+" class, SG_ALERT only priority", test_data.sg_alert_only);
 
     // Default IO streams.
-    fgCompilerOutputter::printIOStreamMessages("STDOUT and STDERR", test_io.stdio);
+    fgCompilerOutputter::printIOStreamMessages("STDOUT and STDERR", test_data.stdio);
 }
 
 

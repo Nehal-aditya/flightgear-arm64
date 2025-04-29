@@ -28,11 +28,15 @@
 #include "formatting.hxx"
 
 
-// Data structure for holding the captured IO for a failed test.
-struct TestIOCapt {
-    std::string name;
+// Data structure for holding the captured data for a test.
+struct TestDataCapt {
+    std::string name;  
+    time_t timing;  
+    bool failure;
+    bool error;
     std::string log_class;
     std::string log_priority;
+    std::string fileName;
     std::string stdio;
     std::string sg_interleaved;
     std::string sg_bulk_only;
@@ -43,7 +47,7 @@ struct TestIOCapt {
 };
 
 
-// Match the test by name for std:find using a vector<TestIOCapt>.
+// Match the test by name for std:find using a vector<TestDataCapt>.
 class matchTestName
 {
     std::string _name;
@@ -51,7 +55,7 @@ class matchTestName
 public:
     matchTestName(const std::string &name) : _name(name) {}
 
-    bool operator()(const TestIOCapt &item) const {
+    bool operator()(const TestDataCapt &item) const {
         return item.name == _name;
     }
 };
@@ -81,11 +85,12 @@ protected:
         clock_t sum_time;
 
         // IO capture for all failed tests.
-        std::vector<TestIOCapt> io_capt;
+        std::vector<TestDataCapt> test_data_records;
 
         // Output settings.
         bool timings;
         bool ctest_output;
+        bool junit_output;
         bool debug;
 
     protected:

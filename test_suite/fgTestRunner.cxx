@@ -24,12 +24,13 @@
 #include <cppunit/extensions/TestFactoryRegistry.h>
 
 #include "fgCompilerOutputter.hxx"
+#include "fgJunitOutputter.hxx"
 #include "fgTestListener.hxx"
 #include "formatting.hxx"
 
 
 // Execute all test suites for the given test category.
-int testRunner(const std::string& type, const std::string& title, char *subset, bool timings, bool ctest_output, bool debug)
+int testRunner(const std::string& type, const std::string& title, char *subset, bool timings, bool ctest_output, bool junit, bool debug)
 {
     // Declarations.
     CppUnit::TextTestRunner runner;
@@ -49,8 +50,12 @@ int testRunner(const std::string& type, const std::string& title, char *subset, 
     testListener->ctest_output = ctest_output;
     testListener->debug = debug;
 
-    // Set the test suite output IO stream.
-    runner.setOutputter(new fgCompilerOutputter(&runner.result(), &testListener->io_capt, &testListener->sum_time, std::cerr, ctest_output, debug));
+    if (junit) {
+        // Set the test suite output IO stream. 
+        runner.setOutputter(new fgJunitOutputter(type, &runner.result(), &testListener->test_data_records, &testListener->sum_time, std::cerr, debug));
+    } else {
+        runner.setOutputter(new fgCompilerOutputter(&runner.result(), &testListener->test_data_records, &testListener->sum_time, std::cerr, ctest_output, debug));
+    }
 
     // Execute the tests.
     if (subset == NULL)
