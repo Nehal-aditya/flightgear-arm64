@@ -56,6 +56,152 @@
 
 using flightgear::SceneryPager;
 
+
+#ifdef SG_TORRENT
+
+#include <simgear/io/torrent.hxx>
+
+static bool s_torrentRuntimeEnabled = false;
+static std::mutex s_torrentMutex;
+static std::vector<std::string> s_torrentScenerySuffixes;
+
+
+struct torrentStatus
+{
+    std::shared_ptr<libtorrent::torrent_info> torrent_info;
+    bool finished = false;
+    bool ok = false;    // Only valid if .finished is true.
+};
+
+static std::map<std::string, torrentStatus>  s_torrentDirToStatus;
+
+static std::ostream& operator<<(std::ostream& out, const torrentStatus& status)
+{
+    return out << "torrentStatus {"
+            << " finished=" << status.finished
+            << " ok=" << status.ok
+            << "}";
+}
+
+static void torrentScheduleTileCallback(const std::string& dir, bool ok)
+{
+    SG_LOG(SG_TERRAIN, SG_ALERT, "torrentScheduleTileCallback(): dir=" << dir << " ok=" << ok);
+    std::unique_lock    lock(s_torrentMutex);
+    
+    assert(!s_torrentDirToStatus[dir].finished);
+    
+    s_torrentDirToStatus[dir].torrent_info = nullptr;
+    s_torrentDirToStatus[dir].finished = true;
+    s_torrentDirToStatus[dir].ok = ok;
+}
+
+static bool torrentIsSyncing(const std::string& path)
+{
+    SG_LOG( SG_TERRAIN, SG_DEBUG, "torrentIsSyncing(): path=" << path);
+    std::unique_lock    lock(s_torrentMutex);
+    // Need to look at active torrents and see whether they include <path>
+    // (which will be a unique leafname, for example `2941832.stg`).
+    for (auto it: s_torrentDirToStatus)
+    {
+        SG_LOG( SG_TERRAIN, SG_DEBUG, "torrentIsSyncing(): it.first=" << it.first);
+        const torrentStatus& status = it.second;
+        if (status.finished)
+        {
+            continue;
+        }
+        if (status.torrent_info)
+        {
+            const libtorrent::file_storage& file_storage = status.torrent_info->files();
+            for (int i=0; i<file_storage.num_files(); ++i)
+            {
+                SG_LOG( SG_TERRAIN, SG_DEBUG, "torrentIsSyncing():"
+                        "    file_storage.file_name(i)=" << file_storage.file_name(i)
+                        );
+                if (file_storage.file_name(i) == path)
+                {
+                    SG_LOG(SG_TERRAIN, SG_DEBUG, "torrentIsSyncing():"
+                            << " returning true"
+                            << " path=" << path
+                            );
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            /* This could end up downloading <path>, we don't know yet. */
+            return true;
+        }
+    }
+    SG_LOG(SG_TERRAIN, SG_DEBUG, "torrentIsSyncing():"
+            << " returning false"
+            << " path=" << path
+            );
+    return false;
+}
+
+static void torrentInfoCallback(const std::string& dir, std::shared_ptr<libtorrent::torrent_info> torrent_info)
+{
+    std::unique_lock    lock(s_torrentMutex);
+    SG_LOG(SG_TERRAIN, SG_DEBUG, "torrentInfoCallback():" << " dir=" << dir);
+    assert(!s_torrentDirToStatus[dir].torrent_info);
+    s_torrentDirToStatus[dir].torrent_info = torrent_info;
+}
+
+static void torrentScheduleTile(const SGBucket& bucket)
+{
+    std::string basePath = bucket.gen_base_path();
+    SG_LOG( SG_TERRAIN, SG_DEBUG, "torrentScheduleTile(): basePath=" << basePath);
+    assert(!s_torrentScenerySuffixes.empty());
+    std::string url_base = "http://us1mirror.flightgear.org/terrasync/ws2";
+    for (const std::string& scenerySuffix : s_torrentScenerySuffixes)
+    {
+        std::string dir = scenerySuffix + "/" + basePath;
+        size_t p = dir.rfind("/");
+        assert(p != std::string::npos);
+        std::string dir_parent = dir.substr(0, p);
+        std::string torrent_url = url_base + "/" + dir + ".torrent";
+        SG_LOG( SG_TERRAIN, SG_DEBUG, "torrentScheduleTile():"
+                << " basePath=" << basePath
+                << " scenerySuffix=" << scenerySuffix
+                << " torrent_url=" << torrent_url
+                );
+        std::unique_lock    lock(s_torrentMutex);
+        auto it = s_torrentDirToStatus.find(dir);
+        if (it == s_torrentDirToStatus.end())
+        {
+            s_torrentDirToStatus[dir] = torrentStatus();
+            simgear::Torrent* torrent = globals->get_subsystem<simgear::Torrent>();
+            SGPath scenery_dir = fgGetString("/sim/terrasync/scenery-dir");
+            SG_LOG( SG_TERRAIN, SG_DEBUG, "/sim/terrasync/scenery-dir=" << scenery_dir);
+            assert(scenery_dir.str() != "");
+            /* Need to temporarily drop lock in case add_torrent_url() calls
+            our callback before returning. */
+            lock.unlock();
+            SGPath torrent_path = scenery_dir / (dir + ".torrent");
+            SGPath out_path = scenery_dir / dir_parent;
+            torrent->add_torrent_url(
+                    torrent_url,
+                    torrent_path,
+                    out_path,
+                    std::bind(torrentScheduleTileCallback, dir, std::placeholders::_1),
+                    std::bind(torrentInfoCallback, dir, std::placeholders::_1)
+                    );
+            lock.lock();
+        }
+        else
+        {
+            SG_LOG( SG_TERRAIN, SG_DEBUG, "torrentScheduleTile(): not downloading because already trying/tried:"
+                    << " dir=" << dir
+                    << " it->second=" << it->second
+                    );
+        }
+    }
+    
+}
+
+#endif
+
 class FGTileMgr::TileManagerListener : public SGPropertyChangeListener
 {
 public:
@@ -163,6 +309,20 @@ FGTileMgr::FGTileMgr():
     _enableCache(true),
     _use_vpb(false)
 {
+    const char* torrent_enabled_path = "/sim/torrent/enabled";
+    SGPropertyNode* torrent_enabled_node = fgGetNode(torrent_enabled_path);
+    if (torrent_enabled_node)
+    {
+        #ifdef SG_TORRENT
+        s_torrentRuntimeEnabled = torrent_enabled_node->getBoolValue();
+        #else
+        SG_LOG(SG_TERRAIN, SG_ALERT,
+                "This Flightgear build does not support torrents;"
+                " ignoring property "
+                << torrent_enabled_path << "='" << torrent_enabled_node->getStringValue() << "'"
+                );
+        #endif
+    }
 }
 
 
@@ -242,6 +402,9 @@ void FGTileMgr::reinit()
         scenerySuffixes = {"Objects", "Terrain"}; // defaut values
     }
 
+    #ifdef SG_TORRENT
+    s_torrentScenerySuffixes = scenerySuffixes;
+    #endif
     if (terraSync) {
         terraSync->setSceneryPathSuffixes(scenerySuffixes);
     }
@@ -421,6 +584,12 @@ void FGTileMgr::schedule_needed(const SGBucket& curr_bucket, double vis)
             SG_LOG(SG_TERRAIN, SG_DEBUG, " Scheduling Tile STG file " << b.get_center_lat() << ", " << b.get_center_lon() << " distance " << d << " priority: " << priority);
             sched_tile( b, priority, true, 0.0 );
 
+            #ifdef SG_TORRENT
+            if (s_torrentRuntimeEnabled) {
+                torrentScheduleTile(b);
+            }
+            else
+            #endif
             if (terraSync) {
                 terraSync->scheduleTile(b);
             }
@@ -702,6 +871,11 @@ bool FGTileMgr::isTileDirSyncing(const std::string& tileFileName) const
         return true;
     }
 
+    #ifdef SG_TORRENT
+    if (s_torrentRuntimeEnabled) {
+        return torrentIsSyncing(tileFileName);
+    }
+    #endif
     std::string nameWithoutExtension = tileFileName.substr(0, tileFileName.size() - 4);
     long int bucketIndex = simgear::strutils::to_int(nameWithoutExtension);
     SGBucket bucket(bucketIndex);
