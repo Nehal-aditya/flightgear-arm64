@@ -39,9 +39,7 @@ namespace simgear { class Dir; }
  * The “default translation” is made of all source strings found in the
  * XML files present in $FG_ROOT/Translations/default/ (also in
  * ⟨base dir⟩/Translations/default inside an aircraft or add-on). This
- * translation corresponds to the /sim/intl/default-translation node (see
- * $FG_ROOT/Translations/locale.xml). It does not correspond to any of the
- * /sim/intl/locale[n] nodes.
+ * translation does not correspond to any of the /sim/intl/locale[n] nodes.
  *
  * The default translation has only one form for any given string: the “source
  * text” (this is what translators translate). Each of its strings is loaded
@@ -261,8 +259,20 @@ protected:
         const SGPath& xmlFile, const std::string& domain,
         const std::string& resource);
     /**
-     * Load the default translation of core resources 'atc', 'menu',
-     * 'options', 'sys', 'tips', etc.
+     * @brief Load all default translation files from the specified directory.
+     *
+     * @param defaultTranslationDir  directory containing XML files
+     * @param domain                 target domain
+     *
+     * The search for XML files does not recurse into subdirectories. Each XML
+     * file is loaded as a resource whose name is the SGPath::file_base() of
+     * the file so that, e.g., atc.no_translate.xml is loaded as the 'atc'
+     * resource.
+     */
+    void loadDefaultTranslation(const simgear::Dir& defaultTranslationDir,
+                                const std::string& domain);
+    /**
+     * Load the core default translation ('atc', 'menu', 'options', 'sys', etc.).
      */
     void loadCoreResourcesForDefaultTranslation();
 
@@ -272,8 +282,6 @@ protected:
      */
     void loadResourcesFromAircraftOrAddonDir(const SGPath& basePath,
                                              const std::string& domain);
-    void loadDefaultTranslationFromAircraftOrAddonDir(
-        const simgear::Dir& defaultTranslationDir, const std::string& domain);
     void loadXLIFFFromAircraftOrAddonDir(const SGPath& basePath,
                                          const std::string& domain);
     /**

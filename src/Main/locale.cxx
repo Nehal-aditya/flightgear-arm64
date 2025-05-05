@@ -307,27 +307,10 @@ std::string FGLocale::getLanguageId() const
 
 void FGLocale::loadCoreResourcesForDefaultTranslation()
 {
-    for (const string resource : {
-            "atc", "menu", "options", "sys", "tips", "weather-scenarios"}) {
-        const auto n = _intl->getChild("default-translation", 0, true);
+    const simgear::Dir d = simgear::Dir(
+        globals->get_fg_root() / "Translations" / "default");
 
-        const auto resourceNode = n->getNode(resource);
-        if (!resourceNode) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "No child node '" << resource << "' of "
-                   << n->getPath() << "; presumably, FGData is not up-to-date.");
-            return;
-        }
-
-        const string pathStr = resourceNode->getStringValue();
-        if (pathStr.empty()) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "No path in " << resourceNode->getPath()
-                   << " for resource '" << resource << "'.");
-            return;
-        }
-
-        loadResourceForDefaultTranslation(globals->get_fg_root() / pathStr,
-                                          "core", resource);
-    }
+    loadDefaultTranslation(d, "core");
 }
 
 void FGLocale::loadAircraftTranslations()
@@ -357,7 +340,7 @@ void FGLocale::loadResourcesFromAircraftOrAddonDir(const SGPath& basePath,
     const simgear::Dir d = simgear::Dir(basePath / "Translations" / "default");
 
     if (d.exists()) {
-        loadDefaultTranslationFromAircraftOrAddonDir(d, domain);
+        loadDefaultTranslation(d, domain);
     }
 
     if (_currentLocale != nullptr) { // if not “engineering English”
@@ -365,13 +348,15 @@ void FGLocale::loadResourcesFromAircraftOrAddonDir(const SGPath& basePath,
     }
 }
 
-void FGLocale::loadDefaultTranslationFromAircraftOrAddonDir(
-    const simgear::Dir& defaultTranslationDir, const string& domain)
+void FGLocale::loadDefaultTranslation(const simgear::Dir& defaultTranslationDir,
+                                      const string& domain)
 {
     const auto xmlFiles = defaultTranslationDir.children(
         simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT, ".xml");
 
     for (const SGPath& file : xmlFiles) {
+        // Because file.file_base() stops at the first dot, atc.no_translate.xml
+        // is loaded as the 'atc' resource.
         loadResourceForDefaultTranslation(file, domain, file.file_base());
     }
 }
