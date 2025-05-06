@@ -354,8 +354,8 @@ void FDMShell::createImplementation()
     _impl = new FGNullFDM( dt );
   }
     else if ( model == "larcsim" ) {
-        SG_LOG(SG_FLIGHT, SG_ALERT, "LaRCsim/UIUC support is removed from this version of FlightGear. Please use the 2024.1 release instead.");
-        fdmUnavailable = true;
+        throw sg_exception(string("LaRCsim/UIUC support is removed from this version of FlightGear.\n"
+             "If you still need it, please use the 2024.1 release instead."));
     }
     else if ( model == "jsb" ) {
 #ifdef ENABLE_JSBSIM
