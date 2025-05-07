@@ -6,6 +6,8 @@
 #include "GUI/dialog.hxx"
 #include "config.h"
 
+#include <utility>
+
 #include "FGPUICompatDialog.hxx"
 
 #include <simgear/debug/BufferedLogCallback.hxx>
@@ -107,9 +109,11 @@ void FGPUICompatDialog::setupGhost(nasal::Hash& compatModule)
     dialogHash.set("new", &f_makeDialogPeer);
 }
 
-FGPUICompatDialog::FGPUICompatDialog(SGPropertyNode* props) : FGDialog(props),
-                                                              _props(props),
-                                                              _needsRelayout(false)
+FGPUICompatDialog::FGPUICompatDialog(SGPropertyNode* props,
+                                     std::string translationDomain)
+    : FGDialog(props, std::move(translationDomain)),
+      _props(props),
+      _needsRelayout(false)
 {
     _module = "__dlg:" + props->getStringValue("name", "[unnamed]");
     _name = props->getStringValue("name", "[unnamed]");

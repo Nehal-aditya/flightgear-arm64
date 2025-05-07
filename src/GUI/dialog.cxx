@@ -2,6 +2,8 @@
 
 #include "config.h"
 
+#include <utility>
+
 #include "dialog.hxx"
 
 #include <simgear/props/props.hxx>
@@ -40,12 +42,30 @@ int defaultFlagsForStyle(FGDialog::WindowStyle ws)
 
 } // namespace
 
-FGDialog::FGDialog(SGPropertyNode* props) : _windowStyle(styleFromProps(props->getStringValue("window-style")))
+FGDialog::FGDialog(SGPropertyNode* props, std::string translationDomain)
+    : _translationDomain(std::move(translationDomain)),
+      _windowStyle(styleFromProps(props->getStringValue("window-style")))
 {
     _flags = defaultFlagsForStyle(_windowStyle);
     updateFlagFromProperty(WF::Closeable, props, "closeable");
     updateFlagFromProperty(WF::Resizable, props, "resizeable");
     updateFlagFromProperty(WF::ButtonBox, props, "has-buttons");
+
+    const auto translationDomainNode = props->getChild("translation-domain");
+    if (translationDomainNode) {
+        // Override what was set by the constructor member initializer list
+        setTranslationDomain(translationDomainNode->getStringValue());
+    }
+}
+
+std::string FGDialog::translationDomain() const noexcept
+{
+    return _translationDomain;
+}
+
+void FGDialog::setTranslationDomain(std::string domain) noexcept
+{
+    _translationDomain = std::move(domain);
 }
 
 void FGDialog::updateFlagFromProperty(WindowFlags f, SGPropertyNode* props, const std::string& name)

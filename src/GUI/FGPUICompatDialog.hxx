@@ -44,8 +44,13 @@ public:
      * from individual configuration files.
      *
      * @param props A property tree describing the dialog.
+     * @param translationDomain domain used to fetch translations of dialog
+     *                          elements such as labels
+     *
+     * The @p translationDomain may be overwridden from @p props.
      */
-    FGPUICompatDialog(SGPropertyNode* props);
+    FGPUICompatDialog(SGPropertyNode* props,
+                      std::string translationDomain = "core");
 
 
     /**

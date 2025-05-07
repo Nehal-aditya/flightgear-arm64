@@ -188,6 +188,9 @@ protected:
 
 private:
     void createMenuBarImplementation();
+    // Assign an element of _dialog_metadata.
+    void setDialogMetadata(const std::string& name, const SGPath& xmlFilepath,
+                           const std::string& translationDomain = "core");
 
     typedef std::map<std::string, FGColor*> ColourDict;
     ColourDict _colors;
@@ -195,8 +198,9 @@ private:
     typedef ColourDict::const_iterator _citt_t;
     void clear_colors();
 
-    // Read all the configuration files in a directory.
-    void readDir (const SGPath& path);
+    // Read all the configuration files in a directory. The translation domain
+    // may be overridden from each dialog XML definition.
+    void readDir(const SGPath& path, const std::string& translationDomain);
 
     std::unique_ptr<FGMenuBar> _menubar;
     FGDialogRef _active_dialog;
@@ -205,10 +209,19 @@ private:
     typedef std::map<std::string, FGDialogRef> DialogDict;
     DialogDict _active_dialogs;
 
-    typedef std::map<std::string, SGPath> NamePathDict;
-    // mapping from dialog names to the corresponding XML property list
-    // which defines them
-    NamePathDict _dialog_names;
+    struct DialogMetadata {
+        DialogMetadata(const SGPath& xmlFilePath,
+                       const std::string& translationDomain);
+
+        SGPath xmlFilePath;            ///< XML file that defines a dialog
+        std::string translationDomain; ///< Where to fetch translations from
+    };
+
+    typedef std::map<std::string, DialogMetadata> DialogMetadataDict;
+    // For each dialog name, this gives a path to the XML PropertyList file
+    // that defines the dialog contents and the domain used for fetching
+    // translations of text elements of the dialog (labels, etc.).
+    DialogMetadataDict _dialog_metadata;
 
     // cache of loaded dialog proeprties
     typedef std::map<std::string,SGPropertyNode_ptr> NameDialogDict;

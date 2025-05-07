@@ -87,6 +87,21 @@ public:
 
     virtual void runCallback(const std::string& name, SGPropertyNode_ptr args = {}) = 0;
 
+    /**
+     * @brief Return the translation domain of the dialog.
+     *
+     * This is the domain used to fetch translations of dialog elements such
+     * as labels.
+     */
+    std::string translationDomain() const noexcept;
+    /**
+     * @brief Set the translation domain of the dialog.
+     *
+     * This is the domain used to fetch translations of dialog elements such
+     * as labels.
+     */
+    void setTranslationDomain(std::string domain) noexcept;
+
 protected:
     /**
      * Construct a new GUI widget configured by a property tree.
@@ -96,12 +111,18 @@ protected:
      * from individual configuration files.
      *
      * @param props A property tree describing the dialog.
+     * @param translationDomain domain used to fetch translations of dialog
+     *                          elements such as labels
+     *
+     * The @p translationDomain may be overwridden from @p props.
      */
-    FGDialog (SGPropertyNode * props);
+    FGDialog(SGPropertyNode* props, std::string translationDomain = "core");
 
 private:
     void updateFlagFromProperty(WindowFlags f, SGPropertyNode* props, const std::string& name);
 
+    /// Domain used to fetch translations of dialog elements such as labels
+    std::string _translationDomain;
     const WindowStyle _windowStyle;
     uint32_t _flags = 0;
 };

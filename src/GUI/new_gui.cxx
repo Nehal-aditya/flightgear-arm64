@@ -14,6 +14,8 @@
 #include "new_gui.hxx"
 
 #include <cstring>
+#include <string>
+
 #include <sys/types.h>
 
 #include <simgear/compiler.h>
@@ -47,6 +49,12 @@
 #include <Navaids/NavDataCache.hxx>
 
 using std::string;
+
+NewGUI::DialogMetadata::DialogMetadata(const SGPath& xmlFilePath,
+                                       const std::string& translationDomain)
+    : xmlFilePath(xmlFilePath),
+      translationDomain(translationDomain)
+{ }
 
 ////////////////////////////////////////////////////////////////////////
 // Implementation of NewGUI.
@@ -116,12 +124,12 @@ NewGUI::init ()
 
     setStyle();
     SGPath p(globals->get_fg_root(), "gui/dialogs");
-    readDir(p);
+    readDir(p, "core");
     
     if (fgGetBool("/sim/gui/startup") == false) {
         SGPath aircraftDialogDir(fgGetString("/sim/aircraft-dir"), "gui/dialogs");
         if (aircraftDialogDir.exists()) {
-            readDir(aircraftDialogDir);
+            readDir(aircraftDialogDir, "current-aircraft");
         }
 
         // Read XML dialogs made available by registered add-ons
@@ -131,7 +139,7 @@ NewGUI::init ()
                 SGPath addonDialogDir = addon->getBasePath() / "gui/dialogs";
 
                 if (addonDialogDir.exists()) {
-                    readDir(addonDialogDir);
+                    readDir(addonDialogDir, "addons/" + addon->getId());
                 }
             }
         }
@@ -193,6 +201,13 @@ NewGUI::createMenuBarImplementation()
     }
 }
 
+void NewGUI::setDialogMetadata(const string& name, const SGPath& xmlFilepath,
+                               const string& domain)
+{
+    _dialog_metadata.erase(name);
+    _dialog_metadata.emplace(name, DialogMetadata(xmlFilepath, domain));
+}
+
 void
 NewGUI::reset (bool reload)
 {
@@ -211,7 +226,7 @@ NewGUI::reset (bool reload)
 
     if (reload) {
         _dialog_props.clear();
-        _dialog_names.clear();
+        _dialog_metadata.clear();
         init();
     } else {
         createMenuBarImplementation();
@@ -275,16 +290,20 @@ NewGUI::showDialog (const string &name)
         _active_dialogs[name]->bringToFront();
         return true;
     }
-  
-    // check we know about the dialog by name
-    if (_dialog_names.find(name) == _dialog_names.end()) {
-        simgear::reportFailure(simgear::LoadFailure::NotFound, simgear::ErrorCode::GUIDialog, "Dialog not found:" + name);
+
+    // Check we know about the dialog by name
+    const auto metadataIt = _dialog_metadata.find(name);
+    if (metadataIt == _dialog_metadata.end()) {
+        simgear::reportFailure(simgear::LoadFailure::NotFound,
+                               simgear::ErrorCode::GUIDialog,
+                               "Metadata not found for dialog '" + name + "'");
         return false;
     }
 
     flightgear::addSentryBreadcrumb("showing GUI dialog:" + name, "info");
     try {
-        SGSharedPtr<FGPUICompatDialog> pcd = new FGPUICompatDialog(getDialogProperties(name));
+        SGSharedPtr<FGPUICompatDialog> pcd = new FGPUICompatDialog(
+            getDialogProperties(name), metadataIt->second.translationDomain);
         if (pcd->init()) {
             _active_dialogs[name] = pcd; // establish ownership
         } else {
@@ -364,23 +383,26 @@ NewGUI::closeDialog (const string& name)
 SGPropertyNode_ptr
 NewGUI::getDialogProperties (const string &name)
 {
-    if (_dialog_names.find(name) == _dialog_names.end()) {
-      SG_LOG(SG_GENERAL, SG_ALERT, "Dialog " << name << " not defined");
-      return NULL;
+    const auto metadataIt = _dialog_metadata.find(name);
+
+    if (metadataIt == _dialog_metadata.end()) {
+      SG_LOG(SG_GENERAL, SG_ALERT, "Dialog '" << name << "' not defined");
+      return {};
     }
-  
+
     NameDialogDict::iterator it = _dialog_props.find(name);
     if (it == _dialog_props.end()) {
       // load the XML
-      SGPath path = _dialog_names[name];
+      const SGPath path = metadataIt->second.xmlFilePath;
       SGPropertyNode_ptr props = new SGPropertyNode;
+
       try {
         readProperties(path, props);
       } catch (const sg_exception &) {
-        SG_LOG(SG_INPUT, SG_ALERT, "Error parsing dialog " << path);
-        return NULL;
+        SG_LOG(SG_INPUT, SG_ALERT, "Error parsing dialog from " << path);
+        return {};
       }
-      
+
       it = _dialog_props.insert(it, std::make_pair(name, props));
     }
 
@@ -461,17 +483,18 @@ NewGUI::newDialog (SGPropertyNode* props)
         SG_LOG(SG_GENERAL, SG_ALERT, "New dialog has no <name> property");
         return;
     }
-  
+
     if(_active_dialogs.find(name) == _active_dialogs.end()) {
         _dialog_props[name] = props;
-    // add a dummy path entry, so we believe the dialog exists
-        _dialog_names[name] = SGPath();
+        // Use a dummy XML file path, so we believe the dialog exists. The
+        // translation domain can be overridden from the 'props' argument.
+        setDialogMetadata(name, SGPath());
     }
 }
 
 
 void
-NewGUI::readDir (const SGPath& path)
+NewGUI::readDir (const SGPath& path, const std::string& translationDomain)
 {
     simgear::Dir dir(path);
     if( !dir.exists() )
@@ -521,29 +544,30 @@ NewGUI::readDir (const SGPath& path)
       if (!cache->isCachedFileModified(xmlPath)) {
         // cached, easy
         string name = cache->readStringProperty(xmlPath.utf8Str());
-        _dialog_names[name] = xmlPath;
+        // The translation domain can be overridden from the xmlPath contents
+        setDialogMetadata(name, xmlPath, translationDomain);
         continue;
       }
-      
+
       // we need to parse the actual XML
       if (!props) {
         SG_LOG(SG_INPUT, SG_ALERT, "Error parsing dialog " << xmlPath);
         continue;
       }
-      
+
       if (!nameprop) {
         SG_LOG(SG_INPUT, SG_WARN, "dialog " << xmlPath << " has no name; skipping.");
         continue;
       }
-      
-      _dialog_names[name] = xmlPath;
+
+      setDialogMetadata(name, xmlPath, translationDomain);
       // update cached values
       if (!cache->isReadOnly()) {
         cache->stampCacheFile(xmlPath);
         cache->writeStringProperty(xmlPath.utf8Str(), name);
       }
     } // of directory children iteration
-  
+
     txn.commit();
 }
 
