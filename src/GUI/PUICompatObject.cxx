@@ -49,7 +49,8 @@ naRef f_translateString(const PUICompatObject& widget, nasal::CallContext ctx)
 {
     const auto key = ctx.requireArg<std::string>(0);
     const auto resource = ctx.getArg<std::string>(1);
-    return ctx.to_nasal(widget.translateString(key, resource));
+    const auto domain = ctx.getArg<std::string>(2);
+    return ctx.to_nasal(widget.translateString(key, resource, domain));
 }
 
 naRef f_translatePluralString(const PUICompatObject& widget, nasal::CallContext ctx)
@@ -57,7 +58,9 @@ naRef f_translatePluralString(const PUICompatObject& widget, nasal::CallContext 
     const auto key = ctx.requireArg<std::string>(0);
     const auto cardinal = ctx.requireArg<int>(1);
     const auto resource = ctx.getArg<std::string>(2);
-    return ctx.to_nasal(widget.translatePluralString(key, cardinal, resource));
+    const auto domain = ctx.getArg<std::string>(3);
+    return ctx.to_nasal(
+        widget.translatePluralString(key, cardinal, resource, domain));
 }
 
 void PUICompatObject::setupGhost(nasal::Hash& compatModule)
@@ -579,14 +582,16 @@ nasal::Hash PUICompatObject::gridLocation(const nasal::CallContext& ctx) const
     return result;
 }
 
-std::string PUICompatObject::translatePluralString(const std::string& key, int cardinal, const std::string& resource) const
+std::string PUICompatObject::translatePluralString(const std::string& key, int cardinal, const std::string& resource, const std::string& domain) const
 {
     auto res = resource.empty() ? "dialog-"s + dialog()->getName() : resource;
-    return flightgear::FGTranslate().setDomain(dialog()->translationDomain()).setCardinalNumber(cardinal).get(res, key);
+    auto dom = domain.empty() ? dialog()->translationDomain() : domain;
+    return flightgear::FGTranslate().setDomain(dom).setCardinalNumber(cardinal).get(res, key);
 }
 
-std::string PUICompatObject::translateString(const std::string& key, const std::string& resource) const
+std::string PUICompatObject::translateString(const std::string& key, const std::string& resource, const std::string& domain) const
 {
     auto res = resource.empty() ? "dialog-"s + dialog()->getName() : resource;
-    return flightgear::FGTranslate().setDomain(dialog()->translationDomain()).get(res, key);
+    auto dom = domain.empty() ? dialog()->translationDomain() : domain;
+    return flightgear::FGTranslate().setDomain(dom).get(res, key);
 }

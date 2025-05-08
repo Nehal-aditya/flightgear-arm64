@@ -100,8 +100,12 @@ public:
 
     bool hasBindings() const;
 
-    std::string translatePluralString(const std::string& key, int cardinal, const std::string& resource = {}) const;
-    std::string translateString(const std::string& key, const std::string& resource = {}) const;
+    std::string translatePluralString(const std::string& key, int cardinal,
+                                      const std::string& resource = {},
+                                      const std::string& domain = {}) const;
+    std::string translateString(const std::string& key,
+                                const std::string& resource = {},
+                                const std::string& domain = {}) const;
 protected:
     PUICompatObject(naRef impl, const std::string& type);
 
