@@ -15,6 +15,10 @@
 #include <GUI/new_gui.hxx>
 #include <Main/fg_props.hxx>
 #include <Scripting/NasalSys.hxx>
+#include <Translations/FGTranslate.hxx>
+#include <string>
+
+using namespace std::string_literals;
 
 extern naRef propNodeGhostCreate(naContext c, SGPropertyNode* n);
 
@@ -39,6 +43,21 @@ naRef f_makeCompatObjectPeer(const nasal::CallContext& ctx)
 {
     return ctx.to_nasal(SGSharedPtr<PUICompatObject>(
         new PUICompatObject(ctx.requireArg<naRef>(0), ctx.requireArg<std::string>(1))));
+}
+
+naRef f_translateString(const PUICompatObject& widget, nasal::CallContext ctx)
+{
+    const auto key = ctx.requireArg<std::string>(0);
+    const auto resource = ctx.getArg<std::string>(1);
+    return ctx.to_nasal(widget.translateString(key, resource));
+}
+
+naRef f_translatePluralString(const PUICompatObject& widget, nasal::CallContext ctx)
+{
+    const auto key = ctx.requireArg<std::string>(0);
+    const auto cardinal = ctx.requireArg<int>(1);
+    const auto resource = ctx.getArg<std::string>(2);
+    return ctx.to_nasal(widget.translatePluralString(key, cardinal, resource));
 }
 
 void PUICompatObject::setupGhost(nasal::Hash& compatModule)
@@ -67,7 +86,9 @@ void PUICompatObject::setupGhost(nasal::Hash& compatModule)
         .member("hasBindings", &PUICompatObject::hasBindings)
         .method("show", &PUICompatObject::show)
         .method("activateBindings", &PUICompatObject::activateBindings)
-        .method("gridLocation", &PUICompatObject::gridLocation);
+        .method("gridLocation", &PUICompatObject::gridLocation)
+        .method("trN", f_translatePluralString)
+        .method("tr", f_translateString);
 
     nasal::Hash objectHash = compatModule.createHash("Object");
     objectHash.set("new", &f_makeCompatObjectPeer);
@@ -556,4 +577,16 @@ nasal::Hash PUICompatObject::gridLocation(const nasal::CallContext& ctx) const
     result.set("columnSpan", _config->getIntValue("colspan", 1));
     result.set("rowSpan", _config->getIntValue("rowspan", 1));
     return result;
+}
+
+std::string PUICompatObject::translatePluralString(const std::string& key, int cardinal, const std::string& resource) const
+{
+    auto res = resource.empty() ? "dialog-"s + dialog()->getName() : resource;
+    return flightgear::FGTranslate().setDomain(dialog()->translationDomain()).setCardinalNumber(cardinal).get(res, key);
+}
+
+std::string PUICompatObject::translateString(const std::string& key, const std::string& resource) const
+{
+    auto res = resource.empty() ? "dialog-"s + dialog()->getName() : resource;
+    return flightgear::FGTranslate().setDomain(dialog()->translationDomain()).get(res, key);
 }

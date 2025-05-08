@@ -686,16 +686,17 @@ naRef initNasalCanvas(naRef globals, naContext c)
     .method("clear", &sc::Layout::clear);
 
   NasalBoxLayout::init("canvas.BoxLayout")
-    .bases<NasalLayout>()
-    .method("addItem", &f_boxLayoutAddItem)
-    .method("addSpacing", &sc::BoxLayout::addSpacing)
-    .method("addStretch", &f_boxLayoutAddStretch)
-    .method("insertItem", &f_boxLayoutInsertItem)
-    .method("insertSpacing", &sc::BoxLayout::insertSpacing)
-    .method("insertStretch", &f_boxLayoutInsertStretch)
-    .method("setStretch", &sc::BoxLayout::setStretch)
-    .method("setStretchFactor", &sc::BoxLayout::setStretchFactor)
-    .method("stretch", &sc::BoxLayout::stretch);
+      .bases<NasalLayout>()
+      .method("addItem", &f_boxLayoutAddItem)
+      .method("addSpacing", &sc::BoxLayout::addSpacing)
+      .method("addStretch", &f_boxLayoutAddStretch)
+      .method("insertItem", &f_boxLayoutInsertItem)
+      .method("insertSpacing", &sc::BoxLayout::insertSpacing)
+      .method("insertStretch", &f_boxLayoutInsertStretch)
+      .method("setStretch", &sc::BoxLayout::setStretch)
+      .method("setStretchFactor", &sc::BoxLayout::setStretchFactor)
+      .method("stretch", &sc::BoxLayout::stretch)
+      .method("setEquals", &sc::BoxLayout::setEqualsItem);
 
   NasalGridLayout::init("canvas.GridLayout")
       .bases<NasalLayout>()

@@ -99,6 +99,9 @@ public:
     }
 
     bool hasBindings() const;
+
+    std::string translatePluralString(const std::string& key, int cardinal, const std::string& resource = {}) const;
+    std::string translateString(const std::string& key, const std::string& resource = {}) const;
 protected:
     PUICompatObject(naRef impl, const std::string& type);
 
@@ -122,6 +125,7 @@ private:
     friend class FGPUICompatDialog;
 
     friend naRef f_makeCompatObjectPeer(const nasal::CallContext& ctx);
+
     naRef nasalGetConfigValue(const nasal::CallContext ctx) const;
 
     void setDialog(PUICompatDialogRef dialog);
@@ -134,7 +138,6 @@ private:
     void doActivate();
     
     nasal::Hash gridLocation(const nasal::CallContext& ctx) const;
-
 
     SGWeakPtr<PUICompatObject> _parent;
     SGWeakPtr<FGPUICompatDialog> _dialog;
