@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <algorithm>
 
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/TestFailure.h>
