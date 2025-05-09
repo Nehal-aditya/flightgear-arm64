@@ -247,138 +247,73 @@ void FGPUICompatDialog::update()
 
 void FGPUICompatDialog::display(SGPropertyNode* props)
 {
-    // map from physical to logical units for PUI
-    const double ratio = fgGetDouble("/sim/rendering/gui-pixel-ratio", 1.0);
-    const int physicalWidth = fgGetInt("/sim/startup/xsize"),
-              physicalHeight = fgGetInt("/sim/startup/ysize");
-    const int screenw = static_cast<int>(physicalWidth / ratio),
-              screenh = static_cast<int>(physicalHeight / ratio);
-
-    bool userx = props->hasValue("x");
-    bool usery = props->hasValue("y");
-    bool userw = props->hasValue("width");
-    bool userh = props->hasValue("height");
-
-    int pw = 0, ph = 0;
-    int px, py, savex, savey;
-
-    pw = props->getIntValue("width", pw);
-    ph = props->getIntValue("height", ph);
-    px = savex = props->getIntValue("x", (screenw - pw) / 2);
-    py = savey = props->getIntValue("y", (screenh - ph) / 2);
-
-    // Negative x/y coordinates are interpreted as distance from the top/right
-    // corner rather than bottom/left.
-    if (userx && px < 0)
-        px = screenw - pw + px;
-    if (usery && py < 0)
-        py = screenh - ph + py;
-
     _root = PUICompatObject::createForType("group", _props);
     _root->setDialog(this);
-    _root->setGeometry(SGRectd{static_cast<double>(px), static_cast<double>(py),
-                               static_cast<double>(pw), static_cast<double>(ph)});
     _root->init();
 
-    // Remove automatically generated properties, so the layout looks
-    // the same next time around, or restore x and y to preserve negative coords.
-    if (userx)
-        props->setIntValue("x", savex);
-    else
-        props->removeChild("x");
-
-    if (usery)
-        props->setIntValue("y", savey);
-    else
-        props->removeChild("y");
-
-    if (!userw) props->removeChild("width");
-    if (!userh) props->removeChild("height");
+    relayout();
 }
 
 void FGPUICompatDialog::relayout()
 {
     _needsRelayout = false;
 
-    int screenw = globals->get_props()->getIntValue("/sim/startup/xsize");
-    int screenh = globals->get_props()->getIntValue("/sim/startup/ysize");
-
+    // map from physical to logical units for PUI
+    const double ratio = fgGetDouble("/sim/rendering/gui-pixel-ratio", 1.0);
+    const int physicalWidth = fgGetInt("/sim/startup/xsize"),
+              physicalHeight = fgGetInt("/sim/startup/ysize");
+    const int screenw = static_cast<int>(physicalWidth / ratio),
+              screenh = static_cast<int>(physicalHeight / ratio);
+#if 0
     bool userx = _props->hasValue("x");
     bool usery = _props->hasValue("y");
     bool userw = _props->hasValue("width");
     bool userh = _props->hasValue("height");
-
-    int pw = 0, ph = 0;
+#endif
     int px, py, savex, savey;
 
-    pw = _props->getIntValue("width", pw);
-    ph = _props->getIntValue("height", ph);
+    const int pw = _props->getIntValue("width", -1);
+    const int ph = _props->getIntValue("height", -1);
     px = savex = _props->getIntValue("x", (screenw - pw) / 2);
     py = savey = _props->getIntValue("y", (screenh - ph) / 2);
 
+#if 0
     // Negative x/y coordinates are interpreted as distance from the top/right
     // corner rather than bottom/left.
     if (userx && px < 0)
         px = screenw - pw + px;
     if (usery && py < 0)
         py = screenh - ph + py;
+#endif
 
-    _root->setGeometry(SGRectd{static_cast<double>(px), static_cast<double>(py),
-                               static_cast<double>(pw), static_cast<double>(ph)});
-
+    _geometry = SGRectd{static_cast<double>(px), static_cast<double>(py),
+                        static_cast<double>(pw), static_cast<double>(ph)};
     _peer->callMethod<void>("geometryChanged");
-
-    // Remove automatically generated properties, so the layout looks
-    // the same next time around, or restore x and y to preserve negative coords.
-    if (userx)
-        _props->setIntValue("x", savex);
-    else
-        _props->removeChild("x");
-
-    if (usery)
-        _props->setIntValue("y", savey);
-    else
-        _props->removeChild("y");
-
-    if (!userw) _props->removeChild("width");
-    if (!userh) _props->removeChild("height");
 }
 
 double FGPUICompatDialog::getX() const
 {
-    if (!_root)
-        return 0.0;
-    
-    return _root->getX();
+    return _geometry.x();
 }
 
 double FGPUICompatDialog::getY() const
 {
-    if (!_root)
-        return 0.0;
-    
-    return _root->getY();
+    return _geometry.y();
 }
 
 double FGPUICompatDialog::width() const
 {
-    if (!_root)
-        return 800.0;
-    
-    return _root->width();
+    return _geometry.width();
 }
 
 double FGPUICompatDialog::height() const
 {
-    if (!_root)
-        return 600.0;
-    
-    return _root->height();
+    return _geometry.height();
 }
 
 SGRectd FGPUICompatDialog::geometry() const
 {
-    return _root->geometry();
+    return _geometry;
 }
 
 std::string FGPUICompatDialog::nameString() const

@@ -8,6 +8,7 @@
 #include <cstdint>
 
 #include "dialog.hxx"
+#include "simgear/math/SGRect.hxx"
 
 
 #include <simgear/misc/sg_path.hxx>
@@ -162,6 +163,7 @@ private:
     SGPropertyNode_ptr _props;
 
     bool _needsRelayout;
+    SGRectd _geometry = SGRectd{0.0, 0.0, 0.0, 0.0};
 
     // Nasal module.
     std::string _module;

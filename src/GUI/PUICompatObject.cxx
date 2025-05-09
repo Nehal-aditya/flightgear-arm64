@@ -380,7 +380,11 @@ void PUICompatObject::valueChanged(SGPropertyNode* node)
 
 void PUICompatObject::activateBindings()
 {
-    assert(_enabled);
+    if (!_enabled) {
+        SG_LOG(SG_GUI, SG_DEV_ALERT, "Skipping binding activation for disabled widget:" << name());
+        return;
+    }
+
     auto guiSub = globals->get_subsystem<NewGUI>();
     assert(guiSub);
 
