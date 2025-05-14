@@ -22,8 +22,8 @@ namespace flightgear
  *        menu.xml)
  *
  * This class implements a parser for XML translation files normally located
- * in ⟨base-dir⟩/Translations/default where ⟨base-dir⟩ can be $FG_ROOT or the
- * top-level directory of an aircraft or add-on.
+ * under ⟨base-dir⟩/Translations/default, where ⟨base-dir⟩ can be $FG_ROOT or
+ * the top-level directory of an aircraft or add-on.
  */
 
 class DefaultTranslationParser : public XMLVisitor

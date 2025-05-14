@@ -16,6 +16,8 @@
 #include <cstring>              // std::strlen()
 #include <cstddef>              // std::size_t
 #include <cassert>
+#include <string>
+#include <vector>
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/strutils.hxx>
@@ -351,12 +353,27 @@ void FGLocale::loadResourcesFromAircraftOrAddonDir(const SGPath& basePath,
 void FGLocale::loadDefaultTranslation(const simgear::Dir& defaultTranslationDir,
                                       const string& domain)
 {
-    const auto xmlFiles = defaultTranslationDir.children(
+    // Files from Translations/default
+    const vector<SGPath> baseXmlFiles = defaultTranslationDir.children(
         simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT, ".xml");
+    // Files from Translations/default/auto-extracted, if this exists
+    vector<SGPath> generatedXmlFiles;
 
-    for (const SGPath& file : xmlFiles) {
+    const SGPath subDirPath = defaultTranslationDir.path() / "auto-extracted";
+    const simgear::Dir subDir = simgear::Dir(subDirPath);
+
+    if (subDir.exists()) {
+        generatedXmlFiles = subDir.children(
+            simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT, ".xml");
+    }
+
+    for (const SGPath& file : baseXmlFiles) {
         // Because file.file_base() stops at the first dot, atc.no_translate.xml
         // is loaded as the 'atc' resource.
+        loadResourceForDefaultTranslation(file, domain, file.file_base());
+    }
+
+    for (const SGPath& file : generatedXmlFiles) {
         loadResourceForDefaultTranslation(file, domain, file.file_base());
     }
 }

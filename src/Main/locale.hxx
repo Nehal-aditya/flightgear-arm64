@@ -37,8 +37,9 @@ namespace simgear { class Dir; }
  * Main concepts: default translation vs. other translations, etc.
  *
  * The “default translation” is made of all source strings found in the
- * XML files present in $FG_ROOT/Translations/default/ (also in
- * ⟨base dir⟩/Translations/default inside an aircraft or add-on). This
+ * XML files present in $FG_ROOT/Translations/default/ and its
+ * `auto-extracted` subdirectory (also in aircraft and add-ons with the
+ * aircraft or add-on base directory substituted for $FG_ROOT). This
  * translation does not correspond to any of the /sim/intl/locale[n] nodes.
  *
  * The default translation has only one form for any given string: the “source
@@ -261,12 +262,13 @@ protected:
     /**
      * @brief Load all default translation files from the specified directory.
      *
-     * @param defaultTranslationDir  directory containing XML files
+     * @param defaultTranslationDir  base directory for the XML files
      * @param domain                 target domain
      *
-     * The search for XML files does not recurse into subdirectories. Each XML
-     * file is loaded as a resource whose name is the SGPath::file_base() of
-     * the file so that, e.g., atc.no_translate.xml is loaded as the 'atc'
+     * The XML files are looked for in two directories:
+     * @p defaultTranslationDir and its `auto-extracted` subdirectory. Each
+     * XML file is loaded as a resource whose name is the SGPath::file_base()
+     * of the file so that, e.g., atc.no_translate.xml is loaded as the 'atc'
      * resource.
      */
     void loadDefaultTranslation(const simgear::Dir& defaultTranslationDir,
