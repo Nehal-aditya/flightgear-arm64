@@ -8,6 +8,7 @@
 
 #include <algorithm>
 
+#include <simgear/misc/strutils.hxx>
 #include <simgear/props/props.hxx>
 #include <simgear/props/props_io.hxx> // for copyProperties
 
@@ -19,6 +20,7 @@
 #include <string>
 
 using namespace std::string_literals;
+namespace strutils = simgear::strutils;
 
 extern naRef propNodeGhostCreate(naContext c, SGPropertyNode* n);
 
@@ -590,12 +592,14 @@ std::string PUICompatObject::translatePluralString(const std::string& key, int c
 {
     auto res = resource.empty() ? "dialog-"s + dialog()->getName() : resource;
     auto dom = domain.empty() ? dialog()->translationDomain() : domain;
-    return flightgear::FGTranslate().setDomain(dom).setCardinalNumber(cardinal).get(res, key);
+    return flightgear::FGTranslate().setDomain(dom).setCardinalNumber(cardinal)
+        .get(res, strutils::strip(key));
 }
 
 std::string PUICompatObject::translateString(const std::string& key, const std::string& resource, const std::string& domain) const
 {
     auto res = resource.empty() ? "dialog-"s + dialog()->getName() : resource;
     auto dom = domain.empty() ? dialog()->translationDomain() : domain;
-    return flightgear::FGTranslate().setDomain(dom).get(res, key);
+    return flightgear::FGTranslate().setDomain(dom).get(res,
+                                                        strutils::strip(key));
 }
