@@ -29,13 +29,17 @@
 #include "localprop.h"
 #include "canvasitem.h"
 
-#include "private/qtriangulator_p.h" // private QtGui header
-#include "private/qtriangulatingstroker_p.h" // private QtGui header
-#include "private/qvectorpath_p.h" // private QtGui header
-
 #include <QSGGeometry>
 #include <QSGGeometryNode>
 #include <QSGFlatColorMaterial>
+
+#if defined(ENABLE_QUICK_DRAWING)
+
+#include "private/qtriangulatingstroker_p.h" // private QtGui header
+#include "private/qtriangulator_p.h"         // private QtGui header
+#include "private/qvectorpath_p.h"           // private QtGui header
+
+#endif
 
 class PathQuickItem : public CanvasItem
 {
@@ -66,6 +70,7 @@ public:
         if (m_path.isEmpty()) {
             return nullptr;
         }
+#if defined(ENABLE_QUICK_DRAWING)
 
         delete oldNode;
         QSGGeometryNode* fillGeom = nullptr;
@@ -128,11 +133,11 @@ public:
 
             if (m_stroke.style() == Qt::SolidLine) {
                 ts.process(vp, m_stroke, clipBounds, renderHints);
-    #if 0
+#if 0
                 inline int vertexCount() const { return m_vertices.size(); }
                 inline const float *vertices() const { return m_vertices.data(); }
 
-    #endif
+#endif
             } else {
                 QDashedStrokeProcessor dasher;
                 dasher.process(vp, m_stroke, clipBounds, renderHints);
@@ -179,6 +184,9 @@ public:
         }
 
         return strokeGeom;
+#else
+        return nullptr;
+#endif
     }
 
     QColor fillColor() const
@@ -218,11 +226,19 @@ signals:
     void strokeChanged(QPen stroke);
 
 protected:
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry) override
     {
         QQuickItem::geometryChanged(newGeometry, oldGeometry);
         update();
     }
+#else
+    void geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) override
+    {
+        QQuickItem::geometryChange(newGeometry, oldGeometry);
+        update();
+    }
+#endif
 
     QRectF boundingRect() const override
     {
@@ -400,7 +416,11 @@ void FGCanvasPath::doPaint(FGCanvasPaintContext *context) const
         context->painter()->drawRect(_rect);
         break;
     case RoundRect:
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         context->painter()->drawRoundRect(_rect, _roundRectRadius.width(), _roundRectRadius.height());
+#else
+        context->painter()->drawRoundedRect(_rect, _roundRectRadius.width(), _roundRectRadius.height());
+#endif
         break;
 
     case Path:

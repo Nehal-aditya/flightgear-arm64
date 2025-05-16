@@ -52,8 +52,11 @@ public slots:
     void setCanvas(CanvasConnection* canvas);
 
 protected:
-
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry) override;
+#else
+    void geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) override;
+#endif
 
 private slots:
     void onConnectionStatusChanged();

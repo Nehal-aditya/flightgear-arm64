@@ -50,11 +50,19 @@ void CanvasPaintedDisplay::paint(QPainter *painter)
 
 }
 
-void CanvasPaintedDisplay::geometryChanged(const QRectF &newGeometry, const QRectF &)
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+void CanvasPaintedDisplay::geometryChanged(const QRectF&, const QRectF&)
 {
-    Q_UNUSED(newGeometry);
     update();
 }
+#else
+void CanvasPaintedDisplay::geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry)
+{
+    QQuickItem::geometryChange(newGeometry, oldGeometry);
+    update();
+}
+#endif
+
 
 void CanvasPaintedDisplay::setCanvas(CanvasConnection *canvas)
 {

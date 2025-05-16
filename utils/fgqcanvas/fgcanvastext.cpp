@@ -23,13 +23,19 @@
 #include <QQmlEngine>
 #include <QTextLayout>
 
-#include <private/qquicktextnode_p.h>
-
 #include "fgcanvaspaintcontext.h"
 #include "localprop.h"
 #include "fgqcanvasfontcache.h"
 #include "canvasitem.h"
 #include "canvasconnection.h"
+
+#if defined(ENABLE_QUICK_DRAWING)
+
+#include <private/qquicktextnode_p.h>
+
+#endif
+
+class QQuickTextNode;
 
 class TextCanvasItem : public CanvasItem
 {
@@ -75,7 +81,7 @@ public:
 
     QSGNode* updateRealPaintNode(QSGNode* oldNode, QQuickItem::UpdatePaintNodeData *data) override
     {
-
+#if defined(ENABLE_QUICK_DRAWING)
         if (!m_textNode) {
             m_textNode = new QQuickTextNode(this);
         }
@@ -89,6 +95,9 @@ public:
                                   QQuickText::Normal);
 
         return m_textNode;
+#else
+        return nullptr;
+#endif
     }
 
 protected:
@@ -130,11 +139,19 @@ protected:
         return QPointF(x,y);
     }
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry) override
     {
         QQuickItem::geometryChanged(newGeometry, oldGeometry);
         update();
     }
+#else
+    void geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) override
+    {
+        QQuickItem::geometryChange(newGeometry, oldGeometry);
+        update();
+    }
+#endif
 
     QRectF boundingRect() const override
     {
@@ -311,7 +328,6 @@ void FGCanvasText::rebuildAlignment(QVariant var) const
 
     if (alignString == "center") {
         _alignment = Qt::AlignCenter;
-
         if (_quickItem) {
             _quickItem->setAlignment(_alignment);
         }

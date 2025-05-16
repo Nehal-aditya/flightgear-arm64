@@ -29,6 +29,12 @@ class QWindow;
 class QTimer;
 class WindowData;
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#define QML_LIST_INDEX_TYPE qsizetype
+#else
+#define QML_LIST_INDEX_TYPE int
+#endif
+
 class ApplicationController : public QObject
 {
     Q_OBJECT

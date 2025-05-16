@@ -43,11 +43,18 @@ void CanvasDisplay::updatePolish()
     m_rootElement->polish();
 }
 
-void CanvasDisplay::geometryChanged(const QRectF &newGeometry, const QRectF &)
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+void CanvasDisplay::geometryChanged(const QRectF&, const QRectF&)
 {
-    Q_UNUSED(newGeometry);
     recomputeScaling();
 }
+#else
+void CanvasDisplay::geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry)
+{
+    QQuickItem::geometryChange(newGeometry, oldGeometry);
+    recomputeScaling();
+}
+#endif
 
 void CanvasDisplay::setCanvas(CanvasConnection *canvas)
 {

@@ -70,6 +70,7 @@ public:
         if (m_pixmap.isNull()) {
             return nullptr;
         }
+#if defined(ENABLE_QUICK_DRAWING)
 
         QSGSimpleTextureNode* texNode = static_cast<QSGSimpleTextureNode*>(oldNode);
         if (!texNode) {
@@ -86,14 +87,25 @@ public:
         m_texture = window()->createTextureFromImage(m_pixmap.toImage(), QQuickWindow::TextureCanUseAtlas);
         texNode->setTexture(m_texture);
         return texNode;
+#else
+        return nullptr;
+#endif
     }
 
 protected:
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry) override
     {
         QQuickItem::geometryChanged(newGeometry, oldGeometry);
         update();
     }
+#else
+    void geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) override
+    {
+        QQuickItem::geometryChange(newGeometry, oldGeometry);
+        update();
+    }
+#endif
 
     QRectF boundingRect() const override
     {

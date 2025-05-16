@@ -33,6 +33,7 @@ linux-build:
     - cmake -B $BUILD_DIR -S $CI_PROJECT_DIR -G Ninja 
       -D CMAKE_BUILD_TYPE=RelWithDebInfo 
       -D CMAKE_INSTALL_PREFIX=$PREFIX_DIR
+      -D ENABLE_FGQCANVAS=ON
       -D CMAKE_PREFIX_PATH="$CI_PROJECT_DIR/simgear-dist;$CI_PROJECT_DIR/osg-dist"
 
     - cmake --build $BUILD_DIR

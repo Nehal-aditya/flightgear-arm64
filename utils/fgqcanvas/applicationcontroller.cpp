@@ -388,12 +388,12 @@ QVariantList ApplicationController::canvases() const
 
 QQmlListProperty<CanvasConnection> ApplicationController::activeCanvases()
 {
-    return QQmlListProperty<CanvasConnection>(this, m_activeCanvases);
+    return QQmlListProperty<CanvasConnection>(this, &m_activeCanvases);
 }
 
 QQmlListProperty<WindowData> ApplicationController::windowList()
 {
-    return QQmlListProperty<WindowData>(this, m_windowList);
+    return QQmlListProperty<WindowData>(this, &m_windowList);
 }
 
 QNetworkAccessManager *ApplicationController::netAccess() const

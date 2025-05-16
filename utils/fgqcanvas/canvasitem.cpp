@@ -132,7 +132,7 @@ QSGClipNode* CanvasItem::updateClipNode(QSGClipNode* oldClipNode, QSGNode* conte
     if (!clipNode) {
         clipNode = new QSGClipNode();
         clipGeometry = new QSGGeometry(QSGGeometry::defaultAttributes_Point2D(), 4);
-        clipGeometry->setDrawingMode(GL_TRIANGLE_STRIP);
+        //   clipGeometry->setDrawingMode(GL_TRIANGLE_STRIP);
         clipNode->setGeometry(clipGeometry);
         clipNode->setFlag(QSGNode::OwnsGeometry);
         clipNode->appendChildNode(contentNode);
