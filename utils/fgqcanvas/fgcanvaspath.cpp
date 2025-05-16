@@ -996,8 +996,13 @@ static QVector<qreal> qtPenDashesFromCanvas(QString s, double penWidth)
 void FGCanvasPath::rebuildPen() const
 {
     QPen p;
-
     QVariant strokeColor = getCascadedStyle("stroke");
+    if (strokeColor == "none") {
+        p.setStyle(Qt::NoPen);
+        _stroke = p;
+        return;
+    }
+
     p.setColor(parseColorValue(strokeColor));
 
     p.setWidthF(getCascadedStyle("stroke-width", 1.0).toFloat());
