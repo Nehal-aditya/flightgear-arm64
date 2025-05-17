@@ -20,10 +20,13 @@
 #include <Main/fg_props.hxx>
 #include <Main/globals.hxx>
 #include <Scripting/NasalSys.hxx>
+#include <Translations/FGTranslate.hxx>
 
 #include "FGColor.hxx"
 #include "PUICompatObject.hxx"
 #include "new_gui.hxx"
+
+using namespace std::string_literals;
 
 ////////////////////////////////////////////////////////////
 
@@ -336,6 +339,9 @@ std::string FGPUICompatDialog::title() const
 {
     if (_title.empty())
         return _name;
+
+    const auto res = "dialog-"s + _name;
+    return flightgear::FGTranslate().setDomain(translationDomain()).get(res, _title);
 
     return _title;
 }

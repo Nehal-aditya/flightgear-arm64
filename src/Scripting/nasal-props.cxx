@@ -194,6 +194,7 @@ static naRef f_getAttribute(naContext c, naRef me, int argc, naRef* args)
     else if(!strcmp(a, "listener-safe"))        attr = SGPropertyNode::LISTENER_SAFE;
     else if(!strcmp(a, "value-changed-up"))     attr = SGPropertyNode::VALUE_CHANGED_UP;
     else if(!strcmp(a, "value-changed-down"))   attr = SGPropertyNode::VALUE_CHANGED_DOWN;
+    else if(!strcmp(a, "translate"))   attr = SGPropertyNode::TRANSLATE;
 
     else {
         naRuntimeError(c, "props.getAttribute() with invalid attribute");
@@ -831,6 +832,14 @@ static naRef f_unalias(naContext c, naRef me, int argc, naRef* args)
 }
 
 
+static naRef f_location(naContext c, naRef me, int argc, naRef* args)
+{
+    NODEARG();
+    const auto ls = node->getLocation().str(); 
+    return NASTR(ls.c_str());
+}
+
+
 // Get the alias of this node as a ghost.
 // Forms:
 //    props.Node.getAliasTarget();
@@ -917,6 +926,7 @@ static struct {
     { f_isNumeric,          "_isNumeric"          },
     { f_isInt,              "_isInt"              },
     { f_adjustValue,        "_adjustValue"        },
+    { f_location,           "_location"           },
     { 0, 0 }
 };
 
