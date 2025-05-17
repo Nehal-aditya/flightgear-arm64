@@ -7,6 +7,7 @@
 
 #include <Airports/airport.hxx>
 #include <Airports/dynamics.hxx>
+#include <FDM/fdm_shell.hxx>
 #include <Main/fg_props.hxx>
 #include <Main/globals.hxx>
 #include <Main/util.hxx>

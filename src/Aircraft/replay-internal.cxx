@@ -1268,8 +1268,8 @@ bool FGReplayInternal::saveTape(const SGPropertyNode* extra)
             // path.file().
             //
             path_timeless.remove();
-            ok = path_timeless.makeLink(path.file());
-            if (!ok) {
+            bool ok_link = path_timeless.makeLink(path.file());
+            if (!ok_link) {
                 SG_LOG(SG_SYSTEMS, SG_ALERT, "Failed to create link " << path_timeless.c_str() << " => " << path.file());
             }
         }

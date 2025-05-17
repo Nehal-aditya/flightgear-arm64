@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#include "cJSON.h"
 #include <config.h>
 
 #include <simgear/compiler.h>
@@ -13,6 +12,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>             // strcmp()
+
+#include "cJSON.h"
 
 #if defined(SG_WINDOWS)
 #define _WINSOCKAPI_

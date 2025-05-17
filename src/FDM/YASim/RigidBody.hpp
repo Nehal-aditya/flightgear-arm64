@@ -109,26 +109,26 @@ private:
     they can be replaced by one aggregated mass at the c.g. of the static masses.
     The isStatic flag is used to mark those masses.
     */
-    struct Mass { float m; float p[3]; bool isStatic; };
+    struct Mass { float m=0; float p[3]={}; bool isStatic=false; };
     void _recalcStatic(); /// aggregate static masses
     Mass  _staticMass;		/// aggregated static masses, calculated once
     Mass* _masses;        /// mass elements
-    int   _nMasses;       /// number of masses
-    int   _massesAlloced; /// counter for memory allocation
+    int   _nMasses = 0;       /// number of masses
+    int   _massesAlloced = 0; /// counter for memory allocation
 
-    float _totalMass;
-    float _cg[3];
-    float _gyro[3];
+    float _totalMass = 0;
+    float _cg[3] = {};
+    float _gyro[3] = {};
 
     // Inertia tensor, and its inverse.  Computed from the above.
-    float _tI_static[9];
-    float _tI[9];
-    float _invI[9];
+    float _tI_static[9] = {};
+    float _tI[9] = {};
+    float _invI[9] = {};
 
     // Externally determined quantities
-    float _force[3];
-    float _torque[3];
-    float _spin[3];
+    float _force[3] = {};
+    float _torque[3] = {};
+    float _spin[3] = {};
 };
 
 }; // namespace yasim

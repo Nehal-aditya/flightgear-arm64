@@ -10,6 +10,7 @@
 
 #include "XLIFFParser.hxx"
 
+#include <cassert>
 #include <cstring>
 #include <regex>
 #include <string>

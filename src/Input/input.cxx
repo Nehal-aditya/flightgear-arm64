@@ -41,6 +41,8 @@
     // we use HID
   #elif defined(SG_WINDOWS)
     // we use HID
+  #elif defined(__OpenBSD__)
+    // we use HID
   #else
     #include "FGLinuxEventInput.hxx"
     #define INPUTEVENT_CLASS FGLinuxEventInput

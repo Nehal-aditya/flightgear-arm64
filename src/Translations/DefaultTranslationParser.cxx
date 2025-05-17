@@ -11,8 +11,10 @@
 #include <cassert>
 #include <string>
 #include <utility>
+#include <cstring>
 
 #include <simgear/structure/exception.hxx>
+#include <simgear/debug/logstream.hxx>
 
 using std::string;
 
