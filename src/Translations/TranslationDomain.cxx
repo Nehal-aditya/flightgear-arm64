@@ -17,13 +17,15 @@ namespace flightgear
 {
 
 TranslationDomain::ResourceRef
-TranslationDomain::getResourceCreate(const std::string& resourceName)
+TranslationDomain::getOrCreateResource(const std::string& resourceName)
 {
-    if (_map.find(resourceName) == _map.end()) {
-        _map[resourceName] = std::make_shared<TranslationResource>();
+    auto& resourcePtr = _map[resourceName];
+
+    if (!resourcePtr) {
+        resourcePtr = std::make_shared<TranslationResource>();
     }
 
-    return _map[resourceName];
+    return resourcePtr;
 }
 
 TranslationDomain::ResourceRef

@@ -10,6 +10,11 @@
 #include <utility>
 #include <vector>
 
+#include <Main/locale.hxx>
+#include <Main/globals.hxx>
+
+#include <simgear/debug/logstream.hxx>
+
 #include "TranslationUnit.hxx"
 
 namespace flightgear
@@ -69,6 +74,53 @@ bool TranslationUnit::getPluralStatus() const
 void TranslationUnit::setPluralStatus(int hasPlural)
 {
     _hasPlural = hasPlural;
+}
+
+std::string TranslationUnit::getTranslation() const
+{
+    const std::size_t nbTargetTexts = getNumberOfTargetTexts();
+    std::string res;            // empty result by default
+
+    if (nbTargetTexts == 0) { // e.g., in the default translation
+        res = getSourceText();
+    } else {
+        res = getTargetText(0);
+
+        if (res.empty()) {      // not translated
+            res = getSourceText();
+        }
+    }
+
+    return res;
+}
+
+std::string TranslationUnit::getTranslation(intType cardinalNumber) const
+{
+    if (!getPluralStatus()) {
+        SG_LOG(SG_GENERAL, SG_WARN,
+               "TranslationUnit::getTranslation(intType cardinalNumber) called "
+               "for “" << getSourceText() << "”), however this string wasn't "
+               "declared with has-plural=\"true\" in the default translation");
+        return getSourceText();
+    }
+
+    const std::size_t nbTargetTexts = getNumberOfTargetTexts();
+    if (nbTargetTexts == 0) { // e.g., in the default translation
+        return getSourceText();
+    }
+
+    const std::string languageId = globals->get_locale()->getLanguageId();
+    const std::size_t pluralFormIndex =
+        LanguageInfo::getPluralFormIndex(languageId, cardinalNumber);
+    assert(pluralFormIndex < nbTargetTexts);
+
+    std::string res = getTargetText(pluralFormIndex);
+
+    if (res.empty()) {          // not translated
+        res = getSourceText();
+    }
+
+    return res;
 }
 
 } // namespace flightgear

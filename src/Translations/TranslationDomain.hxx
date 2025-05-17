@@ -33,7 +33,7 @@ public:
      *
      * Create, insert and return an empty one if there is no such resource yet.
      */
-    ResourceRef getResourceCreate(const std::string& resourceName);
+    ResourceRef getOrCreateResource(const std::string& resourceName);
     /**
      * @brief Get the specified TranslationResource instance.
      *

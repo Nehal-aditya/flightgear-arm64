@@ -16,6 +16,7 @@
 #include <cstring>              // std::strlen()
 #include <cstddef>              // std::size_t
 #include <cassert>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -464,7 +465,8 @@ void FGLocale::loadXLIFF(const SGPath& basePath, SGPropertyNode* localeNode,
     } else {
         SG_LOG(SG_GENERAL, SG_INFO, "Loading XLIFF file at " << xliffPath);
         try {
-            flightgear::XLIFFParser visitor(_languageId, &_domains[domain]);
+            flightgear::XLIFFParser visitor(_languageId,
+                                            _domains[domain].get());
             readXML(xliffPath, visitor);
         } catch (sg_io_exception& ex) {
             SG_LOG(SG_GENERAL, SG_WARN, "failure parsing XLIFF: " << xliffPath
@@ -481,8 +483,13 @@ void FGLocale::loadResourceForDefaultTranslation(
     const SGPath& xmlFile, const std::string& domain,
     const std::string& resource)
 {
-    // Automatically create the domain and resource if necessary
-    auto resourcePtr = _domains[domain].getResourceCreate(resource);
+    auto& domainPtr = _domains[domain];
+    if (!domainPtr) {           // domain not initialized yet
+        domainPtr = std::make_shared<flightgear::TranslationDomain>();
+    }
+
+    // Automatically create the resource if necessary
+    auto resourcePtr = domainPtr->getOrCreateResource(resource);
     DefaultTranslationParser visitor(resourcePtr.get());
 
     SG_LOG(SG_GENERAL, SG_INFO, "Reading the default translation for " <<
@@ -500,7 +507,7 @@ void FGLocale::loadResourceForDefaultTranslation(
     }
 }
 
-const TranslationDomain*
+std::shared_ptr<const flightgear::TranslationDomain>
 FGLocale::getDomain(const std::string& domain) const
 {
     auto it = _domains.find(domain);
@@ -509,10 +516,10 @@ FGLocale::getDomain(const std::string& domain) const
         SG_LOG(SG_GENERAL, SG_ALERT,
                "FGLocale::getDomain(): unable to find requested domain '"
                    << domain << "'.");
-        return nullptr;
+        return {};
     }
 
-    return &it->second;
+    return it->second;
 }
 
 std::string
@@ -520,7 +527,7 @@ FGLocale::getLocalizedStringWithIndex(const string& id, const string& resource,
                                       int index) const
 {
     assert(_inited);
-    return FGTranslate().setIndex(index).get(resource, id);
+    return FGTranslate().get(resource, id, index);
 }
 
 std::string

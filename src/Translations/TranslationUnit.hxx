@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "LanguageInfo.hxx"
+
 namespace flightgear
 {
 
@@ -34,6 +36,8 @@ namespace flightgear
 class TranslationUnit
 {
 public:
+    using intType = LanguageInfo::intType;
+
     explicit TranslationUnit(const std::string sourceText = {},
                              const std::vector<std::string> targetTexts = {},
                              bool hasPlural = false);
@@ -73,6 +77,31 @@ public:
      * @param hasPlural  true if the translation unit has plural forms
      */
     void setPluralStatus(int hasPlural);
+
+    /**
+     * @brief Get the target text of a non-plural translation unit
+     * @return The requested translation (in the selected language)
+     *
+     * This function is for translatable strings without plural forms (i.e.,
+     * those defined without `has-plural="true"` in the default translation.).
+     *
+     * The return value is the first target text, unless it is empty (string
+     * not translated) or the translation unit has no target text
+     * (fgfs --language=default); in the latter two cases, the return value is
+     * the source text.
+     */
+    std::string getTranslation() const;
+    /**
+     * @brief Get the target text of a translation unit that has plural forms
+     * @param cardinalNumber  an integer correponding to a number of
+     *                        “things” (concrete or abstract)
+     * @return The requested translation (in the selected language)
+     *
+     * This function is for translatable strings that have plural forms (i.e.,
+     * those defined with `has-plural="true"` in the default translation). The
+     * selected form depends on the @a cardinalNumber argument.
+     */
+    std::string getTranslation(intType cardinalNumber) const;
 
 private:
     /// String to translate, in “engineering English”

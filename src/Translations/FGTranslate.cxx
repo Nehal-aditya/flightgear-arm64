@@ -7,8 +7,8 @@
  */
 
 #include <cstddef>
+#include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include <simgear/debug/logstream.hxx>
@@ -17,64 +17,106 @@
 #include <Main/globals.hxx>
 
 #include "FGTranslate.hxx"
-#include "LanguageInfo.hxx"
 #include "TranslationDomain.hxx"
 
 using std::string;
 
 namespace flightgear {
 
-FGTranslate& FGTranslate::setDomain(string domain)
-{
-    _domain = std::move(domain);
-    return *this;
-}
+FGTranslate::FGTranslate(const std::string& domain)
+    : _domain(globals->get_locale()->getDomain(domain))
+{ }
 
-FGTranslate& FGTranslate::setIndex(int index)
+FGTranslate& FGTranslate::setDomain(const string& domain)
 {
-    _elementIndex = index;
-    return *this;
-}
-
-FGTranslate& FGTranslate::setCardinalNumber(intType number)
-{
-    _cardinalNumber = number;
+    // This logs a warning if the domain can't be found.
+    _domain = globals->get_locale()->getDomain(domain);
     return *this;
 }
 
 TranslationDomain::ResourceRef
 FGTranslate::getResource(const string& resourceName) const
 {
-    // This logs a warning if the domain can't be found.
-    const TranslationDomain* domain = globals->get_locale()->getDomain(_domain);
-
-    if (domain) {
-        // This logs a warning if the resource can't be found.
-        return domain->getResource(resourceName);
+    if (_domain) {
+        return _domain->getResource(resourceName);
     }
 
     return {};
 }
 
-string FGTranslate::get(const string& resourceName, const string& basicId)
+std::shared_ptr<TranslationUnit>
+FGTranslate::translationUnit(const string& resourceName, const string& basicId,
+                             int index)
+    const
 {
     TranslationDomain::ResourceRef resource = getResource(resourceName);
 
     if (resource) {
-        const string languageId = globals->get_locale()->getLanguageId();
-        const std::size_t pluralFormIndex = _cardinalNumber.has_value() ?
-            LanguageInfo::getPluralFormIndex(languageId, *_cardinalNumber) : 0;
-
-        return resource->getTranslation(basicId, _elementIndex, pluralFormIndex);
+        return resource->translationUnit(basicId, index);
     }
 
     return {};
 }
 
-string FGTranslate::getWithDefault(
-    const string& resourceName, const string& basicId, const string& defaultValue)
+string FGTranslate::get(const string& resourceName, const string& basicId,
+                        int index)
 {
-    const string result = get(resourceName, basicId);
+    const auto translUnit = translationUnit(resourceName, basicId, index);
+
+    if (!translUnit) {
+        return {};
+    }
+
+    if (translUnit->getPluralStatus()) {
+        SG_LOG(SG_GENERAL, SG_DEV_ALERT,
+               "FGTranslate::get() or FGTranslate::getWithDefault() used on "
+               "translatable string '" << resourceName << "/" << basicId <<
+               ":" << index << "' defined with has-plural=\"true\" in the "
+               "default translation. Use FGTranslate::getPlural() or "
+               "FGTranslate::getPluralWithDefault() instead.");
+        return translUnit->getSourceText();
+    } else {
+        return translUnit->getTranslation();
+    }
+}
+
+string FGTranslate::getPlural(intType cardinalNumber, const string& resourceName,
+                              const string& basicId, int index)
+{
+    const auto translUnit = translationUnit(resourceName, basicId, index);
+
+    if (!translUnit) {
+        return {};
+    }
+
+    if (!translUnit->getPluralStatus()) {
+        SG_LOG(SG_GENERAL, SG_DEV_ALERT,
+               "FGTranslate::getPlural() or FGTranslate::getPluralWithDefault() "
+               "used on translatable string '" << resourceName << "/" <<
+               basicId << ":" << index << "' that isn't defined with "
+               "has-plural=\"true\" in the default translation. Use "
+               "FGTranslate::get() or FGTranslate::getWithDefault() instead.");
+        return translUnit->getSourceText();
+    } else {
+        return translUnit->getTranslation(cardinalNumber);
+    }
+
+    return {};
+}
+
+string FGTranslate::getWithDefault(const string& resource, const string& basicId,
+                                   const string& defaultValue, int index)
+{
+    const string result = get(resource, basicId, index);
+
+    return result.empty() ? defaultValue : result;
+}
+
+string FGTranslate::getPluralWithDefault(
+    intType cardinalNumber, const string& resource, const string& basicId,
+    const string& defaultValue, int index)
+{
+    const string result = getPlural(cardinalNumber, resource, basicId, index);
 
     return result.empty() ? defaultValue : result;
 }

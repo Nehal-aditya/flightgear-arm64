@@ -178,9 +178,9 @@ void XLIFFParser::startContextGroup(const char* resname_c)
     }
 
     _resource = resname;
-    // This is where the strings will be stored. getResourceCreate()
+    // This is where the strings will be stored. getOrCreateResource()
     // creates the TranslationResource if necessary.
-    _currentResource = _domain->getResourceCreate(resname);
+    _currentResource = _domain->getOrCreateResource(resname);
     _groupsStack.push(std::make_unique<ContextGroup>(resname));
 }
 

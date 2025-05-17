@@ -341,7 +341,7 @@ std::string FGPUICompatDialog::title() const
         return _name;
 
     const auto res = "dialog-"s + _name;
-    return flightgear::FGTranslate().setDomain(translationDomain()).get(res, _title);
+    return flightgear::FGTranslate(translationDomain()).get(res, _title);
 
     return _title;
 }

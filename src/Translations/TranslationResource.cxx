@@ -16,6 +16,7 @@
 #include <simgear/debug/logstream.hxx>
 
 #include "TranslationResource.hxx"
+#include "TranslationUnit.hxx"
 
 using std::string;
 using std::vector;
@@ -28,7 +29,7 @@ void TranslationResource::addTranslationUnit(std::string name, int index,
                                              bool hasPlural)
 {
     _map.emplace(KeyType(std::move(name), index),
-                 TranslationUnit(std::move(sourceText), {}, hasPlural));
+                 new TranslationUnit(std::move(sourceText), {}, hasPlural));
 }
 
 void TranslationResource::setFirstTargetText(
@@ -39,9 +40,15 @@ void TranslationResource::setFirstTargetText(
            "' to '" << targetText << '\'');
 
     const auto key = std::make_pair(std::move(name), index);
-    auto& translationUnit = _map[key];
-    // Set the first plural form
-    translationUnit.setTargetText(0, std::move(targetText));
+    const auto translationUnit = _map[key];
+
+    // If the smart pointer is empty, it means addTranslationUnit() wasn't
+    // called for this string, therefore it isn't in the default translation.
+    // It's an obsolete string from the XLIFF file being loaded → ignore it.
+    if (translationUnit) {
+        // Set the first plural form
+        translationUnit->setTargetText(0, std::move(targetText));
+    }
 }
 
 void TranslationResource::setTargetTexts(
@@ -54,41 +61,23 @@ void TranslationResource::setTargetTexts(
                       SG_LOG(SG_GENERAL, SG_DEBUG, "\t" << t); });
 
     const auto key = std::make_pair(std::move(name), index);
-    auto& translationUnit = _map[key];
-    translationUnit.setTargetTexts(std::move(targetTexts));
+    const auto translationUnit = _map[key];
+
+    // Set the target texts only if this is not an obsolete string (see above)
+    if (translationUnit) {
+        translationUnit->setTargetTexts(std::move(targetTexts));
+    }
 }
 
-std::string TranslationResource::getTranslation(
-    const std::string& name, int index, std::size_t pluralFormIndex) const
+TranslationResource::TranslationUnitRef
+TranslationResource::translationUnit(const std::string& name, int index) const
 {
-    std::string res;            // empty result by default
-
     auto it = _map.find(std::make_pair(name, index));
     if (it != _map.end()) {
-        const auto transUnit = it->second;
-        const std::size_t nbTargetTexts = transUnit.getNumberOfTargetTexts();
-
-        if (nbTargetTexts == 0) { // e.g., in the default translation
-            res = transUnit.getSourceText();
-        } else if (pluralFormIndex > 0 && !transUnit.getPluralStatus()) {
-            SG_LOG(SG_GENERAL, SG_WARN,
-                   "Requested plural form " << pluralFormIndex << " of the "
-                   "translation of " << name << "[" << index << "] (source "
-                   "text = “" << transUnit.getSourceText() << "”), "
-                   "however this string wasn't declared with "
-                   "has-plural=\"true\" in the default translation");
-            res = transUnit.getSourceText();
-        } else {
-            assert(pluralFormIndex < nbTargetTexts);
-            res = transUnit.getTargetText(pluralFormIndex);
-
-            if (res.empty()) {
-                res = transUnit.getSourceText();
-            }
-        }
+        return it->second;
     }
 
-    return res;
+    return {};
 }
 
 vector<string> TranslationResource::getTranslations(const string& name) const
@@ -101,25 +90,9 @@ vector<string> TranslationResource::getTranslations(const string& name) const
          index++) {
         const auto& transUnit = it->second;
         // Plural form indices all hardcoded to 0
-        const string targetText = transUnit.getTargetText(0);
+        const string targetText = transUnit->getTargetText(0);
         result.push_back(
-            targetText.empty() ? transUnit.getSourceText() : targetText);
-    }
-
-    return result;
-}
-
-// Really useful?..
-vector<string> TranslationResource::getTranslations(
-    const string& name,
-    const std::initializer_list<std::size_t> pluralFormIndices) const
-{
-    const int nbStrings = pluralFormIndices.size();
-    auto pluralFormIndex = pluralFormIndices.begin();
-    vector<string> result(nbStrings);
-
-    for (int i = 0; i < nbStrings; i++) {
-        result.push_back(getTranslation(name, i, *pluralFormIndex++));
+            targetText.empty() ? transUnit->getSourceText() : targetText);
     }
 
     return result;

@@ -10,6 +10,7 @@
 #define __FGLOCALE_HXX
 
 #include <cstdarg> // for va_start/_end
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -339,8 +340,8 @@ private:
      *  such part, return a copy of the input string.
      */
     static std::string removeEncodingPart(const std::string& locale);
-    const flightgear::TranslationDomain* getDomain(const std::string& domain)
-        const;
+    std::shared_ptr<const flightgear::TranslationDomain> getDomain(
+        const std::string& domain) const;
 
     // this is the ordered list of languages to try. It's the same as
     // returned by getUserLanguages(), except if the user has used
@@ -350,8 +351,8 @@ private:
     bool _inited = false;
 
     // Keys are domain names such as "core", "addons/⟨addonId⟩", etc.
-    using DomainsMap = std::map<std::string, flightgear::TranslationDomain>;
-    DomainsMap _domains;
+    using TranslationDomainRef = std::shared_ptr<flightgear::TranslationDomain>;
+    std::map<std::string, TranslationDomainRef> _domains;
 
     // FGTranslate uses our getDomain(), which is private.
     friend class flightgear::FGTranslate;

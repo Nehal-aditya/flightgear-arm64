@@ -10,6 +10,7 @@
 
 #include <initializer_list>
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -72,20 +73,16 @@ public:
                         std::vector<std::string> targetTexts);
 
     /**
-     * @brief Get the translation associated to an element name, index and
-     *        plural form index
+     * @brief Return a shared pointer to a TranslationUnit
      *
      * @param name   element name (aka “basic id”) in the default translation
      *               XML file
      * @param index  zero-based index used to distinguish between elements with
      *               the same @a name in the TranslationResource
-     * @param pluralFormIndex  zero-based index that refers to a plural form
-     *                         of the translated text
-     * @return The translation of the string with the specified basic id,
-     *         element index and plural form index
+     * @return a shared pointer to the TranslationUnit with this name and index
      */
-    std::string getTranslation(const std::string& name, int index,
-                               std::size_t pluralFormIndex) const;
+    std::shared_ptr<TranslationUnit>
+    translationUnit(const std::string& name, int index) const;
     /**
      * @brief Get translations for all strings with a given element name.
      *
@@ -95,20 +92,6 @@ public:
      *         form) of each translated string with the specified element name
      */
     std::vector<std::string> getTranslations(const std::string& name) const;
-
-    /**
-     * @brief Get translations for strings that differ only by their index.
-     *
-     * The number of translations to fetch is the number of elements in
-     * pluralFormIndices. For each i, pluralFormIndices[i] is the index of the
-     * plural form to use when fetching the translation of the TranslationUnit
-     * identified by the given name and index i.
-     *
-     * Not sure this will be very useful!
-     */
-    std::vector<std::string> getTranslations(
-        const std::string& name,
-        const std::initializer_list<std::size_t> pluralFormIndices) const;
 
     /**
      * @brief Get the number of translated strings with the given element
@@ -125,7 +108,8 @@ private:
     // In the default translation files, this corresponds to a node name and
     // its index.
     using KeyType = std::pair<std::string, int>;
-    std::map<KeyType, TranslationUnit> _map;
+    using TranslationUnitRef = std::shared_ptr<TranslationUnit>;
+    std::map<KeyType, TranslationUnitRef> _map;
 };
 
 } // namespace flightgear

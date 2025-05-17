@@ -22,6 +22,8 @@
 using namespace std::string_literals;
 namespace strutils = simgear::strutils;
 
+using flightgear::FGTranslate;
+
 extern naRef propNodeGhostCreate(naContext c, SGPropertyNode* n);
 
 PUICompatObject::PUICompatObject(naRef impl, const std::string& type)
@@ -592,14 +594,12 @@ std::string PUICompatObject::translatePluralString(const std::string& key, int c
 {
     auto res = resource.empty() ? "dialog-"s + dialog()->getName() : resource;
     auto dom = domain.empty() ? dialog()->translationDomain() : domain;
-    return flightgear::FGTranslate().setDomain(dom).setCardinalNumber(cardinal)
-        .get(res, strutils::strip(key));
+    return FGTranslate(dom).getPlural(cardinal, res, strutils::strip(key));
 }
 
 std::string PUICompatObject::translateString(const std::string& key, const std::string& resource, const std::string& domain) const
 {
     auto res = resource.empty() ? "dialog-"s + dialog()->getName() : resource;
     auto dom = domain.empty() ? dialog()->translationDomain() : domain;
-    return flightgear::FGTranslate().setDomain(dom).get(res,
-                                                        strutils::strip(key));
+    return FGTranslate(dom).get(res, strutils::strip(key));
 }

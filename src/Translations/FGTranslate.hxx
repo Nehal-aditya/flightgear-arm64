@@ -9,7 +9,7 @@
 #pragma once
 
 #include <cstddef>
-#include <optional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -21,59 +21,60 @@ namespace flightgear
 /**
  * @brief Class for retrieving translated strings
  *
- * This class has member functions that can be chained in order to set
- * options: these are setDomain(), setIndex() and setCardinalNumber().
- * The other member functions return what is asked for (a translation, a
- * vector of translations sharing the same id, the number of translated
- * strings sharing a specified id).
- *
  * The defaut domain is “core”; it corresponds to translations defined in
  * FGData. Other domains are “current-aircraft” and “addons/⟨addonId⟩”.
  *
- * The default index is 0, meaning the first translatable string having
- * the specified id (in the domain and resource as per setDomain() and the
- * @a resource argument).
+ * If the translatable string specified by the (domain, resource, basicId,
+ * index) tuple doesn't have has-plural="true" in the default translation,
+ * it is a string with no plural forms. Member functions get() and
+ * getWithDefault() are appropriate for retrieving translations of such
+ * strings. On the other hand, if a translatable string is defined with
+ * has-plural="true" in the default translation, it has plural forms.
+ * Member functions getPlural() and getPluralWithDefault() are suitable for
+ * such strings: they require an additional parmeter (“cardinal number”)
+ * which is necessary to choose the correct plural form.
  *
- * If the translatable string specified by the (domain, resource, id)
- * tuple doesn't have has-plural="true" in the default translation, it is
- * a string with no plural forms. setCardinalNumber() should not be called
- * for such strings. On the other hand, if a translatable string is
- * defined with has-plural="true" in the default translation, it has
- * plural forms and setCardinalNumber() must be called on the FGTranslate
- * instance before retrieving data concerning the string, i.e. before
- * using get(), getWithDefault(), getAll() or getCount().
+ * If your code doesn't know in advance whether the string has plural
+ * forms, use translationUnit(). With the result, you can query whether the
+ * string has plural forms and obtain a translation (see the overloads of
+ * TranslationUnit::getTranslation(): one accepts a cardinal number, the
+ * other one doesn't). Doing so minimizes the number of lookups for the
+ * resource, basicId and index because a @c TranslationUnit object contains
+ * all the information pertaining to a given translatable string.
  *
  * Examples:
  *
  * Retrieve the translation of a string defined in FGData that has no
- * plural forms (domain = "core", resource = "options", id = "usage",
+ * plural forms (domain = "core", resource = "options", basicId = "usage",
  * index = 0):
  * @code
  * std::string t = FGTranslate().get("options", "usage");
  * @endcode
  *
+ * or equivalently:
+ * @code
+ * std::string t = FGTranslate("core").get("options", "usage");
+ * @endcode
+ *
  * Similar thing but using the second string (index 1) having the id
  * "fg-scenery-desc":
  * @code
- * std::string t = FGTranslate().setIndex(1).get("options",
- *                                               "fg-scenery-desc");
+ * std::string t = FGTranslate().get("options", "fg-scenery-desc", 1);
  * @endcode
  *
- * Similar thing but from the Skeleton add-on:
+ * Similar thing, but fetching the translation from the Skeleton add-on:
  * @code
  * std::string t =
- *   FGTranslate().setDomain("addons/org.flightgear.addons.Skeleton")
- *                .setIndex(1)
- *                .get("some-resource", "some-id");
+ *   FGTranslate("addons/org.flightgear.addons.Skeleton").get(
+ *     "some-resource", "some-id", 1);
  * @endcode
  *
  * Retrieve a translation with plural forms defined in the current
  * aircraft. Let's assume the translation depends on a number of
- * liveries present in the @p nbLiveries variable.
+ * liveries present in the @a nbLiveries variable.
  * @code
- * std::string t = FGTranslate().setDomain("current-aircraft")
- *                              .setCardinalNumber(nbLiveries)
- *                              .get("some-resource", "some-id");
+ * std::string t = FGTranslate("current-aircraft").getPlural(
+ *                   nbLiveries, "some-resource", "some-id");
  * @endcode
  */
 
@@ -85,42 +86,28 @@ public:
     using intType = LanguageInfo::intType;
 
     /**
-     * @brief Set the domain from which to retrieve translations.
+     * @brief Constructor.
      *
      * @param domain  a string such as “core”, “current-aircraft” or
      *                “addons/⟨addonId⟩”
      *
-     * Newly-created instances of this class have their domain set to “core”.
+     * The constructed FGTranslate instance will allow retrieving
+     * translations from the chosen domain. The domain must already exist
+     * when the constructor is called.
      */
-    FGTranslate& setDomain(std::string domain);
+    explicit FGTranslate(const std::string& domain = "core");
+
     /**
-     * @brief Set the element (string) index used by get() and getWithDefault().
+     * @brief Change the domain from which to retrieve translations.
      *
-     * @param index  an integer corresponding to the index of an XML element
+     * @param domain  a string such as “core”, “current-aircraft” or
+     *                “addons/⟨addonId⟩”
+     * @return The FGTranslate instance
      *
-     * In the default translation, the first element with a given tag name is
-     * assigned index 0, the second element with the same tag name is assigned
-     * index 1, etc. In most cases, there is only one element with a given tag
-     * name in the default translation, so the index is 0 in newly-created
-     * instances of this class.
+     * If you intend to query translations from one domain only, better
+     * pass it directly to the constructor, if possible.
      */
-    FGTranslate& setIndex(int index);
-    /**
-     * @brief Set the number of (items, etc.) that determines the plural form.
-     *
-     * @param number  an integer that correponds to a number of “things”
-     *                (concrete or abstract)
-     *
-     * If you're using a translatable string such as `Found %1 file(s)`,
-     * call this method with the actual number of files. This way, the
-     * appropriate form (singular, plural, etc.) in the target language can be
-     * used.
-     *
-     * Translatable strings with plural forms must be marked with the
-     * `has-plural="true"` attribute in the default translation.
-     * setCardinalNumber() should be called only when using these strings.
-     */
-    FGTranslate& setCardinalNumber(intType number);
+    FGTranslate& setDomain(const std::string& domain);
 
     /**
      * @brief Get a single translation.
@@ -130,38 +117,74 @@ public:
      * @param basicId   name of the XML element corresponding to the
      *                  translation to retrieve in the default translation
      *                  file for the specified resource
+     * @param index     index among strings sharing the same basicId
      * @return The translated string
      *
-     * The translation is fetched from the domain specified with setDomain()
-     * (the domain in newly-created instances is `core`).
+     * The translation is fetched from the domain specified with the
+     * constructor or with setDomain().
      *
      * There may be several elements named @a basicId in the default
-     * translation file for the specified resource; these elements are
-     * distinguished by their index. Newly-created instances of this class use
-     * index 0; call setIndex() before get() in order to retrieve the
-     * translation of a string whose with a non-zero index.
+     * translation file for the specified @a resource; these elements are
+     * distinguished by their @a index.
+     *
+     * If the @a resource doesn't exist in the domain or if there is no
+     * translatable string with the specified @a basicId and @a index
+     * in the @a resource, return an empty string.
      */
-    std::string get(const std::string& resource,
-                    const std::string& basicId);
+    std::string get(const std::string& resource, const std::string& basicId,
+                    int index = 0);
     /**
-     * @brief Get a single translation, with default for missing or empty strings
+     * @brief Same as get(), but for a string that has plural forms.
+     *
+     * @param cardinalNumber  an integer correponding to a number of
+     *                        “things” (concrete or abstract)
+     * @param resource        same as for get()
+     * @param basicId         same as for get()
+     * @param index           same as for get()
+     * @return The translated string
+     */
+    std::string getPlural(intType cardinalNumber, const std::string& resource,
+                          const std::string& basicId, int index = 0);
+    /**
+     * @brief Get a single translation, with default for missing or empty
+     *        strings.
      *
      * @param resource      same as for get()
      * @param basicId       same as for get()
      * @param defaultValue  returned if the string can't be found or is
      *                      declared with an empty source text in the
      *                      default translation
+     * @param index         same as for get()
+     * @return The translated string or default value
      */
+
     std::string getWithDefault(const std::string& resource,
                                const std::string& basicId,
-                               const std::string& defaultValue);
+                               const std::string& defaultValue,
+                               int index = 0);
+    /**
+     * @brief Same as getWithDefault(), but for a string that has plural forms.
+     *
+     * @param cardinalNumber  an integer correponding to a number of
+     *                        “things” (concrete or abstract)
+     * @param resource        same as for getWithDefault()
+     * @param basicId         same as for getWithDefault()
+     * @param defaultValue    same as for getWithDefault()
+     * @param index           same as for getWithDefault()
+     * @return The translated string or default value
+     */
+    std::string getPluralWithDefault(
+        intType cardinalNumber, const std::string& resource,
+        const std::string& basicId, const std::string& defaultValue,
+        int index = 0);
+
     /**
      * @brief Get all translations associated to an id (tag name).
      *
      * @param resource      same as for get()
      * @param basicId       same as for get()
      * @return A vector containing all translations with id @a basicId in the
-     *         specified resource
+     *         specified @a resource
      */
     std::vector<std::string> getAll(const std::string& resource,
                                     const std::string& basicId);
@@ -170,11 +193,28 @@ public:
      *
      * @param resource      same as for get()
      * @param basicId       same as for get()
-     * @return The number of elements named @a basicId in the specified resource
-     *         (this is the size of the vector that getAll() would return)
+     * @return The number of elements named @a basicId in the specified
+     *         @a resource (this is the size of the vector that getAll() would
+     *         return)
      */
     std::size_t getCount(const std::string& resource,
                          const std::string& basicId);
+
+    /**
+     * @brief Return a shared pointer to a TranslationUnit.
+     *
+     * @param resource      same as for get()
+     * @param basicId       same as for get()
+     * @param index         same as for get()
+     *
+     * This function allows one to efficiently perform several operations
+     * on the same translatable string (for instance, querying whether it
+     * has plural forms before getting a translation, or retrieving several
+     * translations for different values of the “cardinal number”).
+     */
+    std::shared_ptr<TranslationUnit>
+    translationUnit(const std::string& resource, const std::string& basicId,
+                    int index = 0) const;
 
 private:
     /**
@@ -188,10 +228,8 @@ private:
     TranslationDomain::ResourceRef getResource(const std::string& resourceName)
         const;
 
-    std::string _domain = "core";
-    int _elementIndex = 0; ///< for sibling elements with the same name
-    /// Determines which plural form will be used; it has no value initially.
-    std::optional<intType> _cardinalNumber;
+    using TranslationDomainRef = std::shared_ptr<const TranslationDomain>;
+    TranslationDomainRef _domain;
 };
 
 } // namespace flightgear
