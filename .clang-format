@@ -15,9 +15,7 @@
 #
 # The comments before each option are reStructuredText formatted text converted
 # from the https://clang.llvm.org/docs/ClangFormatStyleOptions.html web page.
-
-
----
+Language: Cpp
 # **Language** (``LanguageKind``)
 #     Language, this format style is targeted at.
 #
@@ -31,8 +29,6 @@
 #     * ``LK_Proto`` (in configuration: ``Proto``) Should be used for Protocol Buffers (https://developers.google.com/protocol-buffers/).
 #     * ``LK_TableGen`` (in configuration: ``TableGen``) Should be used for TableGen code.
 #     * ``LK_TextProto`` (in configuration: ``TextProto``) Should be used for Protocol Buffer messages in text format (https://developers.google.com/protocol-buffers/).
-
-Language:        Cpp
 
 # **BasedOnStyle** (``string``)
 #     The style used for all options not specifically set in the configuration.
@@ -57,14 +53,11 @@ Language:        Cpp
 # Rational:  Not needed as all options are manually set.
 #BasedOnStyle: LLVM
 
-
 # **AccessModifierOffset** (``int``)
 #     The extra indent or outdent of access modifiers, e.g. ``public:``.
 
 # Rational:  Average FG style with minimal diff.
 AccessModifierOffset: -4
-
-
 # **AlignAfterOpenBracket** (``BracketAlignmentStyle``)
 #     If ``true``, horizontally aligns arguments after an open bracket.
 #
@@ -98,8 +91,6 @@ AccessModifierOffset: -4
 
 # Rational:  Preservation of formatting.
 AlignAfterOpenBracket: Align
-
-
 # **AlignConsecutiveAssignments** (``bool``)
 #     If ``true``, aligns consecutive assignments.
 #
@@ -113,10 +104,8 @@ AlignAfterOpenBracket: Align
 
 # Rational:  Average FG style with minimal diff.
 AlignConsecutiveAssignments: false
-
 # Rational:  Preservation of formatting.
 #AlignConsecutiveAssignments: true
-
 
 # **AlignConsecutiveDeclarations** (``bool``)
 #     If ``true``, aligns consecutive declarations.
@@ -132,7 +121,6 @@ AlignConsecutiveAssignments: false
 # Rational:  Average FG style with minimal diff.
 # Rational:  Preservation of formatting.
 AlignConsecutiveDeclarations: false
-
 # **AlignEscapedNewlines** (``EscapedNewlineAlignmentStyle``)
 #     Options for aligning backslashes in escaped newlines.
 #
@@ -175,7 +163,6 @@ AlignConsecutiveDeclarations: false
 # Rational:  Preservation of formatting.
 #AlignEscapedNewlines: Left
 
-
 # **AlignEscapedNewlinesLeft** (``bool``)
 #     If ``true``, aligns escaped newlines as far left as possible. Otherwise puts them into the right-most column.
 
@@ -183,8 +170,6 @@ AlignConsecutiveDeclarations: false
 # Rational:  Average FG style with minimal diff.
 # Rational:  Preservation of formatting.
 AlignEscapedNewlinesLeft: true
-
-
 # **AlignOperands** (``bool``)
 #     If ``true``, horizontally align operands of binary and ternary expressions.
 #
@@ -200,8 +185,6 @@ AlignEscapedNewlinesLeft: true
 
 # Rational:  Preservation of formatting.
 AlignOperands: true
-
-
 # **AlignTrailingComments** (``bool``)
 #     If ``true``, aligns trailing comments.
 #
@@ -216,8 +199,6 @@ AlignOperands: true
 
 # Rational:  Preservation of formatting.
 AlignTrailingComments: true
-
-
 # **AllowAllParametersOfDeclarationOnNextLine** (``bool``)
 #     If the function declaration doesn't fit on a line, allow putting all parameters of a function declaration onto the next line even if ``BinPackParameters`` is ``false``.
 #
@@ -237,8 +218,6 @@ AlignTrailingComments: true
 # Rational:  Average FG style with minimal diff.
 # Rational:  Preservation of formatting.
 AllowAllParametersOfDeclarationOnNextLine: true
-
-
 # **AllowShortBlocksOnASingleLine** (``bool``)
 #     Allows contracting simple braced statements to a single line.
 #
@@ -246,8 +225,6 @@ AllowAllParametersOfDeclarationOnNextLine: true
 
 # Rational:  Average FG style with minimal diff.
 AllowShortBlocksOnASingleLine: true
-
-
 # **AllowShortCaseLabelsOnASingleLine** (``bool``)
 #     If ``true``, short case labels will be contracted to a single line.
 #
@@ -264,8 +241,6 @@ AllowShortBlocksOnASingleLine: true
 
 # Rational:  Average FG style with minimal diff.
 AllowShortCaseLabelsOnASingleLine: true
-
-
 # **AllowShortFunctionsOnASingleLine** (``ShortFunctionStyle``)
 #     Dependent on the value, ``int f() { return 0; }`` can be put on a single line.
 #
@@ -318,22 +293,16 @@ AllowShortCaseLabelsOnASingleLine: true
 
 # Rational:  Average FG style with minimal diff.
 AllowShortFunctionsOnASingleLine: All
-
-
 # **AllowShortIfStatementsOnASingleLine** (``bool``)
 #     If ``true``, ``if (a) return;`` can be put on a single line.
 
 # Rational:  Average FG style with minimal diff.
 AllowShortIfStatementsOnASingleLine: true
-
-
 # **AllowShortLoopsOnASingleLine** (``bool``)
 #     If ``true``, ``while (true) continue;`` can be put on a single line.
 
 # Rational:  Average FG style with minimal diff.
 AllowShortLoopsOnASingleLine: true
-
-
 # **AlwaysBreakAfterReturnType** (``ReturnTypeBreakingStyle``)
 #     The function declaration return type breaking style to use.
 #
@@ -411,8 +380,6 @@ AllowShortLoopsOnASingleLine: true
 
 # Rational:  Average FG style with minimal diff.
 AlwaysBreakAfterReturnType: None
-
-
 # **AlwaysBreakBeforeMultilineStrings** (``bool``)
 #     If ``true``, always break before multiline string literals.
 #
@@ -427,8 +394,6 @@ AlwaysBreakAfterReturnType: None
 
 # Rational:  Average FG style with minimal diff.
 AlwaysBreakBeforeMultilineStrings: false
-
-
 # **AlwaysBreakTemplateDeclarations** (``bool``)
 #     If ``true``, always break after the ``template<...>`` of a template declaration.
 #
@@ -440,8 +405,6 @@ AlwaysBreakBeforeMultilineStrings: false
 
 # Rational:  Average FG style with minimal diff.
 AlwaysBreakTemplateDeclarations: false
-
-
 # **BinPackArguments** (``bool``)
 #     If ``false``, a function call's arguments will either be all on the same line or will have one line each.
 #
@@ -462,8 +425,6 @@ AlwaysBreakTemplateDeclarations: false
 
 # Rational:  Average FG style with minimal diff.
 BinPackArguments: true
-
-
 # **BinPackParameters** (``bool``)
 #     If ``false``, a function declaration's or function definition's parameters will either all be on the same line or will have one line each.
 #
@@ -480,8 +441,6 @@ BinPackArguments: true
 
 # Rational:  Average FG style with minimal diff.
 BinPackParameters: true
-
-
 # **BraceWrapping** (``BraceWrappingFlags``)
 #     Control of individual brace wrapping cases.
 #
@@ -682,23 +641,21 @@ BinPackParameters: true
 
 # Rational:  Average FG style with minimal diff.
 BraceWrapping:
-  AfterClass:               true
-  AfterControlStatement:    false
-  AfterEnum:                false
-  AfterFunction:            true
-  AfterNamespace:           false
-  AfterStruct:              false
-  AfterUnion:               false
-  BeforeCatch:              false
-  BeforeElse:               false
-  IndentBraces:             false
-
+  AfterClass: true
+  AfterControlStatement: false
+  AfterEnum: false
+  AfterFunction: true
+  AfterNamespace: false
+  AfterStruct: false
+  AfterUnion: false
+  BeforeCatch: false
+  BeforeElse: false
+  IndentBraces: false
 # Clang version >= 6.
 #  AfterExternBlock:         false
 #  SplitEmptyFunction:       false
 #  SplitEmptyRecord:         false
 #  SplitEmptyNamespace:      false
-
 
 # **BreakBeforeBinaryOperators** (``BinaryOperatorStyle``)
 #     The way to wrap binary operators.
@@ -744,8 +701,6 @@ BraceWrapping:
 
 # Rational:  Average FG style with minimal diff.
 BreakBeforeBinaryOperators: None
-
-
 # **BreakBeforeBraces** (``BraceBreakingStyle``)
 #     The brace breaking style to use.
 #
@@ -886,8 +841,6 @@ BreakBeforeBinaryOperators: None
 
 # Rational:  Average FG style with minimal diff.
 BreakBeforeBraces: Custom
-
-
 # **BreakBeforeInheritanceComma** (``bool``)
 #     If ``true``, in the class inheritance expression clang-format will break before ``:`` and ``,`` if there is multiple inheritance.
 #
@@ -901,7 +854,6 @@ BreakBeforeBraces: Custom
 
 # Clang version >= 5.
 #BreakBeforeInheritanceComma: false
-
 
 # **BreakBeforeTernaryOperators** (``bool``)
 #     If ``true``, ternary operators will be placed after line breaks.
@@ -920,8 +872,6 @@ BreakBeforeBraces: Custom
 
 # Rational:  Average FG style with minimal diff.
 BreakBeforeTernaryOperators: true
-
-
 # **BreakConstructorInitializers** (``BreakConstructorInitializersStyle``)
 #     The constructor initializers style to use.
 #
@@ -947,22 +897,17 @@ BreakBeforeTernaryOperators: true
 # Rational:  Average FG style with minimal diff.
 #BreakConstructorInitializers: None
 
-
 # **BreakConstructorInitializersBeforeComma** (``bool``)
 #     Always break constructor initializers before commas and align the commas with the colon.
 
 # Clang version < 5.
 # Rational:  Average FG style with minimal diff.
 BreakConstructorInitializersBeforeComma: false
-
-
 # **BreakStringLiterals** (``bool``)
 #     Allow breaking string literals when formatting.
 
 # Rational:  Average FG style with minimal diff.
 BreakStringLiterals: false
-
-
 # **ColumnLimit** (``unsigned``)
 #     The column limit.
 #
@@ -970,8 +915,6 @@ BreakStringLiterals: false
 
 # Rational:  Average FG style with minimal diff.
 ColumnLimit: 0
-
-
 # **CommentPragmas** (``std::string``)
 #     A regular expression that describes comments with special meaning, which should not be split into lines or otherwise changed.
 #
@@ -983,8 +926,6 @@ ColumnLimit: 0
 
 # Rational:  Average FG style with minimal diff.
 CommentPragmas: None
-
-
 # **CompactNamespaces** (``bool``)
 #     If ``true``, consecutive namespace declarations will be on the same line. If ``false``, each namespace is declared on a new line.
 #
@@ -1012,7 +953,6 @@ CommentPragmas: None
 # Rational:  Average FG style with minimal diff.
 #CompactNamespaces: false
 
-
 # **ConstructorInitializerAllOnOneLineOrOnePerLine** (``bool``)
 #     If the constructor initializers don't fit on a line, put each initializer on its own line.
 #
@@ -1033,15 +973,11 @@ CommentPragmas: None
 
 # Rational:  Average FG style with minimal diff.
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
-
-
 # **ConstructorInitializerIndentWidth** (``unsigned``)
 #     The number of characters to use for indentation of constructor initializer lists.
 
 # Rational:  Preservation of formatting.
 ConstructorInitializerIndentWidth: 4
-
-
 # **ContinuationIndentWidth** (``unsigned``)
 #     Indent width for line continuations.
 #
@@ -1055,8 +991,6 @@ ConstructorInitializerIndentWidth: 4
 
 # Rational:  Average FG style with minimal diff.
 ContinuationIndentWidth: 4
-
-
 # **Cpp11BracedListStyle** (``bool``)
 #     If ``true``, format braced lists as best suited for C++11 braced lists.
 #
@@ -1074,22 +1008,16 @@ ContinuationIndentWidth: 4
 
 # Rational:  Switch to the C++11 braced lists format.
 Cpp11BracedListStyle: true
-
-
 # **DerivePointerAlignment** (``bool``)
 #     If ``true``, analyze the formatted file for the most common alignment of ``&`` and ``*``. Pointer and reference alignment styles are going to be updated according to the preferences found in the file. ``PointerAlignment`` is then used only as fallback.
 
 # Rational:  Do not override PointerAlignment!
 DerivePointerAlignment: false
-
-
 # **DisableFormat** (``bool``)
 #     Disables formatting completely.
 
 # Rational:  N/A.
 DisableFormat: false
-
-
 # **ExperimentalAutoDetectBinPacking** (``bool``)
 #     If ``true``, clang-format detects whether function calls and definitions are formatted with one parameter per line.
 #
@@ -1099,7 +1027,6 @@ DisableFormat: false
 
 # Rational:  N/A.
 #ExperimentalAutoDetectBinPacking: false
-
 
 # **FixNamespaceComments** (``bool``)
 #     If ``true``, clang-format adds missing namespace end comments and fixes invalid existing ones.
@@ -1114,7 +1041,6 @@ DisableFormat: false
 # Clang version >= 5.
 # Rational:  This should be set to ``true`` when possible.
 #FixNamespaceComments: true
-
 
 # **ForEachMacros** (``std::vector<std::string>``)
 #     A vector of macros that should be interpreted as foreach loops instead of as function calls.
@@ -1135,9 +1061,7 @@ DisableFormat: false
 #     For example: BOOST_FOREACH.
 
 # Rational:  Average FG style with minimal diff.
-ForEachMacros: [ foreach, Q_FOREACH, BOOST_FOREACH ]
-
-
+ForEachMacros: [foreach, Q_FOREACH, BOOST_FOREACH]
 # **IncludeBlocks** (``IncludeBlocksStyle``)
 #     Dependent on the value, multiple ``#include`` blocks can be sorted as one and divided based on category.
 #
@@ -1174,7 +1098,6 @@ ForEachMacros: [ foreach, Q_FOREACH, BOOST_FOREACH ]
 # Rational:  Formatting clean up.
 #IncludeBlocks: Regroup
 
-
 # **IncludeCategories** (``std::vector<IncludeCategory>``)
 #     Regular expressions denoting the different ``#include`` categories used for ordering ``#includes``.
 #
@@ -1196,14 +1119,12 @@ ForEachMacros: [ foreach, Q_FOREACH, BOOST_FOREACH ]
 
 # Rational:  Left on the default LLVM values.
 IncludeCategories:
-  - Regex:           '^"(llvm|llvm-c|clang|clang-c)/'
-    Priority:        2
-  - Regex:           '^(<|"(gtest|isl|json)/)'
-    Priority:        3
-  - Regex:           '.*'
-    Priority:        1
-
-
+  - Regex: '^"(llvm|llvm-c|clang|clang-c)/'
+    Priority: 2
+  - Regex: '^(<|"(gtest|isl|json)/)'
+    Priority: 3
+  - Regex: '.*'
+    Priority: 1
 # **IncludeIsMainRegex** (``std::string``)
 #     Specify a regular expression of suffixes that are allowed in the file-to-main-include mapping.
 #
@@ -1213,8 +1134,6 @@ IncludeCategories:
 
 # Rational:  Average FG style with minimal diff.
 IncludeIsMainRegex: '$'
-
-
 # **IndentCaseLabels** (``bool``)
 #     Indent case labels one level from the switch statement.
 #
@@ -1233,8 +1152,6 @@ IncludeIsMainRegex: '$'
 
 # Rational:  Average FG style with minimal diff.
 IndentCaseLabels: false
-
-
 # **IndentPPDirectives** (``PPDirectiveIndentStyle``)
 #     The preprocessor directive indenting style to use.
 #
@@ -1264,7 +1181,6 @@ IndentCaseLabels: false
 # Rational:  Average FG style with minimal diff.
 #IndentPPDirectives: AfterHash
 
-
 # **IndentWidth** (``unsigned``)
 #     The number of columns to use for indentation.
 #
@@ -1281,8 +1197,6 @@ IndentCaseLabels: false
 
 # Rational:  Average FG style with minimal diff.
 IndentWidth: 4
-
-
 # **IndentWrappedFunctionNames** (``bool``)
 #     Indent if a function definition or declaration is wrapped after the type.
 #
@@ -1298,8 +1212,6 @@ IndentWidth: 4
 
 # Rational:  Average FG style with minimal diff.
 IndentWrappedFunctionNames: false
-
-
 # **KeepEmptyLinesAtTheStartOfBlocks** (``bool``)
 #     If true, the empty line at the start of blocks is kept.
 #
@@ -1313,8 +1225,6 @@ IndentWrappedFunctionNames: false
 
 # Rational:  Average FG style with minimal diff.
 KeepEmptyLinesAtTheStartOfBlocks: false
-
-
 # **MacroBlockBegin** (``std::string``)
 #     A regular expression matching macros that start a block.
 #
@@ -1346,15 +1256,11 @@ KeepEmptyLinesAtTheStartOfBlocks: false
 
 # Rational:  Average FG style with minimal diff.
 MacroBlockBegin: ''
-
-
 # **MacroBlockEnd** (``std::string``)
 #     A regular expression matching macros that end a block.
 
 # Rational:  Average FG style with minimal diff.
 MacroBlockEnd: ''
-
-
 # **MaxEmptyLinesToKeep** (``unsigned``)
 #     The maximum number of consecutive empty lines to keep.
 #
@@ -1371,8 +1277,6 @@ MacroBlockEnd: ''
 
 # Rational:  Avoid 3 or more empty lines.
 MaxEmptyLinesToKeep: 2
-
-
 # **NamespaceIndentation** (``NamespaceIndentationKind``)
 #     The indentation used for namespaces.
 #
@@ -1414,57 +1318,42 @@ MaxEmptyLinesToKeep: 2
 
 # Rational:  Average FG style with minimal diff.
 NamespaceIndentation: None
-
-
 # **PenaltyBreakAssignment** (``unsigned``)
 #     The penalty for breaking around an assignment operator.
 
 # Clang version >= 5.
 #PenaltyBreakAssignment:
 
-
 # **PenaltyBreakBeforeFirstCallParameter** (``unsigned``)
 #     The penalty for breaking a function call after ``call(``.
 
 # Rational:  Left to default.
 PenaltyBreakBeforeFirstCallParameter: 19
-
-
 # **PenaltyBreakComment** (``unsigned``)
 #     The penalty for each line break introduced inside a comment.
 
 # Rational:  Left to default.
 PenaltyBreakComment: 300
-
-
 # **PenaltyBreakFirstLessLess** (``unsigned``)
 #     The penalty for breaking before the first ``<<``.
 
 # Rational:  Left to default.
 PenaltyBreakFirstLessLess: 120
-
-
 # **PenaltyBreakString** (``unsigned``)
 #     The penalty for each line break introduced inside a string literal.
 
 # Rational:  Left to default.
 PenaltyBreakString: 1000
-
-
 # **PenaltyExcessCharacter** (``unsigned``)
 #     The penalty for each character outside of the column limit.
 
 # Rational:  Left to default.
 PenaltyExcessCharacter: 1000000
-
-
 # **PenaltyReturnTypeOnItsOwnLine** (``unsigned``)
 #     Penalty for putting the return type of a function onto its own line.
 
 # Rational:  Left to default.
 PenaltyReturnTypeOnItsOwnLine: 60
-
-
 # **PointerAlignment** (``PointerAlignmentStyle``)
 #     Pointer and reference alignment style.
 #
@@ -1490,8 +1379,6 @@ PenaltyReturnTypeOnItsOwnLine: 60
 
 # Rational:  Average FG style with minimal diff.
 PointerAlignment: Left
-
-
 # **RawStringFormats** (``std::vector<RawStringFormat>``)
 #     Defines hints for detecting supported languages code blocks in raw strings.
 #
@@ -1523,7 +1410,6 @@ PointerAlignment: Left
 # Clang version >= 6.
 #RawStringFormats:
 
-
 # **ReflowComments** (``bool``)
 #     If ``true``, clang-format will attempt to re-flow comments.
 #
@@ -1541,8 +1427,6 @@ PointerAlignment: Left
 
 # Rational:  Seems to require ColumnLimit to be set.
 ReflowComments: false
-
-
 # **SortIncludes** (``bool``)
 #     If ``true``, clang-format will sort ``#includes``.
 #
@@ -1554,8 +1438,6 @@ ReflowComments: false
 
 # Rational:  Formatting clean up.
 SortIncludes: true
-
-
 # **SortUsingDeclarations** (``bool``)
 #     If ``true``, clang-format will sort using declarations.
 #
@@ -1571,7 +1453,6 @@ SortIncludes: true
 # Rational:  Formatting clean up.
 #SortUsingDeclarations: true
 
-
 # **SpaceAfterCStyleCast** (``bool``)
 #     If ``true``, a space is inserted after C style casts.
 #
@@ -1582,8 +1463,6 @@ SortIncludes: true
 
 # Rational:  Average FG style with minimal diff.
 SpaceAfterCStyleCast: false
-
-
 # **SpaceAfterTemplateKeyword** (``bool``)
 #     If ``true``, a space will be inserted after the 'template' keyword.
 #
@@ -1596,7 +1475,6 @@ SpaceAfterCStyleCast: false
 # Rational:  Average FG style with minimal diff.
 #SpaceAfterTemplateKeyword: true
 
-
 # **SpaceBeforeAssignmentOperators** (``bool``)
 #     If ``false``, spaces will be removed before assignment operators.
 #
@@ -1608,8 +1486,6 @@ SpaceAfterCStyleCast: false
 
 # Rational:  Average FG style with minimal diff.
 SpaceBeforeAssignmentOperators: true
-
-
 # **SpaceBeforeCtorInitializerColon** (``bool``)
 #     If ``false``, spaces will be removed before constructor initializer colon.
 #
@@ -1622,7 +1498,6 @@ SpaceBeforeAssignmentOperators: true
 # Rational:  Average FG style with minimal diff.
 #SpaceBeforeCtorInitializerColon: true
 
-
 # **SpaceBeforeInheritanceColon** (``bool``)
 #     If ``false``, spaces will be removed before inheritance colon.
 #
@@ -1634,7 +1509,6 @@ SpaceBeforeAssignmentOperators: true
 # Clang version >= 7.
 # Rational:  Average FG style with minimal diff.
 #SpaceBeforeInheritanceColon: true
-
 
 # **SpaceBeforeParens** (``SpaceBeforeParensOptions``)
 #     Defines in which cases to put a space before opening parentheses.
@@ -1674,8 +1548,6 @@ SpaceBeforeAssignmentOperators: true
 
 # Rational:  Average FG style with minimal diff.
 SpaceBeforeParens: ControlStatements
-
-
 # **SpaceBeforeRangeBasedForLoopColon** (``bool``)
 #     If ``false``, spaces will be removed before range-based for loop colon.
 #
@@ -1687,7 +1559,6 @@ SpaceBeforeParens: ControlStatements
 # Clang version >= 7.
 # Rational:  Average FG style with minimal diff.
 #SpaceBeforeRangeBasedForLoopColon: true
-
 
 # **SpaceInEmptyParentheses** (``bool``)
 #     If ``true``, spaces may be inserted into ``()``.
@@ -1704,8 +1575,6 @@ SpaceBeforeParens: ControlStatements
 
 # Rational:  Average FG style with minimal diff.
 SpaceInEmptyParentheses: false
-
-
 # **SpacesBeforeTrailingComments** (``unsigned``)
 #     The number of spaces before trailing line comments (``//`` - comments).
 #
@@ -1722,8 +1591,6 @@ SpaceInEmptyParentheses: false
 
 # Rational:  Average FG style with minimal diff.
 SpacesBeforeTrailingComments: 1
-
-
 # **SpacesInAngles** (``bool``)
 #     If ``true``, spaces will be inserted after ``<`` and before ``>`` in template argument lists.
 #
@@ -1735,8 +1602,6 @@ SpacesBeforeTrailingComments: 1
 
 # Rational:  Average FG style with minimal diff.
 SpacesInAngles: false
-
-
 # **SpacesInContainerLiterals** (``bool``)
 #     If ``true``, spaces are inserted inside container literals (e.g. ObjC and Javascript array and dict literals).
 #
@@ -1748,8 +1613,6 @@ SpacesInAngles: false
 
 # Rational:  Average FG style with minimal diff.
 SpacesInContainerLiterals: false
-
-
 # **SpacesInCStyleCastParentheses** (``bool``)
 #     If ``true``, spaces may be inserted into C style casts.
 #
@@ -1760,8 +1623,6 @@ SpacesInContainerLiterals: false
 
 # Rational:  Average FG style with minimal diff.
 SpacesInCStyleCastParentheses: false
-
-
 # **SpacesInParentheses** (``bool``)
 #     If ``true``, spaces will be inserted after ``(`` and before ``)``.
 #
@@ -1772,8 +1633,6 @@ SpacesInCStyleCastParentheses: false
 
 # Rational:  Average FG style with minimal diff.
 SpacesInParentheses: false
-
-
 # **SpacesInSquareBrackets** (``bool``)
 #     If ``true``, spaces will be inserted after ``[`` and before ``]``. Lambdas or unspecified size array declarations will not be affected.
 #
@@ -1785,9 +1644,6 @@ SpacesInParentheses: false
 
 # Rational:  Average FG style with minimal diff.
 SpacesInSquareBrackets: false
-
-
-
 # **Standard** (``LanguageStandard``)
 #     Format compatible with this standard, e.g. use ``A<A<int> >`` instead of ``A<A<int>>`` for ``LS_Cpp03``.
 #
@@ -1799,15 +1655,11 @@ SpacesInSquareBrackets: false
 
 # Rational:  FlightGear currently uses the C++11 standard.
 Standard: Cpp11
-
-
 # **TabWidth** (``unsigned``)
 #     The number of columns used for tab stops.
 
 # Rational:  Average FG style with minimal diff.
 TabWidth: 4
-
-
 # **UseTab** (``UseTabStyle``)
 #     The way to use tab characters in the resulting file.
 #
@@ -1820,9 +1672,5 @@ TabWidth: 4
 
 # Rational:  Don't use "\t".
 UseTab: Never
-
-
-...
-
+---
 Language: ObjC
-

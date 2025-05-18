@@ -1,4 +1,4 @@
-# Ignore all hidden directories (i.e., .idea, .vscode). This casts a very wide net, 
+# Ignore all hidden directories (i.e., .idea, .vscode). This casts a very wide net,
 # and a case could be made either way for it being a good thing or a bad thing.
 .*
 

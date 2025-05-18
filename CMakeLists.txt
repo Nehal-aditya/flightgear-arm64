@@ -25,7 +25,7 @@ if(POLICY CMP0167)
   cmake_policy(SET CMP0167 NEW)
 endif()
 
-if (CMAKE_BUILD_TYPE)  
+if (CMAKE_BUILD_TYPE)
     message("CMAKE Build type: ${CMAKE_BUILD_TYPE}")
 endif()
 
@@ -382,7 +382,7 @@ if (ENABLE_QT)
         if (NOT Qt${QT_VERSION_MAJOR}Widgets_FOUND)
             message(FATAL_ERROR "Qt support enabled, Qt was found but some required packages are missing, stopping.")
         endif()
-    
+
         set(HAVE_QT 1)
         include (Translations)
 
@@ -394,7 +394,7 @@ if (ENABLE_QT)
         endif()
 
         set(CMAKE_AUTOMOC OFF)
-        
+
         message(STATUS "Qt GUI enabled, found Qt at: ${FG_QT_ROOT_DIR}")
     else()
         message(STATUS "Qt support disabled, Qt/qmake not found in PATH/CMAKE_PREFIX_PATH")
@@ -415,7 +415,7 @@ message(STATUS "Min Simgear version is ${MIN_SIMGEAR_VERSION}")
 if (TARGET SimGearCore)
     message(STATUS "Simgear targets exist, assuming superbuild")
 
-    # since we don't find(SimGear), we need to 
+    # since we don't find(SimGear), we need to
     # find a few dependencies directly
     if (SG_SOUND_USES_OPENALSOFT)
         message((STATUS "Finding OpenAL"))
@@ -458,7 +458,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_C_FLAGS_RELWITHDEBINFO  "-O3 -g -DNDEBUG")
 
     if(HAVE_QT)
-        # if Qt is built with reduce-relocations, applicatino code 
+        # if Qt is built with reduce-relocations, applicatino code
         # needs to be compiled with -fPIC to match
         set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     endif()
@@ -482,7 +482,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Ap
       set(SIMD_COMPILER_FLAGS "-msse2 -mfpmath=sse")
     endif()
     set(SIMD_COMPILER_FLAGS "${SIMD_COMPILER_FLAGS} -ftree-vectorize -ftree-slp-vectorize")
-    
+
     set(WARNING_FLAGS_C "-Wall")
 endif()
 
@@ -596,8 +596,8 @@ add_dependencies(fgfsObjects buildId)
 
 # remove once we use CMake 3.12, since then the dependency will be explicit
 add_dependencies(fgfsObjects fgembeddedresources)
- 
-target_precompile_headers(fgfsObjects PRIVATE 
+
+target_precompile_headers(fgfsObjects PRIVATE
         "$<$<COMPILE_LANGUAGE:CXX>:${PROJECT_SOURCE_DIR}/src/Include/flightgear_precompile.h>")
 
 ########################################################################
