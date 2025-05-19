@@ -47,6 +47,10 @@
 #include "audio_alsa.h"
 #endif
 
+#ifdef AUDIO_OPENAL
+  #include "audio_openal.h"
+#endif
+
 #define IAXC_ERROR  IAXC_TEXT_TYPE_ERROR
 #define IAXC_STATUS IAXC_TEXT_TYPE_STATUS
 #define IAXC_NOTICE IAXC_TEXT_TYPE_NOTICE
