@@ -592,14 +592,17 @@ nasal::Hash PUICompatObject::gridLocation(const nasal::CallContext& ctx) const
 
 std::string PUICompatObject::translatePluralString(const std::string& key, int cardinal, const std::string& resource, const std::string& domain) const
 {
+    auto strippedKey = strutils::strip(key);
     auto res = resource.empty() ? "dialog-"s + dialog()->getName() : resource;
     auto dom = domain.empty() ? dialog()->translationDomain() : domain;
-    return FGTranslate(dom).getPlural(cardinal, res, strutils::strip(key));
+    return FGTranslate(dom).getPluralWithDefault(cardinal, res, strippedKey,
+                                                 strippedKey);
 }
 
 std::string PUICompatObject::translateString(const std::string& key, const std::string& resource, const std::string& domain) const
 {
+    auto strippedKey = strutils::strip(key);
     auto res = resource.empty() ? "dialog-"s + dialog()->getName() : resource;
     auto dom = domain.empty() ? dialog()->translationDomain() : domain;
-    return FGTranslate(dom).get(res, strutils::strip(key));
+    return FGTranslate(dom).getWithDefault(res, strippedKey, strippedKey);
 }
