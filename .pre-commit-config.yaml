@@ -1,11 +1,14 @@
 # exclude: 3rdparty/*
 
+exclude: ^3rdparty/
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
+    
   # - repo: https://github.com/codespell-project/codespell
   #   rev: v2.3.0
   #   hooks:
