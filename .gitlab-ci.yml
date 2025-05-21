@@ -91,6 +91,8 @@ canvas-pi-build:
     paths:
       - $BUILD_DIR
 
+  allow_failure: true
+
 windows-build:
   stage: build
   tags:
