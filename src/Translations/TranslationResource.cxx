@@ -35,10 +35,6 @@ void TranslationResource::addTranslationUnit(std::string name, int index,
 void TranslationResource::setFirstTargetText(
     std::string name, int index, std::string targetText)
 {
-    SG_LOG(SG_GENERAL, SG_DEBUG,
-           "Setting target text for '" << name << ":" << index <<
-           "' to '" << targetText << '\'');
-
     const auto key = std::make_pair(std::move(name), index);
     const auto translationUnit = _map[key];
 
@@ -54,12 +50,6 @@ void TranslationResource::setFirstTargetText(
 void TranslationResource::setTargetTexts(
     std::string name, int index, std::vector<std::string> targetTexts)
 {
-    SG_LOG(SG_GENERAL, SG_DEBUG,
-           "Setting target texts for '" << name << ":" << index << ":\n\n");
-    std::for_each(targetTexts.begin(), targetTexts.end(),
-                  [](const std::string& t) {
-                      SG_LOG(SG_GENERAL, SG_DEBUG, "\t" << t); });
-
     const auto key = std::make_pair(std::move(name), index);
     const auto translationUnit = _map[key];
 
