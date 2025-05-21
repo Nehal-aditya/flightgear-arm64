@@ -7,9 +7,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
       cmake_policy(SET CMP0071 NEW)
   endif()
 
-include(GNUInstallDirs)
+
 
 project(FGQCanvas)
+
+include(GNUInstallDirs)
 
 option(CHECK_FOR_QT5        "Set to ON to attempt to look for Qt5" ON)
 option(CHECK_FOR_QT6        "Set to ON to attempt to look for Qt6" ON)
@@ -98,3 +100,38 @@ target_include_directories(fgqcanvas PRIVATE ${PROJECT_BINARY_DIR})
 # target_include_directories(fgqcanvas PRIVATE ${Qt5Quick_PRIVATE_INCLUDE_DIRS})
 
 install(TARGETS fgqcanvas RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+#### packaging 
+if (NOT CPack_CMake_INCLUDED)
+
+  set(CPACK_PACKAGE_NAME ${PROJECT_NAME}
+      CACHE STRING "The resulting package name"
+  )
+
+  set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Light-weight remote client for FlightGear Canvases, implementing using Qt.")
+  set(CPACK_PACKAGE_VENDOR "flightgear.org")
+  set(CPACK_VERBATIM_VARIABLES YES)
+
+  set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
+  SET(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_SOURCE_DIR}/_packages")
+
+  set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+  set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+  set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+
+  set(CPACK_PACKAGE_CONTACT "james@flightgear.org")
+  set(CPACK_DEBIAN_PACKAGE_MAINTAINER "James Turner")
+  set(CPACK_DEBIAN_PACKAGE_DEPENDS "qml6-module-qtqml-workerscript, qml6-module-qtquick-controls, qml6-module-qtquick-templates")
+
+  set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/../../LICENSE.md")
+  set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+
+  # package name for deb. If set, then instead of some-application-0.9.2-Linux.deb
+  # you'll get some-application_0.9.2_amd64.deb (note the underscores too)
+  set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+
+
+  include (CPack)
+endif()
+
+####

@@ -68,6 +68,29 @@ linux-build:
   cache:
     paths:
       - $BUILD_DIR
+
+
+canvas-pi-build:
+  image: registry.gitlab.com/flightgear/flightgear/fgqcanvas-raspbian
+  stage: build
+  script:
+    - cmake --fresh -B $BUILD_DIR -S $CI_PROJECT_DIR/utils/fgqcanvas -G Ninja 
+      -D CMAKE_BUILD_TYPE=RelWithDebInfo 
+      -D CMAKE_INSTALL_PREFIX=$PREFIX_DIR
+      -D CHECK_FOR_QT5=OFF
+
+    - cmake --build $BUILD_DIR --target install
+
+    # produce a .DEB
+    - cpack -G DEB -B _packages --config $BUILD_DIR/CPackConfig.cmake
+
+  artifacts:
+    paths:
+      - _packages
+  cache:
+    paths:
+      - $BUILD_DIR
+
 windows-build:
   stage: build
   tags:
