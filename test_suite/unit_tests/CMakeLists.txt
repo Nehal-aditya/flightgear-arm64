@@ -14,6 +14,7 @@ foreach( unit_test_category
         ATC
         Autopilot
         GUI
+        Translations
     )
 
     add_subdirectory(${unit_test_category})
