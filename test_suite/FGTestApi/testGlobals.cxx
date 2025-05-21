@@ -17,6 +17,7 @@ SPDX-License-Identifier: GPL-2.0-or-later
 #include <GUI/QtLauncher.hxx>
 #endif
 
+#include <Main/fg_props.hxx>
 #include <Main/globals.hxx>
 #include <Main/options.hxx>
 #include <Main/util.hxx>
@@ -45,10 +46,10 @@ namespace FGTestApi {
 bool global_loggingToKML = false;
 sg_ofstream global_kmlStream;
 bool global_lineStringOpen = false;
-    
+
 namespace setUp {
 
-void initTestGlobals(const std::string& testName)
+void initTestGlobals(const std::string& testName, const std::string& language)
 {
     assert(globals == nullptr);
     globals = new FGGlobals;
@@ -85,11 +86,15 @@ void initTestGlobals(const std::string& testName)
      * destroyed via the subsystem manager.
      */
     globals->get_subsystem_mgr()->add("events", globals->get_event_mgr());
-    
-    // necessary to avoid asserts: mark FGLocale as initialized
-    globals->get_locale()->selectLanguage({});
+
+    // Load $FG_ROOT/Translations/locale.xml under /sim/intl
+    const auto intlNode = fgGetNode("/sim/intl", true);
+    fgLoadProps("Translations/locale.xml", intlNode);
+
+    // Initialize FGLocale with the chosen language (necessary to avoid asserts)
+    globals->get_locale()->selectLanguage(language);
 }
-    
+
 bool logPositionToKML(const std::string& testName)
 {
     // clear any previous state
@@ -492,6 +497,8 @@ void shutdownTestGlobals()
 #if defined(HAVE_QT)
     flightgear::shutdownQtApp();
 #endif
+
+    globals->get_locale()->clear(); // shut down FGLocale
 
     delete globals;
     globals = nullptr;

@@ -27,7 +27,8 @@ namespace FGTestApi {
 
 namespace setUp {
 
-void initTestGlobals(const std::string& testName);
+void initTestGlobals(const std::string& testName,
+                     const std::string& language = "default");
 
 bool logPositionToKML(const std::string& testName);
 /**Don't log aircraft positions*/
