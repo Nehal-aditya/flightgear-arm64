@@ -46,8 +46,7 @@ FGTranslate::getResource(const string& resourceName) const
 
 std::shared_ptr<TranslationUnit>
 FGTranslate::translationUnit(const string& resourceName, const string& basicId,
-                             int index)
-    const
+                             int index) const
 {
     TranslationDomain::ResourceRef resource = getResource(resourceName);
 
@@ -59,7 +58,7 @@ FGTranslate::translationUnit(const string& resourceName, const string& basicId,
 }
 
 string FGTranslate::get(const string& resourceName, const string& basicId,
-                        int index)
+                        int index) const
 {
     const auto translUnit = translationUnit(resourceName, basicId, index);
 
@@ -81,7 +80,7 @@ string FGTranslate::get(const string& resourceName, const string& basicId,
 }
 
 string FGTranslate::getPlural(intType cardinalNumber, const string& resourceName,
-                              const string& basicId, int index)
+                              const string& basicId, int index) const
 {
     const auto translUnit = translationUnit(resourceName, basicId, index);
 
@@ -105,7 +104,7 @@ string FGTranslate::getPlural(intType cardinalNumber, const string& resourceName
 }
 
 string FGTranslate::getWithDefault(const string& resource, const string& basicId,
-                                   const string& defaultValue, int index)
+                                   const string& defaultValue, int index) const
 {
     const string result = get(resource, basicId, index);
 
@@ -114,7 +113,7 @@ string FGTranslate::getWithDefault(const string& resource, const string& basicId
 
 string FGTranslate::getPluralWithDefault(
     intType cardinalNumber, const string& resource, const string& basicId,
-    const string& defaultValue, int index)
+    const string& defaultValue, int index) const
 {
     const string result = getPlural(cardinalNumber, resource, basicId, index);
 
@@ -122,7 +121,7 @@ string FGTranslate::getPluralWithDefault(
 }
 
 std::vector<string> FGTranslate::getAll(const string& resourceName,
-                                        const string& basicId)
+                                        const string& basicId) const
 {
     TranslationDomain::ResourceRef resource = getResource(resourceName);
 
@@ -134,7 +133,7 @@ std::vector<string> FGTranslate::getAll(const string& resourceName,
 }
 
 std::size_t FGTranslate::getCount(const string& resourceName,
-                                  const string& basicId)
+                                  const string& basicId) const
 {
     TranslationDomain::ResourceRef resource = getResource(resourceName);
 

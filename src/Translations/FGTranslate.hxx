@@ -132,7 +132,7 @@ public:
      * in the @a resource, return an empty string.
      */
     std::string get(const std::string& resource, const std::string& basicId,
-                    int index = 0);
+                    int index = 0) const;
     /**
      * @brief Same as get(), but for a string that has plural forms.
      *
@@ -144,7 +144,7 @@ public:
      * @return The translated string
      */
     std::string getPlural(intType cardinalNumber, const std::string& resource,
-                          const std::string& basicId, int index = 0);
+                          const std::string& basicId, int index = 0) const;
     /**
      * @brief Get a single translation, with default for missing or empty
      *        strings.
@@ -161,7 +161,7 @@ public:
     std::string getWithDefault(const std::string& resource,
                                const std::string& basicId,
                                const std::string& defaultValue,
-                               int index = 0);
+                               int index = 0) const;
     /**
      * @brief Same as getWithDefault(), but for a string that has plural forms.
      *
@@ -176,7 +176,7 @@ public:
     std::string getPluralWithDefault(
         intType cardinalNumber, const std::string& resource,
         const std::string& basicId, const std::string& defaultValue,
-        int index = 0);
+        int index = 0) const;
 
     /**
      * @brief Get all translations associated to an id (tag name).
@@ -187,7 +187,7 @@ public:
      *         specified @a resource
      */
     std::vector<std::string> getAll(const std::string& resource,
-                                    const std::string& basicId);
+                                    const std::string& basicId) const;
     /**
      * @brief Get the number of translatable strings with a given id (tag name).
      *
@@ -198,7 +198,7 @@ public:
      *         return)
      */
     std::size_t getCount(const std::string& resource,
-                         const std::string& basicId);
+                         const std::string& basicId) const;
 
     /**
      * @brief Return a shared pointer to a TranslationUnit.
