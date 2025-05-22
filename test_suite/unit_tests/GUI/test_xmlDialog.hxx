@@ -17,6 +17,7 @@ class XMLDialogTests : public CppUnit::TestFixture
     CPPUNIT_TEST(testParseVersion1);
     CPPUNIT_TEST(testParseVersion2);
     CPPUNIT_TEST(testNasalAPI);
+    CPPUNIT_TEST(testTranslation);
 
     CPPUNIT_TEST_SUITE_END();
 
@@ -31,6 +32,7 @@ public:
     void testParseVersion1();
     void testParseVersion2();
     void testNasalAPI();
+    void testTranslation();
 
 private:
 };

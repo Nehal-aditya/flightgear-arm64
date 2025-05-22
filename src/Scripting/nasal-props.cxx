@@ -197,7 +197,7 @@ static naRef f_getAttribute(naContext c, naRef me, int argc, naRef* args)
     else if(!strcmp(a, "translate"))   attr = SGPropertyNode::TRANSLATE;
 
     else {
-        naRuntimeError(c, "props.getAttribute() with invalid attribute");
+        naRuntimeError(c, "props.getAttribute() with invalid attribute: %s", a);
         return naNil();
     }
     return naNum(node->getAttribute(attr));

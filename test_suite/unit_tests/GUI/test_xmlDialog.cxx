@@ -38,7 +38,7 @@ void XMLDialogTests::setUp()
 {
     global_nasalMinimalInit = false;
 
-    FGTestApi::setUp::initTestGlobals("xmlui");
+    FGTestApi::setUp::initTestGlobals("xmlui", "fr");
     FGTestApi::setUp::initNavDataCache(); // dialog loader uses the cache
 
     fgSetBool("/sim/menubar/enable", false);
@@ -100,6 +100,22 @@ void XMLDialogTests::testParseVersion2()
     auto rb = dlg->widgetByName("radio1");
 
     CPPUNIT_ASSERT_EQUAL(rb->radioGroupIdent(), "myGroupA"s);
+}
+
+void XMLDialogTests::testTranslation()
+{
+    const auto dialogPath = globals->get_fg_root() / "gui" / "dialogs" / "exit.xml";
+
+    SGPropertyNode_ptr props = new SGPropertyNode;
+    readProperties(dialogPath, props);
+
+    SGSharedPtr<FGPUICompatDialog> dlg(new FGPUICompatDialog(props));
+
+    CPPUNIT_ASSERT(dlg->init());
+
+    auto label = dlg->widgetByName("exit-prompt");
+    CPPUNIT_ASSERT(label);
+    CPPUNIT_ASSERT_EQUAL("Quitter FlightGear ?"s, label->callMethod<std::string>("_configTrValue", "label"));
 }
 
 void XMLDialogTests::testNasalAPI()
