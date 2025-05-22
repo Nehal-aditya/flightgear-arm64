@@ -834,7 +834,7 @@ static naRef f_unalias(naContext c, naRef me, int argc, naRef* args)
 
 static naRef f_location(naContext c, naRef me, int argc, naRef* args)
 {
-    NODEARG();
+    NODENOARG();
     const auto ls = node->getLocation().str(); 
     return NASTR(ls.c_str());
 }
