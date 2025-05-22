@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resource>
+  <meta>
+    <file-type>FlightGear default translation file</file-type>
+    <format-version>1</format-version>
+    <description>Automatically extracted strings with context 'dialog-sample'</description>
+    <language-description>Engineering English</language-description>
+  </meta>
+  <strings>
+    <a-simple-label>A simple label</a-simple-label>
+    <sample-text>First sample text</sample-text>
+    <sample-text>Second sample text</sample-text>
+    <sample-text>Third sample text</sample-text>
+  </strings>
+</resource>

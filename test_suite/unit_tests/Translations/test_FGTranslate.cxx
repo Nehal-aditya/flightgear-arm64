@@ -5,25 +5,32 @@
  * @file
  * @brief Translations: automated tests for FGTranslate
  *
- * Most tests in this file depend on particular default translation strings
+ * Some tests in this file depend on particular default translation strings
  * (“engineering English”) and translations in $FG_ROOT/Translations. If these
  * are modified, the changes will have to be reflected here.
  */
 
-#include "test_FGTranslate.hxx"
-
 #include "config.h"
-#include "test_suite/FGTestApi/testGlobals.hxx"
 
+#include <algorithm>
+#include <cstddef>
 #include <string>
+#include <vector>
 
+#include <Add-ons/AddonManager.hxx>
+#include <Main/fg_props.hxx>
 #include <Main/globals.hxx>
 #include <Main/locale.hxx>
 #include <Translations/FGTranslate.hxx>
 
+#include "test_FGTranslate.hxx"
+#include "test_suite/FGTestApi/testGlobals.hxx"
+
 using namespace std::string_literals;
 
 using std::string;
+
+using flightgear::addons::AddonManager;
 using flightgear::FGTranslate;
 
 // The en_US strings may differ from the default translation strings (the
@@ -34,19 +41,19 @@ using flightgear::FGTranslate;
 void FGTranslateTests::commonBetweenDefaultTranslationAndEn_US()
 {
     string fetched = FGTranslate().get("options", "general-options");
-    CPPUNIT_ASSERT_EQUAL(fetched, "General Options"s);
+    CPPUNIT_ASSERT_EQUAL("General Options"s, fetched);
 
     fetched = FGTranslate("core").get("options", "general-options");
-    CPPUNIT_ASSERT_EQUAL(fetched, "General Options"s);
+    CPPUNIT_ASSERT_EQUAL("General Options"s, fetched);
 
     fetched = FGTranslate().get("options", "fg-scenery-desc", 0);
-    CPPUNIT_ASSERT_EQUAL(fetched, "Specify the scenery path(s);"s);
+    CPPUNIT_ASSERT_EQUAL("Specify the scenery path(s);"s, fetched);
 
     fetched = FGTranslate().get("options", "fg-scenery-desc", 1);
-    CPPUNIT_ASSERT_EQUAL(fetched, "Defaults to $FG_ROOT/Scenery"s);
+    CPPUNIT_ASSERT_EQUAL("Defaults to $FG_ROOT/Scenery"s, fetched);
 
     fetched = FGTranslate().get("dialog-exit", "exit-button-label");
-    CPPUNIT_ASSERT_EQUAL(fetched, "Exit"s);
+    CPPUNIT_ASSERT_EQUAL("Exit"s, fetched);
 }
 
 void FGTranslateTests::testFGTranslate_defaultTranslation()
@@ -69,20 +76,20 @@ void FGTranslateTests::testFGTranslate_fr()
     FGTestApi::setUp::initTestGlobals("testFGTranslate_fr", "fr");
 
     string fetched = FGTranslate().get("options", "general-options");
-    CPPUNIT_ASSERT_EQUAL(fetched, "Options générales"s);
+    CPPUNIT_ASSERT_EQUAL("Options générales"s, fetched);
 
     fetched = FGTranslate("core").get("options", "general-options");
-    CPPUNIT_ASSERT_EQUAL(fetched, "Options générales"s);
+    CPPUNIT_ASSERT_EQUAL("Options générales"s, fetched);
 
     fetched = FGTranslate().get("dialog-exit", "exit-button-label");
-    CPPUNIT_ASSERT_EQUAL(fetched, "Quitter"s);
+    CPPUNIT_ASSERT_EQUAL("Quitter"s, fetched);
 
     fetched = FGTranslate().get("options", "fg-scenery-desc", 0);
-    CPPUNIT_ASSERT_EQUAL(fetched,
-                         "Spécifie l'emplacement des répertoires des scènes ;"s);
+    CPPUNIT_ASSERT_EQUAL("Spécifie l'emplacement des répertoires des scènes ;"s,
+                         fetched);
 
     fetched = FGTranslate().get("options", "fg-scenery-desc", 1);
-    CPPUNIT_ASSERT_EQUAL(fetched, "Positionné par défaut à $FG_ROOT/Scenery"s);
+    CPPUNIT_ASSERT_EQUAL("Positionné par défaut à $FG_ROOT/Scenery"s, fetched);
 
     FGTestApi::tearDown::shutdownTestGlobals();
 }
@@ -96,7 +103,7 @@ void FGTranslateTests::testFGTranslate_nonExistentTranslation()
     // therefore FGLocale::selectLanguage() uses the fallback translation at
     // /sim/intl/locale[0], which is English.
     const string fetched = FGTranslate().get("options", "general-options");
-    CPPUNIT_ASSERT_EQUAL(fetched, "General Options"s);
+    CPPUNIT_ASSERT_EQUAL("General Options"s, fetched);
 
     FGTestApi::tearDown::shutdownTestGlobals();
 }
@@ -107,11 +114,11 @@ void FGTranslateTests::testFGTranslate_getWithDefault()
 
     string fetched = FGTranslate().getWithDefault("options", "general-options",
                                                   "some default");
-    CPPUNIT_ASSERT_EQUAL(fetched, "General Options"s);
+    CPPUNIT_ASSERT_EQUAL("General Options"s, fetched);
 
     fetched = FGTranslate().getWithDefault("options", "non-existent foobar",
                                            "the default");
-    CPPUNIT_ASSERT_EQUAL(fetched, "the default"s);
+    CPPUNIT_ASSERT_EQUAL("the default"s, fetched);
 
     // Change the selected language to French
     globals->get_locale()->clear();
@@ -119,11 +126,213 @@ void FGTranslateTests::testFGTranslate_getWithDefault()
 
     fetched = FGTranslate().getWithDefault("options", "general-options",
                                            "some default");
-    CPPUNIT_ASSERT_EQUAL(fetched, "Options générales"s);
+    CPPUNIT_ASSERT_EQUAL("Options générales"s, fetched);
 
     fetched = FGTranslate().getWithDefault(
         "options", "non-existent foobar", "the default");
-    CPPUNIT_ASSERT_EQUAL(fetched, "the default"s);
+    CPPUNIT_ASSERT_EQUAL("the default"s, fetched);
+
+    FGTestApi::tearDown::shutdownTestGlobals();
+}
+
+void FGTranslateTests::testFGTranslate_pluralsAndAircraftDomain()
+{
+    FGTestApi::setUp::initTestGlobals("testFGTranslate_pluralsAndAircraftDomain",
+                                      "en_US");
+
+    const auto dir = SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "Aircraft" / "Test";
+    fgSetString("/sim/aircraft-dir"s, dir.utf8Str());
+
+    globals->get_locale()->loadAircraftTranslations();
+    auto tr = FGTranslate("current-aircraft");
+
+    auto translUnit = tr.translationUnit("some-resource", "hello");
+    CPPUNIT_ASSERT(!translUnit->getPluralStatus()); // no plural forms here
+
+    string fetched = translUnit->getTranslation();
+    CPPUNIT_ASSERT_EQUAL("Hello from the Test aircraft!"s, fetched);
+
+    // String with plural forms. In English, we have singular for 1 and plural
+    // for all other non-negative integers, including 0.
+    translUnit = tr.translationUnit("some-resource", "cats");
+    CPPUNIT_ASSERT(translUnit->getPluralStatus()); // the string has plural forms
+
+    fetched = translUnit->getTranslation(0);
+    CPPUNIT_ASSERT_EQUAL("%1 cats is not enough cats."s, fetched);
+
+    fetched = translUnit->getTranslation(1);
+    CPPUNIT_ASSERT_EQUAL("%1 cat is not enough cats."s, fetched);
+
+    fetched = translUnit->getTranslation(2);
+    CPPUNIT_ASSERT_EQUAL("%1 cats is not enough cats."s, fetched);
+
+    // Same thing, but done less efficiently (this involves more lookups)
+    fetched = tr.getPlural(0, "some-resource", "cats");
+    CPPUNIT_ASSERT_EQUAL("%1 cats is not enough cats."s, fetched);
+
+    fetched = tr.getPlural(1, "some-resource", "cats");
+    CPPUNIT_ASSERT_EQUAL("%1 cat is not enough cats."s, fetched);
+
+    fetched = tr.getPlural(2, "some-resource", "cats");
+    CPPUNIT_ASSERT_EQUAL("%1 cats is not enough cats."s, fetched);
+
+    // Change the selected language to French
+    globals->get_locale()->clear();
+    globals->get_locale()->selectLanguage("fr");
+    globals->get_locale()->loadAircraftTranslations();
+    tr = FGTranslate("current-aircraft");
+
+    translUnit = tr.translationUnit("some-resource", "hello");
+    CPPUNIT_ASSERT(!translUnit->getPluralStatus());
+
+    fetched = translUnit->getTranslation();
+    CPPUNIT_ASSERT_EQUAL("Bonjour depuis l'aéronef Test !"s, fetched);
+
+    // String with plural forms. In French, we have singular for 0 and 1,
+    // plural for all other non-negative integers.
+    translUnit = tr.translationUnit("some-resource", "cats");
+    CPPUNIT_ASSERT(translUnit->getPluralStatus());
+
+    fetched = translUnit->getTranslation(0);
+    CPPUNIT_ASSERT_EQUAL("%1 chat, ce n'est pas assez de chats."s, fetched);
+
+    fetched = translUnit->getTranslation(1);
+    CPPUNIT_ASSERT_EQUAL("%1 chat, ce n'est pas assez de chats."s, fetched);
+
+    fetched = translUnit->getTranslation(2);
+    CPPUNIT_ASSERT_EQUAL("%1 chats, ce n'est pas assez de chats."s, fetched);
+
+    // Same thing, but done less efficiently (this involves more lookups)
+    fetched = tr.getPlural(0, "some-resource", "cats");
+    CPPUNIT_ASSERT_EQUAL("%1 chat, ce n'est pas assez de chats."s, fetched);
+
+    fetched = tr.getPlural(1, "some-resource", "cats");
+    CPPUNIT_ASSERT_EQUAL("%1 chat, ce n'est pas assez de chats."s, fetched);
+
+    fetched = tr.getPlural(2, "some-resource", "cats");
+    CPPUNIT_ASSERT_EQUAL("%1 chats, ce n'est pas assez de chats."s, fetched);
+
+    fetched = tr.getPluralWithDefault(2, "some-resource", "non-existent-id",
+                                      "the default");
+    CPPUNIT_ASSERT_EQUAL("the default"s, fetched);
+
+    fetched = tr.getPluralWithDefault(2, "some-resource", "non-existent-id",
+                                      "the default", 0 /* explicit index */);
+    CPPUNIT_ASSERT_EQUAL("the default"s, fetched);
+
+    FGTestApi::tearDown::shutdownTestGlobals();
+}
+
+void FGTranslateTests::testFGTranslate_multipleIndices()
+{
+    FGTestApi::setUp::initTestGlobals("testFGTranslate_multipleIndices",
+                                      "en_US");
+
+    const auto dir = SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "Aircraft" / "Test";
+    fgSetString("/sim/aircraft-dir"s, dir.utf8Str());
+
+    globals->get_locale()->loadAircraftTranslations();
+    auto tr = FGTranslate("current-aircraft");
+
+    CPPUNIT_ASSERT_EQUAL(std::size_t(3),
+                         tr.getCount("dialog-whatever", "sentence"));
+    std::vector<std::string> v = {
+        "Make sure the Prince doesn't leave this room until I come and get him.",
+        "Not to leave the room even if you come and get him.",
+        "No, no. Until I come and get him."
+    };
+
+    std::vector<std::string> v2 = tr.getAll("dialog-whatever", "sentence");
+    bool equal = std::equal(v.cbegin(), v.cend(), v2.cbegin(), v2.cend());
+    CPPUNIT_ASSERT(equal);
+
+    // Change the selected language to French
+    globals->get_locale()->clear();
+    globals->get_locale()->selectLanguage("fr");
+    globals->get_locale()->loadAircraftTranslations();
+    tr = FGTranslate("current-aircraft");
+
+    // There are 3 strings with basicId "sentence" in resource "dialog-whatever"
+    CPPUNIT_ASSERT_EQUAL(std::size_t(3),
+                         tr.getCount("dialog-whatever", "sentence"));
+    v = {"Assurez-vous que le prince ne quitte pas cette pièce avant que je "
+         "ne revienne le checher.",
+         "Ne pas quitter la pièce même si vous revenez le chercher.",
+         "Non, non. Jusqu'à ce que je revienne le chercher."
+    };
+    v2 = tr.getAll("dialog-whatever", "sentence");
+    equal = std::equal(v.cbegin(), v.cend(), v2.cbegin(), v2.cend());
+    CPPUNIT_ASSERT(equal);
+
+    // Similar thing, but done less efficiently (this involves more lookups)
+    for (std::size_t i = 0; i < v.size(); i++) {
+        string fetched = tr.get("dialog-whatever", "sentence", i);
+        CPPUNIT_ASSERT_EQUAL(v[i], fetched);
+    }
+
+    FGTestApi::tearDown::shutdownTestGlobals();
+}
+
+void FGTranslateTests::testFGTranslate_addonDomain()
+{
+    FGTestApi::setUp::initTestGlobals("testFGTranslate_addonDomain", "en_US");
+
+    const auto& addonManager = AddonManager::createInstance();
+    const auto dir = SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "Add-ons" / "Test";
+    addonManager->registerAddon(dir);
+
+    globals->get_locale()->loadAddonTranslations();
+    auto tr = FGTranslate("addons/org.flightgear.TestSuite.addons.Test");
+
+    string fetched = tr.get("foo", "hello");
+    CPPUNIT_ASSERT_EQUAL("Hello from the Test dummy add-on!"s, fetched);
+
+    fetched = tr.get("foo", "question");
+    CPPUNIT_ASSERT_EQUAL("What also floats in water?"s, fetched);
+
+    fetched = tr.get("dialog-sample", "a-simple-label");
+    CPPUNIT_ASSERT_EQUAL("A simple label"s, fetched);
+
+    // A string with multiple indices
+    CPPUNIT_ASSERT_EQUAL(std::size_t(3),
+                         tr.getCount("dialog-sample", "sample-text"));
+    std::vector<std::string> v = {
+        "First sample text", "Second sample text", "Third sample text"
+    };
+
+    std::vector<std::string> v2 = tr.getAll("dialog-sample", "sample-text");
+    bool equal = std::equal(v.cbegin(), v.cend(), v2.cbegin(), v2.cend());
+    CPPUNIT_ASSERT(equal);
+
+    // Change the selected language to French
+    globals->get_locale()->clear();
+    globals->get_locale()->selectLanguage("fr");
+    globals->get_locale()->loadAddonTranslations();
+    tr = FGTranslate("addons/org.flightgear.TestSuite.addons.Test");
+
+    fetched = tr.get("foo", "hello");
+    CPPUNIT_ASSERT_EQUAL("Bonjour depuis le greffon bidon Test !"s, fetched);
+
+    fetched = tr.get("foo", "question");
+    CPPUNIT_ASSERT_EQUAL("Qu'est-ce qui flotte également sur l'eau ?"s, fetched);
+
+    fetched = tr.get("dialog-sample", "a-simple-label");
+    CPPUNIT_ASSERT_EQUAL("Une simple étiquette"s, fetched);
+
+    // A string with multiple indices
+    CPPUNIT_ASSERT_EQUAL(std::size_t(3),
+                         tr.getCount("dialog-sample", "sample-text"));
+    v = {
+        "Premier texte d'exemple",
+        "Deuxième texte d'exemple",
+        "Troisième texte d'exemple"
+    };
+
+    v2 = tr.getAll("dialog-sample", "sample-text");
+    equal = std::equal(v.cbegin(), v.cend(), v2.cbegin(), v2.cend());
+    CPPUNIT_ASSERT(equal);
+
+    addonManager->reset(); // destroy the AddonManager
 
     FGTestApi::tearDown::shutdownTestGlobals();
 }

@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2.xsd">
+  <file original="" source-language="en-US" target-language="fr-FR" datatype="plaintext" xml:space="preserve">
+    <body>
+      <group restype="x-trolltech-linguist-context" resname="dialog-whatever">
+        <trans-unit id="dialog-whatever/sentence:0" translate="yes" approved="yes">
+          <source>Make sure the Prince doesn't leave this room until I come and get him.</source>
+          <target>Assurez-vous que le prince ne quitte pas cette pièce avant que je ne revienne le checher.</target>
+        </trans-unit>
+        <trans-unit id="dialog-whatever/sentence:1" translate="yes" approved="yes">
+          <source>Not to leave the room even if you come and get him.</source>
+          <target>Ne pas quitter la pièce même si vous revenez le chercher.</target>
+        </trans-unit>
+        <trans-unit id="dialog-whatever/sentence:2" translate="yes" approved="yes">
+          <source>No, no. Until I come and get him.</source>
+          <target>Non, non. Jusqu'à ce que je revienne le chercher.</target>
+        </trans-unit>
+      </group>
+      <group restype="x-trolltech-linguist-context" resname="some-resource">
+        <group id="some-resource/cats:0" restype="x-gettext-plurals">
+          <trans-unit id="some-resource/cats:0[0]" translate="yes" approved="yes">
+            <source>%1 cat(s) is not enough cats.</source>
+            <target>%1 chat, ce n'est pas assez de chats.</target>
+          </trans-unit>
+          <trans-unit id="some-resource/cats:0[1]" translate="yes" approved="yes">
+            <source>%1 cat(s) is not enough cats.</source>
+            <target>%1 chats, ce n'est pas assez de chats.</target>
+          </trans-unit>
+        </group>
+        <trans-unit id="some-resource/hello:0" translate="yes" approved="yes">
+          <source>Hello from the Test aircraft!</source>
+          <target>Bonjour depuis l'aéronef Test !</target>
+        </trans-unit>
+      </group>
+    </body>
+  </file>
+</xliff>

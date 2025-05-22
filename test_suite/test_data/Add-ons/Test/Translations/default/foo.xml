@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<resource>
+  <meta>
+    <file-type>FlightGear default translation file</file-type>
+    <format-version>1</format-version>
+    <description>Default translation file for the Test dummy add-on</description>
+    <language-description>Engineering English</language-description>
+  </meta>
+
+  <strings>
+    <hello>Hello from the Test dummy add-on!</hello>
+    <question>What also floats in water?</question>
+  </strings>
+</resource>

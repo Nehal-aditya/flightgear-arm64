@@ -20,6 +20,9 @@ class FGTranslateTests : public CppUnit::TestFixture
     CPPUNIT_TEST(testFGTranslate_fr);
     CPPUNIT_TEST(testFGTranslate_nonExistentTranslation);
     CPPUNIT_TEST(testFGTranslate_getWithDefault);
+    CPPUNIT_TEST(testFGTranslate_pluralsAndAircraftDomain);
+    CPPUNIT_TEST(testFGTranslate_multipleIndices);
+    CPPUNIT_TEST(testFGTranslate_addonDomain);
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -31,10 +34,13 @@ public:
 
     // The tests.
     void testFGTranslate_defaultTranslation();
-    void testFGTranslate_fr();
     void testFGTranslate_en_US();
+    void testFGTranslate_fr();
     void testFGTranslate_nonExistentTranslation();
     void testFGTranslate_getWithDefault();
+    void testFGTranslate_pluralsAndAircraftDomain();
+    void testFGTranslate_multipleIndices();
+    void testFGTranslate_addonDomain();
 
 private:
     static void commonBetweenDefaultTranslationAndEn_US();

@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<resource>
+  <meta>
+    <file-type>FlightGear default translation file</file-type>
+    <format-version>1</format-version>
+    <description>Default translation file for automated tests</description>
+    <language-description>Engineering English</language-description>
+  </meta>
+
+  <strings>
+    <sentence>Make sure the Prince doesn't leave this room until I come and get him.</sentence>
+    <sentence>Not to leave the room even if you come and get him.</sentence>
+    <sentence>No, no. Until I come and get him.</sentence>
+  </strings>
+</resource>

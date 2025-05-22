@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:trolltech="urn:trolltech:names:ts:document:1.0">
+  <file original="" datatype="plaintext" source-language="en-US" target-language="en-US"><body>
+    <group restype="x-trolltech-linguist-context" resname="dialog-sample">
+      <trans-unit id="dialog-sample/a-simple-label:0" approved="yes">
+        <source xml:space="preserve">A simple label</source>
+        <target xml:space="preserve">A simple label</target>
+      </trans-unit>
+      <trans-unit id="dialog-sample/sample-text:0" approved="yes">
+        <source xml:space="preserve">First sample text</source>
+        <target xml:space="preserve">First sample text</target>
+      </trans-unit>
+      <trans-unit id="dialog-sample/sample-text:1" approved="yes">
+        <source xml:space="preserve">Second sample text</source>
+        <target xml:space="preserve">Second sample text</target>
+      </trans-unit>
+      <trans-unit id="dialog-sample/sample-text:2" approved="yes">
+        <source xml:space="preserve">Third sample text</source>
+        <target xml:space="preserve">Third sample text</target>
+      </trans-unit>
+    </group>
+    <group restype="x-trolltech-linguist-context" resname="foo">
+      <trans-unit id="foo/hello:0" approved="yes">
+        <source xml:space="preserve">Hello from the Test dummy add-on!</source>
+        <target xml:space="preserve">Hello from the Test dummy add-on!</target>
+      </trans-unit>
+      <trans-unit id="foo/question:0" approved="yes">
+        <source xml:space="preserve">What also floats in water?</source>
+        <target xml:space="preserve">What also floats in water?</target>
+      </trans-unit>
+    </group>
+  </body></file>
+</xliff>
