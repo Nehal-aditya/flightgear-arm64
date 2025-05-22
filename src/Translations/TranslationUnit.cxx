@@ -6,6 +6,7 @@
  * @brief Container class for a string and its translation
  */
 
+#include <cassert>
 #include <cstddef>
 #include <memory>
 #include <string>
