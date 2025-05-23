@@ -15,14 +15,14 @@ class FGTranslateTests : public CppUnit::TestFixture
 {
     // Set up the test suite.
     CPPUNIT_TEST_SUITE(FGTranslateTests);
-    CPPUNIT_TEST(testFGTranslate_defaultTranslation);
-    CPPUNIT_TEST(testFGTranslate_en_US);
-    CPPUNIT_TEST(testFGTranslate_fr);
-    CPPUNIT_TEST(testFGTranslate_nonExistentTranslation);
-    CPPUNIT_TEST(testFGTranslate_getWithDefault);
-    CPPUNIT_TEST(testFGTranslate_pluralsAndAircraftDomain);
-    CPPUNIT_TEST(testFGTranslate_multipleIndices);
-    CPPUNIT_TEST(testFGTranslate_addonDomain);
+    CPPUNIT_TEST(test_defaultTranslation);
+    CPPUNIT_TEST(test_en_US);
+    CPPUNIT_TEST(test_fr);
+    CPPUNIT_TEST(test_nonExistentTranslation);
+    CPPUNIT_TEST(test_getWithDefault);
+    CPPUNIT_TEST(test_pluralsAndAircraftDomain);
+    CPPUNIT_TEST(test_multipleIndices);
+    CPPUNIT_TEST(test_addonDomain);
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -33,14 +33,14 @@ public:
     void tearDown() {}
 
     // The tests.
-    void testFGTranslate_defaultTranslation();
-    void testFGTranslate_en_US();
-    void testFGTranslate_fr();
-    void testFGTranslate_nonExistentTranslation();
-    void testFGTranslate_getWithDefault();
-    void testFGTranslate_pluralsAndAircraftDomain();
-    void testFGTranslate_multipleIndices();
-    void testFGTranslate_addonDomain();
+    void test_defaultTranslation();
+    void test_en_US();
+    void test_fr();
+    void test_nonExistentTranslation();
+    void test_getWithDefault();
+    void test_pluralsAndAircraftDomain();
+    void test_multipleIndices();
+    void test_addonDomain();
 
 private:
     static void commonBetweenDefaultTranslationAndEn_US();

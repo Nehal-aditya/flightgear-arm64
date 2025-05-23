@@ -56,24 +56,23 @@ void FGTranslateTests::commonBetweenDefaultTranslationAndEn_US()
     CPPUNIT_ASSERT_EQUAL("Exit"s, fetched);
 }
 
-void FGTranslateTests::testFGTranslate_defaultTranslation()
+void FGTranslateTests::test_defaultTranslation()
 {
-    FGTestApi::setUp::initTestGlobals("testFGTranslate_defaultTranslation",
-                                      "default");
+    FGTestApi::setUp::initTestGlobals("test_defaultTranslation", "default");
     commonBetweenDefaultTranslationAndEn_US();
     FGTestApi::tearDown::shutdownTestGlobals();
 }
 
-void FGTranslateTests::testFGTranslate_en_US()
+void FGTranslateTests::test_en_US()
 {
-    FGTestApi::setUp::initTestGlobals("testFGTranslate_en_US", "en_US");
+    FGTestApi::setUp::initTestGlobals("test_en_US", "en_US");
     commonBetweenDefaultTranslationAndEn_US();
     FGTestApi::tearDown::shutdownTestGlobals();
 }
 
-void FGTranslateTests::testFGTranslate_fr()
+void FGTranslateTests::test_fr()
 {
-    FGTestApi::setUp::initTestGlobals("testFGTranslate_fr", "fr");
+    FGTestApi::setUp::initTestGlobals("test_fr", "fr");
 
     string fetched = FGTranslate().get("options", "general-options");
     CPPUNIT_ASSERT_EQUAL("Options générales"s, fetched);
@@ -94,9 +93,9 @@ void FGTranslateTests::testFGTranslate_fr()
     FGTestApi::tearDown::shutdownTestGlobals();
 }
 
-void FGTranslateTests::testFGTranslate_nonExistentTranslation()
+void FGTranslateTests::test_nonExistentTranslation()
 {
-    FGTestApi::setUp::initTestGlobals("testFGTranslate_nonExistentTranslation",
+    FGTestApi::setUp::initTestGlobals("test_nonExistentTranslation",
                                       "non-existent language");
 
     // None of the /sim/intl/locale[n] nodes matches the above language,
@@ -108,9 +107,9 @@ void FGTranslateTests::testFGTranslate_nonExistentTranslation()
     FGTestApi::tearDown::shutdownTestGlobals();
 }
 
-void FGTranslateTests::testFGTranslate_getWithDefault()
+void FGTranslateTests::test_getWithDefault()
 {
-    FGTestApi::setUp::initTestGlobals("testFGTranslate_getWithDefault", "en");
+    FGTestApi::setUp::initTestGlobals("test_getWithDefault", "en");
 
     string fetched = FGTranslate().getWithDefault("options", "general-options",
                                                   "some default");
@@ -135,10 +134,9 @@ void FGTranslateTests::testFGTranslate_getWithDefault()
     FGTestApi::tearDown::shutdownTestGlobals();
 }
 
-void FGTranslateTests::testFGTranslate_pluralsAndAircraftDomain()
+void FGTranslateTests::test_pluralsAndAircraftDomain()
 {
-    FGTestApi::setUp::initTestGlobals("testFGTranslate_pluralsAndAircraftDomain",
-                                      "en_US");
+    FGTestApi::setUp::initTestGlobals("test_pluralsAndAircraftDomain", "en_US");
 
     const auto dir = SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "Aircraft" / "Test";
     fgSetString("/sim/aircraft-dir"s, dir.utf8Str());
@@ -223,10 +221,9 @@ void FGTranslateTests::testFGTranslate_pluralsAndAircraftDomain()
     FGTestApi::tearDown::shutdownTestGlobals();
 }
 
-void FGTranslateTests::testFGTranslate_multipleIndices()
+void FGTranslateTests::test_multipleIndices()
 {
-    FGTestApi::setUp::initTestGlobals("testFGTranslate_multipleIndices",
-                                      "en_US");
+    FGTestApi::setUp::initTestGlobals("test_multipleIndices", "en_US");
 
     const auto dir = SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "Aircraft" / "Test";
     fgSetString("/sim/aircraft-dir"s, dir.utf8Str());
@@ -273,9 +270,9 @@ void FGTranslateTests::testFGTranslate_multipleIndices()
     FGTestApi::tearDown::shutdownTestGlobals();
 }
 
-void FGTranslateTests::testFGTranslate_addonDomain()
+void FGTranslateTests::test_addonDomain()
 {
-    FGTestApi::setUp::initTestGlobals("testFGTranslate_addonDomain", "en_US");
+    FGTestApi::setUp::initTestGlobals("test_addonDomain", "en_US");
 
     const auto& addonManager = AddonManager::createInstance();
     const auto dir = SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "Add-ons" / "Test";
