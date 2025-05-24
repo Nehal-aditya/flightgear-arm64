@@ -43,7 +43,6 @@ namespace strutils = simgear::strutils;
 
 using flightgear::addons::Addon;
 using flightgear::DefaultTranslationParser;
-using flightgear::FGTranslate;
 using flightgear::TranslationDomain;
 
 FGLocale::FGLocale(SGPropertyNode* root) :

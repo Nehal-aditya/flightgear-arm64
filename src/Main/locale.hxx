@@ -355,7 +355,7 @@ private:
     std::map<std::string, TranslationDomainRef> _domains;
 
     // FGTranslate uses our getDomain(), which is private.
-    friend class flightgear::FGTranslate;
+    friend class FGTranslate;
 };
 
 // global translation wrappers

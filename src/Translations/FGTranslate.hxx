@@ -16,8 +16,6 @@
 #include "LanguageInfo.hxx"
 #include "TranslationDomain.hxx"
 
-namespace flightgear
-{
 /**
  * @brief Class for retrieving translated strings
  *
@@ -83,7 +81,7 @@ class FGTranslate
 public:
     // I did this to avoid making both LanguageInfo and FGTranslate class
     // templates...
-    using intType = LanguageInfo::intType;
+    using intType = flightgear::LanguageInfo::intType;
 
     /**
      * @brief Constructor.
@@ -143,6 +141,7 @@ public:
      * @param index           same as for get()
      * @return The translated string
      */
+
     std::string getPlural(intType cardinalNumber, const std::string& resource,
                           const std::string& basicId, int index = 0) const;
     /**
@@ -215,8 +214,14 @@ public:
     std::shared_ptr<TranslationUnit>
     translationUnit(const std::string& resource, const std::string& basicId,
                     int index = 0) const;
+    /**
+     * @brief Set up a Nasal type that wraps FGTranslate
+     */
+    static void setupGhost();
 
 private:
+    using TranslationDomain = flightgear::TranslationDomain;
+
     /**
      * @brief Get the specified resource.
      *
@@ -231,5 +236,3 @@ private:
     using TranslationDomainRef = std::shared_ptr<const TranslationDomain>;
     TranslationDomainRef _domain;
 };
-
-} // namespace flightgear

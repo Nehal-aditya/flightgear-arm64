@@ -13,9 +13,6 @@
 
 #include "LanguageInfo.hxx"
 
-namespace flightgear
-{
-
 /**
  * @brief Class holding a source string and its translation in a language
  *
@@ -36,7 +33,7 @@ namespace flightgear
 class TranslationUnit
 {
 public:
-    using intType = LanguageInfo::intType;
+    using intType = flightgear::LanguageInfo::intType;
 
     explicit TranslationUnit(const std::string sourceText = {},
                              const std::vector<std::string> targetTexts = {},
@@ -103,6 +100,11 @@ public:
      */
     std::string getTranslation(intType cardinalNumber) const;
 
+    /**
+     * @brief Set up a Nasal type that wraps TranslationUnit
+     */
+    static void setupGhost();
+
 private:
     /// String to translate, in “engineering English”
     std::string _sourceText;
@@ -120,5 +122,3 @@ private:
     /// True if the TranslationUnit has plural forms
     bool _hasPlural;
 };
-
-} // namespace flightgear

@@ -66,6 +66,7 @@
 #include "NasalString.hxx"
 #include "NasalSys.hxx"
 #include "NasalSys_private.hxx"
+#include "NasalTranslations.hxx"
 #include "NasalUnitTesting.hxx"
 
 #include <Main/globals.hxx>
@@ -1150,6 +1151,7 @@ void FGNasalSys::init()
         return;
     }
 
+    flightgear::initNasalTranslations(d->_globals, d->_context);
     flightgear::addons::initAddonClassesForNasal(d->_globals, d->_context);
 
     // Now load the various source files in the Nasal directory

@@ -6,19 +6,22 @@
  * @brief Container class for a string and its translation
  */
 
+#include <cstddef>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include <simgear/debug/logstream.hxx>
+#include <simgear/nasal/cppbind/Ghost.hxx>
+#include <simgear/nasal/cppbind/NasalCallContext.hxx>
+
 #include <Main/locale.hxx>
 #include <Main/globals.hxx>
 
-#include <simgear/debug/logstream.hxx>
-
 #include "TranslationUnit.hxx"
 
-namespace flightgear
-{
+using flightgear::LanguageInfo;
 
 TranslationUnit::TranslationUnit(const std::string sourceText,
                                  const std::vector<std::string> targetTexts,
@@ -123,4 +126,69 @@ std::string TranslationUnit::getTranslation(intType cardinalNumber) const
     return res;
 }
 
-} // namespace flightgear
+static naRef f_getTranslation(const TranslationUnit& translUnit,
+                              nasal::CallContext ctx)
+{
+    using intType = LanguageInfo::intType;
+    intType cardinalNumber;
+
+    switch (ctx.argc) {
+    case 0:
+        if (translUnit.getPluralStatus()) {
+            ctx.runtimeError(
+                "TranslationUnit has plural status 1, therefore its "
+                "getTranslation() method requires an argument");
+        }
+        return ctx.to_nasal(translUnit.getTranslation());
+    case 1:
+        if (!translUnit.getPluralStatus()) {
+            ctx.runtimeError(
+                "TranslationUnit has plural status 0, therefore its "
+                "getTranslation() method must be called with no argument");
+         }
+        cardinalNumber = ctx.requireArg<intType>(0);
+        return ctx.to_nasal(translUnit.getTranslation(cardinalNumber));
+    default:
+        ctx.runtimeError(
+            "TranslationUnit.getTranslation() or "
+            "TranslationUnit.getTranslation(cardinalNumber)");
+    }
+
+    return {};                  // unreachable
+}
+
+static naRef f_getTargetText(const TranslationUnit& translUnit,
+                             nasal::CallContext ctx)
+{
+    if (ctx.argc > 1) {
+        ctx.runtimeError("TranslationUnit.getTargetText([index])");
+    }
+
+    const auto index = ctx.getArg<std::size_t>(0); // the index defaults to 0
+
+    if (translUnit.getNumberOfTargetTexts() == 0) {
+        ctx.runtimeError(
+            "cannot call getTargetText() on a TranslationUnit that has "
+            "no target texts");
+    } else if (index >= translUnit.getNumberOfTargetTexts()) {
+        ctx.runtimeError(
+            "invalid target text index %d: TranslationUnit only has %d "
+            "target texts", index, translUnit.getNumberOfTargetTexts());
+    }
+
+    return ctx.to_nasal(translUnit.getTargetText(index));
+}
+
+// Static member function
+void TranslationUnit::setupGhost()
+{
+    using TranslationUnitRef = std::shared_ptr<TranslationUnit>;
+    using NasalTranslationUnit = nasal::Ghost<TranslationUnitRef>;
+
+    NasalTranslationUnit::init("TranslationUnit")
+        .member("sourceText", &TranslationUnit::getSourceText)
+        .member("pluralStatus", &TranslationUnit::getPluralStatus)
+        .member("nbTargetTexts", &TranslationUnit::getNumberOfTargetTexts)
+        .method("getTargetText", &f_getTargetText)
+        .method("getTranslation", &f_getTranslation);
+}

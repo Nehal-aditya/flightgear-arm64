@@ -13,6 +13,7 @@ set(SOURCES
   NasalString.cxx
   NasalModelData.cxx
   NasalSGPath.cxx
+  NasalTranslations.cxx
   NasalFlightPlan.cxx
   sqlitelib.cxx
   # we don't add this here becuase we need to exclude it the testSuite
@@ -33,6 +34,7 @@ set(HEADERS
   NasalString.hxx
   NasalModelData.hxx
   NasalSGPath.hxx
+  NasalTranslations.hxx
   NasalFlightPlan.hxx
 )
 

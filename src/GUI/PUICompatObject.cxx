@@ -22,8 +22,6 @@
 using namespace std::string_literals;
 namespace strutils = simgear::strutils;
 
-using flightgear::FGTranslate;
-
 extern naRef propNodeGhostCreate(naContext c, SGPropertyNode* n);
 
 PUICompatObject::PUICompatObject(naRef impl, const std::string& type)

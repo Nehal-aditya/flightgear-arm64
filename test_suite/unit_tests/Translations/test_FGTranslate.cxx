@@ -31,7 +31,6 @@ using namespace std::string_literals;
 using std::string;
 
 using flightgear::addons::AddonManager;
-using flightgear::FGTranslate;
 
 // The en_US strings may differ from the default translation strings (the
 // former are found in <target> elements of
@@ -60,14 +59,12 @@ void FGTranslateTests::test_defaultTranslation()
 {
     FGTestApi::setUp::initTestGlobals("test_defaultTranslation", "default");
     commonBetweenDefaultTranslationAndEn_US();
-    FGTestApi::tearDown::shutdownTestGlobals();
 }
 
 void FGTranslateTests::test_en_US()
 {
     FGTestApi::setUp::initTestGlobals("test_en_US", "en_US");
     commonBetweenDefaultTranslationAndEn_US();
-    FGTestApi::tearDown::shutdownTestGlobals();
 }
 
 void FGTranslateTests::test_fr()
@@ -89,8 +86,6 @@ void FGTranslateTests::test_fr()
 
     fetched = FGTranslate().get("options", "fg-scenery-desc", 1);
     CPPUNIT_ASSERT_EQUAL("Positionné par défaut à $FG_ROOT/Scenery"s, fetched);
-
-    FGTestApi::tearDown::shutdownTestGlobals();
 }
 
 void FGTranslateTests::test_nonExistentTranslation()
@@ -103,8 +98,6 @@ void FGTranslateTests::test_nonExistentTranslation()
     // /sim/intl/locale[0], which is English.
     const string fetched = FGTranslate().get("options", "general-options");
     CPPUNIT_ASSERT_EQUAL("General Options"s, fetched);
-
-    FGTestApi::tearDown::shutdownTestGlobals();
 }
 
 void FGTranslateTests::test_getWithDefault()
@@ -130,8 +123,6 @@ void FGTranslateTests::test_getWithDefault()
     fetched = FGTranslate().getWithDefault(
         "options", "non-existent foobar", "the default");
     CPPUNIT_ASSERT_EQUAL("the default"s, fetched);
-
-    FGTestApi::tearDown::shutdownTestGlobals();
 }
 
 void FGTranslateTests::test_pluralsAndAircraftDomain()
@@ -217,8 +208,6 @@ void FGTranslateTests::test_pluralsAndAircraftDomain()
     fetched = tr.getPluralWithDefault(2, "some-resource", "non-existent-id",
                                       "the default", 0 /* explicit index */);
     CPPUNIT_ASSERT_EQUAL("the default"s, fetched);
-
-    FGTestApi::tearDown::shutdownTestGlobals();
 }
 
 void FGTranslateTests::test_multipleIndices()
@@ -266,8 +255,6 @@ void FGTranslateTests::test_multipleIndices()
         string fetched = tr.get("dialog-whatever", "sentence", i);
         CPPUNIT_ASSERT_EQUAL(v[i], fetched);
     }
-
-    FGTestApi::tearDown::shutdownTestGlobals();
 }
 
 void FGTranslateTests::test_addonDomain()
@@ -330,6 +317,262 @@ void FGTranslateTests::test_addonDomain()
     CPPUNIT_ASSERT(equal);
 
     addonManager->reset(); // destroy the AddonManager
+}
 
+// Subroutine called by tests that are run with different FGLocale settings
+void FGTranslateTests::NasalAPI_languageIndependentTests()
+{
+    std::string badCode = R"(
+        var tr = FGTranslate.new("current-aircraft");
+        # This string has plural status true...
+        var translUnit = tr.translationUnit("some-resource", "cats");
+        # ... therefore the cardinalNumber argument is missing here:
+        translUnit.getTranslation();
+    )";
+    bool ok = FGTestApi::executeNasal(badCode);
+    CPPUNIT_ASSERT(!ok);
+
+    badCode = R"(
+        var tr = FGTranslate.new("current-aircraft");
+        # This string has plural status false...
+        var translUnit = tr.translationUnit("some-resource", "hello");
+        # ... therefore no argument must be provided here:
+        translUnit.getTranslation(2);
+    )";
+    ok = FGTestApi::executeNasal(badCode);
+    CPPUNIT_ASSERT(!ok);
+}
+
+void FGTranslateTests::test_NasalAPI_en_US()
+{
+    FGTestApi::setUp::initTestGlobals("test_NasalAPI_en_US", "en_US");
+
+    globals->get_subsystem_mgr()->bind();
+    globals->get_subsystem_mgr()->init();
+    FGTestApi::setUp::initStandardNasal();
+    globals->get_subsystem_mgr()->postinit();
+
+    const auto dir = SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "Aircraft" / "Test";
+    fgSetString("/sim/aircraft-dir"s, dir.utf8Str());
+
+    globals->get_locale()->loadAircraftTranslations();
+
+    bool ok = FGTestApi::executeNasal(R"(
+        var tr = FGTranslate.new();
+        unitTest.assert_equal("Exit",
+                              tr.get("dialog-exit", "exit-button-label"));
+
+        var tr = FGTranslate.new("current-aircraft");
+        unitTest.assert_equal("Hello from the Test aircraft!",
+                              tr.get("some-resource", "hello"));
+
+        unitTest.assert_equal("%1 cats is not enough cats.",
+                              tr.getPlural(0, "some-resource", "cats"));
+        unitTest.assert_equal("%1 cat is not enough cats.",
+                              tr.getPlural(1, "some-resource", "cats"));
+        unitTest.assert_equal("%1 cats is not enough cats.",
+                              tr.getPlural(2, "some-resource", "cats"));
+
+        # Prepare for testing getAll() and getCount()
+        var expectedVec = [
+          "Make sure the Prince doesn't leave this room until I come and get him.",
+          "Not to leave the room even if you come and get him.",
+          "No, no. Until I come and get him.",
+        ];
+        var nbSentences = size(expectedVec);
+
+        var v = tr.getAll("dialog-whatever", "sentence");
+        unitTest.assert_equal(nbSentences, size(v));
+
+        unitTest.assert_equal(nbSentences,
+                              tr.getCount("dialog-whatever", "sentence"));
+
+        # Test FGTranslate.get() with the optional argument provided (an index)
+        for (var i = 0; i < nbSentences; i += 1) {
+          unitTest.assert_equal(expectedVec[i],
+                                tr.get("dialog-whatever", "sentence", i));
+        }
+
+        # Test FGTranslate.getWithDefault()
+        unitTest.assert_equal("Hello from the Test aircraft!",
+                              tr.getWithDefault("some-resource", "hello",
+                                                "the default value"));
+        unitTest.assert_equal("the default value",
+                              tr.getWithDefault("some-resource", "non-existent",
+                                                "the default value"));
+
+        unitTest.assert_equal(expectedVec[2],
+                              tr.getWithDefault("dialog-whatever", "sentence",
+                                                "the default value", 2));
+        unitTest.assert_equal("the default value",
+                              tr.getWithDefault("dialog-whatever", "non-existent",
+                                                "the default value", 2));
+
+        # Test FGTranslate.getPluralWithDefault()
+        unitTest.assert_equal(
+          "%1 cats is not enough cats.",
+          tr.getPluralWithDefault(0, "some-resource", "cats", "default"));
+        unitTest.assert_equal(
+          "%1 cat is not enough cats.",
+          tr.getPluralWithDefault(1, "some-resource", "cats", "default"));
+        unitTest.assert_equal(
+          "default",
+          tr.getPluralWithDefault(0, "some-resource", "non-existent", "default"));
+        unitTest.assert_equal(
+          "default",
+          tr.getPluralWithDefault(1, "some-resource", "non-existent", "default"));
+
+        # This string isn't defined with has-plural="true"
+        var translUnit = tr.translationUnit("some-resource", "hello");
+        unitTest.assert_equal(0, translUnit.pluralStatus);
+
+        # This string is defined with has-plural="true"
+        var translUnit = tr.translationUnit("some-resource", "cats");
+
+        unitTest.assert_equal(
+          "%1 cat(s) is not enough cats.", translUnit.sourceText);
+        unitTest.assert_equal(1, translUnit.pluralStatus);
+        # 2 plural forms in English: singular and plural
+        unitTest.assert_equal(2, translUnit.nbTargetTexts);
+
+        unitTest.assert_equal(
+          "%1 cat is not enough cats.", translUnit.getTargetText(0));
+        unitTest.assert_equal(
+          "%1 cats is not enough cats.", translUnit.getTargetText(1));
+
+        unitTest.assert_equal("%1 cats is not enough cats.",
+                              translUnit.getTranslation(0));
+        unitTest.assert_equal("%1 cat is not enough cats.",
+                              translUnit.getTranslation(1));
+        unitTest.assert_equal("%1 cats is not enough cats.",
+                              translUnit.getTranslation(2));
+
+        # FGTranslate.translationUnit() with the optional index argument
+        var translUnit = tr.translationUnit("dialog-whatever", "sentence", 2);
+        unitTest.assert_equal("No, no. Until I come and get him.",
+                              translUnit.getTranslation());
+    )");
+    CPPUNIT_ASSERT(ok);
+
+    NasalAPI_languageIndependentTests();
+}
+
+void FGTranslateTests::test_NasalAPI_fr_FR()
+{
+    FGTestApi::setUp::initTestGlobals("test_NasalAPI_fr_FR", "fr_FR");
+
+    globals->get_subsystem_mgr()->bind();
+    globals->get_subsystem_mgr()->init();
+    FGTestApi::setUp::initStandardNasal();
+    globals->get_subsystem_mgr()->postinit();
+
+    const auto dir = SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "Aircraft" / "Test";
+    fgSetString("/sim/aircraft-dir"s, dir.utf8Str());
+
+    globals->get_locale()->loadAircraftTranslations();
+
+    bool ok = FGTestApi::executeNasal(R"(
+        var tr = FGTranslate.new();
+        unitTest.assert_equal("Quitter",
+                              tr.get("dialog-exit", "exit-button-label"));
+
+        var tr = FGTranslate.new("current-aircraft");
+        unitTest.assert_equal("Bonjour depuis l'aéronef Test !",
+                              tr.get("some-resource", "hello"));
+
+        unitTest.assert_equal("%1 chat, ce n'est pas assez de chats.",
+                              tr.getPlural(0, "some-resource", "cats"));
+        unitTest.assert_equal("%1 chat, ce n'est pas assez de chats.",
+                              tr.getPlural(1, "some-resource", "cats"));
+        unitTest.assert_equal("%1 chats, ce n'est pas assez de chats.",
+                              tr.getPlural(2, "some-resource", "cats"));
+
+        # Prepare for testing getAll() and getCount()
+        var expectedVec = [
+          "Assurez-vous que le prince ne quitte pas cette pièce avant que je ne revienne le checher.",
+          "Ne pas quitter la pièce même si vous revenez le chercher.",
+          "Non, non. Jusqu'à ce que je revienne le chercher.",
+        ];
+        var nbSentences = size(expectedVec);
+
+        var v = tr.getAll("dialog-whatever", "sentence");
+        unitTest.assert_equal(nbSentences, size(v));
+
+        unitTest.assert_equal(nbSentences,
+                              tr.getCount("dialog-whatever", "sentence"));
+
+        # Test FGTranslate.get() with the optional argument provided (an index)
+        for (var i = 0; i < nbSentences; i += 1) {
+          unitTest.assert_equal(expectedVec[i],
+                                tr.get("dialog-whatever", "sentence", i));
+        }
+
+        # Test FGTranslate.getWithDefault()
+        unitTest.assert_equal("Bonjour depuis l'aéronef Test !",
+                              tr.getWithDefault("some-resource", "hello",
+                                                "the default value"));
+        unitTest.assert_equal("the default value",
+                              tr.getWithDefault("some-resource", "non-existent",
+                                                "the default value"));
+
+        unitTest.assert_equal(expectedVec[2],
+                              tr.getWithDefault("dialog-whatever", "sentence",
+                                                "the default value", 2));
+        unitTest.assert_equal("the default value",
+                              tr.getWithDefault("dialog-whatever", "non-existent",
+                                                "the default value", 2));
+
+        # Test FGTranslate.getPluralWithDefault()
+        unitTest.assert_equal(
+          "%1 chat, ce n'est pas assez de chats.",
+          tr.getPluralWithDefault(0, "some-resource", "cats", "default"));
+        unitTest.assert_equal(
+          "%1 chats, ce n'est pas assez de chats.",
+          tr.getPluralWithDefault(2, "some-resource", "cats", "default"));
+        unitTest.assert_equal(
+          "default",
+          tr.getPluralWithDefault(0, "some-resource", "non-existent", "default"));
+        unitTest.assert_equal(
+          "default",
+          tr.getPluralWithDefault(2, "some-resource", "non-existent", "default"));
+
+        # This string isn't defined with has-plural="true"
+        var translUnit = tr.translationUnit("some-resource", "hello");
+        unitTest.assert_equal(0, translUnit.pluralStatus);
+
+        # This string is defined with has-plural="true"
+        var translUnit = tr.translationUnit("some-resource", "cats");
+
+        unitTest.assert_equal(
+          "%1 cat(s) is not enough cats.", translUnit.sourceText);
+        unitTest.assert_equal(1, translUnit.pluralStatus);
+        # 2 plural forms in French: singular and plural
+        unitTest.assert_equal(2, translUnit.nbTargetTexts);
+
+        unitTest.assert_equal(
+          "%1 chat, ce n'est pas assez de chats.", translUnit.getTargetText(0));
+        unitTest.assert_equal(
+          "%1 chats, ce n'est pas assez de chats.", translUnit.getTargetText(1));
+
+        unitTest.assert_equal("%1 chat, ce n'est pas assez de chats.",
+                              translUnit.getTranslation(0));
+        unitTest.assert_equal("%1 chat, ce n'est pas assez de chats.",
+                              translUnit.getTranslation(1));
+        unitTest.assert_equal("%1 chats, ce n'est pas assez de chats.",
+                              translUnit.getTranslation(2));
+
+        # FGTranslate.translationUnit() with the optional index argument
+        var translUnit = tr.translationUnit("dialog-whatever", "sentence", 2);
+        unitTest.assert_equal(
+          "Non, non. Jusqu'à ce que je revienne le chercher.",
+          translUnit.getTranslation());
+    )");
+    CPPUNIT_ASSERT(ok);
+
+    NasalAPI_languageIndependentTests();
+}
+
+void FGTranslateTests::tearDown()
+{
     FGTestApi::tearDown::shutdownTestGlobals();
 }
