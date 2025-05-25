@@ -109,6 +109,8 @@ void FGQCanvasFontCache::lookupFile(QByteArray name)
             // compute a QFont and cache
             QFont font(families.front());
             m_cache.insert(name, font);
+
+            emit fontLoaded(name);
             return;
         } else {
             qWarning() << "Failed to load font into QFontDatabase:" << path;
