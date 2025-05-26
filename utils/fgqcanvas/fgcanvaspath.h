@@ -36,7 +36,7 @@ protected:
 
     void doPolish() override;
 
-    virtual void markStyleDirty() override;
+    void markStyleDirty() override;
 
     CanvasItem* createQuickItem(QQuickItem *parent) override;
     CanvasItem* quickItem() const override;

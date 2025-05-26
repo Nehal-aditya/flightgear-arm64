@@ -245,6 +245,7 @@ void FGQCanvasImage::rebuildImage() const
 
 void FGQCanvasImage::markStyleDirty()
 {
+    FGCanvasElement::markStyleDirty();
 }
 
 void FGQCanvasImage::doDestroy()

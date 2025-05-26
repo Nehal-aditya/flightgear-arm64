@@ -41,7 +41,7 @@ protected:
     bool onChildAdded(LocalProp *prop) override;
     bool onChildRemoved(LocalProp *prop) override;
 
-    virtual void markStyleDirty() override;
+    void markStyleDirty() override;
 
     void doDestroy() override;
 private:

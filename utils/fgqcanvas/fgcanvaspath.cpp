@@ -471,6 +471,7 @@ void FGCanvasPath::doPolish()
 void FGCanvasPath::markStyleDirty()
 {
     _penDirty = true;
+    FGCanvasElement::markStyleDirty();
 }
 
 CanvasItem *FGCanvasPath::createQuickItem(QQuickItem *parent)

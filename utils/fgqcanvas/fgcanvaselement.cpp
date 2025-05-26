@@ -97,6 +97,7 @@ FGCanvasElement::FGCanvasElement(FGCanvasGroup* pr, LocalProp* prop) :
         pr->markChildZIndicesDirty();
     }
 
+    addExistingChildren();
     requestPolish();
 }
 
@@ -279,6 +280,13 @@ CanvasConnection *FGCanvasElement::connection() const
     if (_parent)
         return _parent->connection();
     return qobject_cast<CanvasConnection*>(parent());
+}
+
+void FGCanvasElement::addExistingChildren()
+{
+    for (auto cp : property()->children()) {
+        onChildAdded(cp);
+    }
 }
 
 bool FGCanvasElement::onChildAdded(LocalProp *prop)

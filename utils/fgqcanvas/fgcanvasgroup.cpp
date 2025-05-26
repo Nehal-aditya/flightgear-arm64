@@ -228,6 +228,8 @@ void FGCanvasGroup::markStyleDirty()
     for (FGCanvasElement* element : _children) {
         element->markStyleDirty();
     }
+
+    FGCanvasElement::markStyleDirty();
 }
 
 void FGCanvasGroup::doDestroy()

@@ -220,7 +220,7 @@ void CanvasConnection::onTextMessageReceived(QString message)
     if (json.isObject()) {
         // process new nodes
         QJsonArray created = json.object().value("created").toArray();
-        Q_FOREACH (QJsonValue v, created) {
+        for (QJsonValue v : created) {
             QJsonObject newProp = v.toObject();
 
             QByteArray nodePath = newProp.value("path").toString().toUtf8();
@@ -246,7 +246,7 @@ void CanvasConnection::onTextMessageReceived(QString message)
 
         // process removes
         QJsonArray removed = json.object().value("removed").toArray();
-        Q_FOREACH (QJsonValue v, removed) {
+        for (QJsonValue v : removed) {
             int propId = v.toInt();
             if (!idPropertyDict.contains(propId)) {
                 continue;
@@ -266,7 +266,7 @@ void CanvasConnection::onTextMessageReceived(QString message)
         // process changes
         QJsonArray changed = json.object().value("changed").toArray();
 
-        Q_FOREACH (QJsonValue v, changed) {
+        for (QJsonValue v : changed) {
             QJsonArray change = v.toArray();
             if (change.size() != 2) {
                 qWarning() << "malformed change notification";

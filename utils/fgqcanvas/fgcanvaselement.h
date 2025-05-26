@@ -139,6 +139,8 @@ private:
     mutable QRectF _clipRect;
     mutable ReferenceFrame _clipFrame = ReferenceFrame::GLOBAL;
 
+    void addExistingChildren();
+    
     void parseCSSClip(QByteArray value);
     double parseCSSValue(QByteArray value) const;
 };

@@ -38,7 +38,7 @@ public:
 protected:
     virtual void doPaint(FGCanvasPaintContext* context) const override;
 
-    virtual void markStyleDirty() override;
+    void markStyleDirty() override;
 
     void doDestroy() override;
 

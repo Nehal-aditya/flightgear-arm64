@@ -23,6 +23,7 @@
 #include <QQmlEngine>
 #include <QTextLayout>
 
+#include "fgcanvaselement.h"
 #include "fgcanvaspaintcontext.h"
 #include "localprop.h"
 #include "fgqcanvasfontcache.h"
@@ -271,6 +272,7 @@ void FGCanvasText::doPolish()
 void FGCanvasText::markStyleDirty()
 {
     markFontDirty();
+    FGCanvasElement::markStyleDirty();
 }
 
 void FGCanvasText::doDestroy()
