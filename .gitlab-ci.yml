@@ -74,6 +74,11 @@ canvas-pi-build:
   image: registry.gitlab.com/flightgear/flightgear/fgqcanvas-raspbian
   stage: build
   script:
+    # explicitly set this to avoid intermittent failures to configure.
+    # sometimes, find_package( Qt6 COMPONENTS Gui ....) fails to search
+    # the package subdir for Qt6DBusConfig.cmake, so configuration fails.
+    - export Qt6DBus_DIR=/usr/lib/aarch64-linux-gnu/cmake/Qt6DBus
+
     - cmake --fresh -B $BUILD_DIR -S $CI_PROJECT_DIR/utils/fgqcanvas -G Ninja 
       -D CMAKE_BUILD_TYPE=RelWithDebInfo 
       -D CMAKE_INSTALL_PREFIX=$PREFIX_DIR
@@ -87,9 +92,6 @@ canvas-pi-build:
   artifacts:
     paths:
       - _packages
-  cache:
-    paths:
-      - $BUILD_DIR
 
   allow_failure: true
 
