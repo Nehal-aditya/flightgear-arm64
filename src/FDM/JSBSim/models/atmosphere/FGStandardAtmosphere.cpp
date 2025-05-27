@@ -619,7 +619,7 @@ void FGStandardAtmosphere::ValidateVaporMassFraction(double h)
 void FGStandardAtmosphere::SetDewPoint(eTemperature unit, double dewpoint)
 {
   double dewPoint_R = ConvertToRankine(dewpoint, unit);
-  constexpr double minDewPoint = -CelsiusToRankine(c) + 1.0;
+  constexpr double minDewPoint = CelsiusToRankine(-c) + 1.0;
 
   if (dewPoint_R <= minDewPoint) {
     cerr << "The dew point temperature " << dewPoint_R << " is lower than "
