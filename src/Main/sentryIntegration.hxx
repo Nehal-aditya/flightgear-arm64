@@ -48,6 +48,12 @@ void sentryReportFatalError(const std::string& msg, const std::string& more = {}
 
 void sentryReportUserError(const std::string& aggregate, const std::string& details);
 
+/**
+ * @brief retrive the anonymous user ID (a UUID) for this installation.
+ *
+ * The UUID is generated on first-run and stored in FG_HOME in a text file.  
+ */
+std::string sentryUserId();
 
 } // of namespace flightgear
 
