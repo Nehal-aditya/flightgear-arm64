@@ -7,8 +7,11 @@
 #include "PUICompatObject.hxx"
 
 #include <algorithm>
+#include <cmath>
+#include <string>
 
 #include <simgear/misc/strutils.hxx>
+#include <simgear/nasal/cpputils/integers.hxx>
 #include <simgear/props/props.hxx>
 #include <simgear/props/props_io.hxx> // for copyProperties
 
@@ -17,10 +20,12 @@
 #include <Main/fg_props.hxx>
 #include <Scripting/NasalSys.hxx>
 #include <Translations/FGTranslate.hxx>
-#include <string>
+#include <Translations/LanguageInfo.hxx>
 
 using namespace std::string_literals;
 namespace strutils = simgear::strutils;
+
+using flightgear::LanguageInfo;
 
 extern naRef propNodeGhostCreate(naContext c, SGPropertyNode* n);
 
@@ -65,6 +70,32 @@ naRef f_translatePluralString(const PUICompatObject& widget, nasal::CallContext 
         widget.translatePluralString(key, cardinal, resource, domain));
 }
 
+// First argument of the Nasal call is the leaf name of a node. Second
+// argument is undetermined: if it's an integer n, call
+// PUICompatObject::translateWithMaybePlural() with n as the “cardinal number”
+// (which will actually be used only if the translatable string has plural
+// status “true“); else, call PUICompatObject::translateString().
+static naRef f_translateWithMaybePlural(const PUICompatObject& widget,
+                                        nasal::CallContext ctx)
+{
+    using intType = LanguageInfo::intType;
+
+    if (ctx.argc != 2) {
+        ctx.runtimeError("translateWithMaybePlural() takes exactly two "
+                         "arguments (%d given)", ctx.argc);
+    }
+
+    const auto nodeName = ctx.requireArg<std::string>(0);
+    const auto elementBody = widget.configValue<std::string>(nodeName);
+    const auto maybeInteger = nasal::as_integer<intType>(ctx.args[1]);
+
+    return ctx.to_nasal(maybeInteger ?
+                        widget.translateWithMaybePlural(*maybeInteger,
+                                                        elementBody)
+                        : widget.translateString(elementBody)
+        );
+}
+
 void PUICompatObject::setupGhost(nasal::Hash& compatModule)
 {
     using NasalGUIObject = nasal::Ghost<SGSharedPtr<PUICompatObject>>;
@@ -93,7 +124,8 @@ void PUICompatObject::setupGhost(nasal::Hash& compatModule)
         .method("activateBindings", &PUICompatObject::activateBindings)
         .method("gridLocation", &PUICompatObject::gridLocation)
         .method("trN", f_translatePluralString)
-        .method("tr", f_translateString);
+        .method("tr", f_translateString)
+        .method("translateWithMaybePlural", f_translateWithMaybePlural);
 
     nasal::Hash objectHash = compatModule.createHash("Object");
     objectHash.set("new", &f_makeCompatObjectPeer);
@@ -603,4 +635,29 @@ std::string PUICompatObject::translateString(const std::string& key, const std::
     auto res = resource.empty() ? "dialog-"s + dialog()->getName() : resource;
     auto dom = domain.empty() ? dialog()->translationDomain() : domain;
     return FGTranslate(dom).getWithDefault(res, strippedKey, strippedKey);
+}
+
+std::string PUICompatObject::translateWithMaybePlural(
+    LanguageInfo::intType cardinalNumber, const std::string& key,
+    const std::string& resource, const std::string& domain) const
+{
+    const auto strippedKey = strutils::strip(key);
+    const auto res = resource.empty() ? "dialog-"s + dialog()->getName() :
+        resource;
+    const auto dom = domain.empty() ? dialog()->translationDomain() : domain;
+
+    const auto translUnit = FGTranslate(dom).translationUnit(res, strippedKey);
+
+    if (!translUnit) {
+        SG_LOG(SG_GUI, SG_DEV_ALERT, "In '" << dialog()->getName() << "' "
+               "dialog: attempt to fetch translation for " << dom << "/" <<
+               res << "/" << strippedKey << " which cannot be found (it "
+               "seems it is not even in the default translation; it could "
+               "be an extractable string that hasn't been extracted yet)");
+        return strippedKey;
+    }
+
+    return translUnit->getPluralStatus() ?
+        translUnit->getTranslation(cardinalNumber) :
+        translUnit->getTranslation();
 }
