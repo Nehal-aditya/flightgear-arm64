@@ -117,7 +117,8 @@ public:
 
     bool hasBindings() const;
 
-    std::string translatePluralString(const std::string& key, int cardinal,
+    std::string translatePluralString(flightgear::LanguageInfo::intType cardinal,
+                                      const std::string& key,
                                       const std::string& resource = {},
                                       const std::string& domain = {}) const;
     std::string translateString(const std::string& key,

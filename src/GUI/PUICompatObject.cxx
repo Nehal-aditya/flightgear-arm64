@@ -62,12 +62,12 @@ naRef f_translateString(const PUICompatObject& widget, nasal::CallContext ctx)
 
 naRef f_translatePluralString(const PUICompatObject& widget, nasal::CallContext ctx)
 {
-    const auto key = ctx.requireArg<std::string>(0);
-    const auto cardinal = ctx.requireArg<int>(1);
+    const auto cardinal = ctx.requireArg<LanguageInfo::intType>(0);
+    const auto key = ctx.requireArg<std::string>(1);
     const auto resource = ctx.getArg<std::string>(2);
     const auto domain = ctx.getArg<std::string>(3);
     return ctx.to_nasal(
-        widget.translatePluralString(key, cardinal, resource, domain));
+        widget.translatePluralString(cardinal, key, resource, domain));
 }
 
 // First argument of the Nasal call is the leaf name of a node. Second
@@ -620,7 +620,9 @@ nasal::Hash PUICompatObject::gridLocation(const nasal::CallContext& ctx) const
     return result;
 }
 
-std::string PUICompatObject::translatePluralString(const std::string& key, int cardinal, const std::string& resource, const std::string& domain) const
+std::string PUICompatObject::translatePluralString(
+    LanguageInfo::intType cardinal, const std::string& key,
+    const std::string& resource, const std::string& domain) const
 {
     auto strippedKey = strutils::strip(key);
     auto res = resource.empty() ? "dialog-"s + dialog()->getName() : resource;
