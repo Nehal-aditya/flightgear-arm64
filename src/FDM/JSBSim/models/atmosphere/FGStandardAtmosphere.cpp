@@ -631,11 +631,11 @@ void FGStandardAtmosphere::SetDewPoint(eTemperature unit, double dewpoint)
   double VaporPressure = CalculateVaporPressure(dewPoint_R);
   SetVaporPressure(ePSF, VaporPressure);
 
-  double finalizedDewPoint = GetDewPoint(eRankine);
-  if (finalizedDewPoint < dewPoint_R) {
-    cerr << "Dew point temperature has been capped to " << finalizedDewPoint
-         << endl;
-  }
+  // double finalizedDewPoint = GetDewPoint(eRankine);
+  // if (finalizedDewPoint < dewPoint_R) {
+  //   cerr << "Dew point temperature has been capped to " << finalizedDewPoint
+  //        << endl;
+  // }
 }
 
 //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
