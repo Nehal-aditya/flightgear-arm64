@@ -18,6 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+#include "LaunchConfig.hxx"
 #include "config.h"
 
 #include "SetupRootDialog.hxx"
@@ -344,8 +345,24 @@ SetupRootDialog::SetupRootDialog(PromptState prompt) :
              this, &SetupRootDialog::onBrowse);
     connect(m_ui->downloadButton, &QPushButton::clicked,
             this, &SetupRootDialog::onDownload);
+    connect(m_ui->changeDownloadLocation, &QPushButton::clicked,
+            this, &SetupRootDialog::onSelectDownloadDir);
     connect(m_ui->buttonBox, &QDialogButtonBox::rejected,
             this, &QDialog::reject);
+
+    auto options = flightgear::Options::sharedInstance();
+    if (options->isOptionSet("download-dir")) {
+        // if downlaod dir is set on the command line, don't allow changing it here
+        m_ui->changeDownloadLocation->setEnabled(false);
+    } else {
+        // ensure downlad-dir is set now, since we use it for our
+        // auto download/update
+        auto settings = flightgear::getQSettings();
+        QString downloadDir = settings.value("download-dir").toString();
+        if (!downloadDir.isEmpty()) {
+            options->setOption("download-dir", downloadDir.toStdString());
+        }
+    }
 
     m_ui->versionLabel->setText(tr("<h1>FlightGear %1</h1>").arg(FLIGHTGEAR_VERSION));
     m_ui->bigIcon->setPixmap(QPixmap(":/app-icon-large"));
@@ -355,6 +372,7 @@ SetupRootDialog::SetupRootDialog(PromptState prompt) :
 
     if (prompt == NeedToUpdateDownloadedData) {
         m_ui->downloadButton->setText(tr("Update"));
+        m_ui->changeDownloadLocation->setEnabled(false);
     }
 
     m_networkManager = new QNetworkAccessManager(this);
@@ -569,8 +587,30 @@ void SetupRootDialog::onBrowse()
     accept(); // we're done
 }
 
+void SetupRootDialog::onSelectDownloadDir()
+{
+    auto settings = flightgear::getQSettings();
+
+    auto dd = flightgear::Options::sharedInstance()->actualDownloadDir();
+    const auto dlp = QString::fromStdString(dd.utf8Str());
+
+    QString downloadDir = QFileDialog::getExistingDirectory(this,
+                                                            tr("Choose location to store downloaded files."), dlp);
+    if (downloadDir.isEmpty()) {
+        return;
+    }
+
+    settings.setValue("download-dir", downloadDir);
+    flightgear::Options::sharedInstance()->setOption("download-dir", downloadDir.toStdString());
+    updatePromptText();
+}
+
 void SetupRootDialog::onDownload()
 {
+    // clear !ask value or custom root
+    auto settings = flightgear::getQSettings();
+    settings.remove(rootPathKey());
+
     if (m_promptState == NeedToUpdateDownloadedData) {
         onUpdate();
         return;
@@ -713,6 +753,10 @@ void SetupRootDialog::updatePromptText()
     }
 
     m_ui->promptText->setText(t);
+
+    auto dd = flightgear::Options::sharedInstance()->actualDownloadDir();
+    const auto dlp = QString::fromStdString(dd.utf8Str());
+    m_ui->downloadLocationLabel->setText(tr("Data files will be downloaded to: %1").arg(dlp));
 }
 
 #include "SetupRootDialog.moc"

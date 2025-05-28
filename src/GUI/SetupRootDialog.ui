@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>887</width>
-    <height>513</height>
+    <width>877</width>
+    <height>503</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,10 +24,10 @@
    <item row="2" column="1" rowspan="2">
     <widget class="QStackedWidget" name="contentsPages">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="mainPage">
-      <layout class="QGridLayout" name="mainPageLayout" columnstretch="0,1,0">
+      <layout class="QGridLayout" name="mainPageLayout" rowstretch="0,0,1,0" columnstretch="0,1,0">
        <property name="leftMargin">
         <number>0</number>
        </property>
@@ -40,18 +40,18 @@
        <property name="bottomMargin">
         <number>0</number>
        </property>
-       <item row="1" column="1">
-        <widget class="QLabel" name="label_3">
+       <item row="0" column="1">
+        <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>If you already have the data files on your computer, you can select them.</string>
+          <string>Download &amp; install the data files automatically</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
-        <spacer name="verticalSpacer">
+       <item row="2" column="1">
+        <spacer name="verticalSpacer_3">
          <property name="orientation">
           <enum>Qt::Orientation::Vertical</enum>
          </property>
@@ -63,10 +63,43 @@
          </property>
         </spacer>
        </item>
-       <item row="1" column="2" alignment="Qt::AlignmentFlag::AlignTop">
+       <item row="3" column="2">
         <widget class="QPushButton" name="browseButton">
          <property name="text">
-          <string>Choose folder...</string>
+          <string>Select existing data...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QPushButton" name="changeDownloadLocation">
+         <property name="text">
+          <string>Change download folder...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>If you already have the data files on your computer, you can select them.</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLabel" name="downloadLocationLabel">
+         <property name="text">
+          <string>Folder used for FlightGear downloads: %1</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+         <property name="indent">
+          <number>50</number>
          </property>
         </widget>
        </item>
@@ -76,16 +109,6 @@
           <string>Download </string>
          </property>
          <property name="default">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>Download &amp; install the data files automatically</string>
-         </property>
-         <property name="wordWrap">
           <bool>true</bool>
          </property>
         </widget>

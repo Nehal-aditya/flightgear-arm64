@@ -57,7 +57,8 @@ private slots:
 
     void onDownload();
     void onUpdate();
-    
+    void onSelectDownloadDir();
+
     void updatePromptText();
 private:
     enum PromptState {
