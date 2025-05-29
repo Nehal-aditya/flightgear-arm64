@@ -27,6 +27,9 @@ static osg::ref_ptr<VRManager> managerInstance;
 
 VRManager::VRManager()
     : _reloadCompositorCallback(new ReloadCompositorCallback(this)),
+      _headSpace(new osgXR::RefSpaceView(this,
+                                         // Offset head space back 10cm from view space
+                                         osgXR::Pose(osg::Quat(), osg::Vec3f(0.0f, 0.0f, -0.1f)))),
       _propXrLayersValidation("/sim/vr/openxr/layers/validation"),
       _propXrExtensionsDepthInfo("/sim/vr/openxr/extensions/depth-info"),
       _propXrExtensionsVisibilityMask("/sim/vr/openxr/extensions/visibility-mask"),

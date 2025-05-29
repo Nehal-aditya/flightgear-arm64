@@ -12,6 +12,7 @@
 #include <osg/observer_ptr>
 
 #include <osgXR/Manager>
+#include <osgXR/Space>
 
 #include <simgear/props/propertyObject.hxx>
 #include <simgear/scene/viewer/CompositorPass.hxx>
@@ -121,6 +122,12 @@ class VRManager : public osgXR::Manager
 
         bool cmdRecenter(const SGPropertyNode* arg, SGPropertyNode* root);
 
+        // Access head space
+        osgXR::Space* getHeadSpace()
+        {
+            return _headSpace;
+        }
+
     protected:
 
         typedef std::map<osgXR::View *, osg::ref_ptr<CameraInfo>> XRViewToCamInfo;
@@ -130,6 +137,8 @@ class VRManager : public osgXR::Manager
         CamInfoToXRView _xrViews;
 
         osg::ref_ptr<ReloadCompositorCallback> _reloadCompositorCallback;
+
+        osg::ref_ptr<osgXR::Space> _headSpace;
 
         // Properties
 

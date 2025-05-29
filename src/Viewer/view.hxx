@@ -91,7 +91,7 @@ public:
 
 
     // Position offsets from reference
-    //   These offsets position they "eye" in the scene according to a given
+    //   These offsets position the "eye" in the scene according to a given
     //   location.  For example in pilot view they are used to position the
     //   head inside the aircraft.
     //   Note that in pilot view these are applied "before" the orientation
@@ -130,7 +130,7 @@ public:
     //   the view (in Pilot view).  IE The view frustum rotates as the plane
     //   turns, pitches, and rolls.
     //   In model view (lookat/chaseview) these end up changing the angle that
-    //   the eye is looking at the ojbect (ie the model).
+    //   the eye is looking at the object (ie the model).
     //   FIXME: the FGModel class should have its own version of these so that
     //   it can generate it's own model rotations.
     double getHeading_deg () const {return _heading_deg; }
@@ -159,6 +159,20 @@ public:
 
     // Vectors and positions...
 
+    // These exclude the VR head pose
+    const SGVec3d& getLocalPosition()
+    {
+        if (_dirty)
+            recalc();
+        return _absoluteLocalPos;
+    }
+    const SGQuatd& getLocalOrientation()
+    {
+        if (_dirty)
+            recalc();
+        return _localOr;
+    }
+    // These include the VR head pose
     const SGVec3d& getViewPosition() { if ( _dirty ) { recalc(); } return _absolute_view_pos; }
     const SGQuatd& getViewOrientation() { if ( _dirty ) { recalc(); } return mViewOrientation; }
     const SGQuatd& getViewOrientationOffset() { if ( _dirty ) { recalc(); } return mViewOffsetOr; }
@@ -310,6 +324,10 @@ private:
     SGQuatd mViewOrientation;
     SGQuatd mViewOffsetOr;
     SGVec3d _absolute_view_pos;
+
+    // these exclude VR head pose
+    SGVec3d _absoluteLocalPos = SGVec3d(0, 0, 0);
+    SGQuatd _localOr;
 
     SGGeod _position;
     SGGeod _target;

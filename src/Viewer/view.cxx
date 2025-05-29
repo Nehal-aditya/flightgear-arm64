@@ -12,6 +12,7 @@
 #  include "config.h"
 #endif
 
+#include "VRManager.hxx"
 #include "view.hxx"
 
 #include <simgear/compiler.h>
@@ -629,6 +630,19 @@ View::recalc ()
     recalcLookAt();
   }
 
+  // Offset view position & orientation by VR head pose relative to local space
+  _absolute_view_pos = _absoluteLocalPos;
+  mViewOrientation = _localOr;
+#ifdef ENABLE_OSGXR
+  auto pose = flightgear::VRManager::instance()->getHeadSpace()->locate();
+  if (pose.isPositionValid()) {
+      _absolute_view_pos += mViewOrientation.backTransform(toVec3d(toSG(pose.getPosition())));
+  }
+  if (pose.isOrientationValid()) {
+      mViewOrientation = mViewOrientation * toSG(pose.getOrientation());
+  }
+#endif
+
   set_clean();
 }
 
@@ -810,8 +824,8 @@ View::recalcLookFrom ()
   // simulation runs into the OpenGL camera system with x-right, y-up, z-back.
   SGQuatd q(-0.5, -0.5, 0.5, 0.5);
 
-  _absolute_view_pos = position + (ec2body*q).backTransform(offset_m);
-  mViewOrientation = ec2body*mViewOffsetOr*q;
+  _absoluteLocalPos = position + (ec2body * q).backTransform(offset_m);
+  _localOr = ec2body * mViewOffsetOr * q;
 }
 
 
@@ -1066,8 +1080,8 @@ View::recalcLookAt ()
 
   // add target offsets to at_position...
   // Compute the eyepoints orientation and position
-  // wrt the earth centered frame - that is global coorinates
-  _absolute_view_pos = eyeCart;
+  // wrt the earth centered frame - that is global coordinates
+  _absoluteLocalPos = eyeCart;
 
   // the view direction
   SGVec3d dir = normalize(atCart - eyeCart);
@@ -1077,7 +1091,7 @@ View::recalcLookAt ()
   // rotate up to 1-th unit vector
   // Note that this matches the OpenGL camera coordinate system
   // with x-right, y-up, z-back.
-  mViewOrientation = SGQuatd::fromRotateTo(-dir, 2, up, 1);
+  _localOr = SGQuatd::fromRotateTo(-dir, 2, up, 1);
 }
 
 void

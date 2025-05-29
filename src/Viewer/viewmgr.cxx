@@ -192,8 +192,8 @@ FGViewMgr::update (double dt)
     if (cameraGroup) {
         cameraGroup->setCameraParameters(currentView->get_v_fov(),
                                          cameraGroup->getMasterAspectRatio());
-        cameraGroup->update(toOsg(currentView->getViewPosition()),
-                            toOsg(currentView->getViewOrientation()));
+        cameraGroup->update(toOsg(currentView->getLocalPosition()),
+                            toOsg(currentView->getLocalOrientation()));
     }
 
     SviewUpdate(dt);
