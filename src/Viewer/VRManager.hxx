@@ -123,6 +123,10 @@ class VRManager : public osgXR::Manager
         void updateSubView(osgXR::View *view, unsigned int subviewIndex,
                            const osgXR::View::SubView &subview);
 
+        // Commands
+
+        bool cmdRecenter(const SGPropertyNode* arg, SGPropertyNode* root);
+
     protected:
 
         typedef std::map<osgXR::View *, osg::ref_ptr<CameraInfo>> XRViewToCamInfo;

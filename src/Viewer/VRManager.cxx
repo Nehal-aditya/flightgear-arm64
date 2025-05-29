@@ -23,6 +23,7 @@
 #include <simgear/scene/util/RenderConstants.hxx>
 #include <simgear/scene/viewer/Compositor.hxx>
 #include <simgear/scene/viewer/CompositorPass.hxx>
+#include <simgear/structure/commands.hxx>
 
 #include <Main/fg_props.hxx>
 #include <Main/globals.hxx>
@@ -92,6 +93,8 @@ VRManager::VRManager() :
 
     // No need for a change listener, but it should still be resolvable
     _propMirrorEnabled.node(true);
+
+    globals->get_commands()->addCommand("vr-recenter", this, &VRManager::cmdRecenter);
 
     // Determine what multiview support the default compositor implements.
     std::string compositorPath = fgGetString("/sim/rendering/default-compositor",
@@ -389,6 +392,13 @@ void VRManager::updateSubView(osgXR::View *view, unsigned int subviewIndex,
     auto vp = subview.getViewport();
     info->compositor->updateSubView(subviewIndex, viewMatrix, projMatrix,
                                     osg::Vec4(vp.x, vp.y, vp.w, vp.h));
+}
+
+bool VRManager::cmdRecenter(const SGPropertyNode* arg, SGPropertyNode* root)
+{
+    SG_UNUSED(arg);
+    SG_UNUSED(root);
+    return recenter();
 }
 
 }
