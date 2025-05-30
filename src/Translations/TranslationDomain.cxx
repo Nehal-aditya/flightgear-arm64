@@ -22,7 +22,7 @@ TranslationDomain::getOrCreateResource(const std::string& resourceName)
     auto& resourcePtr = _map[resourceName];
 
     if (!resourcePtr) {
-        resourcePtr = std::make_shared<TranslationResource>();
+        resourcePtr = std::make_shared<TranslationResource>(resourceName);
     }
 
     return resourcePtr;

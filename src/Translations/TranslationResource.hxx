@@ -8,17 +8,15 @@
 
 #pragma once
 
-#include <initializer_list>
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "LanguageInfo.hxx"
 #include "TranslationUnit.hxx"
-
-namespace flightgear
-{
 
 /**
  * @brief Class that holds translation units within a resource (“context”)
@@ -32,6 +30,15 @@ namespace flightgear
 class TranslationResource
 {
 public:
+    using intType = flightgear::LanguageInfo::intType;
+
+    TranslationResource() = delete;
+    /**
+     * @brief Constructor
+     *
+     * @param name   resource name (used for error messages)
+     */
+    explicit TranslationResource(std::string name) noexcept;
     /**
      * @brief Add a translation unit to the TranslationResource
      *
@@ -82,7 +89,64 @@ public:
      * @return a shared pointer to the TranslationUnit with this name and index
      */
     std::shared_ptr<TranslationUnit>
-    translationUnit(const std::string& name, int index) const;
+    translationUnit(const std::string& name, int index = 0) const;
+
+    /**
+     * @brief Get a single translation.
+     *
+     * @param basicId   name of the XML element corresponding to the
+     *                  translation to retrieve in the default translation
+     *                  file for the specified resource
+     * @param index     index among strings sharing the same basicId
+     * @return The translated string
+     *
+     * There may be several elements named @a basicId in the default
+     * translation file for the specified @a resource; these elements are
+     * distinguished by their @a index.
+     *
+     * If there is no translatable string with the specified @a basicId and
+     * @a index in the `TranslationResource`, return an empty string.
+     */
+    std::string get(const std::string& basicId, int index = 0) const;
+    /**
+     * @brief Same as get(), but for a string that has plural forms.
+     *
+     * @param cardinalNumber  an integer correponding to a number of
+     *                        “things” (concrete or abstract)
+     * @param basicId         same as for get()
+     * @param index           same as for get()
+     * @return The translated string
+     */
+    std::string getPlural(intType cardinalNumber, const std::string& basicId,
+                          int index = 0) const;
+    /**
+     * @brief Get a single translation, with default for missing or empty
+     *        strings.
+     *
+     * @param basicId       same as for get()
+     * @param defaultValue  returned if the string can't be found or is
+     *                      declared with an empty source text in the
+     *                      default translation
+     * @param index         same as for get()
+     * @return The translated string or default value
+     */
+    std::string getWithDefault(const std::string& basicId,
+                               const std::string& defaultValue,
+                               int index = 0) const;
+    /**
+     * @brief Same as getWithDefault(), but for a string that has plural forms.
+     *
+     * @param cardinalNumber  an integer correponding to a number of
+     *                        “things” (concrete or abstract)
+     * @param basicId         same as for getWithDefault()
+     * @param defaultValue    same as for getWithDefault()
+     * @param index           same as for getWithDefault()
+     * @return The translated string or default value
+     */
+    std::string getPluralWithDefault(intType cardinalNumber,
+                                     const std::string& basicId,
+                                     const std::string& defaultValue,
+                                     int index = 0) const;
     /**
      * @brief Get translations for all strings with a given element name.
      *
@@ -91,8 +155,7 @@ public:
      * @return A vector containing the first target text (i.e., first plural
      *         form) of each translated string with the specified element name
      */
-    std::vector<std::string> getTranslations(const std::string& name) const;
-
+    std::vector<std::string> getAll(const std::string& name) const;
     /**
      * @brief Get the number of translated strings with the given element
      *        name.
@@ -102,14 +165,14 @@ public:
      * @return The number of translation units with basic id @a name in the
      *         TranslationResource
      */
-     int getNumberOfStringsWithId(const std::string& name) const;
+    std::size_t getCount(const std::string& name) const;
 
 private:
+    /// Name of the resource (e.g., "options" or "dialog-location-in-air")
+    std::string _name;
     // In the default translation files, this corresponds to a node name and
     // its index.
     using KeyType = std::pair<std::string, int>;
     using TranslationUnitRef = std::shared_ptr<TranslationUnit>;
     std::map<KeyType, TranslationUnitRef> _map;
 };
-
-} // namespace flightgear

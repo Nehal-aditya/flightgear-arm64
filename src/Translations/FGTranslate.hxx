@@ -108,6 +108,17 @@ public:
     FGTranslate& setDomain(const std::string& domain);
 
     /**
+     * @brief Get the specified resource.
+     *
+     * @param resourceName  name of the resource
+     * @return A shared pointer to the resource
+     *
+     * This function logs warnings if the domain or resource can't be found.
+     */
+    flightgear::TranslationDomain::ResourceRef
+    getResource(const std::string& resourceName) const;
+
+    /**
      * @brief Get a single translation.
      *
      * @param resource  resource name, aka “context” (such as "atc", "menu",
@@ -141,7 +152,6 @@ public:
      * @param index           same as for get()
      * @return The translated string
      */
-
     std::string getPlural(intType cardinalNumber, const std::string& resource,
                           const std::string& basicId, int index = 0) const;
     /**
@@ -156,7 +166,6 @@ public:
      * @param index         same as for get()
      * @return The translated string or default value
      */
-
     std::string getWithDefault(const std::string& resource,
                                const std::string& basicId,
                                const std::string& defaultValue,
@@ -221,17 +230,6 @@ public:
 
 private:
     using TranslationDomain = flightgear::TranslationDomain;
-
-    /**
-     * @brief Get the specified resource.
-     *
-     * @param resourceName  name of the resource
-     * @return A pointer to the resource
-     *
-     * This function logs warnings if the domain or resource can't be found.
-     */
-    TranslationDomain::ResourceRef getResource(const std::string& resourceName)
-        const;
 
     using TranslationDomainRef = std::shared_ptr<const TranslationDomain>;
     TranslationDomainRef _domain;

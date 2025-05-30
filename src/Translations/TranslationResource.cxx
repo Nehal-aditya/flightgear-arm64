@@ -6,9 +6,8 @@
  * @brief Container class for related translation units
  */
 
-#include <algorithm>
 #include <cassert>
-#include <initializer_list>
+#include <cstddef>
 #include <string>
 #include <utility>
 #include <vector>
@@ -21,8 +20,9 @@
 using std::string;
 using std::vector;
 
-namespace flightgear
-{
+TranslationResource::TranslationResource(std::string name) noexcept
+    :    _name(std::move(name))
+{ }
 
 void TranslationResource::addTranslationUnit(std::string name, int index,
                                              std::string sourceText,
@@ -70,7 +70,71 @@ TranslationResource::translationUnit(const std::string& name, int index) const
     return {};
 }
 
-vector<string> TranslationResource::getTranslations(const string& name) const
+string TranslationResource::get(const string& basicId, int index) const
+{
+    const auto translUnit = translationUnit(basicId, index);
+
+    if (!translUnit) {
+        return {};
+    }
+
+    if (translUnit->getPluralStatus()) {
+        SG_LOG(SG_GENERAL, SG_DEV_ALERT,
+               "TranslationResource::get() or "
+               "TranslationResource::getWithDefault() used on translatable "
+               "string '" << _name << "/" << basicId << ":" << index <<
+               "' defined with has-plural=\"true\" in the default translation. "
+               "Use TranslationResource::getPlural() or "
+               "TranslationResource::getPluralWithDefault() instead.");
+        return translUnit->getSourceText();
+    } else {
+        return translUnit->getTranslation();
+    }
+}
+
+string TranslationResource::getPlural(intType cardinalNumber,
+                                      const string& basicId, int index) const
+{
+    const auto translUnit = translationUnit(basicId, index);
+
+    if (!translUnit) {
+        return {};
+    }
+
+    if (!translUnit->getPluralStatus()) {
+        SG_LOG(SG_GENERAL, SG_DEV_ALERT,
+               "TranslationResource::getPlural() or "
+               "TranslationResource::getPluralWithDefault() used on "
+               "translatable string '" << _name << "/" << basicId << ":" <<
+               index << "' that isn't defined with has-plural=\"true\" in the "
+               "default translation. Use TranslationResource::get() or "
+               "TranslationResource::getWithDefault() instead.");
+        return translUnit->getSourceText();
+    } else {
+        return translUnit->getTranslation(cardinalNumber);
+    }
+
+    return {};
+}
+
+string TranslationResource::getWithDefault(
+    const string& basicId, const string& defaultValue, int index) const
+{
+    const string result = get(basicId, index);
+
+    return result.empty() ? defaultValue : result;
+}
+
+string TranslationResource::getPluralWithDefault(
+    intType cardinalNumber, const string& basicId, const string& defaultValue,
+    int index) const
+{
+    const string result = getPlural(cardinalNumber, basicId, index);
+
+    return result.empty() ? defaultValue : result;
+}
+
+vector<string> TranslationResource::getAll(const string& name) const
 {
     vector<string> result;
     decltype(_map)::const_iterator it;
@@ -88,9 +152,9 @@ vector<string> TranslationResource::getTranslations(const string& name) const
     return result;
 }
 
-int TranslationResource::getNumberOfStringsWithId(const string& name) const
+std::size_t TranslationResource::getCount(const string& name) const
 {
-    int index = 0;
+    std::size_t index = 0;
 
     while (_map.find(std::make_pair(name, index)) != _map.end()) {
         index++;
@@ -98,5 +162,3 @@ int TranslationResource::getNumberOfStringsWithId(const string& name) const
 
     return index;
 }
-
-} // namespace flightgear
