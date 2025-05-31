@@ -8,11 +8,13 @@
 
 #include <cassert>
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include <simgear/debug/logstream.hxx>
+#include <simgear/nasal/cppbind/Ghost.hxx>
 
 #include "TranslationResource.hxx"
 #include "TranslationUnit.hxx"
@@ -161,4 +163,97 @@ std::size_t TranslationResource::getCount(const string& name) const
     }
 
     return index;
+}
+
+static naRef f_get(const TranslationResource& tr, const nasal::CallContext& ctx)
+{
+    if (ctx.argc < 1 || ctx.argc > 2) {
+        ctx.runtimeError("TranslationResource.get(basicId[, index])");
+    }
+
+    const auto basicId = ctx.requireArg<std::string>(0);
+    const auto index = ctx.getArg<int>(1); // the index defaults to 0
+
+    return ctx.to_nasal(tr.get(std::move(basicId), index));
+}
+
+static naRef f_getPlural(const TranslationResource& tr, const nasal::CallContext& ctx)
+{
+    if (ctx.argc < 2 || ctx.argc > 3) {
+        ctx.runtimeError(
+            "TranslationResource.getPlural(cardinalNumber, basicId[, index])");
+    }
+
+    const auto cardinalNumber = ctx.requireArg<TranslationResource::intType>(0);
+    const auto basicId = ctx.requireArg<std::string>(1);
+    const auto index = ctx.getArg<int>(2); // the index defaults to 0
+
+    return ctx.to_nasal(tr.getPlural(cardinalNumber, std::move(basicId),
+                                     index));
+}
+
+static naRef f_getWithDefault(const TranslationResource& tr,
+                              const nasal::CallContext& ctx)
+{
+    if (ctx.argc < 2 || ctx.argc > 3) {
+        ctx.runtimeError("TranslationResource.getWithDefault(basicId, "
+                         "defaultValue[, index])");
+    }
+
+    const auto basicId = ctx.requireArg<std::string>(0);
+    const auto defaultValue = ctx.requireArg<std::string>(1);
+    const auto index = ctx.getArg<int>(2); // the index defaults to 0
+
+    return ctx.to_nasal(
+        tr.getWithDefault(std::move(basicId), std::move(defaultValue), index));
+}
+
+static naRef f_getPluralWithDefault(const TranslationResource& tr,
+                                    const nasal::CallContext& ctx)
+{
+    if (ctx.argc < 3 || ctx.argc > 4) {
+        ctx.runtimeError(
+            "TranslationResource.getPluralWithDefault(cardinalNumber, "
+            "basicId, defaultValue[, index])");
+    }
+
+    const auto cardinalNumber = ctx.requireArg<TranslationResource::intType>(0);
+    const auto basicId = ctx.requireArg<std::string>(1);
+    const auto defaultValue = ctx.requireArg<std::string>(2);
+    const auto index = ctx.getArg<int>(3); // the index defaults to 0
+
+    return ctx.to_nasal(
+        tr.getPluralWithDefault(cardinalNumber, std::move(basicId),
+                                std::move(defaultValue), index));
+}
+
+static naRef f_translationUnit(const TranslationResource& tr,
+                               const nasal::CallContext& ctx)
+{
+    if (ctx.argc < 1 || ctx.argc > 2) {
+        ctx.runtimeError(
+            "TranslationResource.translationUnit(basicId[, index])");
+    }
+
+    const auto basicId = ctx.requireArg<std::string>(0);
+    const auto index = ctx.getArg<int>(1); // the index defaults to 0
+
+    return ctx.to_nasal(
+        tr.translationUnit(std::move(basicId), index));
+}
+
+// Static member function
+void TranslationResource::setupGhost()
+{
+    using TranslationResourceRef = std::shared_ptr<TranslationResource>;
+    using NasalTranslationResource = nasal::Ghost<TranslationResourceRef>;
+
+    NasalTranslationResource::init("TranslationResource")
+        .method("get", &f_get)
+        .method("getPlural", &f_getPlural)
+        .method("getWithDefault", &f_getWithDefault)
+        .method("getPluralWithDefault", &f_getPluralWithDefault)
+        .method("getAll", &TranslationResource::getAll)
+        .method("getCount", &TranslationResource::getCount)
+        .method("translationUnit", &f_translationUnit);
 }

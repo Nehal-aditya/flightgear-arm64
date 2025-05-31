@@ -15,6 +15,7 @@
 #include <simgear/nasal/nasal.h>
 
 #include <Translations/FGTranslate.hxx>
+#include <Translations/TranslationResource.hxx>
 #include <Translations/TranslationUnit.hxx>
 
 namespace flightgear
@@ -45,8 +46,9 @@ void initNasalTranslations(naRef globals, naContext c)
 
     fgTranslateModule.set("new", &f_new_FGTranslate);
 
-    TranslationUnit::setupGhost();
     FGTranslate::setupGhost();
+    TranslationResource::setupGhost();
+    TranslationUnit::setupGhost();
 }
 
 } // of namespace flightgear

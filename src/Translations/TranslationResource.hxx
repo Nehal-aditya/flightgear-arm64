@@ -167,6 +167,11 @@ public:
      */
     std::size_t getCount(const std::string& name) const;
 
+    /**
+     * @brief Set up a Nasal type that wraps TranslationResource
+     */
+    static void setupGhost();
+
 private:
     /// Name of the resource (e.g., "options" or "dialog-location-in-air")
     std::string _name;

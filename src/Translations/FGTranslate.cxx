@@ -227,6 +227,7 @@ void FGTranslate::setupGhost()
     using NasalFGTranslate = nasal::Ghost<FGTranslateRef>;
 
     NasalFGTranslate::init("FGTranslate")
+        .method("getResource", &FGTranslate::getResource)
         .method("get", &f_get)
         .method("getPlural", &f_getPlural)
         .method("getWithDefault", &f_getWithDefault)
