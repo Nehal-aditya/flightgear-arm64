@@ -79,6 +79,16 @@ public:
 	    return mouseMotionHandler;
 	}
 
+    void setMouseLeaveHandler(fgMouseLeaveHandler mouseLeaveHandler)
+    {
+        this->mouseLeaveHandler = mouseLeaveHandler;
+    }
+
+    fgMouseLeaveHandler getMouseLeaveHandler()
+    {
+        return mouseLeaveHandler;
+    }
+
     void setChangeStatsCameraRenderOrder(bool c)
     {
         changeStatsCameraRenderOrder = c;
@@ -116,6 +126,7 @@ protected:
     fgKeyHandler keyHandler;
     fgMouseClickHandler mouseClickHandler;
     fgMouseMotionHandler mouseMotionHandler;
+    fgMouseLeaveHandler mouseLeaveHandler = nullptr;
     osg::ref_ptr<FGStatsHandler> statsHandler;
     osg::ref_ptr<osgGA::GUIEventAdapter> statsEvent;
     int statsType;

@@ -306,6 +306,12 @@ bool FGEventHandler::handle(const osgGA::GUIEventAdapter& ea,
         if (eventToViewport(ea, us, x, y) != WindowType_NONE && mouseMotionHandler)
             (*mouseMotionHandler)(x, y, &ea);
         return true;
+    case osgGA::GUIEventAdapter::LEAVE:
+        if (mouseWarped)
+            return true;
+        if (mouseLeaveHandler)
+            (*mouseLeaveHandler)(&ea);
+        return true;
     case osgGA::GUIEventAdapter::RESIZE:
         SG_LOG(SG_VIEW, SG_DEBUG, "FGEventHandler::handle: RESIZE event " << ea.getWindowHeight() << " x " << ea.getWindowWidth() << ", resizable: " << resizable);
         if (!isMainWindow(ea, us)) {
