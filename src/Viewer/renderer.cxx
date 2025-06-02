@@ -694,7 +694,18 @@ FGRenderer::PickList FGRenderer::pick(const osg::Vec2& windowPos)
     // succeeds and returns +ve, or highlighting is disabled and it returns -1.
     auto highlight = globals->get_subsystem<Highlight>();
     int highlight_num_props = 0;
-    
+
+    // Treat first physical object as hit, even without a pick callback
+    if (!intersections.empty()) {
+        auto hit = intersections.begin();
+
+        SGSceneryPick sceneryPick;
+        sceneryPick.info.local = toSG(hit->getLocalIntersectPoint());
+        sceneryPick.info.wgs84 = toSG(hit->getWorldIntersectPoint());
+        sceneryPick.callback = nullptr;
+        result.push_back(sceneryPick);
+    }
+
     for (const auto& hit : intersections) {
         const osg::NodePath& np = hit.nodePath;
         osg::NodePath::const_reverse_iterator npi;

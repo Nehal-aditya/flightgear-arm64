@@ -65,6 +65,8 @@ void ActivePickCallbacks::init(int button, const osgGA::GUIEventAdapter* ea)
     }
 
     for (const SGSceneryPick& pick : pickList) {
+        if (!pick.callback)
+            continue;
         if (pick.callback->buttonPressed(button, *ea, pick.info)) {
             (*this)[button].push_back(pick.callback);
             return;
@@ -209,6 +211,9 @@ public:
         SGSceneryPicks pickList = globals->get_renderer()->pick(windowPos);
 
         for (const SGSceneryPick& pick : pickList) {
+            if (!pick.callback)
+                continue;
+
             bool done = pick.callback->hover(windowPos, pick.info);
             std::string curName(pick.callback->getCursor());
             if (!curName.empty()) {
@@ -231,7 +236,7 @@ public:
         // Check if any pick from the previous iteration has disappeared. If so
         // notify the callback that the mouse has left its element.
         for (const SGSceneryPick& pick : _previous_picks) {
-            if (!getPick(pickList, pick.callback))
+            if (pick.callback && !getPick(pickList, pick.callback))
                 pick.callback->mouseLeave(windowPos);
         }
         _previous_picks = pickList;
