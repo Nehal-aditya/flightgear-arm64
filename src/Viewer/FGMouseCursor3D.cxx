@@ -70,7 +70,7 @@ FGMouseCursor3D::FGMouseCursor3D()
     setNodeMask(~SG_NODEMASK_PICK_BIT & ~SG_NODEMASK_TERRAIN_BIT);
 }
 
-void FGMouseCursor3D::setTargetGlobal(const SGVec3d& target)
+void FGMouseCursor3D::setTargetGlobal(const SGVec3d& target, bool commit)
 {
     // We need the current view
     auto* view_mgr = globals->get_subsystem<FGViewMgr>();
@@ -90,6 +90,10 @@ void FGMouseCursor3D::setTargetGlobal(const SGVec3d& target)
     SGVec3d targetAircraft = aircraftOrient.transform(target - SGVec3d::fromGeod(aircraftPosition));
     mat.setTrans(toOsg(targetAircraft));
 
+    // Commit cursor position
+    if (commit)
+        _targetAircraft = targetAircraft;
+
     // Match the orientation to the view
     mat.setRotate(toOsg(inverse(aircraftOrient) * view->getViewOrientation()));
 
@@ -98,9 +102,77 @@ void FGMouseCursor3D::setTargetGlobal(const SGVec3d& target)
     mat.preMultScale(osg::Vec3d(scale, scale, scale));
     setMatrix(mat);
 
+    // Clear any pending recenter
+    _recenterPending = false;
+
     // Add cursor to scene graph under aircraft
     if (!getNumParents())
         aircraft->add(this);
+}
+
+FGRenderer::PickList FGMouseCursor3D::update(bool forcePick)
+{
+    FGRenderer::PickList pickList;
+    // We need the current view
+    auto* view_mgr = globals->get_subsystem<FGViewMgr>();
+    if (!view_mgr)
+        return pickList;
+    auto* view = view_mgr->get_current_view();
+    if (!view)
+        return pickList;
+
+    bool visible = (_curModelId >= 0);
+    bool motion = (_motion2d != SGVec2d(0.0, 0.0));
+    // Should we pick to find the latest depth to the target?
+    if (visible || motion || forcePick) {
+        // Get aircraft pose
+        auto* aircraft = globals->get_subsystem<FGAircraftModel>()->get3DModel();
+        auto aircraftPosition = aircraft->getPosition();
+        SGQuatd aircraftOrient = aircraft->getGlobalOrientation();
+
+        // Transform target from aircraft space back into global space
+        SGVec3d targetGlobal = SGVec3d::fromGeod(aircraftPosition) + aircraftOrient.backTransform(_targetAircraft);
+
+        // Transform target into view space
+        SGVec3d viewPosition = view->getViewPosition();
+        SGVec3d vecGlobal = targetGlobal - viewPosition;
+        if (motion || _recenterPending) {
+            SGQuatd viewOrientation = view->getViewOrientation();
+            SGVec3d targetView = viewOrientation.transform(vecGlobal);
+
+            if (_recenterPending) {
+                // Recenter the target in view space
+                targetView = SGVec3d(0.0, 0.0, -1.0);
+                _motion2d = SGVec2d(0.0, 0.0);
+            } else if (motion) {
+                // Rotate in view space based on 2D mouse motion
+                // FIXME adaptive to DPI of screen?
+                const double pixelAngle = SGMiscd::deg2rad(0.05);
+                auto motionRotation = SGQuatd::fromEulerRad(0.0,
+                                                            pixelAngle * _motion2d.x(),
+                                                            -pixelAngle * _motion2d.y());
+                targetView = motionRotation.transform(targetView);
+                _motion2d = SGVec2d(0.0, 0.0);
+            }
+
+            // Transform altered target back from view space into global space
+            vecGlobal = viewOrientation.backTransform(targetView);
+        }
+
+        // Pick scene using the latest target position
+        // FIXME configurable reach
+        const double reach = 100.0;
+        targetGlobal = viewPosition + normalize(vecGlobal) * reach;
+        pickList = globals->get_renderer()->pick(toOsg(viewPosition), toOsg(targetGlobal));
+        if (!pickList.empty())
+            targetGlobal = pickList.front().info.wgs84;
+
+        // Update the cursor position, and update target if intentionally moved
+        bool commit = motion || forcePick || _recenterPending;
+        setTargetGlobal(targetGlobal, commit);
+    }
+
+    return pickList;
 }
 
 void FGMouseCursor3D::updateModel()

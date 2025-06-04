@@ -46,21 +46,31 @@ class ActivePickCallbacks : public std::map<int, SGPickCallbackList>
 {
 public:
     void update(double dt, unsigned int keyModState);
-    void init(int button, const osgGA::GUIEventAdapter* ea);
+    void init(int button, const osgGA::GUIEventAdapter* ea,
+              flightgear::FGMouseCursor3D* cursor3D = nullptr);
 };
 
 
-void ActivePickCallbacks::init(int button, const osgGA::GUIEventAdapter* ea)
+void ActivePickCallbacks::init(int button, const osgGA::GUIEventAdapter* ea,
+                               flightgear::FGMouseCursor3D* cursor3D)
 {
-    osg::Vec2d windowPos;
-    flightgear::eventToWindowCoords(ea, windowPos.x(), windowPos.y());
+    SGSceneryPicks pickList;
+    if (cursor3D) {
+        // 3D pass through
+        cursor3D->showCursor();
+        pickList = cursor3D->pick();
+    } else {
+        osg::Vec2d windowPos;
+        flightgear::eventToWindowCoords(ea, windowPos.x(), windowPos.y());
 
-    // Get the list of hit callbacks. Take the first callback that
-    // accepts the mouse button press and ignore the rest of them
-    // That is they get sorted by distance and by scenegraph depth.
-    // The nearest one is the first one and the deepest
-    // (the most specialized one in the scenegraph) is the first.
-    SGSceneryPicks pickList = globals->get_renderer()->pick(windowPos);
+        // Get the list of hit callbacks. Take the first callback that
+        // accepts the mouse button press and ignore the rest of them
+        // That is they get sorted by distance and by scenegraph depth.
+        // The nearest one is the first one and the deepest
+        // (the most specialized one in the scenegraph) is the first.
+        pickList = globals->get_renderer()->pick(windowPos);
+    }
+
     if (pickList.empty()) {
         return;
     }
@@ -98,6 +108,7 @@ struct mouse_mode {
     FGMouseCursor::Cursor cursor;
     bool constrained;
     bool pass_through;
+    bool _passThrough3D = false;
     std::unique_ptr<FGButton[]> buttons;
     SGBindingList x_bindings[KEYMOD_MAX];
     SGBindingList y_bindings[KEYMOD_MAX];
@@ -160,6 +171,8 @@ public:
         fgGetNode("/sim/mouse/tooltip-commands-registered", true)->addChangeListener(this, true);
         fgGetNode("/sim/mouse/drag-sensitivity", true)->addChangeListener(this, true);
         fgGetNode("/sim/mouse/invert-mouse-wheel", true)->addChangeListener(this, true);
+        fgGetNode("/sim/vr/cursors/mouse[0]/dx", true)->addChangeListener(this, true);
+        fgGetNode("/sim/vr/cursors/mouse[0]/dy", true)->addChangeListener(this, true);
     }
 
     bool areTooltipsEnabled() const
@@ -205,7 +218,7 @@ public:
         hoverPos = windowPos;
     }
 
-    void doHoverPick(const osg::Vec2d& windowPos)
+    void doHoverPick(const osg::Vec2d& windowPos, bool passThrough3D)
     {
         FGMouseCursor::Cursor cur = FGMouseCursor::CURSOR_ARROW;
         bool explicitCursor = false;
@@ -214,14 +227,20 @@ public:
         const auto& m = mice[0];
 
         SGPickCallback::Priority priority = SGPickCallback::PriorityScenery;
-        SGSceneryPicks pickList = globals->get_renderer()->pick(windowPos);
-
-        // Make the 3D cursor target the closest surface under the 2D mouse.
-        if (!pickList.empty() &&
-            m.modes[m.current_mode].cursor3DCondition &&
-            m.modes[m.current_mode].cursor3DCondition->test()) {
-            m.cursor3D->setTargetGlobal(pickList.front().info.wgs84);
+        SGSceneryPicks pickList;
+        if (passThrough3D) {
             m.cursor3D->showCursor();
+            pickList = m.cursor3D->pick();
+        } else {
+            pickList = globals->get_renderer()->pick(windowPos);
+
+            // Make the 3D cursor target the closest surface under the 2D mouse.
+            if (!pickList.empty() &&
+                m.modes[m.current_mode].cursor3DCondition &&
+                m.modes[m.current_mode].cursor3DCondition->test()) {
+                m.cursor3D->setTargetGlobal(pickList.front().info.wgs84);
+                m.cursor3D->showCursor();
+            }
         }
 
         for (const SGSceneryPick& pick : pickList) {
@@ -324,6 +343,10 @@ public:
             _tooltipsEnabled = node->getBoolValue();
         } else if (node->getNameString() == "tooltip-commands-registered") {
             _tooltipsCommandsRegistered = node->getBoolValue();
+        } else if (node->getNameString() == "dx") {
+            cursor3DMotion.x() += node->getDoubleValue();
+        } else if (node->getNameString() == "dy") {
+            cursor3DMotion.y() += node->getDoubleValue();
         }
     }
 
@@ -350,6 +373,7 @@ public:
     bool hoverPickScheduled;
     osg::Vec2d hoverPos;
     bool leaveScheduled = false;
+    SGVec2d cursor3DMotion = SGVec2d(0.0, 0.0);
 };
 
 
@@ -429,6 +453,7 @@ void FGMouseInput::init()
             // Read other properties for this mode
             m.modes[j].constrained = mode_node->getBoolValue("constrained", false);
             m.modes[j].pass_through = mode_node->getBoolValue("pass-through", false);
+            m.modes[j]._passThrough3D = mode_node->getBoolValue("vr-cursor/pass-through", false);
 
             // Read the 3D mouse cursor condition
             SGPropertyNode* cursor3DCondition = mode_node->getNode("vr-cursor/condition");
@@ -518,7 +543,12 @@ void FGMouseInput::update(double dt)
                 m.cursor3D->showCursor();
             } else {
                 m.cursor3D->hideCursorUntilMotion();
+                // discard any pending motion
+                d->cursor3DMotion = SGVec2d(0.0, 0.0);
             }
+
+            // Hide desktop mouse cursor while in 360 mouse mode
+            FGMouseCursor::instance()->setCursorVisible(!m.modes[mode]._passThrough3D);
         } else {
             SG_LOG(SG_INPUT, SG_WARN, "Mouse mode " << mode << " out of range");
             FGMouseCursor::instance()->setCursor(FGMouseCursor::CURSOR_ARROW);
@@ -526,7 +556,7 @@ void FGMouseInput::update(double dt)
     }
 
     if (modeValid && m.modes[mode].pass_through && d->hoverPickScheduled) {
-        d->doHoverPick(d->hoverPos);
+        d->doHoverPick(d->hoverPos, m.modes[mode]._passThrough3D);
         d->hoverPickScheduled = false;
     }
     // Leave *after* hover pick, there's no point hiding the cursor only to make
@@ -543,6 +573,14 @@ void FGMouseInput::update(double dt)
         !m.modes[mode].cursor3DCondition->test()) {
         m.cursor3D->hideCursorUntilMotion();
     }
+
+    // Handle 360 mouse motion
+    if (d->cursor3DMotion != SGVec2d(0.0, 0.0)) {
+        m.cursor3D->showCursor();
+        m.cursor3D->add2dMotion(d->cursor3DMotion);
+        d->cursor3DMotion = SGVec2d(0.0, 0.0);
+    }
+    m.cursor3D->update();
 
     if (!d->tooltipTimeoutDone &&
         d->areTooltipsEnabled() &&
@@ -645,7 +683,8 @@ void FGMouseInput::doMouseClick(int b, int updown, int x, int y, bool mainWindow
         // compute a scenegraph intersection point corresponding to the mouse
         // click
         if (updown == MOUSE_BUTTON_DOWN) {
-            d->activePickCallbacks.init(b, ea);
+            d->activePickCallbacks.init(b, ea,
+                                        mode._passThrough3D ? m.cursor3D : nullptr);
 
             if (d->clickTriggersTooltip && d->areTooltipsEnabled()) {
                 SGPropertyNode_ptr args(new SGPropertyNode);
@@ -655,7 +694,7 @@ void FGMouseInput::doMouseClick(int b, int updown, int x, int y, bool mainWindow
             }
         } else {
             // do a hover pick now, to fix up cursor
-            d->doHoverPick(windowPos);
+            d->doHoverPick(windowPos, mode._passThrough3D);
         } // mouse button was released
     } // of pass-through mode
 
