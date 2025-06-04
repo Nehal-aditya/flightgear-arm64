@@ -39,6 +39,7 @@ public:
 
     void doMouseClick (int b, int updown, int x, int y, bool mainWindow, const osgGA::GUIEventAdapter* ea);
     void doMouseMotion (int x, int y, const osgGA::GUIEventAdapter*);
+    void doMouseLeave(const osgGA::GUIEventAdapter*);
 
     /**
      * @brief isRightDragToLookEnabled - test if we're in right-mouse-drag

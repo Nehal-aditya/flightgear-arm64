@@ -24,6 +24,7 @@
 #include <Main/fg_props.hxx>
 #include <Main/globals.hxx>
 #include <Viewer/FGEventHandler.hxx>
+#include <Viewer/FGMouseCursor3D.hxx>
 #include <Viewer/renderer.hxx>
 #include <Viewer/sview.hxx>
 
@@ -100,6 +101,7 @@ struct mouse_mode {
     std::unique_ptr<FGButton[]> buttons;
     SGBindingList x_bindings[KEYMOD_MAX];
     SGBindingList y_bindings[KEYMOD_MAX];
+    SGConditionRef cursor3DCondition;
 };
 
 
@@ -117,6 +119,8 @@ struct mouse {
 
     SGTimeStamp timeSinceLastMove;
     std::unique_ptr<mouse_mode[]> modes;
+
+    osg::ref_ptr<flightgear::FGMouseCursor3D> cursor3D;
 };
 
 static const SGSceneryPick*
@@ -207,8 +211,18 @@ public:
         bool explicitCursor = false;
         bool didPick = false;
 
+        const auto& m = mice[0];
+
         SGPickCallback::Priority priority = SGPickCallback::PriorityScenery;
         SGSceneryPicks pickList = globals->get_renderer()->pick(windowPos);
+
+        // Make the 3D cursor target the closest surface under the 2D mouse.
+        if (!pickList.empty() &&
+            m.modes[m.current_mode].cursor3DCondition &&
+            m.modes[m.current_mode].cursor3DCondition->test()) {
+            m.cursor3D->setTargetGlobal(pickList.front().info.wgs84);
+            m.cursor3D->showCursor();
+        }
 
         for (const SGSceneryPick& pick : pickList) {
             if (!pick.callback)
@@ -335,6 +349,7 @@ public:
 
     bool hoverPickScheduled;
     osg::Vec2d hoverPos;
+    bool leaveScheduled = false;
 };
 
 
@@ -354,6 +369,12 @@ static void mouseMotionHandler(int x, int y, const osgGA::GUIEventAdapter* ea)
 {
     if (global_mouseInput != 0)
         global_mouseInput->doMouseMotion(x, y, ea);
+}
+
+static void mouseLeaveHandler(const osgGA::GUIEventAdapter* ea)
+{
+    if (global_mouseInput)
+        global_mouseInput->doMouseLeave(ea);
 }
 
 FGMouseInput::FGMouseInput() = default;
@@ -409,6 +430,12 @@ void FGMouseInput::init()
             m.modes[j].constrained = mode_node->getBoolValue("constrained", false);
             m.modes[j].pass_through = mode_node->getBoolValue("pass-through", false);
 
+            // Read the 3D mouse cursor condition
+            SGPropertyNode* cursor3DCondition = mode_node->getNode("vr-cursor/condition");
+            if (cursor3DCondition)
+                m.modes[j].cursor3DCondition = sgReadCondition(globals->get_props(),
+                                                               cursor3DCondition);
+
             // Read the button bindings for this mode
             m.modes[j].buttons.reset(new FGButton[MAX_MOUSE_BUTTONS]);
             for (k = 0; k < MAX_MOUSE_BUTTONS; k++) {
@@ -441,10 +468,13 @@ void FGMouseInput::init()
                 read_bindings(mode_node->getChild("y-axis-ctrl-shift"), m.modes[j].y_bindings, KEYMOD_CTRL | KEYMOD_SHIFT, module);
             }
         } // of modes iteration
+
+        m.cursor3D = new flightgear::FGMouseCursor3D;
     }
 
     fgRegisterMouseClickHandler(mouseClickHandler);
     fgRegisterMouseMotionHandler(mouseMotionHandler);
+    fgRegisterMouseLeaveHandler(mouseLeaveHandler);
     global_mouseInput = this;
 }
 
@@ -472,14 +502,23 @@ void FGMouseInput::update(double dt)
 
     mouse& m = d->mice[0];
     int mode = m.mode_node->getIntValue();
+    const bool modeValid = (mode >= 0 && mode < m.nModes);
     if (mode != m.current_mode) {
         // current mode has changed
         m.current_mode = mode;
         m.timeSinceLastMove.stamp();
 
-        if (mode >= 0 && mode < m.nModes) {
+        if (modeValid) {
             FGMouseCursor::instance()->setCursor(m.modes[mode].cursor);
             d->centerMouseCursor(m);
+
+            // Show or hide 3D cursor on mode change depending on condition
+            if (m.modes[mode].cursor3DCondition &&
+                m.modes[mode].cursor3DCondition->test()) {
+                m.cursor3D->showCursor();
+            } else {
+                m.cursor3D->hideCursorUntilMotion();
+            }
         } else {
             SG_LOG(SG_INPUT, SG_WARN, "Mouse mode " << mode << " out of range");
             FGMouseCursor::instance()->setCursor(FGMouseCursor::CURSOR_ARROW);
@@ -489,6 +528,20 @@ void FGMouseInput::update(double dt)
     if ((mode == 0) && d->hoverPickScheduled) {
         d->doHoverPick(d->hoverPos);
         d->hoverPickScheduled = false;
+    }
+    // Leave *after* hover pick, there's no point hiding the cursor only to make
+    // it visible again.
+    if (d->leaveScheduled) {
+        // Hide 3D cursor if mouse leaves window
+        m.cursor3D->hideCursorUntilMotion();
+        d->leaveScheduled = false;
+    }
+
+    m.cursor3D->setCursor(FGMouseCursor::instance()->getCursor());
+    // Hide 3D cursor if condition no longer passes
+    if (modeValid && m.modes[mode].cursor3DCondition &&
+        !m.modes[mode].cursor3DCondition->test()) {
+        m.cursor3D->hideCursorUntilMotion();
     }
 
     if (!d->tooltipTimeoutDone &&
@@ -502,6 +555,7 @@ void FGMouseInput::update(double dt)
     if (d->hideCursor) {
         if (m.timeSinceLastMove.elapsedMSec() > d->cursorTimeoutMsec) {
             FGMouseCursor::instance()->hideCursorUntilMouseMove();
+            m.cursor3D->hideCursorUntilMotion();
             m.timeSinceLastMove.stamp();
         }
     }
@@ -700,12 +754,24 @@ void FGMouseInput::doMouseMotion(int x, int y, const osgGA::GUIEventAdapter* ea)
 
     if (!ea->getHandled()) {
         processMotion(x, y, ea);
+    } else {
+        // Hide 3D cursor if mouse over GUI
+        m.cursor3D->hideCursorUntilMotion();
     }
 
     m.x = x;
     m.y = y;
     d->mouseXNode->setIntValue(x);
     d->mouseYNode->setIntValue(y);
+}
+
+void FGMouseInput::doMouseLeave(const osgGA::GUIEventAdapter* ea)
+{
+    if (!d) {
+        return;
+    }
+
+    d->leaveScheduled = true;
 }
 
 bool FGMouseInput::isRightDragToLookEnabled() const
