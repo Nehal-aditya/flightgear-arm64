@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?FlightGear-tr context="dialog-whatever"?>
+
+<PropertyList>
+  <name>sample-aircraft-dialog</name>
+  <layout>vbox</layout>
+
+  <text>
+    <label translate="y">
+      sentence                  <!-- sentence:0 would do the same -->
+      <?FlightGear-tr text="Make sure the Prince doesn't leave this room until I come and get him."?>
+    </label>
+  </text>
+
+  <!-- The indices may be out-of-order in the XML markup, no problem. -->
+  <text>
+    <label translate="y">
+      sentence:2
+      <?FlightGear-tr text="No, no. Until I come and get him."?>
+    </label>
+  </text>
+
+  <text>
+    <label translate="y">
+      sentence:1
+      <?FlightGear-tr text="Not to leave the room even if you come and get him."?>
+    </label>
+  </text>
+</PropertyList>

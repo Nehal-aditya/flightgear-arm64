@@ -3,10 +3,9 @@
   <meta>
     <file-type>FlightGear default translation file</file-type>
     <format-version>1</format-version>
-    <description>Default translation file for automated tests</description>
+    <description>Automatically extracted strings with context 'dialog-whatever'</description>
     <language-description>Engineering English</language-description>
   </meta>
-
   <strings>
     <sentence>Make sure the Prince doesn't leave this room until I come and get him.</sentence>
     <sentence>Not to leave the room even if you come and get him.</sentence>
