@@ -62,90 +62,20 @@ using flightgear::SceneryPager;
 #include <simgear/io/torrent.hxx>
 
 static bool s_torrentRuntimeEnabled = false;
-static std::mutex s_torrentMutex;
 static std::vector<std::string> s_torrentScenerySuffixes;
-
-
-struct torrentStatus
-{
-    std::shared_ptr<libtorrent::torrent_info> torrent_info;
-    bool finished = false;
-    bool ok = false;    // Only valid if .finished is true.
-};
-
-static std::map<std::string, torrentStatus>  s_torrentDirToStatus;
-
-static std::ostream& operator<<(std::ostream& out, const torrentStatus& status)
-{
-    return out << "torrentStatus {"
-            << " finished=" << status.finished
-            << " ok=" << status.ok
-            << "}";
-}
-
-static void torrentScheduleTileCallback(const std::string& dir, bool ok)
-{
-    SG_LOG(SG_TERRAIN, SG_ALERT, "torrentScheduleTileCallback(): dir=" << dir << " ok=" << ok);
-    std::unique_lock    lock(s_torrentMutex);
-    
-    assert(!s_torrentDirToStatus[dir].finished);
-    
-    s_torrentDirToStatus[dir].torrent_info = nullptr;
-    s_torrentDirToStatus[dir].finished = true;
-    s_torrentDirToStatus[dir].ok = ok;
-}
 
 static bool torrentIsSyncing(const std::string& path)
 {
-    SG_LOG( SG_TERRAIN, SG_DEBUG, "torrentIsSyncing(): path=" << path);
-    std::unique_lock    lock(s_torrentMutex);
-    // Need to look at active torrents and see whether they include <path>
-    // (which will be a unique leafname, for example `2941832.stg`).
-    for (auto it: s_torrentDirToStatus)
-    {
-        SG_LOG( SG_TERRAIN, SG_DEBUG, "torrentIsSyncing(): it.first=" << it.first);
-        const torrentStatus& status = it.second;
-        if (status.finished)
-        {
-            continue;
-        }
-        if (status.torrent_info)
-        {
-            const libtorrent::file_storage& file_storage = status.torrent_info->files();
-            for (int i=0; i<file_storage.num_files(); ++i)
-            {
-                SG_LOG( SG_TERRAIN, SG_DEBUG, "torrentIsSyncing():"
-                        "    file_storage.file_name(i)=" << file_storage.file_name(i)
-                        );
-                if (file_storage.file_name(i) == path)
-                {
-                    SG_LOG(SG_TERRAIN, SG_DEBUG, "torrentIsSyncing():"
-                            << " returning true"
-                            << " path=" << path
-                            );
-                    return true;
-                }
-            }
-        }
-        else
-        {
-            /* This could end up downloading <path>, we don't know yet. */
-            return true;
-        }
-    }
-    SG_LOG(SG_TERRAIN, SG_DEBUG, "torrentIsSyncing():"
-            << " returning false"
+    SG_LOG( SG_TERRAIN, SG_BULK, "torrentIsSyncing(): path=" << path);
+    simgear::Torrent* torrent = globals->get_subsystem<simgear::Torrent>();
+    simgear::Torrent::status status = torrent->get_status_stg_leafname(path);
+    SG_LOG( SG_TERRAIN, SG_DEBUG, "torrentIsSyncing():"
             << " path=" << path
+            //<< " status=" << status
             );
-    return false;
-}
-
-static void torrentInfoCallback(const std::string& dir, std::shared_ptr<libtorrent::torrent_info> torrent_info)
-{
-    std::unique_lock    lock(s_torrentMutex);
-    SG_LOG(SG_TERRAIN, SG_DEBUG, "torrentInfoCallback():" << " dir=" << dir);
-    assert(!s_torrentDirToStatus[dir].torrent_info);
-    s_torrentDirToStatus[dir].torrent_info = torrent_info;
+    bool ret = (status == simgear::Torrent::status::IN_PROGRESS);
+    SG_LOG( SG_TERRAIN, SG_DEBUG, "torrentIsSyncing(): ret=" << ret);
+    return ret;
 }
 
 static void torrentScheduleTile(const SGBucket& bucket)
@@ -154,47 +84,22 @@ static void torrentScheduleTile(const SGBucket& bucket)
     SG_LOG( SG_TERRAIN, SG_DEBUG, "torrentScheduleTile(): basePath=" << basePath);
     assert(!s_torrentScenerySuffixes.empty());
     std::string url_base = "http://us1mirror.flightgear.org/terrasync/ws2";
+    simgear::Torrent* torrent = globals->get_subsystem<simgear::Torrent>();
+    SGPath scenery_dir = fgGetString("/sim/terrasync/scenery-dir");
+    /* Create a torrent for each item in <s_torrentScenerySuffixes>. */
     for (const std::string& scenerySuffix : s_torrentScenerySuffixes)
     {
         std::string dir = scenerySuffix + "/" + basePath;
-        size_t p = dir.rfind("/");
-        assert(p != std::string::npos);
-        std::string dir_parent = dir.substr(0, p);
-        std::string torrent_url = url_base + "/" + dir + ".torrent";
-        SG_LOG( SG_TERRAIN, SG_DEBUG, "torrentScheduleTile():"
-                << " basePath=" << basePath
-                << " scenerySuffix=" << scenerySuffix
-                << " torrent_url=" << torrent_url
-                );
-        std::unique_lock    lock(s_torrentMutex);
-        auto it = s_torrentDirToStatus.find(dir);
-        if (it == s_torrentDirToStatus.end())
+        SGPath torrent_path = scenery_dir / (dir + ".torrent");
+        simgear::Torrent::status status = torrent->get_status_torrent_path(torrent_path);
+        if (status == simgear::Torrent::status::NONE)
         {
-            s_torrentDirToStatus[dir] = torrentStatus();
-            simgear::Torrent* torrent = globals->get_subsystem<simgear::Torrent>();
-            SGPath scenery_dir = fgGetString("/sim/terrasync/scenery-dir");
-            SG_LOG( SG_TERRAIN, SG_DEBUG, "/sim/terrasync/scenery-dir=" << scenery_dir);
-            assert(scenery_dir.str() != "");
-            /* Need to temporarily drop lock in case add_torrent_url() calls
-            our callback before returning. */
-            lock.unlock();
-            SGPath torrent_path = scenery_dir / (dir + ".torrent");
+            std::string torrent_url = url_base + "/" + dir + ".torrent";
+            size_t p = dir.rfind("/");
+            assert(p != std::string::npos);
+            std::string dir_parent = dir.substr(0, p);
             SGPath out_path = scenery_dir / dir_parent;
-            torrent->add_torrent_url(
-                    torrent_url,
-                    torrent_path,
-                    out_path,
-                    std::bind(torrentScheduleTileCallback, dir, std::placeholders::_1),
-                    std::bind(torrentInfoCallback, dir, std::placeholders::_1)
-                    );
-            lock.lock();
-        }
-        else
-        {
-            SG_LOG( SG_TERRAIN, SG_DEBUG, "torrentScheduleTile(): not downloading because already trying/tried:"
-                    << " dir=" << dir
-                    << " it->second=" << it->second
-                    );
+            torrent->add_torrent_url(torrent_url, torrent_path, out_path);
         }
     }
     
@@ -804,7 +709,7 @@ bool FGTileMgr::schedule_scenery(const SGGeod& position, double range_m, double 
     available = sched_tile( bucket, 1.0, false, duration);
 
     if ((!available)&&(duration==0.0)) {
-        SG_LOG( SG_TERRAIN, SG_DEBUG, "schedule_scenery: Scheduling tile at bucket:" << bucket << " return false" );
+        SG_LOG( SG_TERRAIN, SG_BULK, "schedule_scenery: Scheduling tile at bucket:" << bucket << " return false" );
         return false;
     }
 
