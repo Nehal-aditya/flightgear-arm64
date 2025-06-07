@@ -854,8 +854,7 @@ computeCameraIntersection(const CameraGroup *cgroup,
 
     const osg::Viewport *viewport = cinfo->compositor->getViewport();
     SGRect<double> viewportRect(viewport->x(), viewport->y(),
-                                viewport->x() + viewport->width() - 1.0,
-                                viewport->y() + viewport->height()- 1.0);
+                                viewport->width(), viewport->height());
     double epsilon = 0.5;
     if (!viewportRect.contains(windowPos.x(), windowPos.y(), epsilon))
         return false;
