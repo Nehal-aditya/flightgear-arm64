@@ -21,12 +21,12 @@ SettingControl {
             id: description
             enabled: root.enabled
             text: qsTr("Enter additional command-line arguments if any are required. " +
-                       "See <a href=\"https://wiki.flightgear.org/Command_line_options\">documentation</a> " +
+                       "See <a href=\"%1\">documentation</a> " +
                        "for possible arguments. " +
                        "<br>" +
                        "<b>Warning:</b> values entered here always override other settings; see the " +
                        "<a href=\"#view-command-line\">final set of arguments</a> that will be used."
-                       );
+                      ).arg("https://wiki.flightgear.org/Command_line_options");
 
             onLinkActivated: {
                 if (link == "#view-command-line") {
