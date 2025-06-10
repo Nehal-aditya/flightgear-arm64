@@ -158,6 +158,21 @@ private:
     // return key code number for keystring
     int getKeyCode(const char* keystring);
 
+    /**
+     * @brief Get translation from a node in the dialog property tree.
+     *
+     * @param nodeRelativePath  relative path to a node in the dialog
+     *                          property tree
+     * @return A translation corresponding to the ID in the node value
+     *
+     * If the node doesn't exist, return the empty string. If the node exists
+     * and has the `SGPropertyNode::TRANSLATE` attribute, return the
+     * translation whose ID is given by the stripped node string value in the
+     * dialog translation context. If the node exists and doesn't have the
+     * `SGPropertyNode::TRANSLATE` attribute, return the node string value.
+     */
+    std::string configTrValue(const std::string& nodeRelativePath) const;
+
     // The source xml tree, so that we can pass data back, such as the
     // last position.
     SGPropertyNode_ptr _props;

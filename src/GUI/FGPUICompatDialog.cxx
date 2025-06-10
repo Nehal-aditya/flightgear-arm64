@@ -11,6 +11,7 @@
 #include "FGPUICompatDialog.hxx"
 
 #include <simgear/debug/BufferedLogCallback.hxx>
+#include <simgear/misc/strutils.hxx>
 #include <simgear/nasal/cppbind/NasalObject.hxx>
 #include <simgear/props/props_io.hxx>
 #include <simgear/scene/tsync/terrasync.hxx>
@@ -27,6 +28,7 @@
 #include "new_gui.hxx"
 
 using namespace std::string_literals;
+namespace strutils = simgear::strutils;
 
 ////////////////////////////////////////////////////////////
 
@@ -120,6 +122,9 @@ FGPUICompatDialog::FGPUICompatDialog(SGPropertyNode* props,
 {
     _module = "__dlg:" + props->getStringValue("name", "[unnamed]");
     _name = props->getStringValue("name", "[unnamed]");
+
+    const std::string t = configTrValue("title");
+    _title = t.empty() ? _name : t;
 }
 
 FGPUICompatDialog::~FGPUICompatDialog()
@@ -335,14 +340,31 @@ void FGPUICompatDialog::requestClose()
     gui->closeDialog(_name);
 }
 
+// Quite similar to XMLObjectBase._configTrValue() in Nasal/gui/XMLDialog.nas
+std::string FGPUICompatDialog::configTrValue(const std::string& nodePath)
+    const
+{
+    const auto node = _props->getNode(nodePath);
+
+    if (!node) {
+        return {};
+    }
+
+    if (!node->getAttribute(SGPropertyNode::TRANSLATE)) {
+        SG_LOG(SG_GUI, SG_DEV_WARN, "PUICompatDialog: config property '" <<
+               nodePath << "' of dialog '" << _name <<
+               "' is not marked for translation (at " << node->getLocation()
+               << ")");
+        return node->getStringValue();
+    }
+
+    const auto resource = "dialog-"s + _name;
+    const auto translationId = strutils::strip(node->getStringValue());
+    return FGTranslate(translationDomain()).get(resource, translationId);
+}
+
 std::string FGPUICompatDialog::title() const
 {
-    if (_title.empty())
-        return _name;
-
-    const auto res = "dialog-"s + _name;
-    return FGTranslate(translationDomain()).get(res, _title);
-
     return _title;
 }
 
