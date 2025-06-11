@@ -26,6 +26,8 @@
 #define _FG_INIT_HXX
 
 #include <string>
+#include <optional>
+
 #include <simgear/misc/sg_path.hxx>
 
 // forward decls
