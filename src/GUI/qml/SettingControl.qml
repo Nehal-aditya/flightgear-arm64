@@ -33,13 +33,10 @@ Item {
     }
 
     Connections {
-        // only invoke apply if 'option' is set, otherwise we assume
-        // there is specialised apply code
-        target: root.option != "" ? _config : null
-
-        // this requires Qt 5.7, so we simulate it
-       // enabled: root.option != ""
-
+        target:  _config
+    // only invoke apply if 'option' is set, otherwise we assume
+    // there is specialised apply code
+        enabled: root.option != ""
         function onCollect() { apply(); }
     }
 

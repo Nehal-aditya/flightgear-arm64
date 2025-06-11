@@ -8,6 +8,11 @@ Item {
     implicitWidth: checkBox.width + label.width + 16
     implicitHeight: label.height
 
+    function setChecked(b)
+    {
+        checked = b;
+    }
+
     Rectangle {
         id: checkBox
         width: 18
@@ -41,7 +46,7 @@ Item {
         id: mouseArea
         hoverEnabled: true
         onClicked: {
-            checked = !checked
+            setChecked(!checked)
         }
         cursorShape: Qt.PointingHandCursor
     }

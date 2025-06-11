@@ -20,7 +20,8 @@ FocusScope {
     readonly property int xOffsetForEditFrame: editFrame.x
 
     implicitHeight: editFrame.height
-    implicitWidth: suggestedWidth + label.implicitWidth + (Style.margin * 3)
+    implicitWidth: (metrics.width == 0) ? label.implicitWidth + Style.strutSize * 4 
+                                        : metrics.text + label.implicitWidth + (Style.margin * 3)
 
     Keys.onReturnPressed: {
         if (activeFocus && commitOnReturn) {

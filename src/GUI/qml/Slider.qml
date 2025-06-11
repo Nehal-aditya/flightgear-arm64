@@ -14,7 +14,7 @@ Item {
     readonly property real __percentFull: value / (max - min)
 
     implicitHeight: labelText.height
-    implicitWidth: labelText.width * 2
+    implicitWidth: Style.strutSize * 5
 
     Text {
         id: labelText

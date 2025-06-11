@@ -4,7 +4,7 @@ import FlightGear 1.0
 SettingControl {
     id: root
 
-    implicitHeight: edit.height + Style.margin + description.height
+    implicitHeight: edit.implicitHeight + Style.margin + description.implicitHeight
 
     property alias placeholder: edit.placeholder
     property alias validation: edit.validator
