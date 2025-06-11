@@ -271,6 +271,9 @@ public:
      */
   SGPath actualDownloadDir() const;
 
+  /** @brief define custom location for downloads from external storage. */
+  void setCustomDownloadDir(const SGPath& p);
+
   /**
        * Convert string to bool for boolean options. When param cannot be recognized as bool then
        * the true is returned.

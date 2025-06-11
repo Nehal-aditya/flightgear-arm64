@@ -58,7 +58,7 @@
 
 using namespace std::chrono_literals;
 
-const quint32 static_basePackagePatchLevel = 1;
+const quint32 static_basePackagePatchLevel = 2;
 
 namespace {
     /**
@@ -352,16 +352,8 @@ SetupRootDialog::SetupRootDialog(PromptState prompt) :
 
     auto options = flightgear::Options::sharedInstance();
     if (options->isOptionSet("download-dir")) {
-        // if downlaod dir is set on the command line, don't allow changing it here
+        // if download dir is set on the command line, don't allow changing it here
         m_ui->changeDownloadLocation->setEnabled(false);
-    } else {
-        // ensure downlad-dir is set now, since we use it for our
-        // auto download/update
-        auto settings = flightgear::getQSettings();
-        QString downloadDir = settings.value("download-dir").toString();
-        if (!downloadDir.isEmpty()) {
-            options->setOption("download-dir", downloadDir.toStdString());
-        }
     }
 
     m_ui->versionLabel->setText(tr("<h1>FlightGear %1</h1>").arg(FLIGHTGEAR_VERSION));
@@ -412,7 +404,14 @@ flightgear::SetupRootResult SetupRootDialog::restoreUserSelectedRoot(SGPath& sgp
 {
     auto settings = flightgear::getQSettings();
     QString path = settings.value(rootPathKey()).toString();
-	bool ask = flightgear::checkKeyboardModifiersForSettingFGRoot();
+    const bool ask = flightgear::checkKeyboardModifiersForSettingFGRoot();
+
+    QString downloadDir = settings.value("download-dir").toString();
+    if (!downloadDir.isEmpty()) {
+        auto options = flightgear::Options::sharedInstance();
+        options->setCustomDownloadDir(SGPath::fromUtf8(downloadDir.toStdString()));
+    }
+
     if (ask || (path == QStringLiteral("!ask"))) {
         bool ok = runDialog(ManualChoiceRequested);
         if (!ok) {
@@ -521,6 +520,8 @@ bool SetupRootDialog::validateVersion(QString path)
 
 bool SetupRootDialog::defaultRootAcceptable()
 {
+    return false;
+
     SGPath r = flightgear::Options::sharedInstance()->platformDefaultRoot();
     QString defaultRoot = QString::fromStdString(r.utf8Str());
     return validatePath(defaultRoot) && validateVersion(defaultRoot);
@@ -551,7 +552,7 @@ bool SetupRootDialog::downloadedDataExistsButStale()
     }
 
     // update needed if the on-disk base package version is *lower* than static_basePackagePatchLevel
-    return  simgear::strutils::compare_versions(minBasePackageVersion, ver) < 0;
+    return simgear::strutils::compare_versions(ver, minBasePackageVersion) < 0;
 }
 
 SetupRootDialog::~SetupRootDialog()

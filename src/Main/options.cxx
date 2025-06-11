@@ -2345,6 +2345,7 @@ public:
   OptionValueVec values;
   simgear::PathList configFiles;
   simgear::PathList propertyFiles;
+  SGPath customDownloadDir;
 };
 
 Options* Options::sharedInstance()
@@ -3015,12 +3016,23 @@ SGPath defaultDownloadDir()
 
 SGPath Options::actualDownloadDir() const
 {
+    // explicitly set download-dir on the command line always takes
+    // precedent
     SGPath downloadDir = SGPath::fromUtf8(valueForOption("download-dir"));
     if (!downloadDir.isNull()) {
         return downloadDir;
     }
 
+    if (!p->customDownloadDir.isNull()) {
+        return p->customDownloadDir;
+    }
+
     return defaultDownloadDir();
+}
+
+void Options::setCustomDownloadDir(const SGPath& path)
+{
+    p->customDownloadDir = path;
 }
 
 SGPath defaultTextureCacheDir()
@@ -3459,7 +3471,8 @@ SGPath Options::downloadedDataRoot() const
 
 SGPath Options::platformDefaultRoot() const
 {
-    return SGPath::fromUtf8(PKGLIBDIR);
+    return SGPath{};
+    //return SGPath::fromUtf8(PKGLIBDIR);
 }
 
 string_list Options::extractOptions() const
