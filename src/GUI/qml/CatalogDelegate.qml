@@ -57,9 +57,12 @@ Item {
                     id: enableCheckbox
                     checked: model.enabled
                     height: parent.height
-                    onCheckedChanged: {
-                        model.enabled = checked;
+
+                    function setChecked(b)
+                    {
+                        model.enabled = b;
                     }
+
                     // only allow the user to toggle enable/disable if
                     // the catalog is valid
                     visible: (model.status === CatalogListModel.Ok)

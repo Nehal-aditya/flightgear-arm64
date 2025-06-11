@@ -7,6 +7,8 @@
 #include <Main/globals.hxx>
 #include <Main/locale.hxx>
 
+using namespace std::string_literals;
+
 static SGPropertyNode_ptr loadXMLDefaults()
 {
     SGPropertyNode_ptr root(new SGPropertyNode);
@@ -112,7 +114,7 @@ WeatherScenariosModel::WeatherScenariosModel(QObject *pr) :
 
             // omit the 'live data' option, we have a distinct UI for that, we'll
             // pass --real-wxr option on launch
-            if (scenario->getStringValue("local-weather/tile-type") == std::string("live")) {
+            if (scenario->getStringValue("local-weather/tile-type") == "live"s) {
                 continue;
             }
 
