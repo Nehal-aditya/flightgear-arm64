@@ -192,8 +192,8 @@ FGLocale::findLocaleNode(const string& localeSpec)
     return nullptr;
 }
 
-// Select the language. When no language is given (nullptr),
-// a default is determined matching the system locale.
+// Select the language. When no language is given (empty string), a default
+// is determined matching the system locale.
 bool FGLocale::selectLanguage(const std::string& language)
 {
     bool result = true;

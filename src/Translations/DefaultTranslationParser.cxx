@@ -186,7 +186,7 @@ void DefaultTranslationParser::endElement(const char* name)
         // deal
         break;
     case State::READING_TRANSLATABLE_STRING:
-        _resource->addTranslationUnit(std::move(_stringTagName),
+        _resource->addTranslationUnit(_stringTagName,
                                       _nextIndex[_stringTagName]++,
                                       std::move(_text), _hasPlural);
         _state = State::READING_STRINGS_ELEMENT;

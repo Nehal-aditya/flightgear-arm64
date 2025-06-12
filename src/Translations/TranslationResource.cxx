@@ -37,15 +37,15 @@ void TranslationResource::addTranslationUnit(std::string name, int index,
 void TranslationResource::setFirstTargetText(
     std::string name, int index, std::string targetText)
 {
-    const auto key = std::make_pair(std::move(name), index);
-    const auto translationUnit = _map[key];
+    const auto it = _map.find(std::make_pair(std::move(name), index));
 
-    // If the smart pointer is empty, it means addTranslationUnit() wasn't
-    // called for this string, therefore it isn't in the default translation.
-    // It's an obsolete string from the XLIFF file being loaded → ignore it.
-    if (translationUnit) {
+    // If there is no such element in the map, it means addTranslationUnit()
+    // wasn't called for this string. The most likely explanation for this
+    // would be that it isn't in the default translation. IOW, it's an
+    // obsolete string from the XLIFF file being loaded → ignore it.
+    if (it != _map.end()) {
         // Set the first plural form
-        translationUnit->setTargetText(0, std::move(targetText));
+        it->second->setTargetText(0, std::move(targetText));
     }
 }
 
