@@ -746,6 +746,7 @@ void LeadLagFilterImplementation::initialize( double initvalue )
   _output_1 = initvalue;
 }
 
+#if 0
 double LeadLagFilterImplementation::compute(  double dt, double input )
 {
   input = GainFilterImplementation::compute( dt, input );
@@ -763,6 +764,30 @@ double LeadLagFilterImplementation::compute(  double dt, double input )
   _input_1 = input;
   _output_1 = output;
   return output;
+}
+#endif
+
+// Alternative Z transform substitution method
+double LeadLagFilterImplementation::compute(double dt, double input)
+{
+    if (SGMiscd::isNaN(input))
+        SG_LOG(SG_AUTOPILOT, SG_ALERT, "LeadLag filter input is NaN.");
+
+    double Ginput = GainFilterImplementation::compute(dt, input);
+    double tfa = 1.0 / _TfaInput.get_value();
+    double tfb = 1.0 / _TfbInput.get_value();
+    double output;
+
+    double Cb = exp(-dt / tfb);
+
+    output = _output_1 * Cb + Ginput * (1 - Cb) + (tfa / tfb) * (Ginput - _input_1) * Cb;
+    double o1 = _output_1 * Cb;
+    double o2 = input * (1 - Cb);
+    double o3 = (tfa / tfb) * (input - _input_1) * Cb;
+
+    _input_1 = Ginput;
+    _output_1 = output;
+    return output;
 }
 
 //------------------------------------------------------------------------------
