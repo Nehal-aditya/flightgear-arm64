@@ -1,4 +1,19 @@
+include(GetGitRevisionDescription)
 
+git_describe(GIT_DESCRIBE --always)
+
+# Convert to SemVer format
+# https://semver.org/,
+set(SEMVER_REGEX_PATTERN "^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-?([a-zA-Z][0-9a-zA-Z\.]*)?-?(.*)?$")
+string(REGEX MATCH ${SEMVER_REGEX_PATTERN} MATCHED_GIT_DESC ${GIT_DESCRIBE})
+
+if (CMAKE_MATCH_4)
+    message(STATUS "Have Git pre-release label in tag")
+    file(WRITE ${CMAKE_BINARY_DIR}/prerelease-version "${CMAKE_MATCH_4}")
+    set(INSTALLER_RELEASE_SUFFIX "${CMAKE_MATCH_4}")
+else()
+    message(STATUS "No pre-release version set")
+endif()
 
 if (TARGET sentry_crashpad::handler)
     if (APPLE)

@@ -22,8 +22,11 @@ set(osg_version @OPENSCENEGRAPH_VERSION@)
 set(osg_soversion @osg_soversion@)
 set(openthreads_soversion @openthreads_soversion@)
 
+# used to set -rc1 or similar suffixes on file name
+set(release_suffix "@INSTALLER_RELEASE_SUFFIX@")
+
 if (buildType STREQUAL "Release")
-    set(INNO_SETUP_OUT_NAME "FlightGear-${version}")
+    set(INNO_SETUP_OUT_NAME "FlightGear-${version}${release_suffix}")
 elseif(buildType STREQUAL "Nightly")
     string(TIMESTAMP currentDate "%Y%m%d")
     set(INNO_SETUP_OUT_NAME "FlightGear-${currentDate}-nightly")
