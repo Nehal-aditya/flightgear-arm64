@@ -626,8 +626,8 @@ bool runLauncherDialog()
     // setup package language
     auto lang = options->valueForOption("language");
     if (lang.empty()) {
-        const auto langName = QLocale::languageToString(QLocale{}.language());
-        lang = langName.toStdString();
+        const auto localeName = QLocale{}.name();
+        lang = localeName.toStdString();
     }
 
     // we will re-do this later, but we want to access translated strings
