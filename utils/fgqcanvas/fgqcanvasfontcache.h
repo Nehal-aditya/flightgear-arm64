@@ -45,10 +45,13 @@ private slots:
 private:
     QNetworkAccessManager* m_downloader;
     QHash<QByteArray, QFont> m_cache;
+    QSet<QByteArray> m_pendingFonts;
+    
     QString m_hostName;
     int m_port;
 
     void lookupFile(QByteArray name);
+    void makeFontRequest(QByteArray name, bool inAircraft);
 
     QList<QNetworkReply*> m_transfers;
 };

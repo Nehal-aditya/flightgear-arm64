@@ -24,6 +24,7 @@
 #include <QNetworkReply>
 #include <QFontDatabase>
 #include <QFile>
+#include <QtNetwork/qnetworkreply.h>
 
 FGQCanvasFontCache::FGQCanvasFontCache(QNetworkAccessManager* nam, QObject *parent)
     : QObject(parent)
@@ -63,8 +64,20 @@ void FGQCanvasFontCache::setHost(QString hostName, int portNumber)
 
 void FGQCanvasFontCache::onFontDownloadFinished()
 {
+    QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender());
+    Q_ASSERT(m_transfers.contains(reply));
+    m_transfers.removeOne(reply);
+
+    if (reply->error() != QNetworkReply::NoError) {
+        if (reply->error() == QNetworkReply::ContentNotFoundError) {
+
+        } else {
+            qWarning() << "Font download failed for" << reply->url();
+        }
+        return;
+    }
+
     QByteArray fontPath = sender()->property("font").toByteArray();
-    qDebug() << "finished download of " << fontPath;
 
     QDir cacheDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
     QString absPath = cacheDir.absoluteFilePath(fontPath);
@@ -77,26 +90,36 @@ void FGQCanvasFontCache::onFontDownloadFinished()
         qWarning() << "failed to open cache file" << f.fileName();
     }
 
-    QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender());
-    Q_ASSERT(m_transfers.contains(reply));
-
     f.write(reply->readAll());
     f.close();
 
-    m_transfers.removeOne(reply);
+    // remove from m_pendingFonts so lookupFile works as expected
+    m_pendingFonts.remove(fontPath);
 
     // call ourselves again now it's cached;
     lookupFile(fontPath);
 }
 
-void FGQCanvasFontCache::onFontDownloadError(QNetworkReply::NetworkError)
+void FGQCanvasFontCache::onFontDownloadError(QNetworkReply::NetworkError err)
 {
     QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender());
-    qWarning() << "font download failed:" << reply->errorString();
+    if (err == QNetworkReply::ContentNotFoundError) {
+        // re-try in aircraft scope
+        const bool inAircraft = reply->property("in-aircraft").toBool();
+        const auto fontName = reply->property("font").toByteArray();
+        if (!inAircraft) {
+            makeFontRequest(fontName, true);
+        }
+    }
 }
 
 void FGQCanvasFontCache::lookupFile(QByteArray name)
 {
+    if (m_pendingFonts.contains(name)) {
+        // duplicate request, we should wait
+        return;
+    }
+
     QString path = QStandardPaths::locate(QStandardPaths::CacheLocation, name);
     if (!path.isEmpty()) {
         qDebug() << "found font" << name << "at path" << path;
@@ -122,11 +145,22 @@ void FGQCanvasFontCache::lookupFile(QByteArray name)
         return;
     }
 
+    m_pendingFonts.insert(name);
+    makeFontRequest(name, false);
+}
+
+void FGQCanvasFontCache::makeFontRequest(QByteArray name, bool inAircraft)
+{
     QUrl url;
     url.setScheme("http");
     url.setHost(m_hostName);
     url.setPort(m_port);
-    url.setPath("/Fonts/" + name);
+
+    if (inAircraft) {
+        url.setPath("/aircraft-dir/Fonts/" + name);
+    } else {
+        url.setPath("/Fonts/" + name);
+    }
 
     Q_FOREACH (QNetworkReply* transfer, m_transfers) {
         if (transfer->url() == url) {
@@ -134,14 +168,18 @@ void FGQCanvasFontCache::lookupFile(QByteArray name)
         }
     }
 
-    qDebug() << "reqeusting font" << url;
     QNetworkReply* reply = m_downloader->get(QNetworkRequest(url));
     reply->setProperty("font", name);
+    reply->setProperty("in-aircraft", inAircraft);
 
     connect(reply, &QNetworkReply::finished, this, &FGQCanvasFontCache::onFontDownloadFinished);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    connect(reply, &QNetworkReply::errorOccurred,
+            this, &FGQCanvasFontCache::onFontDownloadError);
+#else
     connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),
             this, SLOT(onFontDownloadError(QNetworkReply::NetworkError)));
+#endif
+
     m_transfers.append(reply);
 }
-
-
