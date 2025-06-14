@@ -19,7 +19,7 @@ namespace flightgear
 {
     class FlightPlan;
     typedef SGSharedPtr<FlightPlan> FlightPlanRef;
-    
+
     typedef std::vector<SGGeod> SGGeodVec;
 }
 
@@ -28,12 +28,13 @@ namespace FGTestApi {
 namespace setUp {
 
 void initTestGlobals(const std::string& testName,
-                     const std::string& language = "default");
+                     const std::string& language = "default",
+                     bool initFGLocale = true);
 
 bool logPositionToKML(const std::string& testName);
 /**Don't log aircraft positions*/
 bool logLinestringsToKML(const std::string& testName);
-    
+
 void initStandardNasal(bool withCanvas = false);
 
 void populateFPWithoutNasal(flightgear::FlightPlanRef f,

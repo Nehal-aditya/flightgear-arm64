@@ -46,10 +46,12 @@ namespace FGTestApi {
 bool global_loggingToKML = false;
 sg_ofstream global_kmlStream;
 bool global_lineStringOpen = false;
+bool global_FGLocaleInitialized = false;
 
 namespace setUp {
 
-void initTestGlobals(const std::string& testName, const std::string& language)
+void initTestGlobals(const std::string& testName, const std::string& language,
+                     bool initFGLocale)
 {
     assert(globals == nullptr);
     globals = new FGGlobals;
@@ -69,7 +71,7 @@ void initTestGlobals(const std::string& testName, const std::string& language)
     globals->set_fg_home(homePath);
     auto props = globals->get_props();
     props->setStringValue("sim/fg-home", homePath.utf8Str());
-    
+
     // Activate headless mode.
     globals->set_headless(true);
 
@@ -91,8 +93,13 @@ void initTestGlobals(const std::string& testName, const std::string& language)
     const auto intlNode = fgGetNode("/sim/intl", true);
     fgLoadProps("Translations/locale.xml", intlNode);
 
-    // Initialize FGLocale with the chosen language (necessary to avoid asserts)
-    globals->get_locale()->selectLanguage(language);
+    if (initFGLocale) {
+        // Initializing FGLocale is often necessary to avoid asserts
+        globals->get_locale()->selectLanguage(language);
+        global_FGLocaleInitialized = true;
+    } else {
+        global_FGLocaleInitialized = false;
+    }
 }
 
 bool logPositionToKML(const std::string& testName)
@@ -498,11 +505,13 @@ void shutdownTestGlobals()
     flightgear::shutdownQtApp();
 #endif
 
-    globals->get_locale()->clear(); // shut down FGLocale
+    if (global_FGLocaleInitialized) {
+        globals->get_locale()->clear(); // shut down FGLocale
+    }
 
     delete globals;
     globals = nullptr;
-    
+
     if (global_kmlStream) {
         if (global_lineStringOpen) {
             endCurrentLineString();
