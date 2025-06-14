@@ -204,6 +204,9 @@ void FGLocale::clear()
         _currentLocale->removeChild("addons");
     }
 
+    _intl->removeChild("current-language-id");
+    _intl->removeChild("current-locale");
+
     _currentLocale.reset();
     _languageId.clear();
 }
