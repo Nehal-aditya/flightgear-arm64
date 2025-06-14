@@ -633,70 +633,67 @@ void FGMouseInput::doMouseClick(int b, int updown, int x, int y, bool mainWindow
     if (b >= 0 && b < MAX_MOUSE_BUTTONS)
         m.mouse_button_nodes[b]->setBoolValue(updown == MOUSE_BUTTON_DOWN);
 
-    if (!d->rightClickModeCycle && (b == 2)) {
-        // in spring-loaded look mode, ignore right clicks entirely here
-        return;
-    }
+    // in spring-loaded look mode, ignore right clicks entirely here
+    if (d->rightClickModeCycle || (b != 2)) {
+        // Pass on to PUI and the panel if requested, and return if one of them
+        // consumes the event.
 
-
-    // Pass on to PUI and the panel if requested, and return if one of them
-    // consumes the event.
-
-    osg::Vec2d windowPos;
-    bool ok = flightgear::eventToWindowCoords(ea, windowPos.x(), windowPos.y());
-    if (!ok) {
-        SG_LOG(SG_GUI, SG_WARN, "Ignoring mouse click with null context/traits");
-        return;
-    }
-
-    SGSceneryPicks pickList;
-
-    if (isRightDragLookActive() && (updown == MOUSE_BUTTON_DOWN)) {
-        // when spring-loaded mode is active, don't do scene selection for picks
-        // https://sourceforge.net/p/flightgear/codetickets/2108/
-    } else {
-        pickList = globals->get_renderer()->pick(windowPos);
-    }
-
-    if (updown == MOUSE_BUTTON_UP) {
-        // Execute the mouse up event in any case, may be we should
-        // stop processing here?
-
-        SGPickCallbackList& callbacks = d->activePickCallbacks[b];
-
-        while (!callbacks.empty()) {
-            SGPickCallbackPtr& cb = callbacks.front();
-            const SGSceneryPick* pick = getPick(pickList, cb);
-            cb->buttonReleased(ea->getModKeyMask(), *ea, pick ? &pick->info : nullptr);
-
-            callbacks.pop_front();
-        }
-
-        if (ea->getHandled()) {
-            // for https://sourceforge.net/p/flightgear/codetickets/2347/
-            // we cleared the active picks, but don't do further processing
+        osg::Vec2d windowPos;
+        bool ok = flightgear::eventToWindowCoords(ea, windowPos.x(), windowPos.y());
+        if (!ok) {
+            SG_LOG(SG_GUI, SG_WARN, "Ignoring mouse click with null context/traits");
             return;
         }
-    }
 
-    if (mode.pass_through) {
-        // compute a scenegraph intersection point corresponding to the mouse
-        // click
-        if (updown == MOUSE_BUTTON_DOWN) {
-            d->activePickCallbacks.init(b, ea,
-                                        mode._passThrough3D ? m.cursor3D : nullptr);
+        SGSceneryPicks pickList;
 
-            if (d->clickTriggersTooltip && d->areTooltipsEnabled()) {
-                SGPropertyNode_ptr args(new SGPropertyNode);
-                args->setStringValue("reason", "click");
-                globals->get_commands()->execute("tooltip-timeout", args, nullptr);
-                d->tooltipTimeoutDone = true;
-            }
+        if (isRightDragLookActive() && (updown == MOUSE_BUTTON_DOWN)) {
+            // when spring-loaded mode is active, don't do scene selection for picks
+            // https://sourceforge.net/p/flightgear/codetickets/2108/
         } else {
-            // do a hover pick now, to fix up cursor
-            d->doHoverPick(windowPos, mode._passThrough3D);
-        } // mouse button was released
-    } // of pass-through mode
+            pickList = globals->get_renderer()->pick(windowPos);
+        }
+
+        if (updown == MOUSE_BUTTON_UP) {
+            // Execute the mouse up event in any case, may be we should
+            // stop processing here?
+
+            SGPickCallbackList& callbacks = d->activePickCallbacks[b];
+
+            while (!callbacks.empty()) {
+                SGPickCallbackPtr& cb = callbacks.front();
+                const SGSceneryPick* pick = getPick(pickList, cb);
+                cb->buttonReleased(ea->getModKeyMask(), *ea, pick ? &pick->info : nullptr);
+
+                callbacks.pop_front();
+            }
+
+            if (ea->getHandled()) {
+                // for https://sourceforge.net/p/flightgear/codetickets/2347/
+                // we cleared the active picks, but don't do further processing
+                return;
+            }
+        }
+
+        if (mode.pass_through) {
+            // compute a scenegraph intersection point corresponding to the mouse
+            // click
+            if (updown == MOUSE_BUTTON_DOWN) {
+                d->activePickCallbacks.init(b, ea,
+                                            mode._passThrough3D ? m.cursor3D : nullptr);
+
+                if (d->clickTriggersTooltip && d->areTooltipsEnabled()) {
+                    SGPropertyNode_ptr args(new SGPropertyNode);
+                    args->setStringValue("reason", "click");
+                    globals->get_commands()->execute("tooltip-timeout", args, nullptr);
+                    d->tooltipTimeoutDone = true;
+                }
+            } else {
+                // do a hover pick now, to fix up cursor
+                d->doHoverPick(windowPos, mode._passThrough3D);
+            } // mouse button was released
+        } // of pass-through mode
+    }
 
     if (b >= MAX_MOUSE_BUTTONS) {
         SG_LOG(SG_INPUT, SG_ALERT, "Mouse button " << b << " where only " << MAX_MOUSE_BUTTONS << " expected");
