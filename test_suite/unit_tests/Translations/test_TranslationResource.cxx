@@ -99,7 +99,6 @@ void TranslationResourceTests::test_getWithDefault()
     CPPUNIT_ASSERT_EQUAL("the default"s, fetched);
 
     // Change the selected language to French
-    globals->get_locale()->clear();
     globals->get_locale()->selectLanguage("fr");
     res = FGTranslate().getResource("options");
 
@@ -151,7 +150,6 @@ void TranslationResourceTests::test_pluralsAndAircraftDomain()
     CPPUNIT_ASSERT_EQUAL("%1 cats is not enough cats."s, fetched);
 
     // Change the selected language to French
-    globals->get_locale()->clear();
     globals->get_locale()->selectLanguage("fr");
     globals->get_locale()->loadAircraftTranslations();
     res = FGTranslate("current-aircraft").getResource("some-resource");
@@ -216,7 +214,6 @@ void TranslationResourceTests::test_multipleIndices()
     CPPUNIT_ASSERT(equal);
 
     // Change the selected language to French
-    globals->get_locale()->clear();
     globals->get_locale()->selectLanguage("fr");
     globals->get_locale()->loadAircraftTranslations();
     tr = FGTranslate("current-aircraft").getResource("dialog-whatever");

@@ -192,13 +192,32 @@ FGLocale::findLocaleNode(const string& localeSpec)
     return nullptr;
 }
 
+void FGLocale::clear()
+{
+    _inited = false;
+    _currentLocaleString.clear();
+    _languages.clear();
+    _domains.clear();
+
+    if (_currentLocale) {
+        _currentLocale->removeChild("current-aircraft");
+        _currentLocale->removeChild("addons");
+    }
+
+    _currentLocale.reset();
+    _languageId.clear();
+}
+
 // Select the language. When no language is given (empty string), a default
 // is determined matching the system locale.
 bool FGLocale::selectLanguage(const std::string& language)
 {
+    // Remove all loaded translations, including the default translation. Also
+    // remove nodes added under /sim/intl and reset the _currentLocale shared
+    // pointer.
+    clear();
+
     bool result = true;
-    // Remove all loaded translations, including the default translation
-    _domains.clear();
     // Default translation for 'atc', 'menu', 'options', etc.
     loadCoreResourcesForDefaultTranslation();
 
@@ -222,8 +241,6 @@ bool FGLocale::selectLanguage(const std::string& language)
     // Record the current locale at /sim/intl/current-locale
     _intl->getChild("current-locale", 0, true)
          ->setStringValue(_currentLocaleString);
-
-    _currentLocale.reset();
 
     if (_currentLocaleString != "default") {
         for (const string& lang : _languages) {
@@ -426,22 +443,6 @@ void FGLocale::loadXLIFFFromAircraftOrAddonDir(const SGPath& basePath,
             loadXLIFF(basePath, _currentLocale, domain);
         }
     }
-}
-
-void FGLocale::clear()
-{
-    _inited = false;
-    _currentLocaleString.clear();
-    _languages.clear();
-    _domains.clear();
-
-    if (_currentLocale) {
-        _currentLocale->removeChild("current-aircraft");
-        _currentLocale->removeChild("addons");
-    }
-
-    _currentLocale.clear();
-    _languageId.clear();
 }
 
 // Return the preferred language according to user choice and/or settings

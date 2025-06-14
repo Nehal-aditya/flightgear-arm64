@@ -666,12 +666,11 @@ bool runLauncherDialog()
 
     // don't set scenery paths twice
     globals->clear_fg_scenery();
-    globals->get_locale()->clear();
 
     if (appResult <= 0) {
         return false; // quit
     }
-    
+
     return true;
 }
 
