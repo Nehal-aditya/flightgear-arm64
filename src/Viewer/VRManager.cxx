@@ -35,9 +35,11 @@ VRManager::VRManager()
       _propXrExtensionsVisibilityMask("/sim/vr/openxr/extensions/visibility-mask"),
       _propXrRuntimeName("/sim/vr/openxr/runtime/name"),
       _propXrSystemName("/sim/vr/openxr/system/name"),
+      _propXrSystemUserPresence("/sim/vr/openxr/system/supports-user-presence"),
       _propStateString("/sim/vr/state-string"),
       _propPresent("/sim/vr/present"),
       _propRunning("/sim/vr/running"),
+      _propUserPresent("/sim/vr/user-present"),
       _propEnabled("/sim/vr/enabled"),
       _propDepthInfo("/sim/vr/depth-info"),
       _propVisibilityMask("/sim/vr/visibility-mask"),
@@ -72,6 +74,7 @@ VRManager::VRManager()
     }
 
     syncReadOnlyProperties();
+    _propUserPresent = false;
 
     _propEnabled.node(true)->addChangeListener(&_listenerEnabled, true);
     _propDepthInfo.node(true)->addChangeListener(&_listenerDepthInfo, true);
@@ -169,6 +172,7 @@ void VRManager::syncReadOnlyProperties()
     _propXrExtensionsVisibilityMask = hasVisibilityMaskExtension();
     _propXrRuntimeName = getRuntimeName();
     _propXrSystemName = getSystemName();
+    _propXrSystemUserPresence = supportsUserPresence();
 
     _propStateString = getStateString();
     _propPresent = getPresent();
@@ -328,6 +332,8 @@ void VRManager::onRunning()
 
 void VRManager::onStopped()
 {
+    _propUserPresent = false;
+
     // As long as we're not in the process of destroying FlightGear, reload
     // compositors to trigger switch away from mirror of VR
     if (!isDestroying())
@@ -335,6 +341,11 @@ void VRManager::onStopped()
         CameraGroup *cgroup = CameraGroup::getDefault();
         reloadCompositors(cgroup);
     }
+}
+
+void VRManager::onUserPresence(bool userPresent)
+{
+    _propUserPresent = userPresent;
 }
 
 static osgXR::View::Flags getPassVRFlags(const simgear::compositor::Pass *pass)

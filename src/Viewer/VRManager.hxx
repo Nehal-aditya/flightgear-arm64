@@ -109,6 +109,7 @@ class VRManager : public osgXR::Manager
 
         void onRunning() override;
         void onStopped() override;
+        void onUserPresence(bool userPresent) override;
 
         // Callback entry points
 
@@ -147,10 +148,12 @@ class VRManager : public osgXR::Manager
         SGPropObjBool _propXrExtensionsVisibilityMask;
         SGPropObjString _propXrRuntimeName;
         SGPropObjString _propXrSystemName;
+        SGPropObjBool _propXrSystemUserPresence;
 
         SGPropObjString _propStateString;
         SGPropObjBool _propPresent;
         SGPropObjBool _propRunning;
+        SGPropObjBool _propUserPresent;
 
         SGPropObjBool _propEnabled;
         SGPropObjBool _propDepthInfo;
