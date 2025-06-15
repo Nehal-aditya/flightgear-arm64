@@ -58,7 +58,7 @@ public:
 
     virtual void setCursorVisible(bool aVis)
     {
-        if (mCursorObscured == aVis) {
+        if (mCursorVisible == aVis) {
             return;
         }
 
