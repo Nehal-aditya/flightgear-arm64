@@ -219,7 +219,7 @@ void FGATCController::transmit(FGTrafficRecord* rec, FGAirportDynamics* parent, 
         fltRules = rec->getAircraft()->getTrafficRef()->getFlightRules();
         transponderCode = genTransponderCode(fltRules);
         rec->getAircraft()->SetTransponderCode(transponderCode);
-        if (stationFreq!=taxiFreq) {
+        if (stationFreq != taxiFreq) {
             text =
                 receiver + ". Start-up approved. " + atisInformation +
                 " correct, runway " + activeRunway + ", " + SID + ", squawk " +
@@ -250,7 +250,7 @@ void FGATCController::transmit(FGTrafficRecord* rec, FGAirportDynamics* parent, 
         activeRunway = rec->getAircraft()->GetFlightPlan()->getRunway();
         transponderCode = rec->getAircraft()->GetTransponderCode();
 
-        if (stationFreq!=taxiFreq) {
+        if (stationFreq != taxiFreq) {
             text =
                 receiver + ". Start-up approved. " + atisInformation +
                 " correct, runway " + activeRunway + ", " + SID + ", squawk " +
@@ -359,15 +359,15 @@ void FGATCController::transmit(FGTrafficRecord* rec, FGAirportDynamics* parent, 
     case MSG_ACKNOWLEDGE_HOLD:
         text = receiver + " holding as published . " + sender;
         break;
-    case MSG_TAXI_PARK:           
-        if(!rec->getAircraft()->GetFlightPlan()->getParkingGate()) {
+    case MSG_TAXI_PARK:
+        if (!rec->getAircraft()->GetFlightPlan()->getParkingGate()) {
             SG_LOG(SG_ATC, SG_ALERT, "Flightplan without gate");
             break;
         }
         text = receiver + " taxi to " + rec->getAircraft()->GetFlightPlan()->getParkingGate()->getName() + " . " + sender;
         break;
-    case MSG_ACKNOWLEDGE_TAXI_PARK:    
-        if(!rec->getAircraft()->GetFlightPlan()->getParkingGate()) {
+    case MSG_ACKNOWLEDGE_TAXI_PARK:
+        if (!rec->getAircraft()->GetFlightPlan()->getParkingGate()) {
             SG_LOG(SG_ATC, SG_ALERT, "Flightplan without gate");
             break;
         }
@@ -386,7 +386,7 @@ void FGATCController::transmit(FGTrafficRecord* rec, FGAirportDynamics* parent, 
             fgGetDouble("/instrumentation/comm[1]/frequencies/selected-mhz");
         int onBoardRadioFreqI0 = (int)floor(onBoardRadioFreq0 * 100 + 0.5);
         int onBoardRadioFreqI1 = (int)floor(onBoardRadioFreq1 * 100 + 0.5);
-        SG_LOG(SG_ATC, SG_DEBUG, "COM1 : " << onBoardRadioFreq0 << " COM2 : " << onBoardRadioFreq1 << " Sending to " << formatATCFrequency3_2(stationFreq) << " Txt : " << text );
+        SG_LOG(SG_ATC, SG_DEBUG, "COM1 : " << onBoardRadioFreq0 << " COM2 : " << onBoardRadioFreq1 << " Sending to " << formatATCFrequency3_2(stationFreq) << " Txt : " << text);
         if (stationFreq == 0) {
             SG_LOG(SG_ATC, SG_DEBUG, getName() << " stationFreq not found");
         }
@@ -423,7 +423,8 @@ void FGATCController::transmit(FGTrafficRecord* rec, FGAirportDynamics* parent, 
 }
 
 
-SGSharedPtr<FGTrafficRecord> FGATCController::getRecord(int id) const {
+SGSharedPtr<FGTrafficRecord> FGATCController::getRecord(int id) const
+{
     TrafficVectorIterator i = searchActiveTraffic(id);
     if (i == activeTraffic.end()) {
         // Dead traffic should never reach here
@@ -440,15 +441,16 @@ SGSharedPtr<FGTrafficRecord> FGATCController::getRecord(int id) const {
  * @param aiObject
  * @param leg
 */
-void FGATCController::handover(SGSharedPtr<FGTrafficRecord> aiObject, int leg) {
+void FGATCController::handover(SGSharedPtr<FGTrafficRecord> aiObject, int leg)
+{
     if (aiObject) {
         aiObject->clearResolveCircularWait();
         activeTraffic.push_back(aiObject);
         if (leg == AILeg::LANDING) {
-            // The first contact 
+            // The first contact
             SG_LOG(SG_ATC, SG_DEBUG,
                    "Added " << (aiObject)->getCallsign() << "(" << (aiObject)->getId() << ") " << aiObject);
-    
+
             airportGroundRadar->add(aiObject);
         }
     }
@@ -469,9 +471,9 @@ void FGATCController::signOff(int id)
         return;
     }
     const auto leg = (*i)->getLeg();
-    // if taken off or parked 
+    // if taken off or parked
     if (((leg > AILeg::TAKEOFF && leg < AILeg::APPROACH) ||
-        (leg >= AILeg::PARKING_TAXI)) && 
+         (leg >= AILeg::PARKING_TAXI)) &&
         airportGroundRadar != nullptr) {
         bool result = airportGroundRadar->remove(*i);
         if (!result) {
@@ -485,11 +487,6 @@ void FGATCController::signOff(int id)
 
     int oldSize = activeTraffic.size();
     activeTraffic.erase(i);
-    if ((oldSize - activeTraffic.size()) != 1) {
-        SG_LOG(SG_ATC, SG_WARN, (*i)->getCallsign() << " (" << (*i)->getId() << ") not removed ");
-    } else {
-        SG_LOG(SG_ATC, SG_DEBUG, (*i)->getCallsign() << " (" << (*i)->getId() << ") removed from traffic");
-    }
 }
 
 bool FGATCController::hasInstruction(int id)
@@ -530,7 +527,7 @@ FGATCInstruction FGATCController::getInstruction(int id)
 string FGATCController::formatATCFrequency3_2(int freq)
 {
     char buffer[8]; // does this ever need to be freed?
-    if (freq>99999) {
+    if (freq > 99999) {
         snprintf(buffer, 8, "%3.3f", ((float)freq / 1000.0));
     } else {
         snprintf(buffer, 8, "%3.3f", ((float)freq / 100.0));
@@ -560,15 +557,15 @@ void FGATCController::eraseDeadTraffic()
     auto it = std::remove_if(activeTraffic.begin(), activeTraffic.end(), [](const FGTrafficRecord* traffic) {
         if (traffic->isDead()) {
             SG_LOG(SG_ATC, SG_DEBUG, "Remove dead " << traffic->getCallsign() << "(" << traffic->getId() << ") " << traffic->isDead());
-        }        
+        }
         return traffic->isDead();
     });
-    if (it!=activeTraffic.end()) {
+    if (it != activeTraffic.end()) {
         if (*it) {
             bool result = airportGroundRadar->remove(*it);
             if (!result) {
                 SG_LOG(SG_ATC, SG_DEBUG, "Couldn't remove from index " << (*it));
-            }    
+            }
         }
     }
     activeTraffic.erase(it, activeTraffic.end());

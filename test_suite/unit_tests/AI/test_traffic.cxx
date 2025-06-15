@@ -1,35 +1,21 @@
 /*
- * Copyright (C) 2020 James Turner
- *
- * This file is part of the program FlightGear.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * SPDX-FileCopyrightText: (C) 2000 James Turner
+ * SPDX_FileComment: AI Traffic tests
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include "test_traffic.hxx"
 
-#include <math.h>
 #include <cstring>
+#include <math.h>
 #include <memory>
 
 #include "test_suite/FGTestApi/NavDataCache.hxx"
 #include "test_suite/FGTestApi/TestDataLogger.hxx"
 #include "test_suite/FGTestApi/testGlobals.hxx"
 
-#include <simgear/math/sg_geodesy.hxx>
 #include <AIModel/AIAircraft.hxx>
 #include <AIModel/AIFlightPlan.hxx>
 #include <AIModel/AIManager.hxx>
@@ -40,10 +26,11 @@
 #include <Scenery/scenery.hxx>
 #include <Time/TimeManager.hxx>
 #include <Traffic/TrafficMgr.hxx>
-
 #include <simgear/math/sg_geodesy.hxx>
+
 #include <simgear/debug/logstream.hxx>
 #include <simgear/io/iostreams/sgstream.hxx>
+#include <simgear/math/sg_geodesy.hxx>
 
 #include <simgear/timing/sg_time.hxx>
 
@@ -58,9 +45,9 @@
 // Set up function for each test.
 void TrafficTests::setUp()
 {
-    time_t t = time(0);   // get time now
+    time_t t = time(0); // get time now
 
-    this->currentWorldTime = t - t%86400 + 86400 + 9 * 60;
+    this->currentWorldTime = t - t % 86400 + 86400 + 9 * 60;
 
 
     FGTestApi::setUp::initTestGlobals("Traffic");
@@ -157,7 +144,7 @@ void TrafficTests::testPushback()
 
     std::unique_ptr<FGAIFlightPlan> fp(new FGAIFlightPlan(aiAircraft,
                                                           flightPlanName, crs,
-                                                          departureTime, departureTime+3000,
+                                                          departureTime, departureTime + 3000,
                                                           departureAirport, arrivalAirport, true, radius,
                                                           cruiseAltFt, // cruise alt
                                                           position.getLatitudeDeg(),
@@ -172,7 +159,7 @@ void TrafficTests::testPushback()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight_testPushback_EGPH_EGPF_" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_testPushback_EGPH_EGPF");
 }
 
 void TrafficTests::testPushbackCargo()
@@ -218,7 +205,7 @@ void TrafficTests::testPushbackCargo()
 
     std::unique_ptr<FGAIFlightPlan> fp(new FGAIFlightPlan(aiAircraft,
                                                           flightPlanName, crs,
-                                                          departureTime, departureTime+3000,
+                                                          departureTime, departureTime + 3000,
                                                           egph, egpf, true, radius,
                                                           cruiseAltFt, // cruise alt
                                                           position.getLatitudeDeg(),
@@ -231,7 +218,7 @@ void TrafficTests::testPushbackCargo()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight_cargo_EGPH_EGPF_" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_cargo_EGPH_EGPF");
 }
 
 void TrafficTests::testPushbackCargoInProgress()
@@ -292,7 +279,7 @@ void TrafficTests::testPushbackCargoInProgress()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight_cargo_in_progress_EGPH_EGPF_" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_cargo_in_progress_EGPH_EGPF");
 }
 
 void TrafficTests::testPushbackCargoInProgressDownWindEast()
@@ -353,7 +340,7 @@ void TrafficTests::testPushbackCargoInProgressDownWindEast()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight_cargo_in_progress_downwind_east_EGPH_EGPF_" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_cargo_in_progress_downwind_east_EGPH_EGPF");
 }
 
 void TrafficTests::testPushbackCargoInProgressDownWindWest()
@@ -414,7 +401,7 @@ void TrafficTests::testPushbackCargoInProgressDownWindWest()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight_cargo_in_progress_downwind_west_EGPH_EGPF_" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_cargo_in_progress_downwind_west_EGPH_EGPF");
 }
 
 void TrafficTests::testPushbackCargoInProgressNotBeyond()
@@ -476,7 +463,7 @@ void TrafficTests::testPushbackCargoInProgressNotBeyond()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight_cargo_in_progress_not_beyond_EGPH_EGPF_" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_cargo_in_progress_not_beyond_EGPH_EGPF");
 }
 
 void TrafficTests::testPushbackCargoInProgressNotBeyondNorth()
@@ -538,7 +525,7 @@ void TrafficTests::testPushbackCargoInProgressNotBeyondNorth()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight_cargo_in_progress_not_beyond_north_EGPH_EGPF_" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_cargo_in_progress_not_beyond_north_EGPH_EGPF");
 }
 
 void TrafficTests::testPushbackCargoInProgressBeyond()
@@ -601,7 +588,7 @@ void TrafficTests::testPushbackCargoInProgressBeyond()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight_cargo_in_progress_beyond_EGPH_EGPF_" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_cargo_in_progress_beyond_EGPH_EGPF");
 }
 
 void TrafficTests::testPushbackCargoInProgressBeyondNorth()
@@ -664,7 +651,7 @@ void TrafficTests::testPushbackCargoInProgressBeyondNorth()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight_cargo_in_progress_beyond_north_EGPH_EGPF_" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_cargo_in_progress_beyond_north_EGPH_EGPF");
 }
 
 void TrafficTests::testChangeRunway()
@@ -712,7 +699,7 @@ void TrafficTests::testChangeRunway()
 
     std::unique_ptr<FGAIFlightPlan> fp(new FGAIFlightPlan(aiAircraft,
                                                           flightPlanName, crs,
-                                                          departureTime, departureTime+3000,
+                                                          departureTime, departureTime + 3000,
                                                           departureAirport, arrivalAirport, true, radius,
                                                           cruiseAltFt, // cruise alt
                                                           position.getLatitudeDeg(),
@@ -725,7 +712,7 @@ void TrafficTests::testChangeRunway()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight_change_runway_EGPH_EGPF_" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_change_runway_EGPH_EGPF");
 }
 
 
@@ -771,7 +758,7 @@ void TrafficTests::testPushforward()
 
     std::unique_ptr<FGAIFlightPlan> fp(new FGAIFlightPlan(aiAircraft,
                                                           flightPlanName, crs,
-                                                          departureTime, departureTime+3000,
+                                                          departureTime, departureTime + 3000,
                                                           departureAirport, arrivalAirport, true, radius,
                                                           cruiseAltFt, // cruise alt
                                                           position.getLatitudeDeg(),
@@ -784,7 +771,7 @@ void TrafficTests::testPushforward()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight_ga_YSSY_depart_" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_ga_YSSY_depart");
 }
 
 void TrafficTests::testPushforwardSpeedy()
@@ -829,7 +816,7 @@ void TrafficTests::testPushforwardSpeedy()
 
     std::unique_ptr<FGAIFlightPlan> fp(new FGAIFlightPlan(aiAircraft,
                                                           flightPlanName, crs,
-                                                          departureTime, departureTime+3000,
+                                                          departureTime, departureTime + 3000,
                                                           departureAirport, arrivalAirport, true, radius,
                                                           cruiseAltFt, // cruise alt
                                                           position.getLatitudeDeg(),
@@ -842,7 +829,7 @@ void TrafficTests::testPushforwardSpeedy()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight_ga_YSSY_fast_depart_" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_ga_YSSY_fast_depart");
 }
 
 void TrafficTests::testPushforwardParkYBBN()
@@ -888,7 +875,7 @@ void TrafficTests::testPushforwardParkYBBN()
 
     std::unique_ptr<FGAIFlightPlan> fp(new FGAIFlightPlan(aiAircraft,
                                                           flightPlanName, crs,
-                                                          departureTime, departureTime+3000,
+                                                          departureTime, departureTime + 3000,
                                                           departureAirport, arrivalAirport, true, radius,
                                                           cruiseAltFt, // cruise alt
                                                           position.getLatitudeDeg(),
@@ -901,7 +888,7 @@ void TrafficTests::testPushforwardParkYBBN()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight_ga_YSSY_YBBN_park_" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_ga_YSSY_YBBN_park");
 
     int shortestDistance = 10000;
     const FGParkingList& parkings(arrivalAirport->groundNetwork()->allParkings());
@@ -969,7 +956,7 @@ void TrafficTests::testPushforwardParkYBBNRepeatGa()
 
 
     std::unique_ptr<FGAIFlightPlan> fp(new FGAIFlightPlan(aiAircraft,
-                                                          flightPlanName, crs, departureTime, departureTime+3000,
+                                                          flightPlanName, crs, departureTime, departureTime + 3000,
                                                           departureAirport, arrivalAirport, true, radius,
                                                           cruiseAltFt, // cruise alt
                                                           position.getLatitudeDeg(),
@@ -981,7 +968,7 @@ void TrafficTests::testPushforwardParkYBBNRepeatGa()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight_ga_YSSY_YBBN_park_repeat" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_ga_YSSY_YBBN_park_repeat" + std::to_string(departureTime));
 
     int shortestDistance = 10000;
     const FGParkingList& parkings(arrivalAirport->groundNetwork()->allParkings());
@@ -1046,7 +1033,7 @@ void TrafficTests::testPushforwardParkYBBNRepeatGaDelayed()
 
     std::unique_ptr<FGAIFlightPlan> fp(new FGAIFlightPlan(aiAircraft,
                                                           flightPlanName, crs,
-                                                          departureTime, departureTime+3000,
+                                                          departureTime, departureTime + 3000,
                                                           departureAirport, arrivalAirport, true, radius,
                                                           cruiseAltFt, // cruise alt
                                                           position.getLatitudeDeg(),
@@ -1068,19 +1055,18 @@ void TrafficTests::testPushforwardParkYBBNRepeatGaDelayed()
 
         rec->setPlannedArrivalTime(newDeparture);
         SGSharedPtr<FGTrafficRecord> sharedRec = static_cast<FGTrafficRecord*>(rec);
- 
+
         activeDepartureRunway->requestTimeSlot(sharedRec);
         newDeparture = sharedRec->getRunwaySlot();
     }
-// See that the wait queue is filled
-    for (size_t i = 0; i < 10; i++)
-    {
+    // See that the wait queue is filled
+    for (size_t i = 0; i < 10; i++) {
         FGTrafficRecord* rec = new FGTrafficRecord();
         rec->setId(-1);
 
         rec->setPlannedArrivalTime(newDeparture);
         SGSharedPtr<FGTrafficRecord> sharedRec = static_cast<FGTrafficRecord*>(rec);
- 
+
         activeDepartureRunway->requestTimeSlot(sharedRec);
         newDeparture = sharedRec->getRunwaySlot();
     }
@@ -1095,24 +1081,23 @@ void TrafficTests::testPushforwardParkYBBNRepeatGaDelayed()
 
         rec->setPlannedArrivalTime(newArrival);
         SGSharedPtr<FGTrafficRecord> sharedRec = static_cast<FGTrafficRecord*>(rec);
- 
+
         activeYSSYRunway->requestTimeSlot(sharedRec);
         newArrival = sharedRec->getRunwaySlot();
     }
-// See that the wait queue is filled
-    for (size_t i = 0; i < 100; i++)
-    {
+    // See that the wait queue is filled
+    for (size_t i = 0; i < 100; i++) {
         FGTrafficRecord* rec = new FGTrafficRecord();
         rec->setId(i);
 
         rec->setPlannedArrivalTime(newArrival);
         SGSharedPtr<FGTrafficRecord> sharedRec = static_cast<FGTrafficRecord*>(rec);
- 
+
         activeYSSYRunway->requestTimeSlot(sharedRec);
         newArrival = sharedRec->getRunwaySlot();
     }
 
-    aiAircraft = flyAI(aiAircraft, "flight_ga_YSSY_YBBN_park_repeatdelayed" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_ga_YSSY_YBBN_park_repeatdelayed" + std::to_string(departureTime));
 
     int shortestDistance = 10000;
     const FGParkingList& parkings(arrivalAirport->groundNetwork()->allParkings());
@@ -1177,7 +1162,7 @@ void TrafficTests::testPushforwardParkYBBNRepeatGate()
 
     std::unique_ptr<FGAIFlightPlan> fp(new FGAIFlightPlan(aiAircraft,
                                                           flightPlanName, crs,
-                                                          departureTime, departureTime+3000,
+                                                          departureTime, departureTime + 3000,
                                                           departureAirport, arrivalAirport, true, radius,
                                                           cruiseAltFt, // cruise alt
                                                           position.getLatitudeDeg(),
@@ -1191,7 +1176,7 @@ void TrafficTests::testPushforwardParkYBBNRepeatGate()
 
     CPPUNIT_ASSERT_EQUAL(aiAircraft->GetFlightPlan()->isValidPlan(), true);
 
-    aiAircraft = flyAI(aiAircraft, "flight_gate_YSSY_YBBN_park_repeat" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_gate_YSSY_YBBN_park_repeat" + std::to_string(departureTime));
 
     int shortestDistance = 10000;
     const FGParkingList& parkings(arrivalAirport->groundNetwork()->allParkings());
@@ -1209,12 +1194,11 @@ void TrafficTests::testPushforwardParkYBBNRepeatGate()
 }
 
 /**
- *
- *
- *
+ * Simulate the flying of the AI Aircraft with the Flightplan
  */
 
-FGAIAircraft * TrafficTests::flyAI(SGSharedPtr<FGAIAircraft> aiAircraft, std::string testname) {
+FGAIAircraft* TrafficTests::flyAI(SGSharedPtr<FGAIAircraft> aiAircraft, std::string testname)
+{
     int lineIndex = 0;
 
     CPPUNIT_ASSERT_EQUAL(aiAircraft->GetFlightPlan()->isValidPlan(), true);
@@ -1227,22 +1211,22 @@ FGAIAircraft * TrafficTests::flyAI(SGSharedPtr<FGAIAircraft> aiAircraft, std::st
     char buffer[50];
     char buffer2[50];
 
-    strftime (buffer,50,"%FT%TZ",startTime);
-    strftime (buffer2,50,"%FT%TZ", localtime(&departureTime));
+    strftime(buffer, 50, "%FT%TZ", startTime);
+    strftime(buffer2, 50, "%FT%TZ", localtime(&departureTime));
 
     SG_LOG(SG_AI, SG_DEBUG, "Start Time " << buffer << " First Departure " << buffer2);
 
-    char fname [160];
-    time_t t = time(0);   // get time now
-    snprintf (fname, sizeof(fname), "%ld.csv", t);
+    char fname[160];
+    time_t t = time(0); // get time now
+    snprintf(fname, sizeof(fname), "%ld.csv", t);
     SGPath p = SGPath::desktop() / (testname + fname);
     std::unique_ptr<sg_ofstream> csvFile = std::make_unique<sg_ofstream>();
     (*csvFile).open(p);
-    if(!(*csvFile).is_open()) {
+    if (!(*csvFile).is_open()) {
         SG_LOG(SG_AI, SG_DEBUG, "CSV File " << fname << " couldn't be opened");
+        aiAircraft->dumpCSVHeader(csvFile);
     }
     if (sglog().get_log_priority() <= SG_DEBUG) {
-        aiAircraft->dumpCSVHeader(csvFile);
         FGTestApi::setUp::logLinestringsToKML(testname);
     }
     flightgear::SGGeodVec geods = flightgear::SGGeodVec();
@@ -1253,6 +1237,7 @@ FGAIAircraft * TrafficTests::flyAI(SGSharedPtr<FGAIAircraft> aiAircraft, std::st
     int startSpeed = aiAircraft->GetFlightPlan()->getCurrentWaypoint()->getSpeed();
     aiAircraft->AccelTo(startSpeed);
 
+    aiAircraft->dumpCSVHeader(csvFile);
     for (size_t i = 0; i < 12000000 && !(aiAircraft->getDie()) && aiAircraft->GetFlightPlan()->getLeg() <= AILeg::PARKING; i++) {
         CPPUNIT_ASSERT_EQUAL(aiAircraft->GetFlightPlan()->isValidPlan(), true);
         if (!aiAircraft->getDie()) {
@@ -1265,15 +1250,17 @@ FGAIAircraft * TrafficTests::flyAI(SGSharedPtr<FGAIAircraft> aiAircraft, std::st
             if (geods.empty() ||
                 (aiAircraft->getSpeed() > 0 &&
                  SGGeodesy::distanceM(aiAircraft->getGeodPos(), FGTestApi::getPosition()) > 10000 &&
-                    /* stop following towards the end*/
-                    aiAircraft->GetFlightPlan()->getLeg() < 8))
-            {
+                 /* stop following towards the end*/
+                 aiAircraft->GetFlightPlan()->getLeg() < 8)) {
                 FGTestApi::setPosition(aiAircraft->getGeodPos());
             }
         }
+        if (aiAircraft->getTaxiClearanceRequest()) {
+            aiAircraft->setTaxiClearanceRequest(false);
+        }
         // Leg has been incremented
-        if (aiAircraft->GetFlightPlan()->getLeg() != lastLeg ) {
-        // The current WP is really in our new leg
+        if (aiAircraft->GetFlightPlan()->getLeg() != lastLeg) {
+            // The current WP is really in our new leg
             if (sglog().get_log_priority() <= SG_DEBUG) {
                 snprintf(buffer, sizeof(buffer), "AI Leg %d Callsign %s Iteration %d", lastLeg, aiAircraft->getCallSign().c_str(), iteration);
                 FGTestApi::writeGeodsToKML(buffer, geods);
@@ -1285,26 +1272,26 @@ FGAIAircraft * TrafficTests::flyAI(SGSharedPtr<FGAIAircraft> aiAircraft, std::st
             SGGeod last = geods.back();
             geods.clear();
             geods.insert(geods.end(), last);
+            if (lastLeg == AILeg::TAKEOFF) {
+                aiAircraft->getATCController();
+            }
         }
-        if (lastHeading==-500) {
+        if (lastHeading == -500) {
             lastHeading = aiAircraft->getTrueHeadingDeg();
         }
-        headingSum += (lastHeading-aiAircraft->getTrueHeadingDeg());
+        headingSum += (lastHeading - aiAircraft->getTrueHeadingDeg());
         lastHeading = aiAircraft->getTrueHeadingDeg();
         aiAircraft->dumpCSV(csvFile, lineIndex++);
         // A flight without loops should never reach 400°
         CPPUNIT_ASSERT_LESSEQUAL(400.0, headingSum);
-        CPPUNIT_ASSERT_LESSEQUAL( 10, aiAircraft->GetFlightPlan()->getLeg());
-        CPPUNIT_ASSERT_MESSAGE( "Aircraft has not completed test in time.", i < 3000000);
+        CPPUNIT_ASSERT_LESSEQUAL(10, aiAircraft->GetFlightPlan()->getLeg());
+        CPPUNIT_ASSERT_MESSAGE("Aircraft has not completed test in time.", i < 3000000);
         // Arrived at a parking
         int beforeNextDepTime = aiAircraft->getTrafficRef()->getDepartureTime() - 30;
 
-        if (iteration > 1
-        && aiAircraft->GetFlightPlan()->getLeg() == 1
-        && aiAircraft->getSpeed() == 0
-        && this->currentWorldTime < beforeNextDepTime) {
+        if (iteration > 1 && aiAircraft->GetFlightPlan()->getLeg() == 1 && aiAircraft->getSpeed() == 0 && this->currentWorldTime < beforeNextDepTime) {
             FGTestApi::adjustSimulationWorldTime(beforeNextDepTime);
-            SG_LOG(SG_AI, SG_BULK, "Jumped time " << (beforeNextDepTime - this->currentWorldTime) );
+            SG_LOG(SG_AI, SG_BULK, "Jumped time " << (beforeNextDepTime - this->currentWorldTime));
             this->currentWorldTime = beforeNextDepTime;
         }
         FGTestApi::runForTime(1);

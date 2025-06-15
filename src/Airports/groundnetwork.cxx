@@ -13,11 +13,11 @@
 #include <iterator>
 #include <map>
 
-#include <simgear/scene/util/OsgMath.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/SGGeometryFwd.hxx>
 #include <simgear/math/SGIntersect.hxx>
 #include <simgear/math/SGLineSegment.hxx>
+#include <simgear/scene/util/OsgMath.hxx>
 #include <simgear/structure/exception.hxx>
 #include <simgear/timing/timestamp.hxx>
 
@@ -114,9 +114,17 @@ void FGTaxiSegment::unblock(time_t now)
  * FGTaxiRoute
  **************************************************************************/
 
-FGTaxiRoute::FGTaxiRoute(const FGTaxiNodeVector& nds, const intVec& rts, double dist, int /* dpth */) : nodes(nds),
-                                                                                                        routes(rts),
-                                                                                                        distance(dist)
+/**
+  * @param nds The FGTaxiNodes 
+  * @param rts The ids of the nodes 
+  * @param dist The length of this FGTaxiRoute in m
+  * @param score The score it achieved. If greater than length then there were penalties.
+  */
+
+FGTaxiRoute::FGTaxiRoute(const FGTaxiNodeVector& nds, const intVec& rts, double dist, double score, int /* dpth */) : nodes(nds),
+                                                                                                                      routes(rts),
+                                                                                                                      distance(dist),
+                                                                                                                      score(score)
 {
     currNode = nodes.begin();
     currRoute = routes.begin();
@@ -170,6 +178,12 @@ FGGroundNetwork::~FGGroundNetwork()
     }
 }
 
+/**
+ * Postprocess the ground network
+ * * join forward/backard segments
+ * * add penalties for crossing runway
+ */
+
 void FGGroundNetwork::init()
 {
     if (networkInitialized) {
@@ -180,8 +194,53 @@ void FGGroundNetwork::init()
     hasNetwork = true;
     int index = 1;
 
+    auto rwys = parent->getRunwaysWithoutReciprocals();
     // establish pairing of segments
     for (auto segment : segments) {
+        //TODO Add Scanning for possible hold points
+        // Calculate the intersection with runways and add a penalty
+        for (FGRunwayRef rwy : rwys) {
+            SGRectd pavement = rwy->getRect();
+            double lateralOffset = rwy->widthM() / 2;
+
+            const SGGeod leftStart = rwy->pointOffCenterline(0.0, -lateralOffset);
+            const SGGeod rightStart = rwy->pointOffCenterline(0.0, lateralOffset);
+            const SGGeod leftEnd = rwy->pointOffCenterline(rwy->lengthFt(), -lateralOffset);
+            const SGGeod rightEnd = rwy->pointOffCenterline(rwy->lengthFt(), lateralOffset);
+            SGGeod r1;
+            SGGeod r2;
+            auto intersectLeft = SGGeodesy::intersection(leftStart, leftEnd,
+                                                         segment->getStart()->geod(), segment->getEnd()->geod());
+            auto intersectRight = SGGeodesy::intersection(rightStart, rightEnd,
+                                                          segment->getStart()->geod(), segment->getEnd()->geod());
+            double segmentLen = segment->getLength();
+
+            if (intersectLeft.has_value()) {
+                double len1 = SGGeodesy::distanceM(segment->getStart()->geod(), (*intersectLeft));
+                double len2 = SGGeodesy::distanceM(segment->getEnd()->geod(), (*intersectLeft));
+                if (len1 + len2 <= segmentLen + 1) {
+                    // We add 1m to catch the difference of calculation
+                    // The intersection point must be within segment
+                    segment->setPenalty(segment->getPenalty() + 100);
+                    SG_LOG(SG_AI, SG_BULK, "Intersection Runway " << rwy->ident() << " Parent " << parent->ident() << " " << pavement << " Len 1 " << len1 << " Len 2 " << len2 << " segmentLen " << segmentLen);
+                }
+            } else {
+                SG_LOG(SG_AI, SG_BULK, "No Intersection Runway " << rwy->ident() << " Parent " << parent->ident() << " " << pavement);
+            }
+            if (intersectRight.has_value()) {
+                double len1 = SGGeodesy::distanceM(segment->getStart()->geod(), (*intersectRight));
+                double len2 = SGGeodesy::distanceM(segment->getEnd()->geod(), (*intersectRight));
+                if (len1 + len2 <= segmentLen + 1) {
+                    // We add 1m to catch the difference of calculation
+                    // The intersection point must be within segment
+                    segment->setPenalty(segment->getPenalty() + 100);
+                    SG_LOG(SG_AI, SG_BULK, "Intersection Runway " << rwy->ident() << " Parent " << parent->ident() << " " << pavement << " Len 1 " << len1 << " Len 2 " << len2 << " segmentLen " << segmentLen);
+                }
+            } else {
+                SG_LOG(SG_AI, SG_BULK, "No Intersection Runway " << rwy->ident() << " Parent " << parent->ident() << " " << pavement);
+            }
+        }
+
         segment->setIndex(index++);
 
         if (segment->oppositeDirection) {
@@ -297,7 +356,7 @@ FGTaxiNodeRef FGGroundNetwork::findNearestNodeOnRunwayExit(const SGGeod& aGeod, 
                 // Only ahead
                 continue;
             }
-            FGTaxiNodeVector exitSegments = findSegmentsFrom((*it));
+            FGTaxiSegmentVector exitSegments = findSegmentsFrom((*it));
             // Some kind of star
             if (exitSegments.size() > 2) {
                 continue;
@@ -305,7 +364,8 @@ FGTaxiNodeRef FGGroundNetwork::findNearestNodeOnRunwayExit(const SGGeod& aGeod, 
             // two segments and next points are on runway, too. Must be a segment before end
             // single runway point not at end is ok
             if (exitSegments.size() == 2 &&
-                ((*exitSegments.at(0)).getIsOnRunway() || (*exitSegments.at(0)).getIsOnRunway())) {
+                ((*exitSegments.at(0)->getEnd()).getIsOnRunway() ||
+                 (*exitSegments.at(1)->getEnd()).getIsOnRunway())) {
                 continue;
             }
             if (exitSegments.empty()) {
@@ -313,7 +373,7 @@ FGTaxiNodeRef FGGroundNetwork::findNearestNodeOnRunwayExit(const SGGeod& aGeod, 
                 continue;
             }
             double exitHeading = SGGeodesy::courseDeg((*it)->geod(),
-                                                      (exitSegments.back())->geod());
+                                                      (exitSegments.back())->getEnd()->geod());
             diff = fabs(SGMiscd::normalizePeriodic(-180, 180, aRunway->headingDeg() - exitHeading));
             SG_LOG(SG_AI, SG_BULK, "findNearestNodeOnRunwayExit2 Diff :" << diff << " Id : " << (*it)->getIndex());
             if (diff > 70) {
@@ -341,8 +401,7 @@ FGTaxiNodeRef FGGroundNetwork::findNearestNodeOnRunwayExit(const SGGeod& aGeod, 
         if (aRunway) {
             double headingTowardsExit = SGGeodesy::courseDeg(aGeod, (*it)->geod());
             double diff = fabs(aRunway->headingDeg() - headingTowardsExit);
-            SG_LOG(SG_AI, SG_BULK, "findNearestNodeOnRunwayExitFallback1 " << aRunway->headingDeg() << " "
-                                                                           << " Diff : " << diff << " " << (*it)->getIndex());
+            SG_LOG(SG_AI, SG_BULK, "findNearestNodeOnRunwayExitFallback1 " << aRunway->headingDeg() << " " << " Diff : " << diff << " " << (*it)->getIndex());
             if (diff > 10) {
                 // Only ahead
                 continue;
@@ -420,10 +479,21 @@ FGTaxiSegment* FGGroundNetwork::findSegment(const FGTaxiNode* from, const FGTaxi
     return NULL; // not found
 }
 
-static int edgePenalty(FGTaxiNode* tn)
+/**
+ * Calculate a penalty for an TaxiSegment
+ * 
+ */
+
+static int edgePenalty(FGTaxiSegment* ts)
 {
-    return (tn->type() == FGPositioned::PARKING ? 10000 : 0) +
-           (tn->getIsOnRunway() ? 1000 : 0);
+    FGTaxiNode* tn = ts->getEnd();
+    int penalty = (tn->type() == FGPositioned::PARKING ? 10000 : 0) +
+                  (tn->getHoldPointType() == 1 ? 1000 : 0) +
+                  (tn->getHoldPointType() == 2 ? 1000 : 0) +
+                  (tn->getIsOnRunway() ? 1000 : 0);
+    // Add the precalculated penalty
+    penalty += ts->getPenalty();
+    return penalty;
 }
 
 class ShortestPathData
@@ -433,6 +503,7 @@ public:
     {
     }
 
+    double distance;
     double score;
     FGTaxiNodeRef previousNode;
 };
@@ -447,6 +518,7 @@ FGTaxiRoute FGGroundNetwork::findShortestRoute(FGTaxiNode* start, FGTaxiNode* en
     FGTaxiNodeVector unvisited(m_nodes);
     std::map<FGTaxiNode*, ShortestPathData> searchData;
 
+    searchData[start].distance = 0.0;
     searchData[start].score = 0.0;
 
     while (!unvisited.empty()) {
@@ -468,14 +540,15 @@ FGTaxiRoute FGGroundNetwork::findShortestRoute(FGTaxiNode* start, FGTaxiNode* en
         }
 
         for (auto target : findSegmentsFrom(best)) {
-            double edgeLength = dist(best->cart(), target->cart());
+            double edgeLength = dist(best->cart(), target->getEnd()->cart());
             double alt = searchData[best].score + edgeLength + edgePenalty(target);
-            if (alt < searchData[target].score) { // Relax (u,v)
-                searchData[target].score = alt;
-                searchData[target].previousNode = best;
+            if (alt < searchData[target->getEnd()].score) { // Relax (u,v)
+                searchData[target->getEnd()].distance = searchData[best].distance + edgeLength;
+                searchData[target->getEnd()].score = alt;
+                searchData[target->getEnd()].previousNode = best;
             }
         } // of outgoing arcs/segments from current best node iteration
-    }     // of unvisited nodes remaining
+    } // of unvisited nodes remaining
 
     if (searchData[end].score == HUGE_VAL) {
         // no valid route found
@@ -503,7 +576,7 @@ FGTaxiRoute FGGroundNetwork::findShortestRoute(FGTaxiNode* start, FGTaxiNode* en
     nodes.push_back(start);
     reverse(nodes.begin(), nodes.end());
     reverse(routes.begin(), routes.end());
-    return FGTaxiRoute(nodes, routes, searchData[end].score, 0);
+    return FGTaxiRoute(nodes, routes, searchData[end].distance, searchData[end].score, 0);
 }
 
 void FGGroundNetwork::unblockAllSegments(time_t now)
@@ -569,7 +642,7 @@ FGParkingRef FGGroundNetwork::findParkingByName(const string& name) const
 void FGGroundNetwork::addSegment(const FGTaxiNodeRef& from, const FGTaxiNodeRef& to)
 {
     FGTaxiSegment* seg = new FGTaxiSegment(from, to);
-    
+
     segments.push_back(seg);
 
     FGTaxiNodeVector::iterator it = std::find(m_nodes.begin(), m_nodes.end(), from);
@@ -594,13 +667,13 @@ void FGGroundNetwork::addParking(const FGParkingRef& park)
     }
 }
 
-FGTaxiNodeVector FGGroundNetwork::findSegmentsFrom(const FGTaxiNodeRef& from) const
+FGTaxiSegmentVector FGGroundNetwork::findSegmentsFrom(const FGTaxiNodeRef& from) const
 {
-    FGTaxiNodeVector result;
+    FGTaxiSegmentVector result;
     FGTaxiSegmentVector::const_iterator it;
     for (it = segments.begin(); it != segments.end(); ++it) {
         if ((*it)->getStart() == from) {
-            result.push_back((*it)->getEnd());
+            result.push_back((*it));
         }
     }
 

@@ -6,7 +6,9 @@
  */
 
 #include <algorithm>
+#include <filesystem>
 #include <iomanip>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -19,6 +21,7 @@
 #include "formatting.hxx"
 #include "logging.hxx"
 
+namespace fs = std::filesystem;
 using namespace std;
 
 
@@ -58,7 +61,12 @@ void fgJunitOutputter::printFailureDetail(CppUnit::TestFailure* failure)
     if (test_iter != test_data_records->end())
         test_data = *test_iter;
 
-    test_data.fileName = failure->sourceLine().fileName();
+    std::string filename = failure->sourceLine().fileName().replace(0, failure->sourceLine().fileName().find("test_suite"), "");
+    // #L141
+    test_data.fileName = filename + "#L" + std::to_string(failure->sourceLine().lineNumber());
+    test_data.failureText = getMessage(failure->thrownException()->message());
+
+    *test_iter = test_data;
 
     // SG_LOG IO streams.
     if (!test_data.sg_interleaved.empty())
@@ -171,12 +179,12 @@ void fgJunitOutputter::writeJunit()
                       std::for_each(localtest_data_records->begin(), localtest_data_records->end(),
                                     [&localType, &localjunitReportFile, &classTiming, &testClass](TestDataCapt test_data) {
                                         if (test_data.name.rfind(testClass, 0) == 0) {
-                                            auto methodName = test_data.name.substr(test_data.name.find("::")+2, test_data.name.length());
+                                            auto methodName = test_data.name.substr(test_data.name.find("::") + 2, test_data.name.length());
                                             localjunitReportFile << "<testcase suite_name=\"" << localType << "\" classname=\"" << testClass << "\" name=\"" << methodName << "\" time=\"" << ((double)test_data.timing / 1000000) << "\" file=\""
-                                            << test_data.fileName << "\">" << endl;
+                                                                 << test_data.fileName << "\">" << endl;
                                             if (test_data.failure) {
                                                 localjunitReportFile << "<failure>" << endl;
-                                                localjunitReportFile << "Fail" << endl;
+                                                localjunitReportFile << test_data.failureText << endl;
                                                 localjunitReportFile << "</failure>" << endl;
                                                 localjunitReportFile << "<system-out>" << endl;
                                                 localjunitReportFile << test_data.sg_interleaved << endl;

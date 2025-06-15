@@ -30,8 +30,8 @@
 
 #include <simgear/compiler.h>
 // There is probably a better include than sg_geodesy to get the SG_NM_TO_METER...
-#include <simgear/math/sg_geodesy.hxx>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/math/sg_geodesy.hxx>
 #include <simgear/structure/SGReferenced.hxx>
 #include <simgear/structure/SGSharedPtr.hxx>
 
@@ -42,9 +42,9 @@ typedef std::vector<FGAIAircraft*> AircraftVec;
 typedef std::vector<FGAIAircraft*>::iterator AircraftVecIterator;
 
 class FGAIFlightPlan;
-typedef std::vector<FGAIFlightPlan*>           FlightPlanVec;
+typedef std::vector<FGAIFlightPlan*> FlightPlanVec;
 typedef std::vector<FGAIFlightPlan*>::iterator FlightPlanVecIterator;
-typedef std::map<std::string, FlightPlanVec>   FlightPlanVecMap;
+typedef std::map<std::string, FlightPlanVec> FlightPlanVecMap;
 
 class FGTrafficRecord;
 typedef std::list<SGSharedPtr<FGTrafficRecord>> TrafficVector;
@@ -66,7 +66,7 @@ class FGATCInstruction
 {
 private:
     bool holdPattern = false;
-    int  requestedArrivalTime{0};
+    int requestedArrivalTime{0};
     bool holdPosition = false;
     bool requestHoldPosition = false;
     bool resumeTaxi = false;
@@ -85,98 +85,125 @@ private:
 public:
     FGATCInstruction();
 
-    bool hasInstruction   () const;
-    bool getHoldPattern   () const {
+    bool hasInstruction() const;
+    bool getHoldPattern() const
+    {
         return holdPattern;
     };
-    void setRunwaySlot (int val) {
+    void setRunwaySlot(int val)
+    {
         requestedArrivalTime = val;
     };
-    int getRunwaySlot () const {
+    int getRunwaySlot() const
+    {
         return requestedArrivalTime;
     };
-    bool getHoldPosition  () const {
+    bool getHoldPosition() const
+    {
         return holdPosition;
     };
-    bool getRequestHoldPosition  () const {
+    bool getRequestHoldPosition() const
+    {
         return requestHoldPosition;
     };
-    bool getResumeTaxi() const {
+    bool getResumeTaxi() const
+    {
         return resumeTaxi;
     };
-    
-    bool getChangeSpeed   () const {
+
+    bool getChangeSpeed() const
+    {
         return changeSpeed;
     };
-    bool getChangeHeading () const {
+    bool getChangeHeading() const
+    {
         return changeHeading;
     };
-    bool getChangeAltitude() const {
+    bool getChangeAltitude() const
+    {
         return changeAltitude;
     };
-    bool getCheckForCircularWait() const {
+    bool getCheckForCircularWait() const
+    {
         return resolveCircularWait;
     };
 
-    double getSpeed       () const {
+    double getSpeed() const
+    {
         return speed;
     };
-    double getHeading     () const {
+    double getHeading() const
+    {
         return heading;
     };
-    double getAlt         () const {
+    double getAlt() const
+    {
         return alt;
     };
 
-    int getWaitsForId  () const {
+    int getWaitsForId() const
+    {
         return waitsForId;
     };
-    int getWaitingSince  () const {
+    int getWaitingSince() const
+    {
         return waitingSince;
     };
 
-    void setHoldPattern   (bool val) {
-        holdPattern    = val;
+    void setHoldPattern(bool val)
+    {
+        holdPattern = val;
     };
-    void setHoldPosition  (bool val) {
-        holdPosition   = val;
+    void setHoldPosition(bool val)
+    {
+        holdPosition = val;
     };
-    void setRequestHoldPosition  (bool val) {
-        requestHoldPosition   = val;
+    void setRequestHoldPosition(bool val)
+    {
+        requestHoldPosition = val;
     };
-    void setResumeTaxi  (bool val) {
-        resumeTaxi   = val;
+    void setResumeTaxi(bool val)
+    {
+        resumeTaxi = val;
     };
-    void setChangeSpeed   (bool val) {
-        changeSpeed    = val;
+    void setChangeSpeed(bool val)
+    {
+        changeSpeed = val;
     };
-    void setChangeHeading (bool val) {
-        changeHeading  = val;
+    void setChangeHeading(bool val)
+    {
+        changeHeading = val;
     };
-    void setChangeAltitude(bool val) {
+    void setChangeAltitude(bool val)
+    {
         changeAltitude = val;
     };
-    void setResolveCircularWait (bool val) {
+    void setResolveCircularWait(bool val)
+    {
         resolveCircularWait = val;
     };
 
-    void setSpeed       (double val) {
-        speed   = val;
+    void setSpeed(double val)
+    {
+        speed = val;
     };
-    void setHeading     (double val) {
+    void setHeading(double val)
+    {
         heading = val;
     };
-    void setAlt         (double val) {
-        alt     = val;
+    void setAlt(double val)
+    {
+        alt = val;
     };
 
-    void setWaitsForId(int id) {
+    void setWaitsForId(int id)
+    {
         waitsForId = id;
     };
-    void setWaitingSince(int t) {
+    void setWaitingSince(int t)
+    {
         waitingSince = t;
     };
-
 };
 
 
@@ -216,38 +243,47 @@ public:
     FGTrafficRecord();
     virtual ~FGTrafficRecord();
 
-    void setId(int val)  {
+    void setId(int val)
+    {
         id = val;
     };
-    void setRadius(double rad) {
+    void setRadius(double rad)
+    {
         radius = rad;
     };
-    void setPositionAndIntentions(int pos, FGAIFlightPlan *route);
-    void setRunway(const std::string& rwy) {
+    void setPositionAndIntentions(int pos, FGAIFlightPlan* route);
+    void setRunway(const std::string& rwy)
+    {
         runway = rwy;
     };
-    void setLeg(int lg) {
+    void setLeg(int lg)
+    {
         leg = lg;
     };
-    int getId() const {
+    int getId() const
+    {
         return id;
     };
     /**
      * Return the current ATC State of type @see ATCMessageState
     */
-    int getState() const {
+    int getState() const
+    {
         return state;
     };
     /**
      * Set the current ATC State of type @see ATCMessageState
     */
-    void setState(int s) {
+    void setState(int s)
+    {
         state = s;
     }
-    FGATCInstruction getInstruction() const {
+    FGATCInstruction getInstruction() const
+    {
         return instruction;
     };
-    bool hasInstruction() const {
+    bool hasInstruction() const
+    {
         return instruction.hasInstruction();
     };
     void resetTakeOffStatus() { takeOffStatus = AITakeOffStatus::NONE; };
@@ -257,161 +293,201 @@ public:
     time_t getTakeOffSlot() { return takeOffTimeSlot; };
 
     void setPositionAndHeading(double lat, double lon, double hdg, double spd, double alt, int leg);
-    bool checkPositionAndIntentions(FGTrafficRecord &other);
-    int  crosses                   (FGGroundNetwork *, FGTrafficRecord &other);
-    bool isOpposing                (FGGroundNetwork *, FGTrafficRecord &other, int node);
+    bool checkPositionAndIntentions(FGTrafficRecord& other);
+    int crosses(FGGroundNetwork*, FGTrafficRecord& other);
+    bool isOpposing(FGGroundNetwork*, FGTrafficRecord& other, int node);
 
     bool isActive(int margin) const;
     bool isDead() const;
     void clearATCController() const;
 
-    bool onRoute(FGGroundNetwork *, FGTrafficRecord &other);
+    bool onRoute(FGGroundNetwork*, FGTrafficRecord& other);
 
-    bool getSpeedAdjustment() const {
+    bool getSpeedAdjustment() const
+    {
         return instruction.getChangeSpeed();
     };
-    void setPlannedArrivalTime   (int val) {
-        plannedArrivalTime    = val;
+    void setPlannedArrivalTime(int val)
+    {
+        plannedArrivalTime = val;
     };
     /**Arrival time planned by aircraft.*/
-    int getPlannedArrivalTime () const {
+    int getPlannedArrivalTime() const
+    {
         return plannedArrivalTime;
     };
-    void setRunwaySlot( int val ) {
+    void setRunwaySlot(int val)
+    {
         if (plannedArrivalTime) {
-            SG_LOG(SG_ATC, SG_BULK, callsign << "(" << id << ") Runwayslot timedelta " << (val-plannedArrivalTime));
+            SG_LOG(SG_ATC, SG_BULK, callsign << "(" << id << ") Runwayslot timedelta " << (val - plannedArrivalTime));
         }
         instruction.setRunwaySlot(val);
     };
     /**Arrival time requested by ATC.*/
-    int getRunwaySlot() {
+    int getRunwaySlot()
+    {
         return instruction.getRunwaySlot();
     };
-    SGGeod getPos() {
+    SGGeod getPos()
+    {
         return pos;
     }
-    double getHeading  () const {
-        return heading  ;
+    double getHeading() const
+    {
+        return heading;
     };
     /**The last diff of heading when turning.*/
-    double getHeadingDiff  () const {
-        return headingDiff  ;
+    double getHeadingDiff() const
+    {
+        return headingDiff;
     };
-    double getSpeed    () const {
-        return speed    ;
+    double getSpeed() const
+    {
+        return speed;
     };
-    double getFAltitude () const {
-        return altitude ;
+    double getFAltitude() const
+    {
+        return altitude;
     };
-    double getRadius   () const {
-        return radius   ;
+    double getRadius() const
+    {
+        return radius;
     };
 
-    int getWaitsForId  () const {
+    int getWaitsForId() const
+    {
         return instruction.getWaitsForId();
     };
-    int getWaitingSince  () const {
+    int getWaitingSince() const
+    {
         return instruction.getWaitingSince();
     };
 
     void setSpeedAdjustment(double spd);
     void setHeadingAdjustment(double heading);
-    void clearSpeedAdjustment  () {
-        instruction.setChangeSpeed  (false);
+    void clearSpeedAdjustment()
+    {
+        instruction.setChangeSpeed(false);
     };
-    void clearHeadingAdjustment() {
+    void clearHeadingAdjustment()
+    {
         instruction.setChangeHeading(false);
     };
 
-    bool hasHeadingAdjustment() const {
+    bool hasHeadingAdjustment() const
+    {
         return instruction.getChangeHeading();
     };
-    bool hasHoldPosition() const {
+    bool hasHoldPosition() const
+    {
         return instruction.getHoldPosition();
     };
-    bool getRequestHoldPosition() const {
+    bool getRequestHoldPosition() const
+    {
         return instruction.getRequestHoldPosition();
     };
-    bool getResumeTaxi() const {
+    bool getResumeTaxi() const
+    {
         return instruction.getResumeTaxi();
     };
-    void setHoldPosition (bool inst) {
+    void setHoldPosition(bool inst)
+    {
         instruction.setHoldPosition(inst);
     };
-    void setRequestHoldPosition (bool inst) {
+    void setRequestHoldPosition(bool inst)
+    {
         instruction.setRequestHoldPosition(inst);
     };
-    void setResumeTaxi (bool inst) {
+    void setResumeTaxi(bool inst)
+    {
         instruction.setResumeTaxi(inst);
     };
-    int getWaitsForId() {
+    int getWaitsForId()
+    {
         return instruction.getWaitsForId();
     }
-    void setWaitsForId(int id) {
+    void setWaitsForId(int id)
+    {
         instruction.setWaitsForId(id);
     };
-    void setWaitingSince(int id) {
+    void setWaitingSince(int id)
+    {
         instruction.setWaitingSince(id);
     };
 
 
-    void setResolveCircularWait()   {
+    void setResolveCircularWait()
+    {
         instruction.setResolveCircularWait(true);
     };
-    void clearResolveCircularWait() {
+    void clearResolveCircularWait()
+    {
         instruction.setResolveCircularWait(false);
     };
 
     void setCallsign(const std::string& clsgn) { callsign = clsgn; };
-    const std::string& getCallsign() const {
+    const std::string& getCallsign() const
+    {
         return callsign;
     };
 
-    const std::string& getRunway() const {
+    const std::string& getRunway() const
+    {
         return runway;
     };
 
-    void setAircraft(FGAIAircraft *ref);
+    void setAircraft(FGAIAircraft* ref);
 
-    void updateState() {
+    void updateState()
+    {
         state++;
-        allowTransmission=true;
+        allowTransmission = true;
     };
 
-    FGAIAircraft *getAircraft() const;
+    FGAIAircraft* getAircraft() const;
 
-    int getTime() const {
+    int getTime() const
+    {
         return timer;
     };
-    int getLeg() const {
+    int getLeg() const
+    {
         return leg;
     };
-    void setTime(time_t time) {
+    void setTime(time_t time)
+    {
         timer = time;
     };
 
     bool pushBackAllowed() const;
-    bool allowTransmissions() const {
+    bool allowTransmissions() const
+    {
         return allowTransmission;
     };
-    void allowPushBack() { allowPushback =true;};
-    void denyPushBack () { allowPushback = false;};
-    void suppressRepeatedTransmissions () {
-        allowTransmission=false;
+    void allowPushBack() { allowPushback = true; };
+    void denyPushBack() { allowPushback = false; };
+    void suppressRepeatedTransmissions()
+    {
+        allowTransmission = false;
     };
-    void allowRepeatedTransmissions () {
-        allowTransmission=true;
+    void allowRepeatedTransmissions()
+    {
+        allowTransmission = true;
     };
-    void nextFrequency() {
+    void nextFrequency()
+    {
         frequencyId++;
     };
-    int  getNextFrequency() const {
+    int getNextFrequency() const
+    {
         return frequencyId;
     };
-    intVec& getIntentions() {
+    intVec& getIntentions()
+    {
         return intentions;
     };
-    int getCurrentPosition() const {
+    int getCurrentPosition() const
+    {
         return currentPos;
     };
     void setPriority(int p) { priority = p; };
@@ -459,13 +535,15 @@ public:
     //void setEstApproachTime(time_t time) { estimatedArrival = time; };
     void addToQueue(SGSharedPtr<FGTrafficRecord> ac);
 
-    void setCleared(int number) {
+    void setCleared(int number)
+    {
         currentlyCleared = number;
     };
     void requestTimeSlot(SGSharedPtr<FGTrafficRecord> eta);
     void updateFirst(SGSharedPtr<FGTrafficRecord> eta, time_t newETA);
     //time_t requestTimeSlot(time_t eta, std::string wakeCategory);
-    int getrunwayQueueSize() {
+    int getrunwayQueueSize()
+    {
         return runwayQueue.size();
     };
 
@@ -473,7 +551,7 @@ public:
 
     const SGSharedPtr<FGTrafficRecord> getFirstOfStatus(int stat) const;
 
-    const SGSharedPtr<FGTrafficRecord> get(int id) const;
+    const SGSharedPtr<FGTrafficRecord> get(const int id) const;
 
     void removeFromQueue(int id);
 
@@ -481,14 +559,14 @@ public:
 
     void printRunwayQueue() const;
 
-    private:
-        void resort()
-        {
-            std::sort(runwayQueue.begin(), runwayQueue.end(),
-                      [](const SGSharedPtr<FGTrafficRecord> a, const SGSharedPtr<FGTrafficRecord> b) {
-                          return a->getRunwaySlot() < b->getRunwaySlot();
-                      });
-        };
+private:
+    void resort()
+    {
+        std::sort(runwayQueue.begin(), runwayQueue.end(),
+                  [](const SGSharedPtr<FGTrafficRecord> a, const SGSharedPtr<FGTrafficRecord> b) {
+                      return a->getRunwaySlot() < b->getRunwaySlot();
+                  });
+    };
 };
 
 

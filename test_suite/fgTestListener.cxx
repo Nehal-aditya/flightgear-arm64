@@ -29,7 +29,7 @@ using namespace std;
 
 
 // Handle failures.
-void fgTestListener::addFailure(const CppUnit::TestFailure &failure)
+void fgTestListener::addFailure(const CppUnit::TestFailure& failure)
 {
     m_failure = true;
     if (failure.isError())
@@ -38,7 +38,7 @@ void fgTestListener::addFailure(const CppUnit::TestFailure &failure)
 
 
 // Override the base class function to restore IO streams.
-void fgTestListener::endTest(CppUnit::Test *test)
+void fgTestListener::endTest(CppUnit::Test* test)
 {
     // Test timing.
     sum_time += clock() - m_time;
@@ -62,14 +62,14 @@ void fgTestListener::endTest(CppUnit::Test *test)
     // Timing output.
     if (timings || ctest_output || debug) {
         // Test timing.
-        float time = ((float)(clock()-m_time))/CLOCKS_PER_SEC;
+        float time = ((float)(clock() - m_time)) / CLOCKS_PER_SEC;
         char buffer[100];
         if (time > 60.0)
-            snprintf(buffer, sizeof(buffer), "%10.3f %-3s", time/60, "min");
+            snprintf(buffer, sizeof(buffer), "%10.3f %-3s", time / 60, "min");
         else if (time > 1.0)
             snprintf(buffer, sizeof(buffer), "%10.3f %-3s", time, "s");
         else
-            snprintf(buffer, sizeof(buffer), "%10.3f %-3s", time*1000, "ms");
+            snprintf(buffer, sizeof(buffer), "%10.3f %-3s", time * 1000, "ms");
         cerr << buffer;
 
         // Test name.
@@ -83,14 +83,15 @@ void fgTestListener::endTest(CppUnit::Test *test)
     test_data.timing = clock() - m_time;
     test_data.failure = m_failure;
     test_data.error = m_error;
-    
+
+
     // Store the captured IO for any failed tests.
     if (m_failure && !debug) {
         // Standard IO.
         test_data.stdio = capt.str();
 
         // The simgear logstreams.
-        capturedIO &obj = getIOstreams();
+        capturedIO& obj = getIOstreams();
         test_data.log_class = obj.log_class;
         test_data.log_priority = obj.log_priority;
         test_data.sg_interleaved = obj.sg_interleaved.str();
@@ -106,12 +107,12 @@ void fgTestListener::endTest(CppUnit::Test *test)
 }
 
 // Override the base class function to capture IO streams.
-void fgTestListener::startTest(CppUnit::Test *test)
+void fgTestListener::startTest(CppUnit::Test* test)
 {
     // IO capture.
     if (!debug) {
         // Clear the simgear logstream buffers.
-        capturedIO &obj = getIOstreams();
+        capturedIO& obj = getIOstreams();
         obj.sg_interleaved.str("");
         obj.sg_bulk_only.str("");
         obj.sg_debug_only.str("");
@@ -128,7 +129,7 @@ void fgTestListener::startTest(CppUnit::Test *test)
         cout.rdbuf(capt.rdbuf());
         cerr.rdbuf(capt.rdbuf());
 
-    // Debugging output.
+        // Debugging output.
     } else {
         cerr << string(WIDTH_DIVIDER, '=') << endl;
         cerr << "Starting test: " << test->getName() << endl;

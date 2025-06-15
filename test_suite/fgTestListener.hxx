@@ -30,13 +30,14 @@
 
 // Data structure for holding the captured data for a test.
 struct TestDataCapt {
-    std::string name;  
-    time_t timing;  
+    std::string name;
+    time_t timing;
     bool failure;
     bool error;
     std::string log_class;
     std::string log_priority;
     std::string fileName;
+    std::string failureText;
     std::string stdio;
     std::string sg_interleaved;
     std::string sg_bulk_only;
@@ -53,9 +54,10 @@ class matchTestName
     std::string _name;
 
 public:
-    matchTestName(const std::string &name) : _name(name) {}
+    matchTestName(const std::string& name) : _name(name) {}
 
-    bool operator()(const TestDataCapt &item) const {
+    bool operator()(const TestDataCapt& item) const
+    {
         return item.name == _name;
     }
 };
@@ -68,41 +70,41 @@ protected:
     // Failure state.
     bool m_failure, m_error;
 
-    public:
-        // Constructor.
-        fgTestListener(): m_failure(false), m_error(false), sum_time(0) { };
+public:
+    // Constructor.
+    fgTestListener() : m_failure(false), m_error(false), sum_time(0){};
 
-        // Override the base class function to capture IO. streams
-        void startTest(CppUnit::Test *test);
+    // Override the base class function to capture IO. streams
+    void startTest(CppUnit::Test* test);
 
-        // Override the base class function to restore IO streams.
-        void endTest(CppUnit::Test *test);
+    // Override the base class function to restore IO streams.
+    void endTest(CppUnit::Test* test);
 
-        // Handle failures.
-        void addFailure(const CppUnit::TestFailure &failure);
+    // Handle failures.
+    void addFailure(const CppUnit::TestFailure& failure);
 
-        // Test suite timing.
-        clock_t sum_time;
+    // Test suite timing.
+    clock_t sum_time;
 
-        // IO capture for all failed tests.
-        std::vector<TestDataCapt> test_data_records;
+    // IO capture for all failed tests.
+    std::vector<TestDataCapt> test_data_records;
 
-        // Output settings.
-        bool timings;
-        bool ctest_output;
-        bool junit_output;
-        bool debug;
+    // Output settings.
+    bool timings;
+    bool ctest_output;
+    bool junit_output;
+    bool debug;
 
-    protected:
-        // The original IO streams.
-        std::streambuf *orig_cerr, *orig_cout;
+protected:
+    // The original IO streams.
+    std::streambuf *orig_cerr, *orig_cout;
 
-        // Captured IO streams.
-        std::stringstream capt;
+    // Captured IO streams.
+    std::stringstream capt;
 
-        // Test timings.
-        clock_t m_time;
+    // Test timings.
+    clock_t m_time;
 };
 
 
-#endif  // _FG_TEST_LISTENER_HXX
+#endif // _FG_TEST_LISTENER_HXX

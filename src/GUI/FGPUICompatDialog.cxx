@@ -137,7 +137,7 @@ void FGPUICompatDialog::close()
     if (_peer) {
         _peer->callMethod<void>("onClose");
     }
-    
+
     _props->setIntValue("lastx", getX());
     _props->setIntValue("lasty", getY());
     // FIXME: save width/height as well?

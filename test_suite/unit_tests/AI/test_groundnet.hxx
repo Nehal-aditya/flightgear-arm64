@@ -33,9 +33,12 @@ class GroundnetTests : public CppUnit::TestFixture
 {
     // Set up the test suite.
     CPPUNIT_TEST_SUITE(GroundnetTests);
+    CPPUNIT_TEST(testLoad);
     CPPUNIT_TEST(testShortestRoute);
+    CPPUNIT_TEST(testShortestRouteCrossingRunway);
+    CPPUNIT_TEST(testShortestRouteNotCrossingRunway);
     CPPUNIT_TEST(testFind);
-    
+
     CPPUNIT_TEST_SUITE_END();
 
 
@@ -47,6 +50,9 @@ public:
     void tearDown();
 
     // The tests.
+    void testLoad();
     void testShortestRoute();
+    void testShortestRouteCrossingRunway();
+    void testShortestRouteNotCrossingRunway();
     void testFind();
 };

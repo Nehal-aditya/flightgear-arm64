@@ -62,6 +62,7 @@ private:
 
     bool isActive;
     BlockList blockTimes;
+    int penalty = 0;
 
     int index;
     FGTaxiSegment* oppositeDirection; // also deliberately weak
@@ -96,7 +97,9 @@ public:
         return index;
     }
 
-    int getPenalty(int nGates);
+    int getPenalty() const { return penalty; }
+
+    void setPenalty(const int p) { penalty = p; }
 
     bool operator<(const FGTaxiSegment& other) const
     {
@@ -118,6 +121,7 @@ private:
     FGTaxiNodeVector nodes;
     intVec routes;
     double distance;
+    double score = 0;
     FGTaxiNodeVector::iterator currNode;
     intVec::iterator currRoute;
 
@@ -129,7 +133,7 @@ public:
         currRoute = routes.begin();
     }
 
-    FGTaxiRoute(const FGTaxiNodeVector& nds, const intVec& rts, double dist, int dpth);
+    FGTaxiRoute(const FGTaxiNodeVector& nds, const intVec& rts, double dist, double score, int dpth);
 
 
     FGTaxiRoute& operator=(const FGTaxiRoute& other)
@@ -137,6 +141,7 @@ public:
         nodes = other.nodes;
         routes = other.routes;
         distance = other.distance;
+        score = other.score;
         currNode = nodes.begin();
         currRoute = routes.begin();
         return *this;
@@ -145,6 +150,7 @@ public:
     FGTaxiRoute(const FGTaxiRoute& copy) : nodes(copy.nodes),
                                            routes(copy.routes),
                                            distance(copy.distance),
+                                           score(copy.score),
                                            currNode(nodes.begin()),
                                            currRoute(routes.begin()) {}
 
@@ -171,6 +177,10 @@ public:
     {
         return nodes.end() - currNode;
     }
+
+    double getDistance() { return distance; }
+
+    double getScore() { return score; }
 };
 
 /**************************************************************************************
@@ -192,8 +202,6 @@ private:
 
     FGParkingList m_parkings;
     FGTaxiNodeVector m_nodes;
-
-    FGTaxiNodeRef findNodeByIndex(int index) const;
 
     void addSegment(const FGTaxiNodeRef& from, const FGTaxiNodeRef& to);
     void addParking(const FGParkingRef& park);
@@ -253,6 +261,7 @@ public:
         return parent;
     }
 
+    FGTaxiNodeRef findNodeByIndex(int index) const;
     FGTaxiNodeRef findNearestNode(const SGGeod& aGeod) const;
     FGTaxiNodeRef findNearestNodeOnRunwayEntry(const SGGeod& aGeod) const;
     FGTaxiNodeRef findNearestNodeOnRunwayExit(const SGGeod& aGeod, FGRunway* aRunway = NULL) const;
@@ -280,7 +289,7 @@ public:
     /**
      * Find the segments connected to the node.
     */
-    FGTaxiNodeVector findSegmentsFrom(const FGTaxiNodeRef& from) const;
+    FGTaxiSegmentVector findSegmentsFrom(const FGTaxiNodeRef& from) const;
 
 
     FGTaxiRoute findShortestRoute(FGTaxiNode* start, FGTaxiNode* end, bool fullSearch = true);

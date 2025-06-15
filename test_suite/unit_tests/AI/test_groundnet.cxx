@@ -22,8 +22,8 @@
 #include "test_groundnet.hxx"
 
 #include <cstring>
-#include <memory>
 #include <iostream>
+#include <memory>
 
 
 #include "test_suite/FGTestApi/NavDataCache.hxx"
@@ -59,14 +59,25 @@ void GroundnetTests::setUp()
     props->setBoolValue("sim/signals/fdm-initialized", false);
 
 
-    // ensure EGPH has a valid ground net for parking testing
-    FGAirport::clearAirportsCache();
-    FGAirportRef egph = FGAirport::getByIdent("EGPH");
-    egph->testSuiteInjectGroundnetXML(SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "EGPH.groundnet.xml");
+    try {
+        // ensure EGPH has a valid ground net for parking testing
+        FGAirport::clearAirportsCache();
+        FGAirportRef egph = FGAirport::getByIdent("EGPH");
+        egph->testSuiteInjectGroundnetXML(SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "EGPH.groundnet.xml");
+    } catch (...) {
+    }
 
-    FGAirportRef ybbn = FGAirport::getByIdent("YBBN");
-    ybbn->testSuiteInjectGroundnetXML(SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "YBBN.groundnet.xml");
+    try {
+        FGAirportRef eddf = FGAirport::getByIdent("EDDF");
+        eddf->testSuiteInjectGroundnetXML(SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "EDDF.groundnet.xml");
+    } catch (...) {
+    }
 
+    try {
+        FGAirportRef ybbn = FGAirport::getByIdent("YBBN");
+        ybbn->testSuiteInjectGroundnetXML(SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "YBBN.groundnet.xml");
+    } catch (...) {
+    }
 
     globals->get_subsystem_mgr()->add<PerformanceDB>();
     globals->get_subsystem_mgr()->add<FGATCManager>();
@@ -84,6 +95,16 @@ void GroundnetTests::tearDown()
     FGTestApi::tearDown::shutdownTestGlobals();
 }
 
+void GroundnetTests::testLoad()
+{
+    try {
+        FGAirportRef egph = FGAirport::getByIdent("EGPH");
+        egph->testSuiteInjectGroundnetXML(SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "EGPH.groundnet.xml");
+    } catch (const std::exception& e) {
+        CPPUNIT_FAIL(e.what());
+    }
+}
+
 void GroundnetTests::testShortestRoute()
 {
     FGAirportRef egph = FGAirport::getByIdent("EGPH");
@@ -97,6 +118,40 @@ void GroundnetTests::testShortestRoute()
     CPPUNIT_ASSERT_EQUAL(29, route.size());
 }
 
+void GroundnetTests::testShortestRouteNotCrossingRunway()
+{
+    FGAirportRef ybbn = FGAirport::getByIdent("YBBN");
+
+    FGGroundNetwork* network = ybbn->groundNetwork();
+    CPPUNIT_ASSERT_EQUAL(true, network->exists());
+
+    FGTaxiNodeRef start = network->findNodeByIndex(1021);
+    FGTaxiNodeRef end = network->findNodeByIndex(416);
+
+    FGTaxiRoute route = network->findShortestRoute(start, end, true);
+
+    // The score should be equal
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(route.getDistance(), route.getScore(), 0.01);
+    CPPUNIT_ASSERT_EQUAL(51, route.size());
+}
+
+void GroundnetTests::testShortestRouteCrossingRunway()
+{
+    FGAirportRef ybbn = FGAirport::getByIdent("YBBN");
+
+    FGGroundNetwork* network = ybbn->groundNetwork();
+    CPPUNIT_ASSERT_EQUAL(true, network->exists());
+
+    FGTaxiNodeRef start = network->findNodeByIndex(945);
+    FGTaxiNodeRef end = network->findNodeByIndex(525);
+
+    FGTaxiRoute route = network->findShortestRoute(start, end, true);
+
+    // The score should be more than the distance
+    CPPUNIT_ASSERT_GREATER(route.getDistance(), route.getScore());
+    CPPUNIT_ASSERT_EQUAL(5, route.size());
+}
+
 /**
  * Tests various find methods.
  */
@@ -107,15 +162,16 @@ void GroundnetTests::testFind()
 
     FGGroundNetwork* network = ybbn->groundNetwork();
     FGParkingRef startParking = network->findParkingByName("GA1");
+    CPPUNIT_ASSERT(startParking);
     CPPUNIT_ASSERT_EQUAL(1020, startParking->getIndex());
     FGTaxiSegment* segment1 = network->findSegment(startParking, NULL);
     CPPUNIT_ASSERT(segment1);
     FGTaxiSegment* segment2 = network->findSegment(startParking, segment1->getEnd());
     CPPUNIT_ASSERT(segment2);
-    FGTaxiNodeVector segmentList = network->findSegmentsFrom(startParking);
+    FGTaxiSegmentVector segmentList = network->findSegmentsFrom(startParking);
     CPPUNIT_ASSERT_EQUAL(2, (int)segmentList.size());
-    CPPUNIT_ASSERT_EQUAL(1026, segmentList.front()->getIndex());
-    CPPUNIT_ASSERT_EQUAL(1027, segmentList.back()->getIndex());
+    CPPUNIT_ASSERT_EQUAL(1026, segmentList.front()->getEnd()->getIndex());
+    CPPUNIT_ASSERT_EQUAL(1027, segmentList.back()->getEnd()->getIndex());
     FGTaxiSegment* pushForwardSegment = network->findSegmentByHeading(startParking, startParking->getHeading());
     CPPUNIT_ASSERT(pushForwardSegment);
     CPPUNIT_ASSERT_EQUAL(1027, pushForwardSegment->getEnd()->getIndex());

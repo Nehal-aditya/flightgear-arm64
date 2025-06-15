@@ -9,6 +9,7 @@
 #include <cassert>
 #include <simgear/compiler.h>
 
+#include <simgear/math/SGLineSegment.hxx>
 #include <simgear/props/props.hxx>
 
 #include <string>
@@ -96,6 +97,35 @@ SGGeod FGRunway::end() const
     return pointOnCenterline(lengthM());
 }
 
+SGLineSegmentd FGRunway::getLeftEdge() const
+{
+    double lateralOffset = widthM() / 2;
+    auto startLeft = pointOffCenterline(0.0, -lateralOffset);
+    auto endLeft = pointOffCenterline(lengthM(), -lateralOffset);
+
+    return SGLineSegmentd(SGVec3d::fromGeod(startLeft), SGVec3d::fromGeod(endLeft));
+}
+
+SGLineSegmentd FGRunway::getRightEdge() const
+{
+    double lateralOffset = widthM() / 2;
+    auto startRight = pointOffCenterline(0.0, lateralOffset);
+    auto endRight = pointOffCenterline(lengthM(), lateralOffset);
+    return SGLineSegmentd(SGVec3d::fromGeod(startRight), SGVec3d::fromGeod(endRight));
+}
+
+SGRectd FGRunway::getRect() const
+{
+    double lateralOffset = widthM() / 2;
+    auto startLeft = pointOffCenterline(0.0, -lateralOffset);
+    auto endRight = pointOffCenterline(lengthM(), lateralOffset);
+
+    return SGRectd(SGVec2(startLeft.getLatitudeDeg(),
+                          startLeft.getLongitudeDeg()),
+                   SGVec2(endRight.getLatitudeDeg(),
+                          endRight.getLongitudeDeg()));
+}
+
 SGGeod FGRunway::threshold() const
 {
     return pointOnCenterline(_displ_thresh);
@@ -103,7 +133,7 @@ SGGeod FGRunway::threshold() const
 
 SGGeod FGRunway::pointOnCenterlineDisplaced(double aOffset) const
 {
-    return pointOnCenterline(_displ_thresh+aOffset);
+    return pointOnCenterline(_displ_thresh + aOffset);
 }
 
 void FGRunway::setReciprocalRunway(PositionedID other)
