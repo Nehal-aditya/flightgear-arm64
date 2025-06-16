@@ -26,7 +26,7 @@ set(openthreads_soversion @openthreads_soversion@)
 set(release_suffix "@INSTALLER_RELEASE_SUFFIX@")
 
 if (buildType STREQUAL "Release")
-    set(INNO_SETUP_OUT_NAME "FlightGear-${version}${release_suffix}")
+    set(INNO_SETUP_OUT_NAME "FlightGear-${version}-${release_suffix}")
 elseif(buildType STREQUAL "Nightly")
     string(TIMESTAMP currentDate "%Y%m%d")
     set(INNO_SETUP_OUT_NAME "FlightGear-${currentDate}-nightly")
