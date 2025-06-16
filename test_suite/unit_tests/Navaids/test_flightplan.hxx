@@ -60,6 +60,7 @@ class FlightplanTests : public CppUnit::TestFixture
     CPPUNIT_TEST(loadFGFPAsRoute);
     CPPUNIT_TEST(testLoadSaveBetweenRestriction);
     CPPUNIT_TEST(testRestrictionUnits);
+    CPPUNIT_TEST(testDeleteProcedureWaypoint);
 
     //  CPPUNIT_TEST(testParseICAORoute);
     // CPPUNIT_TEST(testParseICANLowLevelRoute);
@@ -104,6 +105,7 @@ public:
     void loadFGFPAsRoute();
     void testLoadSaveBetweenRestriction();
     void testRestrictionUnits();
+    void testDeleteProcedureWaypoint();
 };
 
 #endif  // FG_FLIGHTPLAN_UNIT_TESTS_HXX
