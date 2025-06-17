@@ -9,10 +9,16 @@ string(REGEX MATCH ${SEMVER_REGEX_PATTERN} MATCHED_GIT_DESC ${GIT_DESCRIBE})
 
 if (CMAKE_MATCH_4)
     message(STATUS "Have Git pre-release label in tag")
-    file(WRITE ${CMAKE_BINARY_DIR}/prerelease-version "${CMAKE_MATCH_4}")
     set(INSTALLER_RELEASE_SUFFIX "-${CMAKE_MATCH_4}")
 else()
     message(STATUS "No pre-release version set")
+endif()
+
+if (FG_BUILD_TYPE STREQUAL "Nightly")
+    string(TIMESTAMP BUILD_DATE "%Y%m%d")
+elseif(FG_BUILD_TYPE STREQUAL "Dev")
+    # we don't use GIT_REF 
+    get_git_head_revision(GIT_REF GIT_SHA)
 endif()
 
 if (TARGET sentry_crashpad::handler)
@@ -107,6 +113,10 @@ if (MSVC)
     # important we use install() here so that passing a custom prefix to
     # 'cmake --install --prefix FOO' works correctly to put the file somewhere special
     install(FILES ${CMAKE_BINARY_DIR}/InstallConfig.iss DESTINATION . COMPONENT packaging )
+else()
+    configure_file(${CMAKE_CURRENT_LIST_DIR}/exportFGVersion.sh.in 
+        ${CMAKE_BINARY_DIR}/exportFGVersion.sh
+        @ONLY)
 endif()
 
 
