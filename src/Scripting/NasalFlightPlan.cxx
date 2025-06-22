@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
+#include "Navaids/positioned.hxx"
 #include "config.h"
 
 #include <algorithm>
@@ -14,6 +15,9 @@
 #include "NasalFlightPlan.hxx"
 
 #include "NasalPositioned.hxx"
+#include "simgear/debug/debug_types.h"
+#include "simgear/nasal/naref.h"
+#include "simgear/nasal/nasal.h"
 
 #include <Airports/airport.hxx>
 #include <Airports/dynamics.hxx>
@@ -1395,18 +1399,43 @@ static naRef f_airwaySearch(naContext c, naRef me, int argc, naRef* args)
     return convertWayptVecToNasal(c, route);
 }
 
-static naRef f_findAirway(naContext c, naRef me, int argc, naRef* args)
+AirwayRef airwayFromArgs(naContext c, int argc, naRef* args, FGPositionedRef& enroute)
 {
-    if ((argc < 1) || !naIsString(args[0])) {
-        naRuntimeError(c, "findAirway needs at least one string arguments");
+    Airway::Level level = Airway::Both;
+    AirwayRef airway = airwayGhost(args[0]);
+    int posArgIndex = 1;
+
+    if (airway) {
+        // if there's no enroute, we are done
+        if (posArgIndex >= argc) {
+            return airway;
+        }
+
+        // deal with positioned arg
+        if (naIsString(args[posArgIndex])) {
+            const std::string enrouteIdent = naStr_data(args[posArgIndex]);
+            auto wp = airway->findEnroute(enrouteIdent);
+            if (wp) {
+                enroute = wp->source();
+            }
+        } else {
+            auto pos = positionedFromArg(args[posArgIndex]);
+            auto wp = airway->findEnroute(pos);
+            if (wp) {
+                enroute = wp->source();
+            }
+        }
+
+        return airway;
     }
 
-    std::string     ident = naStr_data(args[0]);
-    FGPositionedRef pos;
-    Airway::Level   level = Airway::Both;
-    if (argc >= 2) {
-        int posArgIndex = 1;
+    if (!naIsString(args[0])) {
+        naRuntimeError(c, "expected airway ident");
+    }
 
+    std::string ident = naStr_data(args[0]);
+
+    if (argc >= 2) {
         // try next arg as a level specifier first: this means you can't use
         // a string navaid ident which is 'high', 'low' or 'both'.
         auto maybeLevel = airwayLevelFromNasal(args[1]);
@@ -1414,20 +1443,44 @@ static naRef f_findAirway(naContext c, naRef me, int argc, naRef* args)
             level = maybeLevel.value_or(Airway::Both);
             ++posArgIndex; // worked, so increment index
         }
+    }
 
-        if (argc > posArgIndex) {
-            pos = positionedFromArg(args[posArgIndex]);
+    // if only have an airway ident and optionally a level, we have no enroute point, so
+    // use the simple search and we're done
+    if ((posArgIndex >= argc)) {
+        airway = Airway::findByIdent(ident, level);
+        return airway;
+    }
+
+
+    // we have a positioned arg
+    if (naIsString(args[posArgIndex])) {
+        const std::string enrouteIdent = naStr_data(args[posArgIndex]);
+        airway = Airway::findByIdentAndEnroute(ident, level, enrouteIdent);
+        auto wp = airway->findEnroute(enrouteIdent);
+        if (wp) {
+            enroute = wp->source();
         }
-    }
-
-    AirwayRef awy;
-    if (pos) {
-        SG_LOG(SG_NASAL, SG_INFO, "Pevious navaid for airway():" << pos->ident());
-        awy = Airway::findByIdentAndNavaid(ident, pos);
     } else {
-        awy = Airway::findByIdent(ident, level);
+        auto pos = positionedFromArg(args[posArgIndex]);
+        enroute = pos;
+        airway = Airway::findByIdentAndNavaid(ident, pos);
     }
 
+    if (!enroute) {
+        SG_LOG(SG_GENERAL, SG_INFO, "fofof");
+    }
+    if (!airway) {
+        SG_LOG(SG_GENERAL, SG_INFO, "fofof");
+    }
+
+    return airway;
+}
+
+static naRef f_findAirway(naContext c, naRef me, int argc, naRef* args)
+{
+    FGPositionedRef enroute;
+    auto awy = airwayFromArgs(c, argc, args, enroute);
     if (!awy)
         return naNil();
 
@@ -1490,61 +1543,41 @@ static naRef f_createWPFrom(naContext c, naRef me, int argc, naRef* args)
     return ghostForWaypt(c, wpt);
 }
 
+naRef createViaWithAirway(naContext c, AirwayRef airway, naRef to)
+{
+    FGPositionedRef toNav;
+    if (naIsString(to)) {
+        WayptRef enroute = airway->findEnroute(naStr_data(to));
+        if (!enroute) {
+            naRuntimeError(c, "unknown waypoint on airway %s: %s",
+                           airway->ident().c_str(), naStr_data(to));
+        }
+
+        toNav = enroute->source();
+    } else {
+        toNav = positionedGhost(to);
+        if (!toNav) {
+            naRuntimeError(c, "createVia: 'to' argument is not a navaid");
+        }
+    }
+
+    Via* via = new Via(nullptr, airway, toNav);
+    return ghostForWaypt(c, via);
+}
+
 static naRef f_createViaTo(naContext c, naRef me, int argc, naRef* args)
 {
     if ((argc < 2) || (argc > 3)) {
         naRuntimeError(c, "createViaTo: needs two or three arguments");
     }
 
-    AirwayRef airway = airwayGhost(args[0]);
-    naRef toArg = args[1];
-    if (!airway && naIsString(args[0])) {
-        std::string airwayName = naStr_data(args[0]);
-        auto level = Airway::Both;
-        if (argc == 3) {
-            // this means second arg is high / low select
-            auto l = airwayLevelFromNasal(args[1]);
-            toArg = args[2];
-            if (!l) {
-                naRuntimeError(c, "createViaTo: level argument is not accepted");
-            }
-
-            level = l.value_or(Airway::Both);
-        }
-
-
-        airway = Airway::findByIdent(airwayName, level);
-        if (!airway) {
-            naRuntimeError(c, "createViaTo: couldn't find airway with provided name: %s",
-                           naStr_data(args[0]));
-        }
+    FGPositionedRef enroute;
+    AirwayRef airway = airwayFromArgs(c, argc, args, enroute);
+    if (!airway || !enroute) {
+        naRuntimeError(c, "Couldn't find airway / enroute waypt");
     }
 
-    if (!airway) {
-        naRuntimeError(c, "createViaTo: invalid airway");
-    }
-
-    FGPositionedRef nav;
-    if (naIsString(toArg)) {
-        WayptRef enroute = airway->findEnroute(naStr_data(toArg));
-        if (!enroute) {
-            naRuntimeError(c, "unknown waypoint on airway %s: %s",
-                           naStr_data(args[0]), naStr_data(toArg));
-        }
-
-        nav = enroute->source();
-    } else {
-        nav = positionedGhost(toArg);
-        if (!nav) {
-            naRuntimeError(c, "createViaTo: arg[1] is not a navaid");
-        }
-    }
-
-    if (!airway->containsNavaid(nav)) {
-        naRuntimeError(c, "createViaTo: navaid not on airway");
-    }
-
-    Via* via = new Via(nullptr, airway, nav);
+    Via* via = new Via(nullptr, airway, enroute);
     return ghostForWaypt(c, via);
 }
 
@@ -1556,58 +1589,17 @@ static naRef f_createViaFromTo(naContext c, naRef me, int argc, naRef* args)
 
     auto from = positionedFromArg(args[0]);
     if (!from) {
-        naRuntimeError(c, "createViaFromTo: from wp not found");
+        naRuntimeError(c, "createViaFromTo: 'from' wp not found");
     }
 
-    AirwayRef airway = airwayGhost(args[1]);
-    naRef toArg = args[2];
-    if (!airway && naIsString(args[1])) {
-        std::string airwayName = naStr_data(args[1]);
-        auto level = Airway::Both;
-        if (argc == 4) {
-            // this means third arg is high / low select
-            auto l = airwayLevelFromNasal(args[2]);
-            toArg = args[3];
-            if (!l) {
-                naRuntimeError(c, "createViaFromTo: level argument is not accepted");
-            }
-
-            level = l.value_or(Airway::Both);
-        }
-
-
-        airway = Airway::findByIdent(airwayName, level);
-        if (!airway) {
-            naRuntimeError(c, "createViaFromTo: couldn't find airway with provided name: %s",
-                           naStr_data(args[1]));
-        }
+    FGPositionedRef enroute;
+    // offset the arguments by one
+    AirwayRef airway = airwayFromArgs(c, argc - 1, args + 1, enroute);
+    if (!airway || !enroute) {
+        naRuntimeError(c, "Couldn't find airway / enroute waypt");
     }
 
-    if (!airway) {
-        naRuntimeError(c, "createViaFromTo: invalid airway");
-    }
-
-    FGPositionedRef nav;
-    if (naIsString(toArg)) {
-        WayptRef enroute = airway->findEnroute(naStr_data(toArg));
-        if (!enroute) {
-            naRuntimeError(c, "unknown waypoint on airway %s: %s",
-                           naStr_data(args[1]), naStr_data(toArg));
-        }
-
-        nav = enroute->source();
-    } else {
-        nav = positionedFromArg(toArg);
-        if (!nav) {
-            naRuntimeError(c, "createViaFromTo: final arg is not a navaid");
-        }
-    }
-
-    if (!airway->containsNavaid(nav)) {
-        naRuntimeError(c, "createViaFromTo: navaid not on airway");
-    }
-
-    Via* via = new Via(nullptr, airway, nav);
+    Via* via = new Via(nullptr, airway, enroute);
     return ghostForWaypt(c, via);
 }
 

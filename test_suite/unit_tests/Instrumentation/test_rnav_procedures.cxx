@@ -530,8 +530,8 @@ void RNAVProcedureTests::testLFKC_AJO1R()
     CPPUNIT_ASSERT_EQUAL(std::string{"BEBEV"}, fp->legAtIndex(4)->waypoint()->ident());
     CPPUNIT_ASSERT_EQUAL(std::string{"AJO"}, fp->legAtIndex(5)->waypoint()->ident());
     double d = fp->legAtIndex(5)->distanceAlongRoute();
-    CPPUNIT_ASSERT_DOUBLES_EQUAL(72, d, 1.0); // ensure the route didn't blow up to 0,0
-    
+    CPPUNIT_ASSERT_DOUBLES_EQUAL(71, d, 1.0); // ensure the route didn't blow up to 0,0
+
     FGRunwayRef departureRunway = fp->departureRunway();
    // FGTestApi::writeFlightPlanToKML(fp);
     

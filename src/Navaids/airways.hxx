@@ -71,14 +71,19 @@ public:
     static AirwayRef findByIdent(const std::string& aIdent, Level level);
 
     /**
+     * Find the airway based on its ident and an enroute point
+     */
+    static AirwayRef findByIdentAndEnroute(const std::string& aIdent, Level level, const std::string& enroute);
+
+    /**
      * Find the airway based on its ident. IF both high- and low- level idents
      * exist, select the one which can route between the from and to waypoints
      * correctly, preferring high-level airways.
      */
     static AirwayRef findByIdentAndVia(const std::string& aIdent, const WayptRef& from, const WayptRef& to);
-    
+
     /**
-     * Find an airway by ident, and containing a particula rnavaid/fix. 
+     * Find an airway by ident, and containing a particular rnavaid/fix. 
      */
     static AirwayRef findByIdentAndNavaid(const std::string& aIdent, const FGPositionedRef nav);
 

@@ -108,20 +108,16 @@ WayptRef viaFromString(const SGGeod& basePosition, const std::string& target)
     }
 
     // TO navaid is pieces[1]
-    FGPositionedRef nav = FGPositioned::findClosestWithIdent(pieces[1], basePosition, nullptr);
-    if (!nav) {
-        SG_LOG(SG_NAVAID, SG_WARN, "TO navaid:" << pieces[3] << " unknown");
-        return {};
-    }
-
     // airway ident is pieces[1]
-    AirwayRef airway = Airway::findByIdentAndNavaid(pieces[0], nav);
+    AirwayRef airway = Airway::findByIdentAndEnroute(pieces[0], Airway::Level::Both, pieces[1]);
     if (!airway) {
         SG_LOG(SG_NAVAID, SG_WARN, "Unknown airway:" << pieces[0]);
         return {};
     }
 
-    return new Via(nullptr, airway, nav);
+    auto enroute = airway->findEnroute(pieces[1]);
+
+    return new Via(nullptr, airway, enroute->source());
 }
 
 static double convertSpeedToKnots(RouteUnits aUnits, double aAltitudeFt, double aValue)

@@ -18,6 +18,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "config.h"
+#include "simgear/debug/debug_types.h"
 
 #include "airways.hxx"
 
@@ -294,11 +295,14 @@ int Airway::Network::findAirway(const std::string& aName)
 AirwayRef Airway::findByIdent(const std::string& aIdent, Level level)
 {
     auto it = std::find_if(static_airwaysCache.begin(), static_airwaysCache.end(),
-                           [aIdent, level](const AirwayRef& awy)
-    { 
-      if ((level != Both) && (awy->_level != level)) return false;
-      return (awy->ident() == aIdent); 
-    });
+                           [aIdent, level](const AirwayRef& awy) {
+                               if (level != Level::Both) {
+                                   if (level != awy->level()) {
+                                       return false;
+                                   }
+                               }
+                               return (awy->ident() == aIdent);
+                           });
     if (it != static_airwaysCache.end()) {
         return *it;
     }
@@ -367,7 +371,28 @@ AirwayRef Airway::findByIdentAndVia(const std::string& aIdent, const WayptRef& f
     
     return nullptr;
 }
-    
+
+AirwayRef Airway::findByIdentAndEnroute(const std::string& aIdent, Level level, const std::string& enroute)
+{
+    AirwayRef awy = findByIdent(aIdent, level);
+    if (awy && awy->findEnroute(enroute)) {
+        return awy;
+    }
+
+    // in case there's both airways, *and* the high level doesn't contain the enroute,
+    // fall back to the low level. See eg L620 where the high-level is basically empty.
+    if (level == Level::Both) {
+        AirwayRef awy = findByIdent(aIdent, Level::LowLevel);
+        if (awy && awy->findEnroute(enroute)) {
+            return awy;
+        }
+    }
+
+
+    return nullptr;
+}
+
+
 AirwayRef Airway::findByIdentAndNavaid(const std::string& aIdent, const FGPositionedRef nav)
 {
     AirwayRef hi = findByIdent(aIdent, HighLevel);
