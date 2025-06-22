@@ -52,7 +52,7 @@ private:
 
   WatchedNodesList _watchedNodes;
   double _minTriggerInterval;
-  double _lastTrigger;
+  double _lastTrigger = -1000.0;
 };
 
 }

@@ -21,6 +21,7 @@
 #include "PropertyChangeWebsocket.hxx"
 #include "PropertyChangeObserver.hxx"
 #include "jsonprops.hxx"
+#include "simgear/misc/strutils.hxx"
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/props/props.hxx>
@@ -30,104 +31,80 @@
 #include <Main/globals.hxx>
 #include <Main/fg_props.hxx>
 
-#include <cJSON.h>
+#include <nlohmann/json.hpp>
 
 namespace flightgear {
 namespace http {
 
+using nlohmann::json;
 using std::string;
 
 static unsigned nextid = 0;
 
-static void setPropertyFromJson(SGPropertyNode_ptr prop, cJSON * json)
+static void handleSetCommand(const string_list& nodes, const json& json, WebsocketWriter& writer)
 {
-  if (!prop) return;
-  if ( NULL == json ) return;
-  switch ( json->type ) {
-  case cJSON_String:
-    prop->setStringValue(json->valuestring);
-    break;
-    
-  case cJSON_Number:
-    prop->setDoubleValue(json->valuedouble);
-    break;
-    
-  case cJSON_True:
-    prop->setBoolValue(true);
-    break;
-      
-  case cJSON_False:
-    prop->setBoolValue(false);
-    break;
-      
-  default:
-    return;
-  }
-}
-  
-static void handleSetCommand(const string_list& nodes, cJSON* json, WebsocketWriter &writer)
-{
-  cJSON * value = cJSON_GetObjectItem(json, "value");
-  if ( NULL != value ) {
-    if (nodes.size() > 1) {
-      SG_LOG(SG_NETWORK, SG_WARN, "httpd: WS set: insufficent values for nodes:" << nodes.size());
-      return;
-    }
-    
-    SGPropertyNode_ptr n = fgGetNode(nodes.front());
-    if (!n) {
-      SG_LOG(SG_NETWORK, SG_WARN, "httpd: set '" << nodes.front() << "'  not found");
-      return;
-    }
-    
-    setPropertyFromJson(n, value);
-    return;
-  }
-  
-  cJSON * values = cJSON_GetObjectItem(json, "values");
-  if ( ( NULL == values ) || ( static_cast<size_t>(cJSON_GetArraySize(values)) != nodes.size()) ) {
-    SG_LOG(SG_NETWORK, SG_WARN, "httpd: WS set: mismatched nodes/values sizes:" << nodes.size());
-    return;
-  }
-  
-  string_list::const_iterator it;
-  int i=0;
-  for (it = nodes.begin(); it != nodes.end(); ++it, ++i) {
-    SGPropertyNode_ptr n = fgGetNode(*it);
-    if (!n) {
-      SG_LOG(SG_NETWORK, SG_WARN, "httpd: get '" << *it << "'  not found");
-      return;
+    // single value case
+    if (json.contains("value")) {
+        if (nodes.size() > 1) {
+            SG_LOG(SG_NETWORK, SG_WARN, "httpd: WS set: insufficent values for nodes:" << nodes.size());
+            return;
+        }
+
+        SGPropertyNode_ptr n = fgGetNode(nodes.front());
+        if (!n) {
+            SG_LOG(SG_NETWORK, SG_WARN, "httpd: set '" << nodes.front() << "'  not found");
+            return;
+        }
+
+        JSON::setValueFromJSON(json.at("value"), n);
+        return;
     }
 
-    setPropertyFromJson(n, cJSON_GetArrayItem(values, i));
-  } // of nodes iteration
+    // multi-value case
+    if (!json.contains("values")) {
+        SG_LOG(SG_NETWORK, SG_WARN, "httpd: WS set: neither value or values present");
+        return;
+    }
+
+    const auto& values = json.at("values");
+    if (values.size() != nodes.size()) {
+        SG_LOG(SG_NETWORK, SG_WARN, "httpd: WS set: mismatched nodes/values sizes:" << nodes.size());
+        return;
+    }
+
+    size_t index = 0;
+    for (auto nodePath : nodes) {
+        SGPropertyNode_ptr n = fgGetNode(nodePath);
+        if (!n) {
+            SG_LOG(SG_NETWORK, SG_WARN, "httpd: get '" << nodePath << "'  not found");
+        } else {
+            JSON::setValueFromJSON(values.at(index++), n);
+        }
+    } // of nodes/values iteration
 }
-  
-static void handleExecCommand(cJSON* json)
+
+static void handleExecCommand(const json& json)
 {
-  cJSON* name = cJSON_GetObjectItem(json, "fgcommand");
-  if ((NULL == name )|| (NULL == name->valuestring)) {
-    SG_LOG(SG_NETWORK, SG_WARN, "httpd: exec: no fgcommand name");
-    return;
-  }
-  
+    const auto cmd = json.value<std::string>("fgcommand", {});
+    if (cmd.empty()) {
+        SG_LOG(SG_NETWORK, SG_WARN, "httpd: exec: no fgcommand name");
+        return;
+    }
+
   SGPropertyNode_ptr arg(new SGPropertyNode);
   JSON::addChildrenToProp( json, arg );
-  
-  globals->get_commands()->execute(name->valuestring, arg, nullptr);
+
+  globals->get_commands()->execute(cmd, arg, nullptr);
 }
-  
-PropertyChangeWebsocket::PropertyChangeWebsocket(PropertyChangeObserver * propertyChangeObserver)
+
+PropertyChangeWebsocket::PropertyChangeWebsocket(PropertyChangeObserver* propertyChangeObserver)
     : id(++nextid),
       _propertyChangeObserver(propertyChangeObserver),
-      _minTriggerInterval(fgGetDouble("/sim/http/property-websocket/update-interval-secs", 0.05)), // default 20Hz
-      _lastTrigger(-1000)
+      _minTriggerInterval(fgGetDouble("/sim/http/property-websocket/update-interval-secs", 0.05)) // default 20Hz
 {
 }
 
-PropertyChangeWebsocket::~PropertyChangeWebsocket()
-{
-}
+PropertyChangeWebsocket::~PropertyChangeWebsocket() = default;
 
 void PropertyChangeWebsocket::close()
 {
@@ -137,17 +114,16 @@ void PropertyChangeWebsocket::close()
 
 void PropertyChangeWebsocket::handleGetCommand(const string_list& nodes, WebsocketWriter &writer)
 {
-  double t = fgGetDouble("/sim/time/elapsed-sec");
-  string_list::const_iterator it;
-  for (it = nodes.begin(); it != nodes.end(); ++it) {
-    SGPropertyNode_ptr n = fgGetNode(*it);
-    if (!n) {
-      SG_LOG(SG_NETWORK, SG_WARN, "httpd: get '" << *it << "'  not found");
-      return;
-    }
-    
-    writer.writeText( JSON::toJsonString( false, n, 0, t ) );
-  } // of nodes iteration
+    const double t = fgGetDouble("/sim/time/elapsed-sec");
+    for (const auto& nodePath : nodes) {
+        SGPropertyNode_ptr n = fgGetNode(nodePath);
+        if (!n) {
+            SG_LOG(SG_NETWORK, SG_WARN, "httpd: get '" << nodePath << "'  not found");
+            return;
+        }
+
+        writer.writeText(JSON::toJsonString(false, n, 0, t));
+    } // of nodes iteration
 }
   
 void PropertyChangeWebsocket::handleRequest(const HTTPRequest & request, WebsocketWriter &writer)
@@ -165,45 +141,37 @@ void PropertyChangeWebsocket::handleRequest(const HTTPRequest & request, Websock
    node: '/bax/foo'
    }
    */
-  cJSON * json = cJSON_Parse(request.Content.c_str());
-  if ( NULL != json) {
-    string command;
-    cJSON * j = cJSON_GetObjectItem(json, "command");
-    if ( NULL != j && NULL != j->valuestring) {
-      command = j->valuestring;
-    }
+  json json = json::parse(request.Content, nullptr, false);
+  if (json.is_discarded()) {
+      SG_LOG(SG_NETWORK, SG_WARN, "httpd: unable to parse request JSON:\n\t" << request.Content);
+      return;
+  }
 
-    // handle a single node name, or an array of them
-    string_list nodeNames;
-    j = cJSON_GetObjectItem(json, "node");
-    if ( NULL != j && NULL != j->valuestring) {
-        nodeNames.push_back(simgear::strutils::strip(string(j->valuestring)));
-    }
+  const auto command = json.value<std::string>("command", {});
 
-    cJSON * nodes = cJSON_GetObjectItem(json, "nodes");
-    if ( NULL != nodes) {
-      for (int i = 0; i < cJSON_GetArraySize(nodes); i++) {
-        cJSON * node = cJSON_GetArrayItem(nodes, i);
-        if ( NULL == node) continue;
-        if ( NULL == node->valuestring) continue;
-        nodeNames.push_back(simgear::strutils::strip(string(node->valuestring)));
-      }
-    }
-    
-    if (command == "get") {
+  // handle a single node name, or an array of them
+  string_list nodeNames;
+  if (json.contains("node")) {
+      nodeNames.push_back(json.at("node").template get<std::string>());
+  } else if (json.contains("nodes")) {
+      nodeNames = json.at("nodes").template get<string_list>();
+  }
+
+  // strip strings in place
+  for (auto& s : nodeNames) {
+      s = simgear::strutils::strip(s);
+  }
+
+  if (command == "get") {
       handleGetCommand(nodeNames, writer);
-    } else if (command == "set") {
+  } else if (command == "set") {
       handleSetCommand(nodeNames, json, writer);
-    } else if (command == "exec") {
+  } else if (command == "exec") {
       handleExecCommand(json);
-    } else {
-      string_list::const_iterator it;
-      for (it = nodeNames.begin(); it != nodeNames.end(); ++it) {
-        _watchedNodes.handleCommand(command, *it, _propertyChangeObserver);
+  } else {
+      for (auto n : nodeNames) {
+          _watchedNodes.handleCommand(command, n, _propertyChangeObserver);
       }
-    }
-    
-    cJSON_Delete(json);
   }
 }
 
@@ -218,15 +186,12 @@ void PropertyChangeWebsocket::poll(WebsocketWriter & writer)
     _lastTrigger = now;
   }
 
-  for (WatchedNodesList::iterator it = _watchedNodes.begin(); it != _watchedNodes.end(); ++it) {
-    SGPropertyNode_ptr node = *it;
-
-    string newValue;
-    if (_propertyChangeObserver->isChangedValue(node)) {
-      string out = JSON::toJsonString( false, node, 0, now );
-      SG_LOG(SG_NETWORK, SG_DEBUG, "PropertyChangeWebsocket::poll() new Value for " << node->getPath(true) << " '" << node->getStringValue() << "' #" << id << ": " << out );
-      writer.writeText( out );
-    }
+  for (auto node : _watchedNodes) {
+      if (_propertyChangeObserver->isChangedValue(node)) {
+          string out = JSON::toJsonString(false, node, 0, now);
+          SG_LOG(SG_NETWORK, SG_BULK, "PropertyChangeWebsocket::poll() new Value for " << node->getPath(true) << " '" << node->getStringValue() << "' #" << id << ": " << out);
+          writer.writeText(out);
+      }
   }
 }
 

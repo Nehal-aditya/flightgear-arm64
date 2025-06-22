@@ -19,43 +19,40 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "NavdbUriHandler.hxx"
-#include <simgear/debug/logstream.hxx>
-#include <Navaids/navrecord.hxx>
-#include <Airports/airport.hxx>
+#include "Navaids/positioned.hxx"
 #include <ATC/CommStation.hxx>
-#include <cJSON.h>
+#include <Airports/airport.hxx>
+#include <Navaids/navrecord.hxx>
+#include <simgear/debug/logstream.hxx>
+
+#include <nlohmann/json.hpp>
 
 using std::string;
+
+using njson = nlohmann::json;
 
 namespace flightgear {
 namespace http {
 
-static cJSON * createPositionArray(double x, double y, double z)
+static njson createPositionArray(double x, double y, double z)
 {
-  cJSON * p = cJSON_CreateArray();
-  cJSON_AddItemToArray(p, cJSON_CreateNumber(x));
-  cJSON_AddItemToArray(p, cJSON_CreateNumber(y));
-  cJSON_AddItemToArray(p, cJSON_CreateNumber(z));
-  return p;
+    return njson{x, y, z};
 }
 
-static cJSON * createPositionArray(double x, double y)
+static njson createPositionArray(double x, double y)
 {
-  cJSON * p = cJSON_CreateArray();
-  cJSON_AddItemToArray(p, cJSON_CreateNumber(x));
-  cJSON_AddItemToArray(p, cJSON_CreateNumber(y));
-  return p;
+    return njson{x, y};
 }
 
-static cJSON * createLOCGeometry(FGNavRecord * navRecord)
+static njson createLOCGeometry(FGNavRecord* navRecord)
 {
   assert( navRecord != NULL );
 
-  cJSON * geometry = cJSON_CreateObject();
-  int range = navRecord->get_range();
+  njson coordArray;
 
-  double width = navRecord->localizerWidth();
-  double course = navRecord->get_multiuse();
+  const int range = navRecord->get_range();
+  const double width = navRecord->localizerWidth();
+  const double course = navRecord->get_multiuse();
 
   double px[4];
   double py[4];
@@ -69,88 +66,78 @@ static cJSON * createLOCGeometry(FGNavRecord * navRecord)
     SGGeod p2 = SGGeod::fromGeoc(geoc.advanceRadM(c, range * SG_NM_TO_METER));
     px[i + 2] = p2.getLongitudeDeg();
     py[i + 2] = p2.getLatitudeDeg();
-  }
-  // Add three lines: centerline, left and right edge
-  cJSON_AddItemToObject(geometry, "type", cJSON_CreateString("MultiLineString"));
-  cJSON * coordinates = cJSON_CreateArray();
-  cJSON_AddItemToObject(geometry, "coordinates", coordinates);
-  for (int i = 1; i < 4; i++) {
-    cJSON * line = cJSON_CreateArray();
-    cJSON_AddItemToArray(coordinates, line);
-    cJSON_AddItemToArray(line, createPositionArray(px[0], py[0]));
-    cJSON_AddItemToArray(line, createPositionArray(px[i], py[i]));
-  }
 
-  return geometry;
+    njson line;
+    line.push_back(createPositionArray(px[0], py[0]));
+    line.push_back(createPositionArray(px[i + 2], py[i + 2]));
+    coordArray.push_back(line);
+  }
+  return njson{
+      {"type", "MultiLineString"},
+      {"coordinates", coordArray}};
 }
 
-static cJSON * createPointGeometry(FGPositioned * positioned )
+static njson createPointGeometry(FGPositioned* positioned)
 {
-  cJSON * geometry = cJSON_CreateObject();
-  cJSON_AddItemToObject(geometry, "type", cJSON_CreateString("Point"));
-  cJSON_AddItemToObject(geometry, "coordinates", 
-    createPositionArray(positioned ->longitude(), positioned->latitude(), positioned->elevationM()));
-  return geometry;
+    return njson{
+        {"type", "Point"},
+        {"coordinates", createPositionArray(positioned->longitude(), positioned->latitude(), positioned->elevationM())}};
 }
 
-static cJSON * createRunwayPolygon( FGRunwayBase * rwy )
+static njson createRunwayPolygon(FGRunwayBase* rwy)
 {
-  cJSON * polygon = cJSON_CreateObject(); 
-  cJSON_AddItemToObject(polygon, "type", cJSON_CreateString("Polygon"));
-  cJSON * coordinates = cJSON_CreateArray();
-  cJSON_AddItemToObject(polygon, "coordinates", coordinates );
-  cJSON * linearRing = cJSON_CreateArray();
-  cJSON_AddItemToArray( coordinates, linearRing );
-
   // compute the four corners of the runway
   SGGeod p1 = rwy->pointOffCenterline( 0.0, rwy->widthM()/2 );
   SGGeod p2 = rwy->pointOffCenterline( 0.0, -rwy->widthM()/2 );
   SGGeod p3 = rwy->pointOffCenterline( rwy->lengthM(), -rwy->widthM()/2 );
   SGGeod p4 = rwy->pointOffCenterline( rwy->lengthM(), rwy->widthM()/2 );
-  cJSON_AddItemToArray( linearRing, createPositionArray(p1.getLongitudeDeg(), p1.getLatitudeDeg()) );
-  cJSON_AddItemToArray( linearRing, createPositionArray(p2.getLongitudeDeg(), p2.getLatitudeDeg()) );
-  cJSON_AddItemToArray( linearRing, createPositionArray(p3.getLongitudeDeg(), p3.getLatitudeDeg()) );
-  cJSON_AddItemToArray( linearRing, createPositionArray(p4.getLongitudeDeg(), p4.getLatitudeDeg()) );
-  // close the ring
-  cJSON_AddItemToArray( linearRing, createPositionArray(p1.getLongitudeDeg(), p1.getLatitudeDeg()) );
-  return polygon;
+
+  njson linearRing{
+      createPositionArray(p1.getLongitudeDeg(), p1.getLatitudeDeg()),
+      createPositionArray(p2.getLongitudeDeg(), p2.getLatitudeDeg()),
+      createPositionArray(p3.getLongitudeDeg(), p3.getLatitudeDeg()),
+      createPositionArray(p4.getLongitudeDeg(), p4.getLatitudeDeg()),
+      createPositionArray(p1.getLongitudeDeg(), p1.getLatitudeDeg())};
+
+  njson coordArray;
+  coordArray.push_back(linearRing);
+
+  return njson{
+      {"type", "Polygon"},
+      {"coordinates", coordArray}};
 }
 
-static cJSON * createAirportGeometry(FGAirport * airport )
+static njson createAirportGeometry(FGAirport* airport)
 {
   assert( airport != NULL );
-  FGRunwayList runways = airport->getRunwaysWithoutReciprocals();
+  const auto& runways = airport->getRunwaysWithoutReciprocals();
 
   if( runways.empty() ) {
     // no runways? Create a Point geometry
     return createPointGeometry( airport );
   }
 
-  cJSON * geometry = cJSON_CreateObject();
-
-  // if there are runways, create a geometry collection
-  cJSON_AddItemToObject(geometry, "type", cJSON_CreateString("GeometryCollection"));
-  cJSON * geometryCollection = cJSON_CreateArray();
-  cJSON_AddItemToObject(geometry, "geometries", geometryCollection);
+  njson geometryArray;
 
   // the first item is the aerodrome reference point
-  cJSON_AddItemToArray( geometryCollection, createPointGeometry(airport) );
+  geometryArray.push_back(createPointGeometry(airport));
 
   // followed by the runway polygons
-  for( FGRunwayList::iterator it = runways.begin(); it != runways.end(); ++it ) {
-    cJSON_AddItemToArray( geometryCollection, createRunwayPolygon(*it) );
+  for (auto rwy : runways) {
+      geometryArray.push_back(createRunwayPolygon(rwy));
   }
 
-  FGTaxiwayList taxiways = airport->getTaxiways();
   // followed by the taxiway polygons
-  for( FGTaxiwayList::iterator it = taxiways.begin(); it != taxiways.end(); ++it ) {
-    cJSON_AddItemToArray( geometryCollection, createRunwayPolygon(*it) );
+  for (auto tx : airport->getTaxiways()) {
+      geometryArray.push_back(createRunwayPolygon(tx));
   }
 
-  return geometry;
+  return njson{
+      {"type", "GeometryCollection"},
+      {"geometries", geometryArray}};
 }
 
-static cJSON * createGeometryFor(FGPositioned * positioned)
+static njson createGeometryFor(FGPositioned* positioned)
 {
   switch( positioned->type() ) {
     case FGPositioned::LOC:
@@ -165,114 +152,95 @@ static cJSON * createGeometryFor(FGPositioned * positioned)
   }
 }
 
-static void addAirportProperties(cJSON * json, FGAirport * airport )
+static void addAirportProperties(njson& json, FGAirport* airport)
 {
-  if( NULL == airport ) return;
-  double longestRunwayLength = 0.0;
-  double longestRunwayHeading = 0.0;
-  const char * longestRunwaySurface = "";
+    if (!airport) return;
 
-  cJSON_AddItemToObject(json, "name", cJSON_CreateString(airport->getName().c_str()));
-  cJSON * runwaysJson = cJSON_CreateArray();
-  cJSON_AddItemToObject(json, "runways", runwaysJson);
+    json["name"] = airport->getName();
+    njson runways;
 
-  FGRunwayList runways = airport->getRunways();
-  for( FGRunwayList::iterator it = runways.begin(); it != runways.end(); ++it ) {
-    FGRunway * runway = *it;
-    cJSON * runwayJson = cJSON_CreateObject();
-    cJSON_AddItemToArray( runwaysJson, runwayJson );
-    cJSON_AddItemToObject(runwayJson, "id", cJSON_CreateString(runway->ident().c_str()));
-    cJSON_AddItemToObject(runwayJson, "length_m", cJSON_CreateNumber(runway->lengthM()));
-    cJSON_AddItemToObject(runwayJson, "width_m", cJSON_CreateNumber(runway->widthM()));
-    cJSON_AddItemToObject(runwayJson, "surface", cJSON_CreateString(runway->surfaceName()));
-    cJSON_AddItemToObject(runwayJson, "heading_deg", cJSON_CreateNumber(runway->headingDeg()));
-    double d = runway->displacedThresholdM();
-    if( d > .0 )
-      cJSON_AddItemToObject(runwayJson, "dispacedThreshold_m", cJSON_CreateNumber(d));
+    for (auto rwy : airport->getRunways()) {
+        njson rj{
+            {"id", rwy->ident()},
+            {"length_m", rwy->lengthM()},
+            {"width_m", rwy->widthM()},
+            {"surface", rwy->surfaceName()},
+            {"heading_deg", rwy->headingDeg()}};
 
-    d = runway->stopwayM();
-    if( d > .0 )
-      cJSON_AddItemToObject(runwayJson, "stopway_m", cJSON_CreateNumber(d));
+        if (rwy->displacedThresholdM() > 0.0) {
+            rj["dispacedThreshold_m"] = rwy->displacedThresholdM();
+        }
 
-    if( runway->lengthM() > longestRunwayLength ) {
-      longestRunwayLength = runway->lengthM();
-      longestRunwayHeading = runway->headingDeg();
-      longestRunwaySurface = runway->surfaceName();
+        if (rwy->stopwayM() > 0.0) {
+            rj["stopway_m"] = rwy->stopwayM();
+        }
+
+        runways.push_back(rj);
     }
-  }
-  cJSON_AddItemToObject(json, "longestRwyLength_m", cJSON_CreateNumber(longestRunwayLength));
-  cJSON_AddItemToObject(json, "longestRwyHeading_deg", cJSON_CreateNumber(longestRunwayHeading));
-  cJSON_AddItemToObject(json, "longestRwySurface", cJSON_CreateString(longestRunwaySurface));
-  if( airport->getMetar() ) {
-    cJSON_AddItemToObject(json, "metar", cJSON_CreateTrue());
-  }
 
-  cJSON * commsJson = cJSON_CreateArray();
-  cJSON_AddItemToObject(json, "comm", commsJson);
-  flightgear::CommStationList comms = airport->commStations();
-  for( flightgear::CommStationList::iterator it = comms.begin(); it != comms.end(); ++it ) {
-    flightgear::CommStation * comm = *it;
-    cJSON * commJson = cJSON_CreateObject();
-    cJSON_AddItemToArray( commsJson, commJson );
-    cJSON_AddItemToObject(commJson, "id", cJSON_CreateString(comm->ident().c_str()));
-    cJSON_AddItemToObject(commJson, "mhz", cJSON_CreateNumber(comm->freqMHz()));
-  }
+    json["runways"] = runways;
+
+    auto longestRunway = airport->longestRunway();
+    json["longestRwyLength_m"] = longestRunway->lengthM();
+    json["longestRwyHeading_deg"] = longestRunway->headingDeg();
+    json["longestRwySurface"] = longestRunway->surfaceName();
+
+    if (airport->getMetar()) {
+        json["metar"] = true;
+    }
+
+    njson comms;
+    for (auto c : airport->commStations()) {
+        comms.push_back({{"id", c->ident()},
+                         {"mhz", c->freqMHz()}});
+    }
+
+    json["comm"] = comms;
 }
 
-static void addNAVProperties(cJSON * json, FGNavRecord * navRecord )
+static void addNAVProperties(njson& json, FGNavRecord* navRecord)
 {
-  if( NULL == navRecord ) return;
-  cJSON_AddItemToObject(json, "range_nm", cJSON_CreateNumber(navRecord->get_range()));
-  cJSON_AddItemToObject(json, "frequency", cJSON_CreateNumber((double) navRecord->get_freq() / 100.0));
-  switch (navRecord->type()) {
+    if (!navRecord) return;
+
+    json["range_nm"] = navRecord->get_range();
+    json["frequency"] = navRecord->get_freq() / 100.0;
+
+    switch (navRecord->type()) {
     case FGPositioned::ILS:
     case FGPositioned::LOC:
-      cJSON_AddItemToObject(json, "localizer-course", cJSON_CreateNumber(navRecord->get_multiuse()));
-      break;
+        json["localizer-course"] = navRecord->get_multiuse();
+        break;
 
     case FGPositioned::VOR:
-      cJSON_AddItemToObject(json, "variation", cJSON_CreateNumber(navRecord->get_multiuse()));
-      break;
+        json["variation"] = navRecord->get_multiuse();
+        break;
 
     default:
       break;
   }
 }
 
-static cJSON * createPropertiesFor(FGPositioned * positioned)
+static njson createPropertiesFor(FGPositioned* positioned)
 {
-  cJSON * properties = cJSON_CreateObject();
+    njson props{
+        {"name", positioned->name()},
+        {"id", positioned->ident()},
+        {"type", positioned->typeString()},
+        {"elevation-m", positioned->elevationM()}};
 
-  cJSON_AddItemToObject(properties, "name", cJSON_CreateString(positioned->name().c_str()));
-  // also add id to properties
-  cJSON_AddItemToObject(properties, "id", cJSON_CreateString(positioned->ident().c_str()));
-  cJSON_AddItemToObject(properties, "type", cJSON_CreateString(positioned->typeString()));
-  cJSON_AddItemToObject(properties, "elevation-m", cJSON_CreateNumber(positioned->elevationM()));
-  addNAVProperties( properties, dynamic_cast<FGNavRecord*>(positioned) );
-  addAirportProperties( properties, dynamic_cast<FGAirport*>(positioned) );
-  return properties;
+    addNAVProperties(props, fgpositioned_cast<FGNavRecord>(positioned));
+    addAirportProperties(props, fgpositioned_cast<FGAirport>(positioned));
+
+    return props;
 }
 
-static cJSON * createFeatureFor(FGPositioned * positioned)
+static njson createFeatureFor(FGPositioned* positioned)
 {
-  cJSON * feature = cJSON_CreateObject();
-
-  // A GeoJSON object with the type "Feature" is a feature object.
-  cJSON_AddItemToObject(feature, "type", cJSON_CreateString("Feature"));
-
-  // A feature object must have a member with the name "geometry".
-  // The value of the geometry member is a geometry object as defined above or a JSON null value.
-  cJSON_AddItemToObject(feature, "geometry", createGeometryFor(positioned));
-
-  // A feature object must have a member with the name "properties".
-  // The value of the properties member is an object (any JSON object or a JSON null value).
-  cJSON_AddItemToObject(feature, "properties", createPropertiesFor(positioned));
-
-  // If a feature has a commonly used identifier, that identifier should be included
-  // as a member of the feature object with the name "id".
-  cJSON_AddItemToObject(feature, "id", cJSON_CreateString(positioned->ident().c_str()));
-
-  return feature;
+    return njson{
+        {"type", "Feature"},
+        {"geometry", createGeometryFor(positioned)},
+        {"properties", createPropertiesFor(positioned)},
+        {"id", positioned->ident()}};
 }
 
 bool NavdbUriHandler::handleRequest(const HTTPRequest & request, HTTPResponse & response, Connection * connection)
@@ -326,15 +294,12 @@ bool NavdbUriHandler::handleRequest(const HTTPRequest & request, HTTPResponse & 
 
     result = FGPositioned::findWithinRange(pos, range, &filter);
   } else if (query == "airports") {
-    cJSON * json = cJSON_CreateArray();
-    for( char ** airports = FGAirport::searchNamesAndIdents(""); *airports; airports++ ) {
-      cJSON_AddItemToArray(json, cJSON_CreateString(*airports));
-    }
-    char * jsonString = indent ? cJSON_Print(json) : cJSON_PrintUnformatted(json);
-    cJSON_Delete(json);
-    response.Content = jsonString;
-    free(jsonString);
-    return true;
+      njson results;
+      for (char** airports = FGAirport::searchNamesAndIdents(""); *airports; airports++) {
+          results.push_back(std::string{*airports});
+      }
+      response.Content = results.dump(indent ? 2 : -1);
+      return true;
 
   } else if (query == "airport") {
     FGAirportRef airport = FGAirport::findByIdent(request.RequestVariables.get("id"));
@@ -345,29 +310,21 @@ bool NavdbUriHandler::handleRequest(const HTTPRequest & request, HTTPResponse & 
   }
 
  { // create some GeoJSON from the result list
-    // GeoJSON always consists of a single object.
-    cJSON * geoJSON = cJSON_CreateObject();
+     // Each element in the array is a feature object
+     njson features;
 
-    // The GeoJSON object must have a member with the name "type".
-    // This member's value is a string that determines the type of the GeoJSON object.
-    cJSON_AddItemToObject(geoJSON, "type", cJSON_CreateString("FeatureCollection"));
+     for (auto p : result) {
+         features.push_back(createFeatureFor(p));
+     }
 
-    // we send zero to many features - let's make it a FeatureCollection
-    // A GeoJSON object with the type "FeatureCollection" is a feature collection object.
-    // An object of type "FeatureCollection" must have a member with the name "features".
-    // The value corresponding to "features" is an array.
-    cJSON * featureCollection = cJSON_CreateArray();
-    cJSON_AddItemToObject(geoJSON, "features", featureCollection);
+     // GeoJSON always consists of a single object.
+     njson geoJSON{
+         // The GeoJSON object must have a member with the name "type".
+         // This member's value is a string that determines the type of the GeoJSON object.
+         {"type", "FeatureCollection"},
+         {"features", features}};
 
-    for (FGPositionedList::iterator it = result.begin(); it != result.end(); ++it) {
-      // Each element in the array is a feature object as defined above.
-      cJSON_AddItemToArray(featureCollection, createFeatureFor(*it));
-    }
-
-    char * jsonString = indent ? cJSON_Print(geoJSON) : cJSON_PrintUnformatted(geoJSON);
-    cJSON_Delete(geoJSON);
-    response.Content = jsonString;
-    free(jsonString);
+     response.Content = geoJSON.dump(indent ? 2 : -1);
   }
 
   return true;

@@ -80,7 +80,7 @@ add_executable(fgfs
 )
 
 # link to our OBJECT library
-target_link_libraries(fgfs fgfsObjects)
+target_link_libraries(fgfs PRIVATE fgfsObjects)
 
 add_dependencies(fgfs buildId)
 # explicitly disable automoc for main fgfs target

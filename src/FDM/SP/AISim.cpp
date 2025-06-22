@@ -32,17 +32,18 @@
 #include <fstream>
 #include <streambuf>
 
+#include <nlohmann/json.hpp>
+
 #ifdef ENABLE_SP_FDM
 # include <simgear/constants.h>
 # include <simgear/math/simd.hxx>
 # include <simgear/math/simd4x4.hxx>
 # include <simgear/math/sg_geodesy.hxx>
 
-# include <Aircraft/controls.hxx>
-# include <Main/fg_props.hxx>
-# include <Main/globals.hxx>
-# include <FDM/flight.hxx>
-# include <cJSON.h>
+#include <Aircraft/controls.hxx>
+#include <FDM/flight.hxx>
+#include <Main/fg_props.hxx>
+#include <Main/globals.hxx>
 #else
 # include "simd.hxx"
 # include "simd4x4.hxx"
@@ -658,72 +659,50 @@ FGAISim::invert_inertia(aiMtx4 mtx)
 }
 
 
-std::map<std::string,float>
-FGAISim::jsonParse(const char *str)
+std::map<std::string, float>
+FGAISim::jsonParse(std::istream& in)
 {
-    cJSON *json = ::cJSON_Parse(str);
-    jsonMap rv;
-    if (json)
-    {
-        for (int i=0; i<::cJSON_GetArraySize(json); ++i)
-        {
-            cJSON* cj = ::cJSON_GetArrayItem(json, i);
-            if (cj->string)
-            {
-                if (cj->valuedouble) {
-                    rv.emplace(cj->string, cj->valuedouble);
-                }
-                else if (cj->type == cJSON_Array)
-                {
-                    cJSON* child = cj->child;
-                    for (int j=0; child; child = child->next, ++j)
-                    {
-                        std::string str = cj->string;
-                        str += '[';
-                        str += std::to_string(j);
-                        str += ']';
-                        if (child->type == cJSON_Object)
-                        {
-                            cJSON* subchild = child->child;
-                            for (int k=0; subchild; subchild = subchild->next, ++k)
-                            {
-                                std::string substr = str;
-                                substr += '/';
-                                substr += subchild->string;
+    using nj = nlohmann::json;
+    const auto json = nj::parse(in, nullptr, false);
+    if (json.is_discarded()) {
+        SG_LOG(SG_FLIGHT, SG_ALERT, "Failed to parse Aircraft Json");
+        return {};
+    }
 
-                                if (subchild->type == cJSON_Array)
-                                {
-                                   cJSON* array = subchild->child;
-                                   for (int l=0; array; array = array->next, ++l)
-                                    {
-                                        std::string arraystr = substr;
-                                        arraystr += '[';
-                                        arraystr += std::to_string(l);
-                                        arraystr += ']';
-                                        rv.emplace(arraystr, array->valuedouble);
-                                    }
-                                }
-                                else {
-                                    rv.emplace(substr, subchild->valuedouble);
-                                }
+    jsonMap rv;
+    for (const auto& i : json.items()) {
+        const auto& v = i.value();
+        if (v.is_number()) {
+            // simple case, top level sacalar numerical value
+            rv.emplace(i.key(), v.template get<float>());
+        } else if (v.is_array()) {
+            int index = 0;
+            for (const auto& child : v) {
+                std::string k = i.key() + "[" + std::to_string(index++) + "]";
+                if (child.is_object()) {
+                    // child is an object, we will iterate its children and add them below
+                    // a path seperator to the result map
+                    for (const auto& subchild : child.items()) {
+                        const auto subChildK = k + "/" + subchild.key();
+                        if (subchild.value().is_array()) {
+                            // subchild is itself an array ...
+                            int subChildIndex = 0;
+                            for (const auto& subChildElement : subchild.value()) {
+                                std::string k2 = subChildK + "[" + std::to_string(subChildIndex++) + "]";
+                                rv.emplace(k2, subChildElement.template get<float>());
                             }
-                        }
-                        else {
-                            rv.emplace(str, child->valuedouble);
+                        } else {
+                            // simple value
+                            rv.emplace(subChildK, subchild.value().template get<float>());
                         }
                     }
+                } else {
+                    rv.emplace(k, child.template get<float>());
                 }
-            }
+            } // of array iteration
         }
-        ::cJSON_Delete(json);
     }
-    else
-    {
-        std::string err = ::cJSON_GetErrorPtr();
-        err = err.substr(0, 16);
-        err = "AISim: Can't parse Aircraft data around: "+err;
-        SG_LOG(SG_FLIGHT, SG_ALERT, err );
-    }
+
     return rv;
 }
 
@@ -740,7 +719,7 @@ FGAISim::load(std::string path)
     jsonString.assign((std::istreambuf_iterator<char>(file)),
                        std::istreambuf_iterator<char>());
 
-    jsonMap data = jsonParse(jsonString.c_str());
+    jsonMap data = jsonParse(file);
 
     Sw   = data["Sw"];
     cbar = data["cbar"];

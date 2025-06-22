@@ -183,7 +183,8 @@ public:
     }
 
 private:
-    std::map<std::string,float> jsonParse(const char *str);
+    std::map<std::string, float> jsonParse(std::istream& in);
+
     void update_velocity(float v);
     aiMtx4 matrix_inverse(aiMtx4 mtx);
     aiMtx4 invert_inertia(aiMtx4 mtx);

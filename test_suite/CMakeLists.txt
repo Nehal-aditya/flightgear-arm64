@@ -124,7 +124,7 @@ add_executable(fgfs_test_suite
     ${TESTSUITE_HEADERS}
 )
 
-target_link_libraries(fgfs_test_suite fgfsObjects)
+target_link_libraries(fgfs_test_suite PRIVATE fgfsObjects)
 
 add_dependencies(fgfs_test_suite buildId)
 set_target_properties(fgfs_test_suite
@@ -149,7 +149,7 @@ target_include_directories(fgfs_test_suite PUBLIC ${PROJECT_SOURCE_DIR})
 target_compile_definitions(fgfs_test_suite PUBLIC BUILDING_TESTSUITE)
 
 # Additional libraries just for the test suite.
-target_link_libraries(fgfs_test_suite CppUnitLib)
+target_link_libraries(fgfs_test_suite PRIVATE CppUnitLib)
 
 # target to run the tests
 if (MSVC)

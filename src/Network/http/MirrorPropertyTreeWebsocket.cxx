@@ -33,7 +33,7 @@
 #include <Main/globals.hxx>
 #include <Main/fg_props.hxx>
 
-#include <cJSON.h>
+#include <nlohmann/json.hpp>
 
 //#define MIRROR_DEBUG 1
 
@@ -259,8 +259,9 @@ using std::string;
             return it->second;
         }
 
-        cJSON* makeJSONData()
+        nlohmann::json makeJSONData()
         {
+            using njson = nlohmann::json;
 #if defined (MIRROR_DEBUG)
             SGTimeStamp st;
             st.stamp();
@@ -269,75 +270,45 @@ using std::string;
             int changedSize = changedNodes.size();
             int removedSize = removedNodes.size();
 #endif
-            cJSON* result = cJSON_CreateObject();
+            njson result;
             if (!newNodes.empty()) {
-                cJSON * newNodesArray = cJSON_CreateArray();
-                
-                // cJSON_AddItemToArray performance is O(N) due to use of a linked
-                // list, which dominates the performance here. To fix this we maintan
-                // a point to the tail of the array, keeping appends O(1)
-                cJSON* arrayTail = nullptr;
-                
+                njson newNodesJson;
+
                 for (auto prop : newNodes) {
                     changedNodes.erase(prop); // avoid duplicate send
-                    cJSON* newPropData = cJSON_CreateObject();
-                    cJSON_AddItemToObject(newPropData, "path", cJSON_CreateString(prop->getPath(true).c_str()));
-                    cJSON_AddItemToObject(newPropData, "type", cJSON_CreateString(JSON::getPropertyTypeString(prop->getType())));
-                    cJSON_AddItemToObject(newPropData, "index", cJSON_CreateNumber(prop->getIndex()));
-                    cJSON_AddItemToObject(newPropData, "position", cJSON_CreateNumber(prop->getPosition()));
-                    cJSON_AddItemToObject(newPropData, "id", cJSON_CreateNumber(idForProperty(prop)));
+
+                    njson newPropData = {
+                        {"path", prop->getPath(true)},
+                        {"type", JSON::getPropertyTypeString(prop->getType())},
+                        {"index", prop->getIndex()},
+                        {"position", prop->getPosition()},
+                        {"id", idForProperty(prop)}};
+
                     if (prop->getType() != simgear::props::NONE) {
-                        cJSON_AddItemToObject(newPropData, "value", JSON::valueToJson(prop));
-                    }
-                    
-                    if (arrayTail) {
-                        arrayTail->next = newPropData;
-                        newPropData->prev = arrayTail;
-                        arrayTail = newPropData;
-                    } else {
-                        cJSON_AddItemToArray(newNodesArray, newPropData);
-                        arrayTail = newPropData;
+                        newPropData["value"] = JSON::valueToJson(prop);
                     }
                 }
 
                 newNodes.clear();
-                cJSON_AddItemToObject(result, "created", newNodesArray);
+                result["created"] = newNodesJson;
             }
 
-
             if (!removedNodes.empty()) {
-                cJSON * deletedNodesArray = cJSON_CreateArray();
+                njson removedNodesJson;
                 for (auto propId : removedNodes) {
-                    cJSON_AddItemToArray(deletedNodesArray, cJSON_CreateNumber(propId));
+                    removedNodesJson.push_back(propId);
                 }
-                cJSON_AddItemToObject(result, "removed", deletedNodesArray);
+                result["removed"] = removedNodesJson;
                 removedNodes.clear();
             }
 
             if (!changedNodes.empty()) {
-                cJSON * changedNodesArray = cJSON_CreateArray();
-                
-                // see comment above about cJSON_AddItemToArray
-                cJSON* tail = nullptr;
-                
+                njson changedNodesJson;
                 for (auto prop : changedNodes) {
-                    cJSON* propData = cJSON_CreateArray();
-                    cJSON_AddItemToArray(propData, cJSON_CreateNumber(idForProperty(prop)));
-                    cJSON_AddItemToArray(propData, JSON::valueToJson(prop));
-                    
-                    
-                    if (tail) {
-                        tail->next = propData;
-                        propData->prev = tail;
-                        tail = propData;
-                    } else {
-                        cJSON_AddItemToArray(changedNodesArray, propData);
-                        tail = propData;
-                    }
+                    changedNodesJson.push_back({idForProperty(prop), JSON::valueToJson(prop)});
                 }
-
                 changedNodes.clear();
-                cJSON_AddItemToObject(result, "changed", changedNodesArray);
+                result["changed"] = changedNodesJson;
             }
 #if defined (MIRROR_DEBUG)
             SG_LOG(SG_NETWORK, SG_INFO, "making JSON data took:" << st.elapsedMSec() << " for " << newSize << "/" << changedSize << "/" << removedSize);
@@ -531,11 +502,8 @@ void MirrorPropertyTreeWebsocket::poll(WebsocketWriter & writer)
     // okay, we will send now, update the send stamp
     _lastSendTime.stamp();
 
-    cJSON * json = _listener->makeJSONData();
-    char * jsonString = cJSON_PrintUnformatted( json );
-    writer.writeText( jsonString );
-    free( jsonString );
-    cJSON_Delete( json );
+    const auto json = _listener->makeJSONData();
+    writer.writeText(json.dump());
 }
 
 } // namespace http

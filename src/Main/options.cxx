@@ -30,7 +30,7 @@
 #include <simgear/timing/sg_time.hxx>
 #include <simgear/misc/sg_dir.hxx>
 
-#include <cJSON.h>
+#include <nlohmann/json.hpp>
 
 #include <cmath>        // rint()
 #include <cstdio>
@@ -98,6 +98,7 @@ using std::vector;
 using std::cin;
 
 using namespace flightgear;
+using namespace std::string_literals;
 
 #define NEW_DEFAULT_MODEL_HZ 120
 
@@ -116,6 +117,22 @@ atoi( const string& str )
 }
 
 static int fgSetupProxy( const char *arg );
+
+// define conversion of SGpath to JSON. Must be in the global namespace
+// becuase SGPath is in it.
+void to_json(nlohmann::json& j, const SGPath& p)
+{
+    j = p.utf8Str();
+}
+
+namespace simgear {
+void to_json(nlohmann::json& j, const PathList& pl)
+{
+    for (const auto& p : pl) {
+        j.push_back(nlohmann::json{p});
+    }
+}
+} // namespace simgear
 
 /**
  * Set a few fail-safe default property values.
@@ -2134,6 +2151,7 @@ const std::initializer_list<OptionDesc> fgOptionArray = {
 };
 // clang-format on
 
+
 namespace flightgear
 {
 
@@ -2304,31 +2322,6 @@ public:
     }
 
     return pos;
-  }
-
-  // Return a pointer to a new JSON array node
-  // (["/foo/bar", "/other/path", ...]) created from the given PathList.
-  cJSON *createJSONArrayFromPathList(const PathList& pl) const
-  {
-    cJSON *resultNode = cJSON_CreateArray();
-    cJSON *prevNode = nullptr;
-    bool isFirst = true;
-
-    for (const SGPath& path : pl) {
-      cJSON *pathNode = cJSON_CreateString(path.utf8Str().c_str());
-
-      if (isFirst) {
-        isFirst = false;
-        resultNode->child = pathNode;
-      } else {
-        prevNode->next = pathNode;
-        pathNode->prev = prevNode;
-      }
-
-      prevNode = pathNode;
-    }
-
-    return resultNode;
   }
 
   bool showHelp,
@@ -3381,63 +3374,46 @@ void Options::showInfo() const
 // changes (see below).
 void Options::printJSONReport() const
 {
-  cJSON *rootNode = cJSON_CreateObject();
+    using nlohmann::json;
 
-  cJSON *metaNode = cJSON_CreateObject();
-  cJSON_AddItemToObject(rootNode, "meta", metaNode);
-  cJSON_AddStringToObject(metaNode, "type", "FlightGear JSON report");
-  // When making compatible changes to the format (e.g., adding members to
-  // JSON objects), only the minor version number should be increased.
-  // Increase the major version number when a change is backward-incompatible
-  // (such as the removal, renaming or semantic change of a member). Of
-  // course, incompatible changes should only be considered as a last
-  // recourse.
-  cJSON_AddNumberToObject(metaNode, "formatMajorVersion", 2);
-  cJSON_AddNumberToObject(metaNode, "formatMinorVersion", 0);
+    json rootNode;
+    rootNode["meta"] = json{
+        {"type", "FlightGear JSON report"s},
+        // When making compatible changes to the format (e.g., adding members to
+        // JSON objects), only the minor version number should be increased.
+        // Increase the major version number when a change is backward-incompatible
+        // (such as the removal, renaming or semantic change of a member). Of
+        // course, incompatible changes should only be considered as a last
+        // recourse.
+        {"formatMajorVersion", 2},
+        {"formatMinorVersion", 1}};
 
-  cJSON *generalNode = cJSON_CreateObject();
-  cJSON_AddItemToObject(rootNode, "general", generalNode);
-  cJSON_AddStringToObject(generalNode, "name", "FlightGear");
-  cJSON_AddStringToObject(generalNode, "version", FLIGHTGEAR_VERSION);
-  cJSON_AddStringToObject(generalNode, "buildDate", BUILD_DATE);
-  cJSON_AddStringToObject(generalNode, "buildType", FG_BUILD_TYPE);
-  cJSON_AddStringToObject(generalNode, "buildRevision", REVISION);
+    rootNode["general"] = json{
+        {"name", "FlightGear"},
+        {"version", FLIGHTGEAR_VERSION},
+        {"buildDate", BUILD_DATE},
+        {"buildType", FG_BUILD_TYPE},
+        {"buildRevision", REVISION},
+    };
 
-  cJSON *configNode = cJSON_CreateObject();
-  cJSON_AddItemToObject(rootNode, "config", configNode);
-  cJSON_AddStringToObject(configNode, "fgRoot",
-                          globals->get_fg_root().utf8Str().c_str());
-  cJSON_AddStringToObject(configNode, "fgHome",
-                          globals->get_fg_home().utf8Str().c_str());
+    rootNode["config"] = json{
+        {"fgRoot", globals->get_fg_root()},
+        {"fgHome", globals->get_fg_home()},
+        {"terrasyncPath", globals->get_terrasync_dir()},
+        {"downloadPath", globals->get_download_dir()},
+        {"autosavePath", globals->autosaveFilePath()},
+        {"sentryUUID", fgGetString("sim/crashreport/sentry-user-id")}};
 
-  cJSON *sceneryPathsNode = p->createJSONArrayFromPathList(globals->get_fg_scenery());
-  cJSON_AddItemToObject(configNode, "sceneryPaths", sceneryPathsNode);
+    rootNode["config"]["sceneryPaths"] = globals->get_fg_scenery();
+    rootNode["config"]["aircraftPaths"] = globals->get_aircraft_paths();
 
-  cJSON *aircraftPathsNode = p->createJSONArrayFromPathList(
-    globals->get_aircraft_paths());
-  cJSON_AddItemToObject(configNode, "aircraftPaths", aircraftPathsNode);
 
-  cJSON_AddStringToObject(configNode, "terrasyncPath",
-                          globals->get_terrasync_dir().utf8Str().c_str());
-
-  cJSON_AddStringToObject(configNode, "downloadPath",
-                          globals->get_download_dir().utf8Str().c_str());
-
-  cJSON_AddStringToObject(configNode, "autosavePath",
-                          globals->autosaveFilePath().utf8Str().c_str());
-
-  const auto sentryUid = fgGetString("sim/crashreport/sentry-user-id");
-  cJSON_AddStringToObject(configNode, "sentryUUID", sentryUid.c_str());
-
-  // Get the ordered lists of apt.dat, fix.dat and nav.dat files used by the
-  // NavCache
-  NavDataCache* cache = NavDataCache::instance();
-  if (!cache) {
-    cache = NavDataCache::createInstance();
-  }
-
-  cJSON *navDataNode = cJSON_CreateObject();
-  cJSON_AddItemToObject(rootNode, "navData", navDataNode);
+    // Get the ordered lists of apt.dat, fix.dat and nav.dat files used by the
+    // NavCache
+    NavDataCache* cache = NavDataCache::instance();
+    if (!cache) {
+        cache = NavDataCache::createInstance();
+    }
 
   // Write each list to the JSON tree
   for (const auto& datType: {NavDataCache::DATFILETYPE_APT,
@@ -3447,23 +3423,16 @@ void Options::printJSONReport() const
     const NavDataCache::DatFilesGroupInfo& datFilesInfo =
       cache->getDatFilesInfo(datType);
 
-    // Create a list of SGPath instances (for the .dat files) from the list of
-    // NavDataCache::SceneryLocation structs that datFilesInfo.paths is.
-    PathList datFiles(datFilesInfo.paths.size());
-    const auto map = [](const auto& e) { return e.datPath; };
-    std::transform(std::cbegin(datFilesInfo.paths),
-                   std::cend(datFilesInfo.paths), std::begin(datFiles), map);
+    json paths;
+    for (const auto& p : datFilesInfo.paths) {
+        paths.push_back(p.datPath.utf8Str());
+    }
 
-    cJSON *datPathsNode = p->createJSONArrayFromPathList(datFiles);
     string key = NavDataCache::datTypeStr[datType] + "DatPaths";
-    cJSON_AddItemToObject(navDataNode, key.c_str(), datPathsNode);
-  }
+    rootNode["navData"][key] = paths;
+  } // of DAT types iteration
 
-
-  // Print the JSON tree to the standard output
-  char *report = cJSON_Print(rootNode);
-  cout << report << endl;
-  cJSON_Delete(rootNode);
+  cout << rootNode.dump(2) << endl;
 }
 
 #if defined(__CYGWIN__)

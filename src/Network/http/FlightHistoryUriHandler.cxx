@@ -20,10 +20,11 @@
 
 #include "FlightHistoryUriHandler.hxx"
 #include "SimpleDOM.hxx"
-#include <cJSON.h>
+#include "simgear/debug/debug_types.h"
 
 #include <Aircraft/FlightHistory.hxx>
 #include <Main/fg_props.hxx>
+#include <nlohmann/json.hpp>
 #include <sstream>
 
 using std::string;
@@ -55,37 +56,22 @@ static const char * errorPage =
 		"</ul>"
 		"</body></html>";
 
-static string FlightHistoryToJson(const SGGeodVec & history, size_t last_seen ) {
-	cJSON * feature = cJSON_CreateObject();
-	cJSON_AddItemToObject(feature, "type", cJSON_CreateString("Feature"));
+static string FlightHistoryToJson(const SGGeodVec& history, size_t last_seen)
+{
+    using nj = nlohmann::json;
+    auto lineArray = nj{};
+    for (const auto& g : history) {
+        lineArray.push_back(nj{g.getLongitudeDeg(), g.getLatitudeDeg(), g.getElevationM()});
+    }
 
-	cJSON * lineString = cJSON_CreateObject();
-	cJSON_AddItemToObject(feature, "geometry", lineString );
+    auto feature = nj{
+        {"type", "Feature"},
+        {"properties", nj{
+                           {"type", "FlightHistory"},
+                           {"last", last_seen}}},
+        {"geometry", nj{{"type", "LineString"}, {"coordinates", lineArray}}}};
 
-	cJSON * properties = cJSON_CreateObject();
-	cJSON_AddItemToObject(feature, "properties", properties );
-	cJSON_AddItemToObject(properties, "type", cJSON_CreateString("FlightHistory"));
-	cJSON_AddItemToObject(properties, "last", cJSON_CreateNumber(last_seen));
-
-	cJSON_AddItemToObject(lineString, "type", cJSON_CreateString("LineString"));
-	cJSON * coordinates = cJSON_CreateArray();
-	cJSON_AddItemToObject(lineString, "coordinates", coordinates);
-	for (SGGeodVec::const_iterator it = history.begin(); it != history.end();
-			++it) {
-		cJSON * coordinate = cJSON_CreateArray();
-		cJSON_AddItemToArray(coordinates, coordinate);
-
-		cJSON_AddItemToArray(coordinate, cJSON_CreateNumber(it->getLongitudeDeg()));
-		cJSON_AddItemToArray(coordinate, cJSON_CreateNumber(it->getLatitudeDeg()));
-		cJSON_AddItemToArray(coordinate, cJSON_CreateNumber(it->getElevationM()));
-
-	}
-
-	char * jsonString = cJSON_PrintUnformatted(feature);
-	string reply(jsonString);
-	free(jsonString);
-	cJSON_Delete(lineString);
-	return reply;
+    return feature.dump();
 }
 
 static string AutoUpdateResponse(const HTTPRequest & request,
@@ -178,40 +164,13 @@ static string FlightHistoryToKml(const SGGeodVec & history,
 	return reply;
 }
 
-static bool GetJsonDouble(cJSON * json, const char * item, double & out) {
-	cJSON * cj = cJSON_GetObjectItem(json, item);
-	if (NULL == cj)
-		return false;
+bool FlightHistoryUriHandler::handleRequest(const HTTPRequest& request,
+                                            HTTPResponse& response, Connection* connection)
+{
+    using nj = nlohmann::json;
 
-	if (cj->type != cJSON_Number)
-		return false;
-
-	out = cj->valuedouble;
-
-	return true;
-}
-
-static bool GetJsonBool(cJSON * json, const char * item, bool & out) {
-	cJSON * cj = cJSON_GetObjectItem(json, item);
-	if (NULL == cj)
-		return false;
-
-	if (cj->type == cJSON_True) {
-		out = true;
-		return true;
-	}
-	if (cj->type == cJSON_False) {
-		out = true;
-		return true;
-
-	}
-	return false;
-}
-
-bool FlightHistoryUriHandler::handleRequest(const HTTPRequest & request,
-		HTTPResponse & response, Connection * connection) {
-	response.Header["Access-Control-Allow-Origin"] = "*";
-	response.Header["Access-Control-Allow-Methods"] = "OPTIONS, GET, POST";
+    response.Header["Access-Control-Allow-Origin"] = "*";
+    response.Header["Access-Control-Allow-Methods"] = "OPTIONS, GET, POST";
 	response.Header["Access-Control-Allow-Headers"] =
 			"Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token";
 
@@ -234,37 +193,30 @@ bool FlightHistoryUriHandler::handleRequest(const HTTPRequest & request,
 		 *   enabled: (bool),
 		 * }
 		 */
-		cJSON * json = cJSON_Parse(request.Content.c_str());
-		if ( NULL != json) {
-			double d = .0;
-			bool b = false;
-			bool doReinit = false;
-			if (GetJsonDouble(json, "sampleIntervalSec", d)) {
-				fgSetDouble("/sim/history/sample-interval-sec", d);
-				doReinit = true;
-			}
-			if (GetJsonDouble(json, "maxMemoryUseBytes", d)) {
-				fgSetDouble("/sim/history/max-memory-use-bytes", d);
-				doReinit = true;
-			}
+        auto json = nj::parse(request.Content, nullptr, false);
+        if (json.is_discarded()) {
+            SG_LOG(SG_NETWORK, SG_DEV_WARN, "Failed to parse request JSON:" << request.Content);
+            return false;
+        }
 
-			if (GetJsonBool(json, "clearOnTakeoff", b)) {
-				fgSetBool("/sim/history/clear-on-takeoff", b);
-				doReinit = true;
-			}
-			if (GetJsonBool(json, "enabled", b)) {
-				fgSetBool("/sim/history/enabled", b);
-			}
+        if (json.contains("sampleIntervalSec")) {
+            fgSetDouble("/sim/history/sample-interval-sec", json.value<double>("sampleIntervalSec", 1.0));
+        }
 
-			if (doReinit) {
-				history->reinit();
-			}
+        if (json.contains("maxMemoryUseBytes")) {
+            fgSetDouble("/sim/history/max-memory-use-bytes", json.value<double>("maxMemoryUseBytes", 1.0));
+        }
 
-			cJSON_Delete(json);
-		}
+        if (json.contains("clearOnTakeoff")) {
+            fgSetBool("/sim/history/clear-on-takeoff", json.value<bool>("clearOnTakeoff", false));
+        }
 
-		response.Content = "{}";
-		return true;
+        if (json.contains("enabled")) {
+            fgSetBool("/sim/history/enabled", json.value<bool>("enabled", false));
+        }
+
+        response.Content = "{}";
+        return true;
 
 	} else {
 		SG_LOG(SG_NETWORK, SG_INFO,

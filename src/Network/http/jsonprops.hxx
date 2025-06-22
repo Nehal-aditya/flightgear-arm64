@@ -18,11 +18,10 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#ifndef JSONPROPS_HXX_
-#define JSONPROPS_HXX_
+#pragma once
 
-#include <simgear/props/props.hxx>
-#include <cJSON.h>
+#include <nlohmann/json_fwd.hpp>
+#include <simgear/props/propsfwd.hxx>
 #include <string>
 
 namespace flightgear {
@@ -30,17 +29,15 @@ namespace http {
 
 class JSON {
 public:
-  static cJSON * toJson(SGPropertyNode_ptr n, int depth, double timestamp = -1.0 );
-  static std::string toJsonString(bool indent, SGPropertyNode_ptr n, int depth, double timestamp = -1.0 );
+    static nlohmann::json toJson(SGPropertyNode_ptr n, int depth, double timestamp = -1.0);
+    static std::string toJsonString(bool indent, SGPropertyNode_ptr n, int depth, double timestamp = -1.0);
 
-  static const char * getPropertyTypeString(simgear::props::Type type);
-  static cJSON * valueToJson(SGPropertyNode_ptr n);
-
-  static void toProp(cJSON * json, SGPropertyNode_ptr base);
-  static void addChildrenToProp(cJSON * json, SGPropertyNode_ptr base);
+    static const char* getPropertyTypeString(simgear::props::Type type);
+    static nlohmann::json valueToJson(SGPropertyNode_ptr n);
+    static void setValueFromJSON(const nlohmann::json& json, SGPropertyNode_ptr node);
+    static void toProp(const nlohmann::json& json, SGPropertyNode_ptr base);
+    static void addChildrenToProp(const nlohmann::json& json, SGPropertyNode_ptr base);
 };
 
 }  // namespace http
-}  // namespace flightgear
-
-#endif /* JSONPROPS_HXX_ */
+} // namespace flightgear

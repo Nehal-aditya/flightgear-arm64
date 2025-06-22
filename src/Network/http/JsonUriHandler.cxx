@@ -21,7 +21,10 @@
 
 #include "JsonUriHandler.hxx"
 #include "jsonprops.hxx"
+#include "simgear/debug/debug_types.h"
 #include <Main/fg_props.hxx>
+
+#include <nlohmann/json.hpp>
 
 using std::string;
 
@@ -67,20 +70,19 @@ bool JsonUriHandler::handleRequest( const HTTPRequest & request, HTTPResponse & 
       response.StatusCode = 404;
       response.Content = "{}";
       return true;
-    } 
+    }
 
-    SG_LOG(SG_NETWORK,SG_INFO, "JsonUriHandler: setting property from'" << request.Content << "'" );
-    cJSON * json = cJSON_Parse( request.Content.c_str() );
-    if( NULL != json ) {
-      JSON::toProp( json, node );
-      cJSON_Delete(json);
+    SG_LOG(SG_NETWORK, SG_DEBUG, "JsonUriHandler: setting property from'" << request.Content << "'");
+    nlohmann::json json = nlohmann::json::parse(request.Content, nullptr, false);
+    if (!json.is_discarded()) {
+        JSON::toProp(json, node);
     }
 
     response.Content = "{}";
     return true;
   }
 
-  SG_LOG(SG_NETWORK,SG_INFO, "JsonUriHandler: invalid request method '" << request.Method << "'" );
+  SG_LOG(SG_NETWORK, SG_DEV_WARN, "JsonUriHandler: invalid request method '" << request.Method << "'");
   response.Header["Allow"] = "OPTIONS, GET, POST";
   response.StatusCode = 405;
   response.Content = "{}";

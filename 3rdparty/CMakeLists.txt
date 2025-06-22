@@ -8,7 +8,6 @@ if (ENABLE_IAX)
 endif()
 
 add_subdirectory(mongoose)
-add_subdirectory(cjson)
 
 add_subdirectory(flite_hts_engine)
 

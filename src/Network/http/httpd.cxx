@@ -35,7 +35,6 @@
 #include <Main/fg_props.hxx>
 
 #include <mongoose.h>
-#include <cJSON.h>
 
 #include <string>
 #include <vector>

@@ -7,10 +7,10 @@
 
 #include <algorithm>
 
-#include <Network/DNSClient.hxx>
 #include <Main/fg_props.hxx>
-#include <cJSON.h>
+#include <Network/DNSClient.hxx>
 #include <cstdlib>
+#include <nlohmann/json.hpp>
 
 #include "MPServerResolver.hxx"
 
@@ -26,16 +26,16 @@ public:
     std::vector<unsigned char> b64dec;
     simgear::strutils::decodeBase64 (b64, b64dec);
     auto jsonString = std::string ((char*) b64dec.data (), b64dec.size ());
-    cJSON * json = ::cJSON_Parse (jsonString.c_str ());
-    if (json) {
-      for (int i = 0; i < ::cJSON_GetArraySize (json); i++) {
-        cJSON * cj = ::cJSON_GetArrayItem (json, i);
-        if (cj->string && cj->valuestring)
-          emplace (cj->string, cj->valuestring);
-      }
-      ::cJSON_Delete (json);
+
+    using nj = nlohmann::json;
+    const auto json = nj::parse(jsonString);
+    if (json.is_discarded()) {
+        SG_LOG(SG_NETWORK, SG_WARN, "MPServerResolver: Can't parse JSON string '" << jsonString << "'");
     } else {
-      SG_LOG(SG_NETWORK,SG_WARN, "MPServerResolver: Can't parse JSON string '" << jsonString << "'" );
+        // JSON parsed ok, convert to our map entries
+        for (const auto& e : json.items()) {
+            emplace(e.key(), e.value().template get<std::string>());
+        }
     }
   }
 };

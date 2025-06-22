@@ -19,11 +19,18 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "jsonprops.hxx"
+#include "simgear/debug/debug_types.h"
+#include "simgear/structure/exception.hxx"
+
+#include <nlohmann/json.hpp>
+
 #include <simgear/misc/strutils.hxx>
 #include <simgear/math/SGMath.hxx>
+
 namespace flightgear {
 namespace http {
 
+using nlohmann::json;
 using std::string;
 
 const char * JSON::getPropertyTypeString(simgear::props::Type type)
@@ -70,144 +77,120 @@ const char * JSON::getPropertyTypeString(simgear::props::Type type)
   }
 }
 
-cJSON * JSON::valueToJson(SGPropertyNode_ptr n)
+json JSON::valueToJson(SGPropertyNode_ptr n)
 {
     if( !n->hasValue() )
-        return cJSON_CreateNull();
+        return {nullptr};
 
     switch( n->getType() ) {
         case simgear::props::BOOL:
-            return cJSON_CreateBool(n->getBoolValue());
+            return n->getBoolValue();
         case simgear::props::INT:
         case simgear::props::LONG:
         case simgear::props::FLOAT:
         case simgear::props::DOUBLE: {
             double val = n->getDoubleValue();
-            return SGMiscd::isNaN(val) ? cJSON_CreateNull() : cJSON_CreateNumber(val);
+            return SGMiscd::isNaN(val) ? json{nullptr} : json{val};
         }
 
         default:
-            return cJSON_CreateString(n->getStringValue().c_str());
+            return n->getStringValue();
     }
 }
 
-    
-cJSON * JSON::toJson(SGPropertyNode_ptr n, int depth, double timestamp )
-{
-  cJSON * json = cJSON_CreateObject();
-  cJSON_AddItemToObject(json, "path", cJSON_CreateString(n->getPath(true).c_str()));
-  cJSON_AddItemToObject(json, "name", cJSON_CreateString(n->getNameString().c_str()));
-  if( n->hasValue() ) {
-    switch( n->getType() ) {
-      case simgear::props::BOOL:
-        cJSON_AddItemToObject(json, "value", cJSON_CreateBool(n->getBoolValue()));
-        break;
-      case simgear::props::INT:
-      case simgear::props::LONG:
-      case simgear::props::FLOAT:
-      case simgear::props::DOUBLE: {
-        double val = n->getDoubleValue();
-	cJSON_AddItemToObject(json, "value", SGMiscd::isNaN(val) ? cJSON_CreateNull() : cJSON_CreateNumber(val));
-        break;
-      }
-      default:
-        cJSON_AddItemToObject(json, "value", cJSON_CreateString(n->getStringValue().c_str()));
-        break;
-    }
-  }
-  cJSON_AddItemToObject(json, "type", cJSON_CreateString(getPropertyTypeString(n->getType())));
-  cJSON_AddItemToObject(json, "index", cJSON_CreateNumber(n->getIndex()));
-  if( timestamp >= 0.0 )
-    cJSON_AddItemToObject(json, "ts", cJSON_CreateNumber(timestamp));
-  cJSON_AddItemToObject(json, "nChildren", cJSON_CreateNumber(n->nChildren()));
 
-  if (depth > 0 && n->nChildren() > 0) {
-    cJSON * jsonArray = cJSON_CreateArray();
-    for (int i = 0; i < n->nChildren(); i++)
-      cJSON_AddItemToArray(jsonArray, toJson(n->getChild(i), depth - 1, timestamp ));
-    cJSON_AddItemToObject(json, "children", jsonArray);
-  }
-  return json;
+json JSON::toJson(SGPropertyNode_ptr n, int depth, double timestamp)
+{
+    const auto nc = n->nChildren();
+    json j = {
+        {"path", n->getPath(true)},
+        {"name", n->getNameString()},
+        {"value", valueToJson(n)},
+        {"type", getPropertyTypeString(n->getType())},
+        {"index", n->getIndex()},
+        {"nChildren", nc}};
+
+    if (timestamp > 0.0) {
+        j["ts"] = timestamp;
+    }
+
+    if ((depth > 0) && (nc > 0)) {
+        json children;
+        for (int i = 0; i < nc; i++) {
+            children.push_back(toJson(n->getChild(i), depth - 1, timestamp));
+        }
+        j["children"] = children;
+    }
+
+    return j;
 }
 
-void JSON::toProp(cJSON * json, SGPropertyNode_ptr base)
+void JSON::toProp(const json& j, SGPropertyNode_ptr base)
 {
-  if (NULL == json) return;
+    if (!j.is_object()) {
+        // warn / throw exception?
+        return;
+    }
 
   SGPropertyNode_ptr n = base;
 
   // check if name is set. If so, update child with given name
   // else update base
-  cJSON * cj = cJSON_GetObjectItem(json, "name");
-  if ( cj ) {
-    const char * name = cj->valuestring;
-    if (NULL == name) name = "";
-
-    // TODO: better check for valid name
-    string namestr = simgear::strutils::strip(string(name));
-    if( !namestr.empty() ) {
-      int index = 0;
-      cj = cJSON_GetObjectItem(json, "index");
-      if (NULL != cj) index = cj->valueint;
-      if (index < 0) return;
-
-      n = base->getNode(namestr, index, true);
-    }
+  if (j.contains("name")) {
+      const auto name = simgear::strutils::strip(j.value<std::string>("name", {}));
+      if (name.empty()) {
+          // error / exception?
+      } else {
+          const int index = j.value<int>("index", 0);
+          n = base->getNode(name, index, true);
+      }
   }
 
-  cJSON * children = cJSON_GetObjectItem(json, "children");
-  if (NULL != children) {
-    for (int i = 0; i < cJSON_GetArraySize(children); i++) {
-      toProp(cJSON_GetArrayItem(children, i), n);
-    }
-  } else {
-    cj = cJSON_GetObjectItem(json, "value");
-    if (NULL != cj) {
-      switch ( cj->type ) {
-      case cJSON_String:
-        n->setStringValue(cj->valuestring);
-        break;
-        
-      case cJSON_Number:
-        n->setDoubleValue(cj->valuedouble);
-        break;
-        
-      case cJSON_True:
-        n->setBoolValue(true);
-        break;
-        
-      case cJSON_False:
-        n->setBoolValue(false);
-        break;
-          
-      default:
-        break;
-      }
-    } // of have value
-  } // of no children
+  if (j.contains("children")) {
+      addChildrenToProp(j, n);
+  } else if (j.contains("value")) {
+      setValueFromJSON(j.at("value"), n);
+  }
 }
 
-void JSON::addChildrenToProp(cJSON * json, SGPropertyNode_ptr n)
+void JSON::setValueFromJSON(const nlohmann::json& v, SGPropertyNode_ptr n)
 {
-  if (NULL == json) return;
-  if (!n) return;
-  
-  cJSON * children = cJSON_GetObjectItem(json, "children");
-  if (NULL != children) {
-    for (int i = 0; i < cJSON_GetArraySize(children); i++) {
-      toProp(cJSON_GetArrayItem(children, i), n);
+    if (v.is_boolean()) {
+        n->setBoolValue(v.template get<bool>());
+    } else if (v.is_number_integer()) {
+        n->setIntValue(v.template get<int>());
+    } else if (v.is_number_unsigned()) {
+        n->setIntValue(v.template get<int>());
+    } else if (v.is_number_float()) {
+        n->setDoubleValue(v.template get<double>());
+    } else if (v.is_string()) {
+        n->setStringValue(v.template get<string>());
+    } else {
+        SG_LOG(SG_IO, SG_DEV_WARN, "setValueFromJSON: could not convert JSON value to SGPropertyNode value:" << v.dump());
     }
-  }
+}
+
+void JSON::addChildrenToProp(const json& j, SGPropertyNode_ptr n)
+{
+    if (!n || !j.is_object()) {
+        // warn / throw exception?
+        return;
+    }
+
+    if (!j.contains("children")) {
+        return;
+    }
+
+    const auto& children = j.at("children");
+    for (const auto& c : children) {
+        toProp(c, n);
+    };
 }
 
 string JSON::toJsonString(bool indent, SGPropertyNode_ptr n, int depth, double timestamp )
 {
-  cJSON * json = toJson( n, depth, timestamp );
-  char * jsonString = indent ? cJSON_Print( json ) : cJSON_PrintUnformatted( json );
-  string reply(jsonString);
-  free( jsonString );
-  cJSON_Delete( json );
-  return reply;
+    auto j = toJson(n, depth, timestamp);
+    return j.dump(indent);
 }
 
 }  // namespace http

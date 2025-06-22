@@ -301,6 +301,19 @@ find_package(OpenSceneGraph 3.6.0 REQUIRED
   osgGA
 )
 
+if (WIN32)
+    # on Windows, we include Nlohmann in windows-3rd-party
+    # synthesies a target matching the package
+    add_library(fg_json INTERFACE)
+    set_target_properties(fg_json PROPERTIES
+			INTERFACE_INCLUDE_DIRECTORIES "${FINAL_MSVC_3RDPARTY_DIR}/include"
+		)
+    # match the name of the official library
+    add_library(nlohmann_json::nlohmann_json ALIAS fg_json)
+else()
+    find_package(nlohmann_json 3.10.0 REQUIRED)
+endif()
+
 ##############################################################################
 ## Sentry.io setup
 if (ENABLE_SENTRY)
@@ -418,7 +431,7 @@ if (TARGET SimGearCore)
     # since we don't find(SimGear), we need to
     # find a few dependencies directly
     if (SG_SOUND_USES_OPENALSOFT)
-        message((STATUS "Finding OpenAL"))
+        message((STATUS "Finding OpenAL in Config mode"))
         find_package(OpenAL CONFIG)
     else()
         find_package(OpenAL)

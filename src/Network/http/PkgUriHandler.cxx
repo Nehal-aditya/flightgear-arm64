@@ -20,7 +20,8 @@
 
 
 #include "PkgUriHandler.hxx"
-#include <cJSON.h>
+
+#include <nlohmann/json.hpp>
 
 #include <simgear/package/Root.hxx>
 #include <simgear/package/Catalog.hxx>
@@ -30,7 +31,59 @@
 
 #include <Main/fg_props.hxx>
 
+using nlohmann::json;
 using std::string;
+
+static json PackageToJson(simgear::pkg::Package* p)
+{
+    if (!p) {
+        return {};
+    }
+
+    return json{
+        {"id", p->id()},
+        {"name", p->name()},
+        {"description", p->description()},
+        {"installed", p->isInstalled()},
+        {"thumbnails", p->thumbnailUrls()},
+        {"variants", p->variants()},
+        {"revision", p->revision()},
+        {"fileSize", p->fileSizeBytes()},
+        {"author", p->getLocalisedProp("author")},
+        {"ratingFdm", p->getLocalisedProp("rating/FDM")},
+        {"ratingCockpit", p->getLocalisedProp("rating/cockpit")},
+        {"ratingModel", p->getLocalisedProp("rating/model")},
+        {"ratingSystems", p->getLocalisedProp("rating/systems")}};
+}
+
+
+namespace simgear {
+namespace pkg {
+
+// Nlohmann needs adpaters defined in the classes' namespace
+void to_json(json& j, const PackageRef& p)
+{
+    j = PackageToJson(p.get());
+}
+
+void to_json(json& j, const CatalogRef& c)
+{
+    if (!c) {
+        return;
+    }
+
+    j = json{
+        {"id", c->id()},
+        {"installRoot", c->installRoot().utf8Str()},
+        {"url", c->url()},
+        {"description", c->description()},
+        {"packages", c->packages()},
+        {"needingUpdate", c->packagesNeedingUpdate()},
+        {"installed", c->installedPackages()}};
+}
+
+} // namespace pkg
+} // namespace simgear
 
 namespace flightgear {
 namespace http {
@@ -53,123 +106,41 @@ Output:
 }
 */
 
-static cJSON * StringListToJson( const string_list & l )
-{
-  cJSON * jsonArray = cJSON_CreateArray();
-  for( string_list::const_iterator it = l.begin(); it != l.end(); ++it )
-      cJSON_AddItemToArray(jsonArray, cJSON_CreateString((*it).c_str()) );
-  return jsonArray;
-}
-
-static cJSON * PackageToJson( simgear::pkg::Package * p )
-{
-  cJSON * json = cJSON_CreateObject();
-  if( p ) {
-    cJSON_AddItemToObject(json, "id", cJSON_CreateString( p->id().c_str() ));
-    cJSON_AddItemToObject(json, "name", cJSON_CreateString( p->name().c_str() ));
-    cJSON_AddItemToObject(json, "description", cJSON_CreateString( p->description().c_str() ));
-    cJSON_AddItemToObject(json, "installed", cJSON_CreateBool( p->isInstalled() ));
-    cJSON_AddItemToObject(json, "thumbnails", StringListToJson( p->thumbnailUrls() ));
-    cJSON_AddItemToObject(json, "variants", StringListToJson( p->variants() ));
-    cJSON_AddItemToObject(json, "revision", cJSON_CreateNumber( p->revision() ));
-    cJSON_AddItemToObject(json, "fileSize", cJSON_CreateNumber( p->fileSizeBytes() ));
-    cJSON_AddItemToObject(json, "author", cJSON_CreateString( p->getLocalisedProp("author").c_str() ));
-    cJSON_AddItemToObject(json, "ratingFdm", cJSON_CreateString( p->getLocalisedProp("rating/FDM").c_str() ));
-    cJSON_AddItemToObject(json, "ratingCockpit", cJSON_CreateString( p->getLocalisedProp("rating/cockpit").c_str() ));
-    cJSON_AddItemToObject(json, "ratingModel", cJSON_CreateString( p->getLocalisedProp("rating/model").c_str() ));
-    cJSON_AddItemToObject(json, "ratingSystems", cJSON_CreateString( p->getLocalisedProp("rating/systems").c_str() ));
-  }
-  return json;
-}
-
-static cJSON * PackageListToJson( const simgear::pkg::PackageList & l )
-{
-  cJSON * jsonArray = cJSON_CreateArray();
-  for( simgear::pkg::PackageList::const_iterator it = l.begin(); it != l.end(); ++it ) {
-    cJSON_AddItemToArray(jsonArray, PackageToJson(*it) );
-  }
-  return jsonArray;
-}
-
-static cJSON * CatalogToJson( simgear::pkg::Catalog * c )
-{
-  cJSON * json = cJSON_CreateObject();
-  if( c ) {
-    cJSON_AddItemToObject(json, "id", cJSON_CreateString( c->id().c_str() ));
-    std::string s = c->installRoot().utf8Str();
-    cJSON_AddItemToObject(json, "installRoot", cJSON_CreateString( s.c_str() ));
-    cJSON_AddItemToObject(json, "url", cJSON_CreateString( c->url().c_str() ));
-    cJSON_AddItemToObject(json, "description", cJSON_CreateString( c->description().c_str() ));
-    cJSON_AddItemToObject(json, "packages", PackageListToJson(c->packages()) );
-    cJSON_AddItemToObject(json, "needingUpdate", PackageListToJson(c->packagesNeedingUpdate()) );
-    cJSON_AddItemToObject(json, "installed", PackageListToJson(c->installedPackages()) );
-  }
-  return json;
-}
-
-
 static string PackageRootCommand( simgear::pkg::Root* packageRoot, const string & command, const string & args )
 {
-  cJSON * json = cJSON_CreateObject();
+    json r;
 
-  if( command == "path" ) {
-    std::string p = packageRoot->path().utf8Str();
-    cJSON_AddItemToObject(json, "path", cJSON_CreateString( p.c_str() ));
-
-  } else if( command == "version" ) {
-
-    cJSON_AddItemToObject(json, "version", cJSON_CreateString( packageRoot->applicationVersion().c_str() ));
-
-  } else if( command == "refresh" ) {
-    packageRoot->refresh(true);
-    cJSON_AddItemToObject(json, "refresh", cJSON_CreateString( "OK" ));
-
-  } else if( command == "catalogs" ) {
-
-    cJSON * jsonArray = cJSON_CreateArray();
-    simgear::pkg::CatalogList catalogList = packageRoot->catalogs();
-    for( simgear::pkg::CatalogList::iterator it = catalogList.begin(); it != catalogList.end(); ++it ) {
-      cJSON_AddItemToArray(jsonArray, CatalogToJson(*it) );
+    if (command == "path") {
+        r["path"] = packageRoot->path().utf8Str();
+    } else if (command == "version") {
+        r["version"] = packageRoot->applicationVersion();
+    } else if (command == "refresh") {
+        packageRoot->refresh(true);
+        r["refresh"] = "OK";
+    } else if (command == "catalogs") {
+        r["catalogs"] = packageRoot->catalogs();
+    } else if (command == "packageById") {
+        r["package"] = packageRoot->getPackageById(args);
+    } else if (command == "catalogById") {
+        r["catalog"] = packageRoot->getCatalogById(args);
+    } else if (command == "search") {
+        SGPropertyNode_ptr query(new SGPropertyNode);
+        simgear::pkg::PackageList packageList = packageRoot->packagesMatching(query);
+        r["packages"] = packageList;
+    } else if (command == "install") {
+        simgear::pkg::PackageRef package = packageRoot->getPackageById(args);
+        if (NULL == package) {
+            SG_LOG(SG_NETWORK, SG_WARN, "Can't install package '" << args << "', package not found");
+            return string("");
+        }
+        package->existingInstall();
+    } else {
+        SG_LOG(SG_NETWORK, SG_WARN, "Unhandled pkg command : '" << command << "'");
+        return string("");
     }
-    cJSON_AddItemToObject(json, "catalogs", jsonArray );
 
-  } else if( command == "packageById" ) {
-
-    simgear::pkg::PackageRef p = packageRoot->getPackageById(args);
-    cJSON_AddItemToObject(json, "package", PackageToJson( p ));
-
-  } else if( command == "catalogById" ) {
-
-    simgear::pkg::CatalogRef p = packageRoot->getCatalogById(args);
-    cJSON_AddItemToObject(json, "catalog", CatalogToJson( p ));
-
-  } else if( command == "search" ) {
-
-    SGPropertyNode_ptr query(new SGPropertyNode);
-    simgear::pkg::PackageList packageList = packageRoot->packagesMatching(query);
-    cJSON_AddItemToObject(json, "packages", PackageListToJson(packageList) );
-
-  } else if( command == "install" ) {
-
-	  simgear::pkg::PackageRef package = packageRoot->getPackageById(args);
-	  if( NULL == package ) {
-		  SG_LOG(SG_NETWORK,SG_WARN,"Can't install package '" << args << "', package not found" );
-		    cJSON_Delete( json );
-		    return string("");
-	  }
-	  package->existingInstall();
-
-  } else {
-    SG_LOG( SG_NETWORK,SG_WARN, "Unhandled pkg command : '" << command << "'" );
-    cJSON_Delete( json );
-    return string("");
-  }
-
-  char * jsonString = cJSON_PrintUnformatted( json );
-  string reply(jsonString);
-  free( jsonString );
-  cJSON_Delete( json );
-  return reply;
+    return r.dump();
+    ;
 }
 
 static  string findCommand( const string & uri, string & outArgs )

@@ -13,8 +13,6 @@
 #include <cstdlib>
 #include <cstring>             // strcmp()
 
-#include "cJSON.h"
-
 #if defined(SG_WINDOWS)
 #define _WINSOCKAPI_
 #  include <io.h>               // isatty()
@@ -143,6 +141,8 @@
 #include <Main/ErrorReporter.hxx>
 #include <Main/sentryIntegration.hxx>
 
+#include <nlohmann/json.hpp>
+
 #if defined(SG_MAC)
 #include <GUI/CocoaHelpers.h> // for Mac impl of platformDefaultDataPath()
 #endif
@@ -183,14 +183,14 @@ std::optional<FGBasePackageInfo> fgBasePackageInfo(const SGPath& path)
         return {};
     }
 
-    const auto content = in.read_all();
-    cJSON* json = cJSON_Parse(content.c_str());
+    nlohmann::json j = nlohmann::json::parse(in, nullptr, false);
+    if (j.is_discarded()) {
+        return {}; // parse failure
+    }
 
     FGBasePackageInfo r;
-    r.buildDate = cJSON_GetObjectItem(json, "build-date")->valuestring;
-    r.gitRevision = cJSON_GetObjectItem(json, "fgdata-sha")->valuestring;
-
-    cJSON_Delete(json);
+    r.buildDate = j.value<std::string>("build-date", {});
+    r.gitRevision = j.value<std::string>("fgdata-sha", {});
     return r;
 }
 
