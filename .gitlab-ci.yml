@@ -50,6 +50,7 @@ linux-build:
       ref: $OSG_REF
       artifacts: true
   cache:
+    key: "linux-$CI_COMMIT_REF_SLUG"
     paths:
       - $BUILD_DIR
 
@@ -200,6 +201,8 @@ test:
       ref: $OSG_REF
       artifacts: true
   cache:
+    key: "linux-$CI_COMMIT_REF_SLUG"
+    policy: pull
     paths:
       - $BUILD_DIR
 

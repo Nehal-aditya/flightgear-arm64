@@ -1,4 +1,31 @@
+include(GetGitRevisionDescription)
 
+find_package(Git)
+
+git_describe(GIT_DESCRIBE --always)
+
+# Convert to SemVer format
+# https://semver.org/,
+set(SEMVER_REGEX_PATTERN "^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-?([a-zA-Z][0-9a-zA-Z\.]*)?-?(.*)?$")
+string(REGEX MATCH ${SEMVER_REGEX_PATTERN} MATCHED_GIT_DESC ${GIT_DESCRIBE})
+
+if (CMAKE_MATCH_4)
+    message(STATUS "Have Git pre-release label in tag")
+    set(INSTALLER_RELEASE_SUFFIX "-${CMAKE_MATCH_4}")
+else()
+    message(STATUS "No pre-release version set")
+endif()
+
+if (FG_BUILD_TYPE STREQUAL "Nightly")
+    string(TIMESTAMP BUILD_DATE "%Y%m%d")
+elseif(FG_BUILD_TYPE STREQUAL "Dev")
+    # we don't use GIT_REF 
+    get_git_head_revision(GIT_REF GIT_FULL_SHA)    
+    
+    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short=8 ${GIT_FULL_SHA}
+        OUTPUT_VARIABLE GIT_SHA
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
 
 if (TARGET sentry_crashpad::handler)
     if (APPLE)
@@ -79,9 +106,6 @@ string(REGEX REPLACE ".*#define OPENTHREADS_SOVERSION[ \t]+([0-9]+).*"
 message(STATUS "OSG SO version: ${osg_soversion}")
 message(STATUS "OpenThreads SO version: ${openthreads_soversion}")
 
-
-find_package(Git)
-
 if (MSVC)
     configure_file(${CMAKE_CURRENT_LIST_DIR}/generateInnoSetupConfig.cmake.in 
         ${CMAKE_BINARY_DIR}/generateInnoSetupConfig.cmake
@@ -92,6 +116,10 @@ if (MSVC)
     # important we use install() here so that passing a custom prefix to
     # 'cmake --install --prefix FOO' works correctly to put the file somewhere special
     install(FILES ${CMAKE_BINARY_DIR}/InstallConfig.iss DESTINATION . COMPONENT packaging )
+else()
+    configure_file(${CMAKE_CURRENT_LIST_DIR}/exportFGVersion.sh.in 
+        ${CMAKE_BINARY_DIR}/exportFGVersion.sh
+        @ONLY)
 endif()
 
 
@@ -105,12 +133,6 @@ foreach (osglib OSG OpenThreads osgUtil osgText osgGA osgSim osgParticle osgTerr
             DESTINATION 
                 $<TARGET_BUNDLE_CONTENT_DIR:fgfs>/Frameworks
         )
-    endif()
-
-    if (LINUX)
-        install(FILES $<TARGET_FILE:OSG::${osglib}>  
-            DESTINATION appdir/usr/lib
-            COMPONENT packaging EXCLUDE_FROM_ALL)
     endif()
 endforeach()
 

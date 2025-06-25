@@ -15,6 +15,7 @@ file(TO_NATIVE_PATH "@OSG_BASE_DIR@" INNO_SETUP_OSG_BASE_DIR)
 file(TO_NATIVE_PATH "@FINAL_MSVC_3RDPARTY_DIR@" INNO_SETUP_3RDPARTY_DIR)
 
 set(buildType @FG_BUILD_TYPE@)
+set(revision @GIT_SHA@)
 set(version @FLIGHTGEAR_VERSION@)
 set(version_major @FG_VERSION_MAJOR@)
 set(version_minor @FG_VERSION_MINOR@)
@@ -22,18 +23,16 @@ set(osg_version @OPENSCENEGRAPH_VERSION@)
 set(osg_soversion @osg_soversion@)
 set(openthreads_soversion @openthreads_soversion@)
 
+# used to set -rc1 or similar suffixes on file name
+set(release_suffix "@INSTALLER_RELEASE_SUFFIX@")
+
 if (buildType STREQUAL "Release")
-    set(INNO_SETUP_OUT_NAME "FlightGear-${version}")
+    set(INNO_SETUP_OUT_NAME "flightgear-${version}${release_suffix}-windows-amd64")
 elseif(buildType STREQUAL "Nightly")
     string(TIMESTAMP currentDate "%Y%m%d")
-    set(INNO_SETUP_OUT_NAME "FlightGear-${currentDate}-nightly")
+    set(INNO_SETUP_OUT_NAME "flightgear-${currentDate}-windows-amd64")
 else()
-    execute_process(COMMAND "@GIT_EXECUTABLE@" --git-dir "@CMAKE_SOURCE_DIR@/.git" rev-parse --short HEAD
-        OUTPUT_VARIABLE revision
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-    message(STATUS "Git revision is ${revision}")
-
-    set(INNO_SETUP_OUT_NAME "FlightGear-${revision}-dev")
+    set(INNO_SETUP_OUT_NAME "flightgear-${revision}-windows-amd64")
 endif()
 
 string(TIMESTAMP iss_config_timestamp)
