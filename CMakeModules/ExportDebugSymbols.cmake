@@ -43,7 +43,7 @@ endfunction()
 file(TO_NATIVE_PATH "${FINAL_MSVC_3RDPARTY_DIR}/bin" _msvc_3rdparty_bin_dir)
 set(CMAKE_MSVCIDE_RUN_PATH "${_msvc_3rdparty_bin_dir}")
 
-if (FG_BUILD_TYPE STREQUAL "Release")
+if ((FG_BUILD_TYPE STREQUAL "Release") OR (FG_BUILD_TYPE STREQUAL "Nightly"))
     add_custom_target(upload_debug_symbols
         COMMENT "Uploading debug symbols via sentry-cli"
         COMMAND sentry-cli upload-dif --org flightgear --project flightgear ${CMAKE_BINARY_DIR}/symbols
