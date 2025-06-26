@@ -1,7 +1,9 @@
 // FileDialog.hxx - abstract inteface for a file open/save dialog
 
-#ifndef FG_GUI_FILE_DIALOG_HXX
-#define FG_GUI_FILE_DIALOG_HXX 1
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: Copyright (C) 2012  James Turner - james@flightgear.org
+
+#pragma once
 
 #include <memory> // for std::unique_ptr
 
@@ -72,7 +74,15 @@ public:
     void setCallbackFromNasal(const nasal::CallContext& ctx);
 protected:
     FGFileDialog(Usage use);
-    
+
+    /**
+     * @brief helper for derived classes, when a path is selected
+     * 
+     * @param p - the SGPath which was selected
+     * @return true if the path was handled ok, false if path was disallowed
+     */
+    bool handleSelectedPath(const SGPath& p);
+
     const Usage _usage;
     std::string _title, _buttonText;
     SGPath _initialPath;
@@ -81,5 +91,3 @@ protected:
     bool _showHidden;
     std::unique_ptr<Callback> _callback;
 };
-
-#endif // FG_GUI_FILE_DIALOG_HXX

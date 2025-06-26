@@ -1,26 +1,9 @@
-// FileDialog -- generic FileDialog interface and Nasal wrapper
-//
-// Written by James Turner, started 2012.
-//
-// Copyright (C) 2012 James Turner  <zakalawe@mac.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// FileDialog.cxx - generic FileDialog interface and Nasal wrapper
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: Copyright (C) 2012  James Turner - james@flightgear.org
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+
+#include "config.h"
 
 #include "FileDialog.hxx"
 
@@ -82,6 +65,28 @@ void FGFileDialog::setCallback(Callback* aCB)
 void FGFileDialog::setShowHidden(bool show)
 {
     _showHidden = show;
+}
+
+bool FGFileDialog::handleSelectedPath(const SGPath& p)
+{
+    // mark the path as allowed. For CHOOSE_DIR we will get read permissions as well
+    const auto perm = (_usage == USE_SAVE_FILE) ? SGPath::Permissions{false, true} : SGPath::Permissions{true, false};
+
+    bool ok = false;
+    const auto pathString = p.realpath().utf8Str();
+    if (_usage == USE_CHOOSE_DIR) {
+        ok = SGPath::addAllowedDirectoryHierarchy(pathString, perm);
+    } else {
+        ok = SGPath::addAllowedPath(pathString, perm);
+    }
+
+    if (!ok) {
+        SG_LOG(SG_IO, SG_POPUP, "The selected location '" << p.utf8Str() << "' is not allowed. (The location was resolved to a path that contains characters such as '*')");
+        return false;
+    }
+
+    _callback->onFileDialogDone(this, p);
+    return true;
 }
 
 class NasalCallback : public FGFileDialog::Callback

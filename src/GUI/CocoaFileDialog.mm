@@ -1,24 +1,10 @@
 // CocoaFileDialog.mm - Cocoa implementation of file-dialog interface
-
-// Copyright (C) 2013 James Turner <zakalawe@mac.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: Copyright (C) 2013  James Turner - james@flightgear.org
 
 #include "CocoaFileDialog.hxx"
+#include "GUI/FileDialog.hxx"
+#include "simgear/debug/debug_types.h"
 
 #include <AppKit/NSSavePanel.h>
 #include <AppKit/NSOpenPanel.h>
@@ -33,11 +19,6 @@
 #include <Main/globals.hxx>
 #include <Main/fg_props.hxx>
 #include <Viewer/renderer.hxx>
-
-// 10.6 compiler won't accept block-scoped locals in Objective-C++,
-// so making these globals.
-static NSString* completion_path = nil;
-static SGPath completion_sgpath;
 
 class CocoaFileDialog::CocoaFileDialogPrivate
 {
@@ -130,10 +111,10 @@ void CocoaFileDialog::exec()
     [d->panel beginSheetModalForWindow:cocoaWindow completionHandler:^(NSInteger result)
     {
         if (result == NSModalResponseOK) {
-            completion_path = [[d->panel URL] path];
-            //NSLog(@"the URL is: %@", d->panel URL]);
-            completion_sgpath = SGPath::fromUtf8([completion_path UTF8String]);
-            _callback->onFileDialogDone(this, completion_sgpath);
+          NSString *nspath = [[d->panel URL] path];
+          // NSLog(@"the URL is: %@", d->panel URL]);
+          auto p = SGPath::fromUtf8([nspath UTF8String]);
+          handleSelectedPath(p);
         }
     }];
 }

@@ -1,22 +1,6 @@
 // QtFileDialog.cxx - Qt5 implementation of FGFileDialog
-//
-// Written by Rebecca Palmer, started February 2016.
-//
-// Copyright (C) 2015 Rebecca Palmer <rebecca_palmer@zoho.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: Copyright (C) 2015 Rebecca Palmer <rebecca_palmer@zoho.com>
 
 #include "QtFileDialog.hxx"
 #include "QtLauncher.hxx"
@@ -61,10 +45,12 @@ void QtFileDialog::exec()
     if(_showHidden){
         dlg.setFilter(dlg.filter() | QDir::Hidden);
     }
+
     if(dlg.exec()){
         QStringList result = dlg.selectedFiles();
-        if(!(result.isEmpty())){
-            _callback->onFileDialogDone(this, SGPath(result[0].toStdString()));
+        if (!result.isEmpty()) {
+            const auto sgp = SGPath::fromUtf8(result[0].toStdString());
+            handleSelectedPath(sgp);
         }
     }
 }
