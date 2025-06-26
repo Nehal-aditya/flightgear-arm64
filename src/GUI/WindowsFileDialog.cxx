@@ -98,14 +98,14 @@ void WindowsFileDialog::exec()
     if (_usage == USE_SAVE_FILE) {
         if (GetSaveFileNameA(&opf)) {
             std::string stringPath(opf.lpstrFile);
-            _callback->onFileDialogDone(this, stringPath);
+            handleSelectedPath(SGPath::fromUtf8(stringPath));
         }
     } else if (_usage == USE_CHOOSE_DIR) {
         chooseDir();
     } else {
         if (GetOpenFileNameA(&opf)) {
             std::string stringPath(opf.lpstrFile);
-            _callback->onFileDialogDone(this, stringPath);
+            handleSelectedPath(SGPath::fromUtf8(stringPath));
         }
     }
 }
@@ -141,5 +141,5 @@ void WindowsFileDialog::chooseDir()
     SHGetPathFromIDListA(results, pathBuf);
     CoTaskMemFree(results);
 
-	_callback->onFileDialogDone(this, SGPath(pathBuf));
+    handleSelectedPath(SGPath(pathBuf));
 }

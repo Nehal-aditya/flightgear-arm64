@@ -1,7 +1,9 @@
 // FileDialog.hxx - abstract interface for a file open/save dialog
 
-#ifndef FG_GUI_FILE_DIALOG_HXX
-#define FG_GUI_FILE_DIALOG_HXX 1
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: Copyright (C) 2012  James Turner - james@flightgear.org
+
+#pragma once
 
 #include <memory> // for std::unique_ptr
 
@@ -104,7 +106,6 @@ protected:
      */
     bool handleSelectedPath(const SGPath& p);
 
-
     const Usage _usage;
     std::string _title, _buttonText;
     SGPath _initialPath;
@@ -113,5 +114,3 @@ protected:
     bool _showHidden;
     std::unique_ptr<Callback> _callback;
 };
-
-#endif // FG_GUI_FILE_DIALOG_HXX

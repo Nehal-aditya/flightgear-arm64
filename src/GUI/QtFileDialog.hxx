@@ -1,5 +1,8 @@
-#ifndef FG_QT_FILE_DIALOG_HXX
-#define FG_QT_FILE_DIALOG_HXX 1
+// QtFileDialog.hxx - Qt5 implementation of FGFileDialog
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: Copyright (C) 2015 Rebecca Palmer <rebecca_palmer@zoho.com>
+
+#pragma once
 
 #include <GUI/FileDialog.hxx>
 
@@ -10,7 +13,7 @@ public:
 
     virtual ~QtFileDialog();
     
-    virtual void exec();
-    virtual void close();
+    void exec() override;
+    void close() override;
 };
-#endif
+
