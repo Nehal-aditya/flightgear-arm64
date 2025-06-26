@@ -21,6 +21,8 @@
 
 namespace flightgear {
 
+class FGDirectionCue3D;
+
 /**
  * Represents a 3D mouse cursor visible in the scene.
  * It will place itself in the scene graph when the target is positioned.
@@ -154,6 +156,9 @@ protected:
 
     /// Whether a recenter is pending.
     bool _recenterPending = true;
+
+    /// Direction cue object.
+    osg::ref_ptr<FGDirectionCue3D> _cue;
 };
 
 } // namespace flightgear

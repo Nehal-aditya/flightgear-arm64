@@ -8,6 +8,7 @@
 
 #include "FGMouseCursor3D.hxx"
 
+#include "FGDirectionCue3D.hxx"
 #include "renderer.hxx"
 #include "view.hxx"
 #include "viewmgr.hxx"
@@ -68,6 +69,9 @@ FGMouseCursor3D::FGMouseCursor3D()
     // Don't allow the cursor to itself be picked, or it may try to pick itself!
     // Don't allow the aircraft to collide catastrophically with the cursor!
     setNodeMask(~SG_NODEMASK_PICK_BIT & ~SG_NODEMASK_TERRAIN_BIT);
+
+    // Create direction cue object
+    _cue = new FGDirectionCue3D(this);
 }
 
 void FGMouseCursor3D::setTargetGlobal(const SGVec3d& target, bool commit)
@@ -172,6 +176,8 @@ FGRenderer::PickList FGMouseCursor3D::update(bool forcePick)
         setTargetGlobal(targetGlobal, commit);
     }
 
+    _cue->update();
+
     return pickList;
 }
 
@@ -205,7 +211,11 @@ void FGMouseCursor3D::updateModel()
         if (_curModelId >= 0)
             sw->setValue(_curModelId, false);
         _curModelId = modelId;
-        if (_curModelId >= 0)
+        if (_curModelId >= 0) {
             sw->setValue(_curModelId, true);
+            _cue->showCue();
+        } else {
+            _cue->hideCue();
+        }
     }
 }
