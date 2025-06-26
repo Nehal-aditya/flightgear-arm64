@@ -7,6 +7,7 @@ set(SOURCES
 	CameraGroup.cxx
 	FGEventHandler.cxx
 	FGMouseCursor3D.cxx
+	FGDirectionCue3D.cxx
 	WindowBuilder.cxx
 	WindowSystemAdapter.cxx
 	fg_os_osgviewer.cxx
@@ -25,6 +26,7 @@ set(HEADERS
 	CameraGroup.hxx
 	FGEventHandler.hxx
 	FGMouseCursor3D.hxx
+	FGDirectionCue3D.hxx
 	WindowBuilder.hxx
 	WindowSystemAdapter.hxx
 	fgviewer.hxx
