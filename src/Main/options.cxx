@@ -3457,7 +3457,7 @@ void Options::printJSONReport() const
   cJSON_AddStringToObject(configNode, "autosave file",
                           globals->autosaveFilePath().utf8Str().c_str());
 
-  const auto sentryUid = fgGetString("sim/crashreport/sentry-user-id");
+  const auto sentryUid = sentryUserId();
   cJSON_AddStringToObject(configNode, "Sentry.io UUID", sentryUid.c_str());
 
   // Get the ordered lists of apt.dat, fix.dat and nav.dat files used by the
