@@ -3402,7 +3402,7 @@ void Options::printJSONReport() const
         {"terrasyncPath", globals->get_terrasync_dir()},
         {"downloadPath", globals->get_download_dir()},
         {"autosavePath", globals->autosaveFilePath()},
-        {"sentryUUID", fgGetString("sim/crashreport/sentry-user-id")}};
+        {"sentryUUID", sentryUserId()};
 
     rootNode["config"]["sceneryPaths"] = globals->get_fg_scenery();
     rootNode["config"]["aircraftPaths"] = globals->get_aircraft_paths();
