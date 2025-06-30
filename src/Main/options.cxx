@@ -3505,8 +3505,7 @@ SGPath Options::downloadedDataRoot() const
 
 SGPath Options::platformDefaultRoot() const
 {
-    return SGPath{};
-    //return SGPath::fromUtf8(PKGLIBDIR);
+  return SGPath::fromUtf8(PKGLIBDIR);
 }
 
 string_list Options::extractOptions() const
