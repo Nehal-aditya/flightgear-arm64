@@ -36,6 +36,7 @@
 #define RM "/autopilot/route-manager/"
 
 using namespace flightgear;
+using namespace std::string_literals;
 using std::string;
 namespace su = simgear::strutils;
 
@@ -282,7 +283,11 @@ void FGRouteMgr::init() {
   departure->tie("sid", SGStringValueMethods<FGRouteMgr>(*this, 
                                                          &FGRouteMgr::getSID,
                                                          &FGRouteMgr::setSID));
-  
+
+  departure->tie("sid-with-trans", SGStringValueMethods<FGRouteMgr>(*this,
+                                                                    &FGRouteMgr::getSIDWithTransition,
+                                                                    &FGRouteMgr::setSID));
+
   departure->tie("name", SGStringValueMethods<FGRouteMgr>(*this, 
     &FGRouteMgr::getDepartureName, nullptr));
   departure->tie("field-elevation-ft", SGRawValueMethods<FGRouteMgr, double>(*this, 
@@ -301,10 +306,16 @@ void FGRouteMgr::init() {
   destination->tie("star", SGStringValueMethods<FGRouteMgr>(*this, 
                                                             &FGRouteMgr::getSTAR,
                                                             &FGRouteMgr::setSTAR));
+  destination->tie("star-with-trans", SGStringValueMethods<FGRouteMgr>(*this,
+                                                                       &FGRouteMgr::getSTARWithTransition,
+                                                                       &FGRouteMgr::setSTAR));
   destination->tie("approach", SGStringValueMethods<FGRouteMgr>(*this, 
                                                                 &FGRouteMgr::getApproach,
                                                                 &FGRouteMgr::setApproach));
-  
+  destination->tie("approach-with-trans", SGStringValueMethods<FGRouteMgr>(*this,
+                                                                           &FGRouteMgr::getApproachWithTransition,
+                                                                           &FGRouteMgr::setApproach));
+
   destination->tie("name", SGStringValueMethods<FGRouteMgr>(*this, 
     &FGRouteMgr::getDestinationName, nullptr));
   destination->tie("field-elevation-ft", SGRawValueMethods<FGRouteMgr, double>(*this, 
@@ -935,6 +946,22 @@ std::string FGRouteMgr::getSID() const
   return "";
 }
 
+std::string FGRouteMgr::getSIDWithTransition() const
+{
+    if (!_plan || !_plan->sid()) {
+        return {};
+    }
+
+    auto sid = _plan->sid();
+    auto trans = _plan->sidTransition();
+    if (trans) {
+        return sid->ident() + "-"s + trans->ident();
+    }
+
+    // no transition defined
+    return sid->ident();
+}
+
 static double headingDiffDeg(double a, double b)
 {
   double rawDiff = b - a;
@@ -1096,6 +1123,22 @@ std::string FGRouteMgr::getApproach() const
   return "";
 }
 
+std::string FGRouteMgr::getApproachWithTransition() const
+{
+    if (!_plan || !_plan->approach()) {
+        return {};
+    }
+
+    auto app = _plan->approach();
+    auto trans = _plan->approachTransition();
+    if (trans) {
+        return app->ident() + "-"s + trans->ident();
+    }
+
+    // no transition defined
+    return app->ident();
+}
+
 flightgear::Approach* createDefaultApproach(FGRunway* aRunway, double aEnrouteCourse)
 {
   if (!aRunway) {
@@ -1187,6 +1230,22 @@ std::string FGRouteMgr::getSTAR() const
   }
   
   return "";
+}
+
+std::string FGRouteMgr::getSTARWithTransition() const
+{
+    if (!_plan || !_plan->star()) {
+        return {};
+    }
+
+    auto star = _plan->star();
+    auto trans = _plan->starTransition();
+    if (trans) {
+        return star->ident() + "-"s + trans->ident();
+    }
+
+    // no transition defined
+    return star->ident();
 }
 
 void FGRouteMgr::setSTAR(const std::string& aIdent)

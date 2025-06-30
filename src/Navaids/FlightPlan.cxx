@@ -1852,6 +1852,7 @@ void FlightPlan::unlockDelegates()
     for (auto d : _delegates) {
       d->departureChanged();
     }
+    assert(!_departureChanged);
   }
   
   if (_arrivalChanged) {
@@ -1859,6 +1860,7 @@ void FlightPlan::unlockDelegates()
     for (auto d : _delegates) {
       d->arrivalChanged();
     }
+    assert(!_arrivalChanged);
   }
   
   if (_cruiseDataChanged) {
@@ -1874,6 +1876,7 @@ void FlightPlan::unlockDelegates()
     for (auto d : _delegates) {
       d->waypointsChanged();
     }
+    assert(!_arrivalChanged);
   }
   
   if (_currentWaypointChanged) {
@@ -1884,6 +1887,10 @@ void FlightPlan::unlockDelegates()
   }
   
   --_delegateLock;
+  if (_delegateLock == 0) {
+      assert(!_departureChanged && !_arrivalChanged &&
+             !_waypointsChanged && !_currentWaypointChanged);
+  }
 }
   
 void FlightPlan::registerDelegateFactory(DelegateFactoryRef df)

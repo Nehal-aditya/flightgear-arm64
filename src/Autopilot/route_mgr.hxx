@@ -190,6 +190,7 @@ private:
 
     std::string getSID() const;
     void setSID(const std::string& aIdent);
+    std::string getSIDWithTransition() const;
 
     std::string getDestinationICAO() const;
     std::string getDestinationName() const;
@@ -200,9 +201,11 @@ private:
 
     std::string getApproach() const;
     void setApproach(const std::string& aIdent);
+    std::string getApproachWithTransition() const;
 
     std::string getSTAR() const;
     void setSTAR(const std::string& aIdent);
+    std::string getSTARWithTransition() const;
 
     double getDepartureFieldElevation() const;
     double getDestinationFieldElevation() const;
