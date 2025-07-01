@@ -32,17 +32,17 @@
 #include "acmodel.hxx"
 
 
-static osg::Node *
-fgLoad3DModelPanel(const SGPath &path, SGPropertyNode *prop_root)
+static simgear::SGModelLib::NodeRef
+fgLoad3DModelPanel(const SGPath& path, SGPropertyNode* prop_root)
 {
-    bool loadPanels = true;
-    bool autoTooltipsMaster = fgGetBool("/sim/rendering/automatic-animation-tooltips/enabled");
-    int autoTooltipsMasterMax = fgGetInt("/sim/rendering/automatic-animation-tooltips/max-count");
+    const bool loadPanels = true;
+    const bool autoTooltipsMaster = fgGetBool("/sim/rendering/automatic-animation-tooltips/enabled");
+    const int autoTooltipsMasterMax = fgGetInt("/sim/rendering/automatic-animation-tooltips/max-count");
     SG_LOG(SG_INPUT, SG_DEBUG, ""
             << " autoTooltipsMaster=" << autoTooltipsMaster
             << " autoTooltipsMasterMax=" << autoTooltipsMasterMax
             );
-    osg::Node* node = simgear::SGModelLib::loadModel(path.utf8Str(), prop_root, NULL, loadPanels, autoTooltipsMaster, autoTooltipsMasterMax);
+    auto node = simgear::SGModelLib::loadModel(path.utf8Str(), prop_root, NULL, loadPanels, autoTooltipsMaster, autoTooltipsMasterMax);
     if (node)
         node->setNodeMask(~SG_NODEMASK_TERRAIN_BIT);
     return node;
@@ -166,7 +166,7 @@ FGAircraftModel::init ()
             continue;
         }
 
-        osg::Node* node = NULL;
+        osg::ref_ptr<osg::Node> node;
         try {
             node = fgLoad3DModelPanel( resolvedPath, globals->get_props());
         } catch (const sg_exception &ex) {
@@ -200,8 +200,8 @@ FGAircraftModel::init ()
     // no models loaded, load the glider instead
     if (!_aircraft.get()) {
         SG_LOG(SG_AIRCRAFT, SG_ALERT, "(Falling back to glider.ac.)");
-        osg::Node* model = fgLoad3DModelPanel( SGPath::fromUtf8("Models/Geometry/glider.ac"),
-                                   globals->get_props());
+        auto model = fgLoad3DModelPanel(SGPath::fromUtf8("Models/Geometry/glider.ac"),
+                                        globals->get_props());
         _aircraft.reset(new SGModelPlacement);
         _aircraft->init(model);
 
