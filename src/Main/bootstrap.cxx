@@ -411,8 +411,6 @@ void fgExitCleanup()
         fgOSCloseWindow();
     }
 
-    flightgear::NavDataCache::shutdown();
-
     // you might imagine we'd call shutdownQtApp here, but it's not safe to do
     // so in an atexit handler, and crashes on Mac. Thiago states this explicitly:
     // https://bugreports.qt.io/browse/QTBUG-48709
@@ -422,6 +420,11 @@ void fgExitCleanup()
     delete globals;
 
     flightgear::addSentryBreadcrumb("finished deleting globals", "info");
+
+    // important we do this *after* deleting globals, since in
+    // the error case, globals will shutdown+unbind all the subsystems, and that
+    // can need a working nav-cache.
+    flightgear::NavDataCache::shutdown();
 
     // avoid crash on exit (https://sourceforge.net/p/flightgear/codetickets/1935/)
     simgear::GroundLightManager::instance()->getRunwayLightStateSet()->clear();

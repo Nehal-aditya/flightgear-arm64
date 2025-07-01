@@ -1320,7 +1320,7 @@ bool NavDataCache::NavDataCachePrivate::areDatFilesModified(
 
 
 // NavDataCache's static member variables
-static NavDataCache* static_instance = NULL;
+static NavDataCache* static_instance = nullptr;
 
 const string NavDataCache::datTypeStr[] = {
     string("apt"),
@@ -1439,6 +1439,7 @@ void NavDataCache::shutdown()
 {
     if (static_instance) {
         delete static_instance;
+        // destructor will clear static_instance pointer
     }
 }
 
