@@ -127,37 +127,35 @@ FGModelMgr::add_model (SGPropertyNode * node)
     }
 
     const std::string internal_model{node->getStringValue("internal-model", "external")};
- 
-  osg::Node *object;
 
-  Instance * instance = new Instance;
-  instance->loaded_node = node->addChild("loaded");
-  instance->loaded_node->setBoolValue(false);
-    
-  if (internal_model == "marker") {
-    std::string label{node->getStringValue("marker/text", "MARKER")};
-    float r = node->getFloatValue("marker/color[0]", 1.0f);
-    float g = node->getFloatValue("marker/color[1]", 1.0f);
-    float b = node->getFloatValue("marker/color[2]", 1.0f);
-    osg::Vec4f color(r, g, b, 1.0f);
-    float font_size = node->getFloatValue("marker/size", 1.0f);
-    float pin_height = node->getFloatValue("marker/height", 1000.0f);
-    float tip_height = node->getFloatValue("marker/tip-height", 0.0f);
-    object = fgCreateMarkerNode(osgText::String(label, osgText::String::ENCODING_UTF8), font_size, pin_height, tip_height, color);
-  }
-  else if (internal_model == "external") {
-    try {
-      std::string fullPath = simgear::SGModelLib::findDataFile(model_path);
-      if (fullPath.empty()) {
-        SG_LOG(SG_AIRCRAFT, SG_ALERT, "add_model: unable to find model with name '" << model_path << "'");
-        return;
-      }
-      object = SGModelLib::loadDeferredModel(fullPath, globals->get_props());
-    } catch (const sg_throwable& t) {
-      SG_LOG(SG_AIRCRAFT, SG_ALERT, "Error loading " << model_path << ":\n  "
-          << t.getFormattedMessage() << t.getOrigin());
-      return;
-    }
+    osg::ref_ptr<osg::Node> object;
+
+    Instance* instance = new Instance;
+    instance->loaded_node = node->addChild("loaded");
+    instance->loaded_node->setBoolValue(false);
+
+    if (internal_model == "marker") {
+        std::string label{node->getStringValue("marker/text", "MARKER")};
+        float r = node->getFloatValue("marker/color[0]", 1.0f);
+        float g = node->getFloatValue("marker/color[1]", 1.0f);
+        float b = node->getFloatValue("marker/color[2]", 1.0f);
+        osg::Vec4f color(r, g, b, 1.0f);
+        float font_size = node->getFloatValue("marker/size", 1.0f);
+        float pin_height = node->getFloatValue("marker/height", 1000.0f);
+        float tip_height = node->getFloatValue("marker/tip-height", 0.0f);
+        object = fgCreateMarkerNode(osgText::String(label, osgText::String::ENCODING_UTF8), font_size, pin_height, tip_height, color);
+    } else if (internal_model == "external") {
+        try {
+            std::string fullPath = simgear::SGModelLib::findDataFile(model_path);
+            if (fullPath.empty()) {
+                SG_LOG(SG_AIRCRAFT, SG_ALERT, "add_model: unable to find model with name '" << model_path << "'");
+                return;
+            }
+            object = SGModelLib::loadDeferredModel(fullPath, globals->get_props());
+        } catch (const sg_throwable& t) {
+            SG_LOG(SG_AIRCRAFT, SG_ALERT, "Error loading " << model_path << ":\n  " << t.getFormattedMessage() << t.getOrigin());
+            return;
+        }
   }
   else {
       object = new osg::Node;
