@@ -80,7 +80,7 @@ const char * JSON::getPropertyTypeString(simgear::props::Type type)
 json JSON::valueToJson(SGPropertyNode_ptr n)
 {
     if( !n->hasValue() )
-        return {nullptr};
+        return json(nullptr);
 
     switch( n->getType() ) {
         case simgear::props::BOOL:
@@ -90,7 +90,7 @@ json JSON::valueToJson(SGPropertyNode_ptr n)
         case simgear::props::FLOAT:
         case simgear::props::DOUBLE: {
             double val = n->getDoubleValue();
-            return SGMiscd::isNaN(val) ? json{nullptr} : json{val};
+            return SGMiscd::isNaN(val) ? json(nullptr) : json(val);
         }
 
         default:
