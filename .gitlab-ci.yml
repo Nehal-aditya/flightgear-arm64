@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: James Turner <james@flightgear.org>
 #
-# SPDX-License-Identifier: GPL-2.0
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 variables:
   BUILD_DIR: "$CI_PROJECT_DIR/build"
@@ -21,16 +21,30 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_COMMIT_TAG
     - if: $CI_COMMIT_REF_PROTECTED == "true"
+
 # see https://pre-commit.com/#gitlab-ci-example if changing this
+
+# this job runs only on MRs, but needs to pass.
+# the version below can fail, but runs over the whole repo, for now
+pre-commit-merge:
+  stage: build
+  image: registry.gitlab.com/flightgear/flightgear
+  script:
+    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+    - pre-commit run --from-ref origin/"$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --to-ref "$CI_COMMIT_SHA"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  cache:
+    paths:
+      - ${PRE_COMMIT_HOME}
+
 pre-commit:
   stage: build
   image: registry.gitlab.com/flightgear/flightgear
   script:
-    # consider using pre-commit run --from-ref origin/HEAD --to-ref HEAD
-    # once we decide how heavy this is
+    # run on all files, but allow failure. For MRs
     - pre-commit run --all-files
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_REF_PROTECTED == "true"
   cache:
     paths:
@@ -43,9 +57,11 @@ linux-build:
   stage: build
   script:
     - rm -f $BUILD_DIR/CMakeCache.txt
+
     # --fresh would be ideal here to avoid the line above, but needs CMake 3.25
-    - cmake -B $BUILD_DIR -S $CI_PROJECT_DIR -G Ninja 
-      -D CMAKE_BUILD_TYPE=RelWithDebInfo 
+    - >
+      cmake -B $BUILD_DIR -S $CI_PROJECT_DIR -G Ninja
+      -D CMAKE_BUILD_TYPE=RelWithDebInfo
       -D CMAKE_INSTALL_PREFIX=$PREFIX_DIR
       -D ENABLE_FGQCANVAS=ON
       -D CMAKE_PREFIX_PATH="$CI_PROJECT_DIR/simgear-dist;$CI_PROJECT_DIR/osg-dist"
@@ -69,7 +85,6 @@ linux-build:
     paths:
       - $BUILD_DIR
 
-
 canvas-pi-build:
   image: registry.gitlab.com/flightgear/flightgear/fgqcanvas-raspbian
   stage: build
@@ -79,8 +94,9 @@ canvas-pi-build:
     # the package subdir for Qt6DBusConfig.cmake, so configuration fails.
     - export Qt6DBus_DIR=/usr/lib/aarch64-linux-gnu/cmake/Qt6DBus
 
-    - cmake --fresh -B $BUILD_DIR -S $CI_PROJECT_DIR/utils/fgqcanvas -G Ninja 
-      -D CMAKE_BUILD_TYPE=RelWithDebInfo 
+    - >
+      cmake --fresh -B $BUILD_DIR -S $CI_PROJECT_DIR/utils/fgqcanvas -G Ninja
+      -D CMAKE_BUILD_TYPE=RelWithDebInfo
       -D CMAKE_INSTALL_PREFIX=$PREFIX_DIR
       -D CHECK_FOR_QT5=OFF
 
@@ -107,11 +123,17 @@ windows-build:
     - Move-Item -Path $CI_PROJECT_DIR\msvc140 $WIN_FG_DIR\msvc140
   script:
     # should ideally be done inside CMake but this works for now
-    #
     - $Env:PATH += ";$WIN_FG_DIR\msvc140\3rdparty.x64\bin"
     #  -D CMAKE_BUILD_TYPE=RelWithDebInfo
 
-    - cmake -B $env:BUILD_DIR -S $env:CI_PROJECT_DIR -G "Visual Studio 17 2022" -A x64 --fresh -D CMAKE_INSTALL_PREFIX=$env:PREFIX_DIR -D MSVC_3RDPARTY_ROOT=$WIN_FG_DIR -D OSG_FSTREAM_EXPORT_FIXED:BOOL=ON -D CMAKE_PREFIX_PATH="$env:CI_PROJECT_DIR\simgear-dist;$env:CI_PROJECT_DIR\osg-dist"
+    - >
+      cmake -B $env:BUILD_DIR -S $env:CI_PROJECT_DIR -G "Visual Studio 17 2022" -A x64
+      --fresh
+      -D CMAKE_INSTALL_PREFIX=$env:PREFIX_DIR
+      -D MSVC_3RDPARTY_ROOT=$WIN_FG_DIR
+      -D OSG_FSTREAM_EXPORT_FIXED:BOOL=ON
+      -D CMAKE_PREFIX_PATH="$env:CI_PROJECT_DIR\simgear-dist;$env:CI_PROJECT_DIR\osg-dist"
+
     - cmake --build $BUILD_DIR --config RelWithDebInfo
     - cmake --build $BUILD_DIR --config RelWithDebInfo --target install
   needs:
@@ -143,7 +165,14 @@ macos-build:
     # ensure we use our FreeType and not the one from Homebrew
     # ours is UB, HomeBrew's is not
     - export FREETYPE_DIR=$CI_PROJECT_DIR/dist
-    - cmake -B $BUILD_DIR -S $CI_PROJECT_DIR -G Ninja --fresh -D CMAKE_BUILD_TYPE=RelWithDebInfo -D CMAKE_INSTALL_PREFIX=$PREFIX_DIR -D CMAKE_OSX_ARCHITECTURES="arm64;x86_64" -D CMAKE_PREFIX_PATH="$CI_PROJECT_DIR/osg-dist;$CI_PROJECT_DIR/simgear-dist"
+    - >
+      cmake -B $BUILD_DIR -S $CI_PROJECT_DIR -G Ninja
+      --fresh
+      -D CMAKE_BUILD_TYPE=RelWithDebInfo
+      -D CMAKE_INSTALL_PREFIX=$PREFIX_DIR
+      -D CMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+      -D CMAKE_PREFIX_PATH="$CI_PROJECT_DIR/osg-dist;$CI_PROJECT_DIR/simgear-dist"
+
     - cmake --build $BUILD_DIR
     - cmake --build $BUILD_DIR --target install
   needs:
@@ -186,15 +215,12 @@ test:
   artifacts:
     when: always
     paths:
-      - $BUILD_DIR/FGData_tests_junit.xml 
-      - $BUILD_DIR/Simgear_unit_tests_junit.xml 
-      - $BUILD_DIR/System_tests_junit.xml 
+      - $BUILD_DIR/FGData_tests_junit.xml
+      - $BUILD_DIR/Simgear_unit_tests_junit.xml
+      - $BUILD_DIR/System_tests_junit.xml
       - $BUILD_DIR/Unit_tests_junit.xml
     reports:
       junit: build/*_junit.xml
   cache:
     paths:
       - $BUILD_DIR
-
-
-

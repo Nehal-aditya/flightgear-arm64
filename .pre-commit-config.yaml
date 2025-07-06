@@ -1,4 +1,5 @@
-# exclude: 3rdparty/*
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SPDX-FileCopyrightText: 2025 James Turner <james@flightgear.org>
 
 exclude: ^3rdparty/
 
@@ -8,11 +9,11 @@ repos:
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
-    
-  # - repo: https://github.com/codespell-project/codespell
-  #   rev: v2.3.0
-  #   hooks:
-  #     - id: codespell
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.3.0
+    hooks:
+      - id: codespell
   - repo: https://github.com/google/yamlfmt
     rev: v0.14.0
     hooks:
@@ -21,3 +22,9 @@ repos:
     rev: v14.0.6
     hooks:
       - id: clang-format
+
+  # check SPDx compliance
+  - repo: https://github.com/fsfe/reuse-tool
+    rev: v5.0.2
+    hooks:
+      - id: reuse-lint-file
