@@ -1,3 +1,11 @@
+// SPDX-FileCopyrightText: 2020 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+/**
+ * @file
+ * @brief Class for managing graphics presets
+ */
+
 #pragma once
 
 #include <memory>
@@ -56,7 +64,7 @@ public:
 
     /**
         @brief apply a preset identified by its (localized) name. This is helpful
-        for the rnedering dialog since PUI combo-boxes only record the name of
+        for the rendering dialog since PUI combo-boxes only record the name of
         items and no other data.
      */
     bool applyPresetByName(const std::string& name);
@@ -77,6 +85,13 @@ private:
 
     bool loadPresetXML(const SGPath& p, GraphicsPresetInfo& info);
 
+    // Auxiliary function for loadPresetXML() that fills 'info' with
+    // translations for the preset name and description, if available.
+    static bool fillNameAndDescription(
+        GraphicsPresetInfo& info, const SGPath& p, const SGPropertyNode* props);
+    // Auxiliary function for fillNameAndDescription(): from a path like
+    // .../high-quality-preset.xml, it returns "graphics-presets-high-quality".
+    static std::string translationContextFromPresetFileName(const SGPath& path);
 
     class RequiredPropertyListener;
     class GraphicsConfigChangeListener;

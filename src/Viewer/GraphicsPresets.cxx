@@ -1,13 +1,24 @@
+// SPDX-FileCopyrightText: 2020 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+/**
+ * @file
+ * @brief Class for managing graphics presets
+ */
+
 #include "config.h"
 
 #include <Viewer/GraphicsPresets.hxx>
 
 // std
+#include <string>
 #include <unordered_set>
 
 // SG
 #include <simgear/io/iostreams/sgstream.hxx>
 #include <simgear/misc/sg_dir.hxx>
+#include <simgear/misc/strutils.hxx>
+#include <simgear/props/props.hxx>
 #include <simgear/props/props_io.hxx>
 #include <simgear/structure/commands.hxx>
 #include <simgear/structure/exception.hxx>
@@ -15,11 +26,12 @@
 // FG
 #include <Main/fg_props.hxx>
 #include <Main/globals.hxx>
-#include <Main/locale.hxx>
 #include <Main/sentryIntegration.hxx>
 #include <Scenery/scenery.hxx>
+#include <Translations/FGTranslate.hxx>
 
 using namespace std;
+namespace strutils = simgear::strutils;
 
 namespace {
 
@@ -232,7 +244,7 @@ static bool do_list_standard_presets(const SGPropertyNode* arg, SGPropertyNode* 
         destRoot->removeAllChildren();
     }
 
-    // format the way PUI combo-box (actualy, fgValueList) like it
+    // format the way PUI combo-box (actually, fgValueList) like it
     if (arg->getBoolValue("as-combobox-values")) {
         for (const auto& preset : gp->listPresets()) {
             SGPropertyNode_ptr v = destRoot->addChild("value");
@@ -489,15 +501,13 @@ bool GraphicsPresets::loadPresetXML(const SGPath& p, GraphicsPresetInfo& info)
         return false;
     }
 
-    info.id = id;
-    info.name = globals->get_locale()->getLocalizedString(rawName, "graphics-presets");
-    info.description = globals->get_locale()->getLocalizedString(rawDesc, "graphics-presets");
-    info.orderNum = orderNum;
+    // Get translations for the preset name and description, if available
+    if (!fillNameAndDescription(info, p, props)) { // logs errors if any
+        return false;
+    }
 
-    if (info.name.empty())
-        info.name = rawName; // no translation defined
-    if (info.description.empty())
-        info.description = rawDesc;
+    info.id = id;
+    info.orderNum = orderNum;
 
     info.properties = props->getChild("settings");
     if (!info.properties) {
@@ -516,6 +526,71 @@ bool GraphicsPresets::loadPresetXML(const SGPath& p, GraphicsPresetInfo& info)
     }
 
     return true;
+}
+
+// Static member function
+bool GraphicsPresets::fillNameAndDescription(
+    GraphicsPresetInfo& info, const SGPath& path, const SGPropertyNode* props)
+{
+    const auto nameNode = props->getNode("name");
+    const auto descriptionNode = props->getNode("description");
+
+    // Default: untranslated
+    info.name = strutils::strip(nameNode->getStringValue());
+    info.description = strutils::strip(descriptionNode->getStringValue());
+
+    string translationContext;
+    if (const auto n = props->getChild("translation-context")) {
+        translationContext = n->getStringValue();
+    } else {
+        translationContext = translationContextFromPresetFileName(path);
+    }
+
+    if (translationContext.empty()) {
+        SG_LOG(SG_GUI, SG_WARN, "Unable to find translation context for "
+                                "graphics preset file '"
+                                    << path.utf8Str() << "'");
+        return false;
+    }
+
+    const string translationDomain = props->getStringValue("translation-domain");
+    // Overwrite with translations for the name and description, if possible
+    if (!translationDomain.empty()) {
+        const auto res = FGTranslate(translationDomain).getResource(translationContext);
+        if (!res) {
+            // This will happen if people enable translations in preset files
+            // but forget to run fg-extract-translatable-strings.
+            return false;
+        }
+
+        if (nameNode->getAttribute(SGPropertyNode::TRANSLATE)) {
+            info.name = res->get(info.name);
+        }
+
+        if (descriptionNode->getAttribute(SGPropertyNode::TRANSLATE)) {
+            info.description = res->get(info.description);
+        }
+    }
+
+    return true;
+}
+
+// Static member function
+std::string GraphicsPresets::translationContextFromPresetFileName(
+    const SGPath& path)
+{
+    string baseName = path.file();
+    const auto pos = baseName.find("-preset.xml");
+
+    if (pos == string::npos) {
+        SG_LOG(SG_GUI, SG_WARN, "Preset file name doesn't end in "
+                                "'-preset.xml': '"
+                                    << path.utf8Str() << "'");
+        return {};
+    }
+
+    baseName.resize(pos); // remove the '-preset.xml' suffix
+    return "graphics-presets-" + baseName;
 }
 
 bool GraphicsPresets::saveToXML(const SGPath& path, const std::string& name, const std::string& desc)
