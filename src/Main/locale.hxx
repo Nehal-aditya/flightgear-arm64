@@ -23,8 +23,7 @@
 class SGPath;
 
 namespace flightgear {
-    class FGTranslate;
-    class TranslationDomain;
+class TranslationDomain;
 };
 
 namespace simgear { class Dir; }
@@ -220,9 +219,9 @@ public:
      * a printf format string.
      */
     std::string localizedPrintf(const char* id, const char* resource, ... );
-    
+
     std::string vlocalizedPrintf(const char* id, const char* resource, va_list args);
-    
+
     /**
      * Simple UTF8 to Latin1 encoder.
      */
