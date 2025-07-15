@@ -30,7 +30,7 @@
 #include <Scenery/scenery.hxx>
 #include <Translations/FGTranslate.hxx>
 
-using namespace std;
+using std::string;
 namespace strutils = simgear::strutils;
 
 namespace {
@@ -146,7 +146,7 @@ public:
 
         for (const auto& c : props->getChildren("property")) {
             // tolerate exterior whitespace in the XML
-            string path = simgear::strutils::strip(c->getStringValue());
+            string path = strutils::strip(c->getStringValue());
             if (path.empty())
                 continue;
 
@@ -301,7 +301,7 @@ void GraphicsPresets::init()
         SGPropertyNode_ptr toSave = graphicsPropsXML->getChild("save-to-file");
         if (toSave) {
             for (const auto& p : toSave->getChildren("property")) {
-                string t = simgear::strutils::strip(p->getStringValue());
+                string t = strutils::strip(p->getStringValue());
                 if (t.at(0) == '/') {
                     t = t.substr(1); // remove leading '/'
                 }
@@ -400,7 +400,7 @@ bool GraphicsPresets::applyCustomPreset(const SGPath& path)
 bool GraphicsPresets::applyPresetByName(const std::string& name)
 {
     const auto presets = listPresets();
-    auto it = std::find_if(presets.begin(), presets.end(), [name](const GraphicsPresetInfo& pi) { return simgear::strutils::iequals(name, pi.name); });
+    auto it = std::find_if(presets.begin(), presets.end(), [name](const GraphicsPresetInfo& pi) { return strutils::iequals(name, pi.name); });
     if (it == presets.end()) {
         SG_LOG(SG_GUI, SG_ALERT, "Couldn't find graphics preset with name: " << name);
         return false;
@@ -434,12 +434,12 @@ bool GraphicsPresets::innerApplyPreset(const GraphicsPresetInfo& info, bool over
             // if we're high up in the tree, eg looking at /sim, then we
             // want to check if at least one prefix includes that path
             if (path.length() < p.length()) {
-                return simgear::strutils::starts_with(p, path);
+                return strutils::starts_with(p, path);
             }
 
             // if the prefix is longer (more specific) than our path, we
             // want to consider the full prefix
-            return simgear::strutils::starts_with(path, p);
+            return strutils::starts_with(path, p);
         });
 
         if (it == kWitelistedPrefixes.end()) {
@@ -520,7 +520,7 @@ bool GraphicsPresets::loadPresetXML(const SGPath& p, GraphicsPresetInfo& info)
     SGPropertyNode_ptr devices = props->getChild("devices");
     if (devices) {
         for (auto d : devices->getChildren("device")) {
-            const auto t = simgear::strutils::strip(d->getStringValue());
+            const auto t = strutils::strip(d->getStringValue());
             info.devices.push_back(t);
         }
     }
