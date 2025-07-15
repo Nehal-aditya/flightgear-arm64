@@ -785,17 +785,17 @@ bool FGAIFlightPlan::createDescent(FGAIAircraft* ac,
         ac->setHeading(courseTowardsThreshold);
     }
 
-    SGGeod threshold = rwy->threshold();
-    double currElev = threshold.getElevationFt();
-    double altDiff = alt - currElev - 2000;
+    const SGGeod threshold = rwy->threshold();
+    const double currElev = threshold.getElevationFt();
+    const double altDiff = alt - currElev - 2000;
 
     // depending on entry we differ approach (teardrop/direct/parallel)
 
-    double initialTurnRadius = getTurnRadius(vDescent, true);
+    const double initialTurnRadius = getTurnRadius(vDescent, true);
     //double finalTurnRadius = getTurnRadius(vApproach, true);
 
     // get length of the downwind leg for the intended runway
-    double distanceOut = apt->getDynamics()->getApproachController()->getRunway(rwy->name())->getApproachDistance(); //12 * SG_NM_TO_METER;
+    const double distanceOut = apt->getDynamics()->getApproachController()->getRunway(rwy->name())->getApproachDistance(); //12 * SG_NM_TO_METER;
     //time_t previousArrivalTime=  apt->getDynamics()->getApproachController()->getRunway(rwy->name())->getEstApproachTime();
 
     // tells us the direction we have to turn
@@ -875,10 +875,16 @@ bool FGAIFlightPlan::createDescent(FGAIAircraft* ac,
             }
             const double dHeading = VectorMath::innerTangentsAngle(firstTurnCenter, secondaryTarget, initialTurnRadius, initialTurnRadius)[innerTangent];
             createArc(ac, firstTurnCenter, ac->_getHeading() - rightAngle, dHeading - rightAngle, firstTurnIncrement, initialTurnRadius, waypoints.size() > 0 ? waypoints.back()->getAltitude() : alt, altDiff / 8, vDescent, "far-initialturn%03d");
-            double length = VectorMath::innerTangentsLength(firstTurnCenter, secondaryTarget, initialTurnRadius, initialTurnRadius);
-            createLine(ac, waypoints.back()->getPos(), dHeading, length, waypoints.size() > 0 ? waypoints.back()->getAltitude() : alt, altDiff * 0.75, vDescent, "descent%03d");
-            int startVal = SGMiscd::normalizePeriodic(0, 360, dHeading + rightAngle);
-            int endVal = SGMiscd::normalizePeriodic(0, 360, rwy->headingDeg() + rightAngle);
+            const double length = VectorMath::innerTangentsLength(firstTurnCenter, secondaryTarget, initialTurnRadius, initialTurnRadius);
+            if (waypoints.empty()) {
+                createLine(ac, current, dHeading, length, alt, altDiff * 0.75, vDescent, "descent%03d");
+            } else {
+                const auto lastPos = waypoints.back()->getPos();
+                const auto lastAlt = waypoints.back()->getAltitude();
+                createLine(ac, lastPos, dHeading, length, lastAlt, altDiff * 0.75, vDescent, "descent%03d");
+            }
+            const int startVal = SGMiscd::normalizePeriodic(0, 360, dHeading + rightAngle);
+            const int endVal = SGMiscd::normalizePeriodic(0, 360, rwy->headingDeg() + rightAngle);
             // Turn into runway
             createArc(ac, secondaryTarget, startVal, endVal, firstTurnIncrement * -1, initialTurnRadius,
                       waypoints.size() > 0 ? waypoints.back()->getAltitude() : alt, altDiff / 8, vDescent, "s-turn%03d");
