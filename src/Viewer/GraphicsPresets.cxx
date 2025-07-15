@@ -376,7 +376,7 @@ auto GraphicsPresets::listPresets() -> GraphicsPresetVec
 
     // Sort the resulting list by the order number or alphabetically if some
     // presets have the same order number
-    sort(result.begin(), result.end(), [](auto &a, auto &b) {
+    sort(result.begin(), result.end(), [](auto& a, auto& b) {
         if (a.orderNum != b.orderNum)
             return a.orderNum < b.orderNum;
         return a.name < b.name;

@@ -14,8 +14,8 @@
 #include <string>
 #include <vector>
 
-#include <simgear/props/propsfwd.hxx>
 #include <simgear/misc/strutils.hxx>
+#include <simgear/props/propsfwd.hxx>
 
 #include <Translations/TranslationDomain.hxx>
 
@@ -26,7 +26,9 @@ namespace flightgear {
 class TranslationDomain;
 };
 
-namespace simgear { class Dir; }
+namespace simgear {
+class Dir;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -212,20 +214,20 @@ public:
     /**
      * Obtain default font for current locale.
      */
-    std::string getDefaultFont      (const char* fallbackFont);
+    std::string getDefaultFont(const char* fallbackFont);
 
     /**
      * Obtain a message string, from a localized resource ID, and use it as
      * a printf format string.
      */
-    std::string localizedPrintf(const char* id, const char* resource, ... );
+    std::string localizedPrintf(const char* id, const char* resource, ...);
 
     std::string vlocalizedPrintf(const char* id, const char* resource, va_list args);
 
     /**
      * Simple UTF8 to Latin1 encoder.
      */
-    static void utf8toLatin1        (std::string& s);
+    static void utf8toLatin1(std::string& s);
 
     /**
         * reset all data in the locale. This is needed to allow the launcher to use the code,
@@ -333,6 +335,7 @@ protected:
      */
     void loadXLIFF(const SGPath& basePath, SGPropertyNode* localeNode,
                    const std::string& domain);
+
 private:
     /** Return a new string with the character encoding part of the locale
      *  spec removed., i.e., "de_DE.UTF-8" becomes "de_DE". If there is no
