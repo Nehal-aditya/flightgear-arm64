@@ -27,7 +27,7 @@ workflow:
 # this job runs only on MRs, but needs to pass.
 # the version below can fail, but runs over the whole repo, for now
 pre-commit-merge:
-  stage: build
+  stage: .pre
   image: registry.gitlab.com/flightgear/flightgear
   script:
     - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
@@ -39,7 +39,7 @@ pre-commit-merge:
       - ${PRE_COMMIT_HOME}
 
 pre-commit:
-  stage: build
+  stage: .pre
   image: registry.gitlab.com/flightgear/flightgear
   script:
     # run on all files, but allow failure. For MRs
