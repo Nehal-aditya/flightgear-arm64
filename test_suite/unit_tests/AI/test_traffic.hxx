@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "test_suite/FGTestApi/testStringUtils.hxx"
 #include <cppunit/TestFixture.h>
 #include <cppunit/extensions/HelperMacros.h>
 
@@ -68,6 +69,5 @@ public:
 
 private:
     long currentWorldTime;
-    std::string getTimeString(int timeOffset);
     FGAIAircraft* flyAI(SGSharedPtr<FGAIAircraft> aiAircraft, std::string fName);
 };

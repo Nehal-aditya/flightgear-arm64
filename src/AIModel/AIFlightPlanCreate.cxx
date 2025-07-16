@@ -458,7 +458,7 @@ bool FGAIFlightPlan::createTakeoffTaxi(FGAIAircraft* ac, bool firstFlight,
     time_t now = globals->get_time_params()->get_cur_time();
 
     arrivalTime = now + calcArrivalTimes();
-   //cerr << "[done]" << endl;
+    //cerr << "[done]" << endl;
     return true;
 }
 
@@ -800,17 +800,18 @@ bool FGAIFlightPlan::createDescent(FGAIAircraft* ac,
         ac->setHeading(courseTowardsThreshold);
     }
 
-    SGGeod threshold = rwy->threshold();
-    double currElev = threshold.getElevationFt();
-    double altDiff = alt - currElev - 2000;
+    const SGGeod threshold = rwy->threshold();
+    const double currElev = threshold.getElevationFt();
+    const double altDiff = alt - currElev - 2000;
 
     // depending on entry we differ approach (teardrop/direct/parallel)
 
-    double initialTurnRadius = getTurnRadius(vDescent, true);
+    const double initialTurnRadius = getTurnRadius(vDescent, true);
     //double finalTurnRadius = getTurnRadius(vApproach, true);
 
     // get length of the downwind leg for the intended runway
-    double distanceOut = apt->getDynamics()->getRunwayQueue(rwy->name())->getApproachDistance(); //12 * SG_NM_TO_METER;
+    const double distanceOut = apt->getDynamics()->getRunwayQueue(rwy->name())->getApproachDistance(); //12 * SG_NM_TO_METER;
+    //time_t previousArrivalTime=  apt->getDynamics()->getApproachController()->getRunway(rwy->name())->getEstApproachTime();
 
     // tells us the direction we have to turn
     const double headingDiffRunway = SGMiscd::normalizePeriodic(-180, 180, ac->getTrueHeadingDeg() - rwy->headingDeg());
@@ -820,12 +821,12 @@ bool FGAIFlightPlan::createDescent(FGAIAircraft* ac,
     }
 
     SGGeod initialTarget = rwy->pointOnCenterline(-distanceOut);
-//    SGGeod otherRwyEnd = rwy->pointOnCenterline(rwy->lengthM());
+    //    SGGeod otherRwyEnd = rwy->pointOnCenterline(rwy->lengthM());
     SGGeod secondaryTarget =
         rwy->pointOffCenterline(-2 * distanceOut, lateralOffset);
     SGGeod secondHoldCenter =
         rwy->pointOffCenterline(-3 * distanceOut, lateralOffset);
-//    SGGeod refPoint = rwy->pointOnCenterline(0);
+    //    SGGeod refPoint = rwy->pointOnCenterline(0);
     double distance = SGGeodesy::distanceM(current, initialTarget);
     double azimuth = SGGeodesy::courseDeg(current, initialTarget);
     double secondaryAzimuth = SGGeodesy::courseDeg(current, secondaryTarget);
@@ -889,10 +890,16 @@ bool FGAIFlightPlan::createDescent(FGAIAircraft* ac,
             }
             const double dHeading = VectorMath::innerTangentsAngle(firstTurnCenter, secondaryTarget, initialTurnRadius, initialTurnRadius)[innerTangent];
             createArc(ac, firstTurnCenter, ac->_getHeading() - rightAngle, dHeading - rightAngle, firstTurnIncrement, initialTurnRadius, waypoints.size() > 0 ? waypoints.back()->getAltitude() : alt, altDiff / 8, vDescent, "far-initialturn%03d");
-            double length = VectorMath::innerTangentsLength(firstTurnCenter, secondaryTarget, initialTurnRadius, initialTurnRadius);
-            createLine(ac, waypoints.back()->getPos(), dHeading, length, waypoints.size() > 0 ? waypoints.back()->getAltitude() : alt, altDiff * 0.75, vDescent, "descent%03d");
-            int startVal = SGMiscd::normalizePeriodic(0, 360, dHeading + rightAngle);
-            int endVal = SGMiscd::normalizePeriodic(0, 360, rwy->headingDeg() + rightAngle);
+            const double length = VectorMath::innerTangentsLength(firstTurnCenter, secondaryTarget, initialTurnRadius, initialTurnRadius);
+            if (waypoints.empty()) {
+                createLine(ac, current, dHeading, length, alt, altDiff * 0.75, vDescent, "descent%03d");
+            } else {
+                const auto lastPos = waypoints.back()->getPos();
+                const auto lastAlt = waypoints.back()->getAltitude();
+                createLine(ac, lastPos, dHeading, length, lastAlt, altDiff * 0.75, vDescent, "descent%03d");
+            }
+            const int startVal = SGMiscd::normalizePeriodic(0, 360, dHeading + rightAngle);
+            const int endVal = SGMiscd::normalizePeriodic(0, 360, rwy->headingDeg() + rightAngle);
             // Turn into runway
             createArc(ac, secondaryTarget, startVal, endVal, firstTurnIncrement * -1, initialTurnRadius,
                       waypoints.size() > 0 ? waypoints.back()->getAltitude() : alt, altDiff / 8, vDescent, "s-turn%03d");
@@ -957,7 +964,7 @@ bool FGAIFlightPlan::createDescent(FGAIAircraft* ac,
     time_t now = globals->get_time_params()->get_cur_time();
 
     arrivalTime = now + calcArrivalTimes();
-    
+
     //choose a distance to the runway such that it will take at least 60 seconds more
     // time to get there than the previous aircraft.
     // Don't bother when aircraft need to be repositioned, because that marks the initialization phased...

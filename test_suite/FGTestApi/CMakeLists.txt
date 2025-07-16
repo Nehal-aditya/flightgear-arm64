@@ -1,3 +1,7 @@
+# SPDX-FileName: CMakeLists.txt
+# SPDX-FileCopyrightText: Copyright (C) 2020 Edward d'Auvergne
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 set(TESTSUITE_SOURCES
     ${TESTSUITE_SOURCES}
     ${CMAKE_CURRENT_SOURCE_DIR}/testGlobals.cxx
@@ -9,6 +13,7 @@ set(TESTSUITE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/TestDataLogger.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/testApis.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/DummyCanvasSystemAdapter.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/testStringUtils.cxx
     PARENT_SCOPE
 )
 
@@ -22,5 +27,6 @@ set(TESTSUITE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/TestPilot.hxx
     ${CMAKE_CURRENT_SOURCE_DIR}/TestDataLogger.hxx
     ${CMAKE_CURRENT_SOURCE_DIR}/DummyCanvasSystemAdapter.hxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/testStringUtils.hxx
     PARENT_SCOPE
 )

@@ -1,20 +1,7 @@
 /*
- * Copyright (C) 2020 James Turner
- *
- * This file is part of the program FlightGear.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * SPDX-FileName: test_AIFlightPlan.cxx
+ * SPDX-FileCopyrightText: Copyright (C) 2020 James Turner
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "test_AIFlightPlan.hxx"
@@ -23,16 +10,25 @@
 #include <memory>
 
 #include "config.h"
-#include "test_suite/FGTestApi/testGlobals.hxx"
 #include "test_suite/FGTestApi/NavDataCache.hxx"
 #include "test_suite/FGTestApi/TestDataLogger.hxx"
 #include "test_suite/FGTestApi/TestPilot.hxx"
+#include "test_suite/FGTestApi/testGlobals.hxx"
+#include "test_suite/FGTestApi/testStringUtils.hxx"
+
+#include <simgear/timing/sg_time.hxx>
 
 #include <AIModel/AIAircraft.hxx>
 #include <AIModel/AIFlightPlan.hxx>
 #include <AIModel/AIManager.hxx>
 
+#include <ATC/atc_mgr.hxx>
+
+#include <Traffic/SchedFlight.hxx>
+#include <Traffic/Schedule.hxx>
+
 #include <Airports/airport.hxx>
+#include <Airports/airportdynamicsmanager.hxx>
 #include <Main/fg_props.hxx>
 #include <Main/globals.hxx>
 #include <Navaids/NavDataCache.hxx>
@@ -49,7 +45,9 @@ void AIFlightPlanTests::setUp()
     FGTestApi::setUp::initTestGlobals("AI");
     FGTestApi::setUp::initNavDataCache();
 
+    globals->get_subsystem_mgr()->add<FGATCManager>();
     globals->get_subsystem_mgr()->add<FGAIManager>();
+    globals->get_subsystem_mgr()->add<flightgear::AirportDynamicsManager>();
 
     auto props = globals->get_props();
     props->setBoolValue("sim/ai/enabled", true);
@@ -271,7 +269,7 @@ void AIFlightPlanTests::testAIFlightPlanLeftCircle()
 
     int course = 0;
 
-    for(int i = 1; i <= 10; i++) {
+    for (int i = 1; i <= 10; i++) {
         auto wp = new FGAIWaypoint;
         course += 10;
         const auto g1 = SGGeodesy::direct(lastWp->getPos(), course, SG_NM_TO_METER * 5.0);
@@ -284,6 +282,50 @@ void AIFlightPlanTests::testAIFlightPlanLeftCircle()
         lastWp = wp;
     }
     CPPUNIT_ASSERT_EQUAL(aiFP->getNrOfWayPoints(), 11);
+}
+
+void AIFlightPlanTests::testAIFlightPlans()
+{
+    auto aiFP = new FGAIFlightPlan;
+    aiFP->setName("Bob");
+    aiFP->setRunway("24");
+
+    FGAirportRef egph = FGAirport::getByIdent("EGPH");
+    FGAirportRef egpf = FGAirport::getByIdent("EGPF");
+
+
+    // Time to depart
+    std::string dep = FGTestApi::strings::getTimeString(30);
+    // Time to arrive
+    std::string arr = FGTestApi::strings::getTimeString(320);
+
+    FGAISchedule* schedule = new FGAISchedule(
+        "B737", "KLM", "EGPH", "G-BLA", "ID", false, "B737", "KLM", "N", "cargo", 24, 8);
+    FGScheduledFlight* flight = new FGScheduledFlight("testPushbackCargo", "", "EGPH", "EGPF", 24, dep, arr, "WEEK", "HBR_BN_2");
+    schedule->assign(flight);
+
+    SGSharedPtr<FGAIAircraft> aiAircraft = new FGAIAircraft{schedule};
+
+    std::string activeRunway;
+    FGRunwayRef rwy;
+
+    // FLIGHTGEAR-1VBR
+    int aircraftHeading = 302;
+    int heading = 5;
+
+    // heading of vector towards threshold
+    egpf->getDynamics()->getActiveRunway("com", 2, activeRunway, heading);
+    rwy = egpf->getRunwayByIdent(activeRunway);
+    SGGeod threshold = rwy->threshold();
+    SGGeod aiAircraftPos = SGGeodesy::direct(threshold, aiAircraft->getTrueHeadingDeg(), 120000);
+
+    aiAircraft->setLatitude(aiAircraftPos.getLatitudeDeg());
+    aiAircraft->setLongitude(aiAircraftPos.getLongitudeDeg());
+    aiAircraft->setHeading(aircraftHeading);
+
+    bool isValid = aiFP->create(aiAircraft, egph, egpf, AILeg::APPROACH, 5000, 200, 51, 10,
+                                false, 20, "cargo", "B737", "KLM", 1000);
+    CPPUNIT_ASSERT_EQUAL(true, isValid);
 }
 
 void AIFlightPlanTests::testAIFlightPlanLoadXML()
@@ -331,7 +373,7 @@ void AIFlightPlanTests::testAIFlightPlanLoadXML()
 void AIFlightPlanTests::testLeftTurnFlightplanXML()
 {
     std::unique_ptr<FGAIFlightPlan> aiFP(new FGAIFlightPlan);
-    const auto fpath = SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "AI"/"Flightplan"/"left_onground.xml";
+    const auto fpath = SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "AI" / "Flightplan" / "left_onground.xml";
 
     std::fstream fs(fpath.c_str());
 
@@ -348,7 +390,7 @@ void AIFlightPlanTests::testLeftTurnFlightplanXML()
 void AIFlightPlanTests::testRightTurnFlightplanXML()
 {
     std::unique_ptr<FGAIFlightPlan> aiFP(new FGAIFlightPlan);
-    const auto fpath = SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "AI"/"Flightplan"/"right_onground.xml";
+    const auto fpath = SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "AI" / "Flightplan" / "right_onground.xml";
 
     std::fstream fs(fpath.c_str());
 

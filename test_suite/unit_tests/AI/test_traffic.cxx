@@ -15,6 +15,7 @@
 #include "test_suite/FGTestApi/NavDataCache.hxx"
 #include "test_suite/FGTestApi/TestDataLogger.hxx"
 #include "test_suite/FGTestApi/testGlobals.hxx"
+#include "test_suite/FGTestApi/testStringUtils.hxx"
 
 #include <AIModel/AIAircraft.hxx>
 #include <AIModel/AIFlightPlan.hxx>
@@ -107,9 +108,9 @@ void TrafficTests::testPushback()
     fgSetInt("/environment/metar/base-wind-dir-deg", 160);
 
     // Time to depart
-    std::string dep = getTimeString(30);
+    std::string dep = FGTestApi::strings::getTimeString(30);
     // Time to arrive
-    std::string arr = getTimeString(320);
+    std::string arr = FGTestApi::strings::getTimeString(320);
 
     const int radius = 18.0;
     const int cruiseAltFt = 32000;
@@ -170,9 +171,9 @@ void TrafficTests::testPushbackCargo()
     fgSetString("/sim/presets/airport-id", "EGPH");
 
     // Time to depart
-    std::string dep = getTimeString(30);
+    std::string dep = FGTestApi::strings::getTimeString(30);
     // Time to arrive
-    std::string arr = getTimeString(320);
+    std::string arr = FGTestApi::strings::getTimeString(320);
 
 
     FGAISchedule* schedule = new FGAISchedule(
@@ -229,9 +230,9 @@ void TrafficTests::testPushbackCargoInProgress()
     fgSetString("/sim/presets/airport-id", "EGPH");
 
     // Time to depart
-    std::string dep = getTimeString(-100);
+    std::string dep = FGTestApi::strings::getTimeString(-100);
     // Time to arrive
-    std::string arr = getTimeString(190);
+    std::string arr = FGTestApi::strings::getTimeString(190);
 
 
     FGAISchedule* schedule = new FGAISchedule(
@@ -290,9 +291,9 @@ void TrafficTests::testPushbackCargoInProgressDownWindEast()
     fgSetString("/sim/presets/airport-id", "EGPH");
 
     // Time to depart
-    std::string dep = getTimeString(-100);
+    std::string dep = FGTestApi::strings::getTimeString(-100);
     // Time to arrive
-    std::string arr = getTimeString(190);
+    std::string arr = FGTestApi::strings::getTimeString(190);
 
 
     FGAISchedule* schedule = new FGAISchedule(
@@ -351,9 +352,9 @@ void TrafficTests::testPushbackCargoInProgressDownWindWest()
     fgSetString("/sim/presets/airport-id", "EGPH");
 
     // Time to depart
-    std::string dep = getTimeString(-100);
+    std::string dep = FGTestApi::strings::getTimeString(-100);
     // Time to arrive
-    std::string arr = getTimeString(190);
+    std::string arr = FGTestApi::strings::getTimeString(190);
 
 
     FGAISchedule* schedule = new FGAISchedule(
@@ -412,9 +413,9 @@ void TrafficTests::testPushbackCargoInProgressNotBeyond()
     fgSetString("/sim/presets/airport-id", "EGPH");
 
     // Time to depart
-    std::string dep = getTimeString(-100);
+    std::string dep = FGTestApi::strings::getTimeString(-100);
     // Time to arrive
-    std::string arr = getTimeString(190);
+    std::string arr = FGTestApi::strings::getTimeString(190);
 
 
     FGAISchedule* schedule = new FGAISchedule(
@@ -474,9 +475,9 @@ void TrafficTests::testPushbackCargoInProgressNotBeyondNorth()
     fgSetString("/sim/presets/airport-id", "EGPH");
 
     // Time to depart
-    std::string dep = getTimeString(-100);
+    std::string dep = FGTestApi::strings::getTimeString(-100);
     // Time to arrive
-    std::string arr = getTimeString(190);
+    std::string arr = FGTestApi::strings::getTimeString(190);
 
 
     FGAISchedule* schedule = new FGAISchedule(
@@ -536,9 +537,9 @@ void TrafficTests::testPushbackCargoInProgressBeyond()
     fgSetString("/sim/presets/airport-id", "EGPH");
 
     // Time to depart
-    std::string dep = getTimeString(-100);
+    std::string dep = FGTestApi::strings::getTimeString(-100);
     // Time to arrive
-    std::string arr = getTimeString(190);
+    std::string arr = FGTestApi::strings::getTimeString(190);
 
 
     FGAISchedule* schedule = new FGAISchedule(
@@ -599,9 +600,9 @@ void TrafficTests::testPushbackCargoInProgressBeyondNorth()
     fgSetString("/sim/presets/airport-id", "EGPH");
 
     // Time to depart
-    std::string dep = getTimeString(-100);
+    std::string dep = FGTestApi::strings::getTimeString(-100);
     // Time to arrive
-    std::string arr = getTimeString(190);
+    std::string arr = FGTestApi::strings::getTimeString(190);
 
 
     FGAISchedule* schedule = new FGAISchedule(
@@ -665,9 +666,9 @@ void TrafficTests::testChangeRunway()
     fgSetInt("/environment/metar/base-wind-dir-deg", 160);
 
     // Time to depart
-    std::string dep = getTimeString(60);
+    std::string dep = FGTestApi::strings::getTimeString(60);
     // Time to arrive
-    std::string arr = getTimeString(320);
+    std::string arr = FGTestApi::strings::getTimeString(320);
 
     const int radius = 24.0;
     const int cruiseAltFt = 32000;
@@ -724,9 +725,9 @@ void TrafficTests::testPushforward()
     fgSetString("/sim/presets/airport-id", departureAirport->getId());
 
     // Time to depart
-    std::string dep = getTimeString(60);
+    std::string dep = FGTestApi::strings::getTimeString(60);
     // Time to arrive
-    std::string arr = getTimeString(320);
+    std::string arr = FGTestApi::strings::getTimeString(320);
 
     const int radius = 8.0;
     const int cruiseAltFt = 32000;
@@ -782,9 +783,9 @@ void TrafficTests::testPushforwardSpeedy()
     fgSetString("/sim/presets/airport-id", departureAirport->getId());
 
     // Time to depart
-    std::string dep = getTimeString(60);
+    std::string dep = FGTestApi::strings::getTimeString(60);
     // Time to arrive
-    std::string arr = getTimeString(320);
+    std::string arr = FGTestApi::strings::getTimeString(320);
 
     const int radius = 8.0;
     const int cruiseAltFt = 32000;
@@ -841,9 +842,9 @@ void TrafficTests::testPushforwardParkYBBN()
     fgSetString("/sim/presets/airport-id", arrivalAirport->getId());
 
     // Time to depart
-    std::string dep = getTimeString(60);
+    std::string dep = FGTestApi::strings::getTimeString(60);
     // Time to arrive
-    std::string arr = getTimeString(3260);
+    std::string arr = FGTestApi::strings::getTimeString(3260);
 
     const int radius = 8.0;
     const int cruiseAltFt = 32000;
@@ -918,11 +919,11 @@ void TrafficTests::testPushforwardParkYBBNRepeatGa()
     fgSetString("/sim/presets/airport-id", arrivalAirport->getId());
 
     // Time to depart
-    std::string dep = getTimeString(120);
+    std::string dep = FGTestApi::strings::getTimeString(120);
     // Time to arrive
-    std::string arr = getTimeString(3260);
+    std::string arr = FGTestApi::strings::getTimeString(3260);
     // Time to arrive back
-    std::string ret = getTimeString(6460);
+    std::string ret = FGTestApi::strings::getTimeString(6460);
 
     const int radius = 8.0;
     const int cruiseAltFt = 32000;
@@ -994,11 +995,11 @@ void TrafficTests::testPushforwardParkYBBNRepeatGaDelayed()
     fgSetString("/sim/presets/airport-id", arrivalAirport->getId());
 
     // Time to depart
-    std::string dep = getTimeString(120);
+    std::string dep = FGTestApi::strings::getTimeString(120);
     // Time to arrive
-    std::string arr = getTimeString(3260);
+    std::string arr = FGTestApi::strings::getTimeString(3260);
     // Time to arrive back
-    std::string ret = getTimeString(6460);
+    std::string ret = FGTestApi::strings::getTimeString(6460);
 
     const int radius = 8.0;
     const int cruiseAltFt = 32000;
@@ -1123,11 +1124,11 @@ void TrafficTests::testPushforwardParkYBBNRepeatGate()
     fgSetString("/sim/presets/airport-id", arrivalAirport->getId());
 
     // Time to depart
-    std::string dep = getTimeString(10);
+    std::string dep = FGTestApi::strings::getTimeString(10);
     // Time to arrive
-    std::string arr = getTimeString(3260);
+    std::string arr = FGTestApi::strings::getTimeString(3260);
     // Time to arrive back
-    std::string ret = getTimeString(6460);
+    std::string ret = FGTestApi::strings::getTimeString(6460);
 
     const int radius = 32.0;
     const int cruiseAltFt = 32000;
@@ -1305,14 +1306,4 @@ FGAIAircraft* TrafficTests::flyAI(SGSharedPtr<FGAIAircraft> aiAircraft, std::str
     geods.clear();
     (*csvFile).close();
     return aiAircraft;
-}
-
-std::string TrafficTests::getTimeString(int timeOffset)
-{
-    char ret[11];
-    time_t rawtime = globals->get_time_params()->get_cur_time();
-    rawtime = rawtime + timeOffset;
-    tm* timeinfo = gmtime(&rawtime);
-    strftime(ret, 11, "%w/%H:%M:%S", timeinfo);
-    return ret;
 }
