@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# SPDX-FileCopyrightText: James Turner <james@flightgear.org>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+export FG_RELEASE_SUFFIX="@INSTALLER_RELEASE_SUFFIX@"
+export FG_BUILD_TYPE=@FG_BUILD_TYPE@
+export FG_VERSION=@FLIGHTGEAR_VERSION@
+export FG_GIT_SHA="@GIT_SHA@"
+export FG_BUILD_DATE="@BUILD_DATE@"
