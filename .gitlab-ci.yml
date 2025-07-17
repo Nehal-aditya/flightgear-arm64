@@ -26,7 +26,7 @@ workflow:
 
 # this job runs only on MRs, but needs to pass.
 # the version below can fail, but runs over the whole repo, for now
-pre-commit-merge:
+pre-commit:
   stage: .pre
   image: registry.gitlab.com/flightgear/flightgear
   script:
@@ -38,19 +38,10 @@ pre-commit-merge:
     paths:
       - ${PRE_COMMIT_HOME}
 
-pre-commit:
+checks:
   stage: .pre
-  image: registry.gitlab.com/flightgear/flightgear
-  script:
-    # run on all files, but allow failure. For MRs
-    - pre-commit run --all-files
-  rules:
-    - if: $CI_COMMIT_REF_PROTECTED == "true"
-  cache:
-    paths:
-      - ${PRE_COMMIT_HOME}
-  # important for now until we get some checks passing :)
-  allow_failure: true
+  needs: [pre-commit]
+  script: echo "Checks completed"
 
 linux-build:
   image: registry.gitlab.com/flightgear/flightgear
@@ -73,6 +64,7 @@ linux-build:
     paths:
       - dist
   needs:
+    - job: checks
     - project: flightgear/simgear
       job: linux-build
       artifacts: true
@@ -104,6 +96,8 @@ canvas-pi-build:
 
     # produce a .DEB
     - cpack -G DEB -B _packages --config $BUILD_DIR/CPackConfig.cmake
+  needs:
+    - job: checks
 
   artifacts:
     paths:
@@ -137,6 +131,7 @@ windows-build:
     - cmake --build $BUILD_DIR --config RelWithDebInfo
     - cmake --build $BUILD_DIR --config RelWithDebInfo --target install
   needs:
+    - job: checks
     - project: flightgear/simgear
       job: windows-build
       ref: $BRANCH_REF
@@ -176,6 +171,7 @@ macos-build:
     - cmake --build $BUILD_DIR
     - cmake --build $BUILD_DIR --target install
   needs:
+    - job: checks
     - project: flightgear/simgear
       job: macos-build
       ref: $BRANCH_REF
