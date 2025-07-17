@@ -15,8 +15,5 @@ naRef initNasalSGPath(naRef globals, naContext c);
 
 /**
  * @brief Map a string value such as `DESKTOP `to an SGPath location enum value.
- *
- * @param s
- * @return SGPath::StandardLocation
  */
 SGPath::StandardLocation standardLocationFromString(const std::string& s);
