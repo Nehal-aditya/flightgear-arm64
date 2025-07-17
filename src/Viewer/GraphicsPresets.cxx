@@ -11,6 +11,7 @@
 #include <Viewer/GraphicsPresets.hxx>
 
 // std
+#include <regex>
 #include <string>
 #include <unordered_set>
 
@@ -580,17 +581,17 @@ std::string GraphicsPresets::translationContextFromPresetFileName(
     const SGPath& path)
 {
     string baseName = path.file();
-    const auto pos = baseName.find("-preset.xml");
+    std::regex regexp(R"((.+)-preset\.xml$)");
+    std::smatch results;
 
-    if (pos == string::npos) {
-        SG_LOG(SG_GUI, SG_WARN, "Preset file name doesn't end in "
-                                "'-preset.xml': '"
+    if (!std::regex_match(baseName, results, regexp)) {
+        SG_LOG(SG_GUI, SG_WARN, "Preset file name doesn't end with "
+                                "'-preset.xml' (or the prefix is empty): '"
                                     << path.utf8Str() << "'");
         return {};
     }
 
-    baseName.resize(pos); // remove the '-preset.xml' suffix
-    return "graphics-presets-" + baseName;
+    return "graphics-presets-" + results.str(1);
 }
 
 bool GraphicsPresets::saveToXML(const SGPath& path, const std::string& name, const std::string& desc)
