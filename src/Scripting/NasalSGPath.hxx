@@ -1,7 +1,10 @@
-//@file Expose SGPath module to Nasal
-
+// SPDX-FileCopyrightText: 2013 James Turner <james@flightgear.org>
 // SPDX-License-Identifier: GPL-2.0-or-later
-// SPDX-FileCopyrightText: Copyright (C) 2013  James Turner - james@flightgear.org
+
+/**
+ * @file
+ * @brief Expose SGPath module to Nasal
+ */
 
 #pragma once
 
@@ -11,7 +14,7 @@
 naRef initNasalSGPath(naRef globals, naContext c);
 
 /**
- * @brief map a string value such as 'DESKTOP' to a SGPath location enum value
+ * @brief Map a string value such as `DESKTOP `to an SGPath location enum value.
  *
  * @param s
  * @return SGPath::StandardLocation

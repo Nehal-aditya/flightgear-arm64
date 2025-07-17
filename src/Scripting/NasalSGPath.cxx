@@ -52,6 +52,7 @@ static naRef f_desktop(const nasal::CallContext& ctx)
         ctx, SGPath::desktop(SGPath(&SGPath::NasalIORulesChecker)));
 }
 
+// Static member function
 SGPath::StandardLocation standardLocationFromString(const std::string& s)
 {
     if (s == "DESKTOP") return SGPath::DESKTOP;
@@ -60,7 +61,7 @@ SGPath::StandardLocation standardLocationFromString(const std::string& s)
     if (s == "PICTURES") return SGPath::PICTURES;
     if (s == "HOME") return SGPath::HOME;
 
-    throw sg_range_exception("Unrecognized standard location:" + s);
+    throw sg_range_exception("Unrecognized standard location: '" + s + "'");
 }
 
 /**

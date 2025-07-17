@@ -54,7 +54,7 @@ void FGFileDialog::setStandardLocation(const std::string& s)
         const auto l = standardLocationFromString(s);
         _initialPath = SGPath::standardLocation(l);
     } catch (sg_exception&) {
-        SG_LOG(SG_GUI, SG_DEV_ALERT, "FileDialog was requested to use invalid standard location:" + s);
+        SG_LOG(SG_GUI, SG_DEV_ALERT, "FileDialog was requested to use invalid standard location: " + s);
     }
 }
 

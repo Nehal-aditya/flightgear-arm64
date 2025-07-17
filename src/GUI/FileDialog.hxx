@@ -67,8 +67,8 @@ public:
     void setShowHidden(bool show);
 
     /**
-     * @brief Set the current directory of the file dialog based on a stadard-location string.
-     * Eg 'DESKTOP' or 'DOCUMENTS'. This allows Nasal to request such a location without Nasal
+     * @brief Set the current directory of the file dialog based on a standard-location string.
+     * E.g., `DESKTOP` or `DOCUMENTS`. This allows Nasal to request such a location without Nasal
      * itself having read/write access until the user picks a path (and hence it's added as allowed)
      *
      * @param name
