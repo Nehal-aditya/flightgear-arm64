@@ -31,7 +31,7 @@ pre-commit-merge:
   image: registry.gitlab.com/flightgear/flightgear
   script:
     - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
-    - git-clang-format -q --diff origin/"$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+    - git-clang-format-15 -q --diff origin/"$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
 
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
