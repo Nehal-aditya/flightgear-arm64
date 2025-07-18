@@ -30,6 +30,8 @@ pre-commit-merge:
   stage: build
   image: registry.gitlab.com/flightgear/flightgear
   script:
+    - dpkg -s clang-format || true
+    - dpkg -L clang-format || true
     - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
     - git-clang-format-15 -q --diff origin/"$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
 
