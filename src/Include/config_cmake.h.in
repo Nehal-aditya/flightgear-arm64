@@ -1,4 +1,5 @@
-
+// SPDX-FileCopyrightText: James Turner <james@flightgear.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #cmakedefine FG_NDEBUG
 
@@ -28,6 +29,8 @@
 #define FLIGHTGEAR_MAJOR_VERSION @FLIGHTGEAR_MAJOR_VERSION@
 #define FLIGHTGEAR_MINOR_VERSION @FLIGHTGEAR_MINOR_VERSION@
 #define FLIGHTGEAR_PATCH_VERSION @FLIGHTGEAR_PATCH_VERSION@
+
+#define BUILD_SUFFIX "@INSTALLER_RELEASE_SUFFIX@"
 
 #cmakedefine ENABLE_YASIM
 #cmakedefine ENABLE_JSBSIM

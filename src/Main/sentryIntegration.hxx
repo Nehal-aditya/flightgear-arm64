@@ -1,28 +1,14 @@
 // sentryIntegration.hxx - Interface with Sentry.io crash reporting
 //
-// Copyright (C) 2020 James Turner  james@flightgear.org
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: James Turner <james@flightgear.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
-#include <string>
 #include <simgear/misc/strutils.hxx>
+#include <string>
 
-namespace flightgear
-{
+namespace flightgear {
 void initSentry();
 
 void shutdownSentry();
@@ -32,9 +18,9 @@ void delayedSentryInit();
 bool isSentryEnabled();
 
 /**
- * @brief retrive the anonymous user ID (a UUID) for this installation.
+ * @brief retrieve the anonymous user ID (a UUID) for this installation.
  *
- * The UUID is generated on first-run and stored in FG_HOME in a text file.  
+ * The UUID is generated on first-run and stored in FG_HOME in a text file.
  */
 std::string sentryUserId();
 
@@ -56,5 +42,4 @@ void sentryReportFatalError(const std::string& msg, const std::string& more = {}
 void sentryReportUserError(const std::string& aggregate, const std::string& parameter, const std::string& details);
 
 
-} // of namespace flightgear
-
+} // namespace flightgear

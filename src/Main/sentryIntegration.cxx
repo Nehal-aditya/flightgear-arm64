@@ -1,20 +1,7 @@
 // sentryIntegration.cxx - Interface with Sentry.io crash reporting
 //
-// Copyright (C) 2020 James Turner  james@flightgear.org
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: James Turner <james@flightgear.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
 
@@ -22,16 +9,16 @@
 
 #include <cstring> // for strcmp
 
-#include <simgear/debug/LogCallback.hxx>
-#include <simgear/debug/logstream.hxx>
 #include <simgear/debug/ErrorReportingCallback.hxx>
+#include <simgear/debug/LogCallback.hxx>
 #include <simgear/debug/Reporting.hxx>
+#include <simgear/debug/logstream.hxx>
 
+#include <simgear/io/iostreams/sgstream.hxx>
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/props/props.hxx>
 #include <simgear/structure/commands.hxx>
 #include <simgear/structure/exception.hxx>
-#include <simgear/io/iostreams/sgstream.hxx>
 
 #include <Main/fg_init.hxx>
 #include <Main/fg_props.hxx>
@@ -45,7 +32,7 @@ bool doesStringMatchPrefixes(const std::string& s, const std::initializer_list<c
         return false;
 
 
-    for (auto c  : prefixes) {
+    for (auto c : prefixes) {
         if (s.find(c) == 0)
             return true;
     }
@@ -54,19 +41,18 @@ bool doesStringMatchPrefixes(const std::string& s, const std::initializer_list<c
 }
 
 auto OSG_messageWhitelist = {
-     "PNG lib warning : iCCP: known incorrect sRGB profile",
-     "PNG lib warning : iCCP: profile 'ICC Profile': 1000000h: invalid rendering intent",
-     "osgDB ac3d reader: detected surface with less than 3",
-     "osgDB ac3d reader: detected line with less than 2",
-     "Detected particle system using segment(s) with less than 2 vertices"
-};
+    "PNG lib warning : iCCP: known incorrect sRGB profile",
+    "PNG lib warning : iCCP: profile 'ICC Profile': 1000000h: invalid rendering intent",
+    "osgDB ac3d reader: detected surface with less than 3",
+    "osgDB ac3d reader: detected line with less than 2",
+    "Detected particle system using segment(s) with less than 2 vertices"};
 
 auto exception_messageWhitelist = {
     "position is invalid, NaNs", ///< avoid spam when NaNs occur
     "bad AI flight plan",        ///< adjusting logic to avoid this is tricky
-    "couldn't find shader",      ///< handled seperately
+    "couldn't find shader",      ///< handled separately
 
-    /// supress noise from user-entered METAR values : we special case
+    /// suppress noise from user-entered METAR values : we special case
     /// when live metar fails to parse
     "metar data bogus",
     "metar data incomplete",
@@ -219,8 +205,7 @@ void sentryReportBadAlloc()
 
 } // namespace
 
-namespace flightgear
-{
+namespace flightgear {
 
 bool sentryReportCommand(const SGPropertyNode* args, SGPropertyNode* root)
 {
@@ -279,18 +264,34 @@ std::string sentryUserId()
 
 void initSentry()
 {
-    sentry_options_t *options = sentry_options_new();
+    sentry_options_t* options = sentry_options_new();
     // API key is defined in config.h, set in an environment variable prior
     // to running CMake, so it can be customised. Env var at build time is:
     // FLIGHTGEAR_SENTRY_API_KEY
     sentry_options_set_dsn(options, SENTRY_API_KEY);
-    
+
     if (strcmp(FG_BUILD_TYPE, "Dev") == 0) {
+        sentry_options_set_environment(options, "dev");
         sentry_options_set_release(options, "flightgear-dev@" REVISION);
     } else if (strcmp(FG_BUILD_TYPE, "Nightly") == 0) {
-        sentry_options_set_release(options, "flightgear-nightly@" BUILD_DATE);
+        sentry_options_set_environment(options, "dev");
+        // we use the build year and month here to cluster nightly builds in Sentry.
+        // the idea being that this is sufficient granularity to notice when an issue
+        // first occurs, and then bisect the commits. We could switch to using
+        // year and week number, but this makes more noise in sentry.
+        sentry_options_set_release(options, "flightgear-nightly@" BUILD_MONTH);
+    } else if (strcmp(FG_BUILD_TYPE, "Release") == 0) {
+        // RC builds are for testing
+        if (strncmp(BUILD_SUFFIX, "rc", 2) == 0) {
+            sentry_options_set_environment(options, "testing");
+        } else {
+            sentry_options_set_environment(options, "production");
+        }
+
+        sentry_options_set_release(options, FLIGHTGEAR_VERSION);
     } else {
-        sentry_options_set_release(options, "flightgear@" FLIGHTGEAR_VERSION);
+        // unknown build type
+        sentry_options_set_environment(options, "dev");
     }
 
     sentry_options_set_dist(options, REVISION);
@@ -304,17 +305,17 @@ void initSentry()
 #if defined(SG_WINDOWS)
     const auto homePathString = dataPath.wstr();
     sentry_options_set_database_pathw(options, homePathString.c_str());
-    
+
     const auto logPath = (fgHomePath() / "fgfs.log").wstr();
     sentry_options_add_attachmentw(options, logPath.c_str());
 #else
     const auto homePathString = dataPath.utf8Str();
     sentry_options_set_database_path(options, homePathString.c_str());
-    
+
     const auto logPath = (fgHomePath() / "fgfs.log").utf8Str();
     sentry_options_add_attachment(options, logPath.c_str());
 #endif
-    
+
     const auto uuidPath = fgHomePath() / "sentry_uuid.txt";
     bool generateUuid = true;
     std::string uuid;
@@ -322,7 +323,7 @@ void initSentry()
         sentryUserId(); // will cache into static_sentryUUID as a side-effect
 
         // if we read enough bytes, that this is a valid UUID, then accept it
-        if ( static_sentryUUID.length() >= 36) {
+        if (static_sentryUUID.length() >= 36) {
             generateUuid = false;
         }
     }
@@ -410,7 +411,7 @@ void addSentryTag(const char* tag, const char* value)
 
     if (!tag || !value)
         return;
-    
+
     sentry_set_tag(tag, value);
 }
 
@@ -441,17 +442,17 @@ void sentryReportNasalError(const std::string& msg, const string_list& stack)
     }
     sentry_value_set_by_key(exc, "stack", stackData);
 
-    
+
     sentry_value_t event = sentry_value_new_event();
     sentry_value_set_by_key(event, "exception", exc);
-    
+
     // add the Nasal stack trace data
-    
+
     // capture the C++ stack-trace. Probably not that useful but can't hurt
     sentry_event_value_add_stacktrace(event, nullptr, 0);
-    
+
     sentry_capture_event(event);
-    
+
 #endif
 }
 
@@ -474,13 +475,13 @@ void sentryReportException(const std::string& msg, const std::string& location)
 
     sentry_value_t event = sentry_value_new_event();
     sentry_value_set_by_key(event, "exception", exc);
-    
+
     // capture the C++ stack-trace. Probably not that useful but can't hurt
     sentry_event_value_add_stacktrace(event, nullptr, 0);
     sentry_capture_event(event);
 }
 
-void  sentryReportFatalError(const std::string& msg, const std::string& more)
+void sentryReportFatalError(const std::string& msg, const std::string& more)
 {
     if (!static_sentryEnabled)
         return;
@@ -498,7 +499,7 @@ void  sentryReportFatalError(const std::string& msg, const std::string& more)
 
     sentry_value_t event = sentry_value_new_event();
     sentry_value_set_by_key(event, "message", sentryMessage);
-    
+
     sentry_event_value_add_stacktrace(event, nullptr, 0);
     sentry_capture_event(event);
 }
@@ -527,14 +528,13 @@ void sentryReportUserError(const std::string& aggregate, const std::string& para
     sentry_capture_event(event);
 }
 
-} // of namespace
+} // namespace flightgear
 
 #else
 
 // stubs for non-sentry case
 
-namespace flightgear
-{
+namespace flightgear {
 
 void initSentry()
 {
@@ -575,7 +575,7 @@ void sentryReportNasalError(const std::string&, const string_list&)
 {
 }
 
-void sentryReportException(const std::string&, const  std::string&)
+void sentryReportException(const std::string&, const std::string&)
 {
 }
 
@@ -587,21 +587,20 @@ void sentryReportUserError(const std::string&, const std::string&, const std::st
 {
 }
 
-} // of namespace
+} // namespace flightgear
 
 #endif
 
 // common helpers
 
-namespace flightgear
-{
+namespace flightgear {
 
 void addSentryTag(const std::string& tag, const std::string& value)
 {
     if (tag.empty() || value.empty())
         return;
-    
+
     addSentryTag(tag.c_str(), value.c_str());
 }
 
-} // of namespace flightgear
+} // namespace flightgear
