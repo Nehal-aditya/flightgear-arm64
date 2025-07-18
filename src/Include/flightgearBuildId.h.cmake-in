@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: (C) 2018 James Turner <james@flightgear.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 // template file to produce flightgearBuildId.h header
 // this is produced at build time (not Cmake time) via the special
 // target defined by GenerateBuildInfo.Cmake
@@ -9,7 +12,4 @@
 #define JENKINS_BUILD_NUMBER @JENKINS_BUILD_NUMBER@
 #define JENKINS_BUILD_ID "@JENKINS_BUILD_ID@"
 #define REVISION "@REVISION@"
-
-
-
-
+#define BUILD_MONTH "@CURRENT_YEAR_MONTH@"

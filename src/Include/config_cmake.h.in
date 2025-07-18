@@ -1,4 +1,5 @@
-
+// SPDX-FileCopyrightText: (C) 2010 James Turner <james@flightgear.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #cmakedefine FG_NDEBUG
 
@@ -30,6 +31,7 @@
 #define FLIGHTGEAR_PATCH_VERSION @FG_VERSION_PATCH@
 
 #define FLIGHTGEAR_MAJOR_MINOR_VERSION "@FG_VERSION_MAJOR@.@FG_VERSION_MINOR@"
+#define BUILD_SUFFIX "@INSTALLER_RELEASE_SUFFIX@"
 
 #cmakedefine ENABLE_UIUC_MODEL
 #cmakedefine ENABLE_LARCSIM
