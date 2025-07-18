@@ -312,8 +312,8 @@ public:
         }
     }
 
-    void presentErrorToUser(AggregateReport& report)
-    {
+    void 
+    presentErrorToUser(AggregateReport& report) {
         const int catId = static_cast<int>(report.type);
         auto catLabel = globals->get_locale()->getLocalizedString(static_categoryIds.at(catId), "sys");
 
