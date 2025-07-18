@@ -32,6 +32,8 @@ pre-commit-merge:
   script:
     - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
     - pre-commit run --from-ref origin/"$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --to-ref "$CI_COMMIT_SHA"
+    - git-clang-format --diff origin/"$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   cache:
