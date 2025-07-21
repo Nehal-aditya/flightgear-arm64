@@ -21,7 +21,7 @@
 #pragma once
 
 #include <nlohmann/json_fwd.hpp>
-#include <simgear/props/propsfwd.hxx>
+#include <simgear/props/props.hxx>
 #include <string>
 
 namespace flightgear {
