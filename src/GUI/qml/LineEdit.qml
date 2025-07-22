@@ -1,3 +1,8 @@
+// SPDX-FileName: LineEdit.qml
+// SPDX-FileComment: LineEdit widget used in the launcher
+// SPDX-FileCopyrightText: Copyright (C) 2025 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import FlightGear 1.0
 
@@ -20,8 +25,8 @@ FocusScope {
     readonly property int xOffsetForEditFrame: editFrame.x
 
     implicitHeight: editFrame.height
-    implicitWidth: (metrics.width == 0) ? label.implicitWidth + Style.strutSize * 4 
-                                        : metrics.text + label.implicitWidth + (Style.margin * 3)
+    implicitWidth: (metrics.width == 0) ? label.implicitWidth + Style.strutSize * 4
+                                        : metrics.width + label.implicitWidth + (Style.margin * 3)
 
     Keys.onReturnPressed: {
         if (activeFocus && commitOnReturn) {
@@ -55,7 +60,7 @@ FocusScope {
         border.width: 1
         clip: true
         color: Style.backgroundColor
-        
+
         TextInput {
             id: edit
             enabled: root.enabled
