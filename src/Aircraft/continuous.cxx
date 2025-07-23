@@ -577,7 +577,15 @@ SGPropertyNode_ptr continuousWriteHeader(
     flight_recorder->getConfig(signals);
 
     out.open(path.c_str(), std::ofstream::binary | std::ofstream::trunc);
+    if (!out)
+    {
+        SG_LOG(SG_SYSTEMS, SG_ALERT, "Failed to open recording file: " << path);
+    }
     out.write(FlightRecorderFileMagic, strlen(FlightRecorderFileMagic)+1);
+    if (!out)
+    {
+        SG_LOG(SG_SYSTEMS, SG_ALERT, "Failed to write to recording file: " << path);
+    }
     PropertiesWrite(config, out);
 
     if (tape_type == FGTapeType_CONTINUOUS)
@@ -589,6 +597,7 @@ SGPropertyNode_ptr continuousWriteHeader(
 
     if (!out)
     {
+        SG_LOG(SG_SYSTEMS, SG_ALERT, "Failed to initialise recording file: " << path);
         out.close();
         config = nullptr;
     }
@@ -958,8 +967,9 @@ void Continuous::valueChanged(SGPropertyNode * node)
                 );
         if (!m_out_config)
         {
-            SG_LOG(SG_SYSTEMS, SG_ALERT, "Failed to start continuous recording");
-            popupTip("Continuous record to file failed to start", 5 /*delay*/);
+            std::string message = "Continuous record to file failed to start: " + path.str();
+            SG_LOG(SG_SYSTEMS, SG_ALERT, message);
+            popupTip(message.c_str(), 5 /*delay*/);
             return;
         }
 
