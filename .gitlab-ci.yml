@@ -28,7 +28,7 @@ workflow:
 # the version below can fail, but runs over the whole repo, for now
 pre-commit-merge:
   stage: build
-  image: registry.gitlab.com/flightgear/flightgear
+  image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/pre-commit:latest
   script:
     - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
     - pre-commit run --from-ref origin/"$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --to-ref "$CI_COMMIT_SHA"
@@ -41,7 +41,7 @@ pre-commit-merge:
 
 pre-commit:
   stage: build
-  image: registry.gitlab.com/flightgear/flightgear
+  image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/pre-commit:latest
   script:
     # run on all files, but allow failure. For MRs
     - pre-commit run --all-files
@@ -54,7 +54,7 @@ pre-commit:
   allow_failure: true
 
 linux-build:
-  image: registry.gitlab.com/flightgear/flightgear
+  image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/flightgear:latest
   stage: build
   script:
     - rm -f $BUILD_DIR/CMakeCache.txt
@@ -88,7 +88,7 @@ linux-build:
       - $BUILD_DIR
 
 canvas-pi-build:
-  image: registry.gitlab.com/flightgear/flightgear/fgqcanvas-raspbian
+  image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/fgqcanvas-raspbian:latest
   stage: build
   script:
     # explicitly set this to avoid intermittent failures to configure.
@@ -197,7 +197,7 @@ macos-build:
     paths:
       - $BUILD_DIR
 test:
-  image: registry.gitlab.com/flightgear/flightgear
+  image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/flightgear:latest
   stage: test
   script:
     - cd $BUILD_DIR
