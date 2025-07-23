@@ -1,36 +1,29 @@
 // WakeMesh.hxx -- Mesh for the computation of a wing wake.
-//
 // Written by Bertrand Coconnier, started March 2017.
 //
-// Copyright (C) 2017  Bertrand Coconnier  - bcoconni@users.sf.net
-//
-// This program is free software; you can redistribute it and/or modify it under
-// the terms of the GNU General Public License as published by the Free Software
-// Foundation; either version 2 of the License, or (at your option) any later
-// version.
-//
-// This program is distributed in the hope that it will be useful, but WITHOUT
-// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-// details.
-//
-// You should have received a copy of the GNU General Public License along with
-// this program; if not, write to the Free Software Foundation, Inc., 51
-// Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-//
-// $Id$
+// SPDX-FileCopyrightText: (C) 2017  Bertrand Coconnier  - bcoconni@users.sf.net
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef _FG_WAKEMESH_HXX
 #define _FG_WAKEMESH_HXX
 
 #include <string>
 
+#include <simgear/math/SGVec3.hxx>
+
 #include "AeroElement.hxx"
 
-namespace FGTestApi { namespace PrivateAccessor { namespace FDM { class Accessor; } } }
+namespace FGTestApi {
+namespace PrivateAccessor {
+namespace FDM {
+class Accessor;
+}
+} // namespace PrivateAccessor
+} // namespace FGTestApi
 
 
-class WakeMesh : public SGReferenced {
+class WakeMesh : public SGReferenced
+{
 public:
     WakeMesh(double _span, double _chord, const std::string& aircraft_name);
     virtual ~WakeMesh();
