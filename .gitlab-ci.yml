@@ -25,7 +25,7 @@ workflow:
     - if: $CI_COMMIT_REF_PROTECTED == "true"
 
 linux-build:
-  image: registry.gitlab.com/flightgear/flightgear/stable-build
+  image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/flightgear:2024.1
   stage: build
   script:
     - cmake -B $BUILD_DIR -S $CI_PROJECT_DIR -G Ninja 
@@ -183,7 +183,7 @@ macos-x64-build:
       - $BUILD_DIR
 
 test:
-  image: registry.gitlab.com/flightgear/flightgear/stable-build
+  image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/flightgear:2024.1
   stage: test
   script:
     - cd $BUILD_DIR
