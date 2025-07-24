@@ -1,19 +1,7 @@
 // AircraftPerformance.cxx - compute data about planned acft performance
 //
-// Copyright (C) 2018  James Turner  <james@flightgear.org>
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: Copyright (C) 2018 James Turner <james@flightgear.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "AircraftPerformance.hxx"
 
@@ -89,7 +77,7 @@ static string_list readTags()
     const auto tagsNode = fgGetNode("/sim/tags");
     if (!tagsNode)
         return r;
-    
+
     for (auto t : tagsNode->getChildren("tag")) {
         r.push_back(t->getStringValue());
     }
@@ -105,19 +93,19 @@ static bool stringListContains(const string_list& t, const std::string& s)
 std::string AircraftPerformance::heuristicCatergoryFromTags() const
 {
     const auto tags(readTags());
-    
+
     if (stringListContains(tags, "turboprop"))
         return {ICAO_AIRCRAFT_CATEGORY_C};
-    
+
     // any way we could distuinguish fast and slow GA aircraft?
     if (stringListContains(tags, "ga")) {
         return {ICAO_AIRCRAFT_CATEGORY_A};
     }
-    
+
     if (stringListContains(tags, "jet")) {
         return {ICAO_AIRCRAFT_CATEGORY_E};
     }
-    
+
     return {ICAO_AIRCRAFT_CATEGORY_C};
 }
 
@@ -162,16 +150,16 @@ void AircraftPerformance::icaoCategoryData()
 
 void AircraftPerformance::readPerformanceData()
 {
-    for (auto nd : fgGetNode("/aircraft/performance/")->getChildren("bracket")) {
-        const int atOrBelowAlt = nd->getIntValue("at-or-below-ft");
-        const int climbFPM = nd->getIntValue("climb-rate-fpm");
-        const int descentFPM = nd->getIntValue("descent-rate-fpm");
-        bool isMach = nd->hasChild("speed-mach");
+    for (auto n : fgGetNode("/aircraft/performance/")->getChildren("bracket")) {
+        const int atOrBelowAlt = n->getIntValue("at-or-below-ft");
+        const int climbFPM = n->getIntValue("climb-rate-fpm");
+        const int descentFPM = n->getIntValue("descent-rate-fpm");
+        bool isMach = n->hasChild("speed-mach");
         double speed;
         if (isMach) {
-            speed = nd->getDoubleValue("speed-mach");
+            speed = n->getDoubleValue("speed-mach");
         } else {
-            speed = nd->getIntValue("speed-ias-knots");
+            speed = n->getIntValue("speed-ias-knots");
         }
 
         Bracket b(atOrBelowAlt, climbFPM, descentFPM, speed, isMach);
@@ -217,7 +205,7 @@ void AircraftPerformance::traverseAltitudeRange(int initialElevationFt, int targ
             tf(*bracket, previousBracketCapAltitude, bracket->atOrBelowAltitudeFt);
             previousBracketCapAltitude = bracket->atOrBelowAltitudeFt;
         }
-        
+
         tf(*r.second, previousBracketCapAltitude, targetElevationFt);
     } else {
         int nextBracketCapAlt = (r.first - 1)->atOrBelowAltitudeFt;
@@ -226,7 +214,7 @@ void AircraftPerformance::traverseAltitudeRange(int initialElevationFt, int targ
             nextBracketCapAlt = (r.first - 1)->atOrBelowAltitudeFt;
             tf(*bracket, bracket->atOrBelowAltitudeFt, nextBracketCapAlt);
         }
-        
+
         tf(*r.second, nextBracketCapAlt, targetElevationFt);
     }
 }
@@ -275,10 +263,10 @@ double oatKForAltitudeFt(int altitudeFt)
 
 double pressureAtAltitude(int altitude)
 {
-/*
+    /*
   p= P_0*(1-6.8755856*10^-6 h)^5.2558797    h<36,089.24ft
-  p_Tr= 0.2233609*P_0                  
-  p=p_Tr*exp(-4.806346*10^-5(h-36089.24)) h>36,089.24ft 
+  p_Tr= 0.2233609*P_0
+  p=p_Tr*exp(-4.806346*10^-5(h-36089.24)) h>36,089.24ft
 
     magic numbers
     6.8755856*10^-6 = T'/T_0, where T' is the standard temperature lapse rate and T_0 is the standard sea-level temperature.
@@ -383,19 +371,19 @@ double AircraftPerformance::turnRadiusMForAltitude(int altitudeFt) const
 #if 0
     From the aviation formulary again
     In a steady turn, in no wind, with bank angle, b at an airspeed v
-    
+
     tan(b)= v^2/(R g)
-    
+
     With R in feet, v in knots, b in degrees and w in degrees/sec (inconsistent units!), numerical constants are introduced:
-    
+
     R =v^2/(11.23*tan(0.01745*b))
     (Example) At 100 knots, with a 45 degree bank, the radius of turn is 100^2/(11.23*tan(0.01745*45))= 891 feet.
-    
+
     The bank angle b_s for a standard rate turn is given by:
-        
+
         b_s = 57.3*atan(v/362.1)
         (Example) for 100 knots, b_s = 57.3*atan(100/362.1) = 15.4 degrees
-            
+
     Working in meter-per-second and radians removes a bunch of constants again.
 #endif
     const double gsKts = groundSpeedForAltitudeKnots(altitudeFt);
@@ -404,4 +392,3 @@ double AircraftPerformance::turnRadiusMForAltitude(int altitudeFt) const
     const double r = (gs * gs)/(SG_g0_m_p_s2 * tan(bankAngleRad));
     return r;
 }
-

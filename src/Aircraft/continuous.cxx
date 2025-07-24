@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (C) 2021 Julian Smith
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "continuous.hxx"
 
 #include <Aircraft/flightrecorder.hxx>
@@ -229,7 +232,7 @@ static std::shared_ptr<FGReplayData> ReadFGReplayData(
 {
     std::shared_ptr<FGReplayData>   ret;
     auto it = continuous.m_in_pos_to_frame.find(pos);
-    
+
     if (it != continuous.m_in_pos_to_frame.end())
     {
         if (0
@@ -285,7 +288,7 @@ static std::shared_ptr<FGReplayData> ReadFGReplayData(
         }
         it = continuous.m_in_pos_to_frame.lower_bound(pos);
         it = continuous.m_in_pos_to_frame.insert(it, std::make_pair(pos, ret));
-        
+
         /* Delete faraway items. */
         size_t size_old = continuous.m_in_pos_to_frame.size();
         int n = 2;
@@ -328,13 +331,13 @@ struct compression_streambuf : std::streambuf
         zstream.zalloc = nullptr;
         zstream.zfree = nullptr;
         zstream.opaque = nullptr;
-        
+
         zstream.next_in = nullptr;
         zstream.avail_in = 0;
-        
+
         zstream.next_out = (unsigned char*) &buffer_compressed[0];
         zstream.avail_out = buffer_compressed_size;
-        
+
         int e = deflateInit2(
                 &zstream,
                 Z_DEFAULT_COMPRESSION,
@@ -350,7 +353,7 @@ struct compression_streambuf : std::streambuf
         // We leave space for one character to simplify overflow().
         setp(&buffer_uncompressed[0], &buffer_uncompressed[0] + buffer_uncompressed_size - 1);
     }
-    
+
     // Flush compressed data to .out and reset zstream.next_out.
     void _flush()
     {
@@ -360,7 +363,7 @@ struct compression_streambuf : std::streambuf
         zstream.next_out = (unsigned char*) &buffer_compressed[0];
         zstream.avail_out = buffer_compressed_size;
     }
-    
+
     // Compresses specified bytes from buffer_uncompressed into
     // buffer_compressed, flushing to .out as necessary. Returns true if we get
     // EOF writing to .out.
@@ -386,7 +389,7 @@ struct compression_streambuf : std::streambuf
         if (!out) return true;  // EOF.
         return false;
     }
-    
+
     int overflow(int c) override
     {
         // We've deliberately left space for one character, into which we write <c>.
@@ -395,18 +398,18 @@ struct compression_streambuf : std::streambuf
         if (_deflate(buffer_uncompressed_size, false /*flush*/)) return EOF;
         return c;
     }
-    
+
     int sync() override
     {
         _deflate(pptr() - &buffer_uncompressed[0], true /*flush*/);
         return 0;
     }
-    
+
     ~compression_streambuf()
     {
         deflateEnd(&zstream);
     }
-    
+
     std::ostream&           out;
     z_stream                zstream;
     std::unique_ptr<char[]> buffer_uncompressed;
@@ -430,7 +433,7 @@ struct compression_ostream : std::ostream
     streambuf(out, buffer_uncompressed_size, buffer_compressed_size)
     {
     }
-    
+
     compression_streambuf   streambuf;
 };
 
@@ -477,7 +480,6 @@ static void writeFrame2(FGReplayData* r, std::ostream& out, SGPropertyNode_ptr c
             assert(0);
         }
     }
-    
 }
 
 bool continuousWriteFrame(
@@ -529,9 +531,9 @@ bool continuousWriteFrame(
         SG_LOG(SG_SYSTEMS, SG_DEBUG, "Not writing frame because no data to write");
         return true;
     }
-    
+
     writeRaw(out, r->sim_time);
-    
+
     if (tape_type == FGTapeType_CONTINUOUS && continuous.m_out_compression)
     {
         uint8_t flags = 0;
@@ -539,14 +541,14 @@ bool continuousWriteFrame(
         if (has_multiplayer)        flags |= 2;
         if (has_extra_properties)   flags |= 4;
         out.write((char*) &flags, sizeof(flags));
-        
+
         /* We need to first write the size of the compressed data so compress
         to a temporary ostringstream first. */
         std::ostringstream  compressed;
         compression_ostream out_compressing(compressed, 1024, 1024);
         writeFrame2(r, out_compressing, config);
         out_compressing.flush();
-        
+
         uint32_t compressed_size = compressed.str().size();
         out.write((char*) &compressed_size, sizeof(compressed_size));
         out.write((char*) compressed.str().c_str(), compressed.str().size());
@@ -573,18 +575,18 @@ SGPropertyNode_ptr continuousWriteHeader(
             tape_type, continuous.m_out_compression);
     SGPropertyNode* signals = config->getNode("signals", true /*create*/);
     flight_recorder->getConfig(signals);
-    
+
     out.open(path.c_str(), std::ofstream::binary | std::ofstream::trunc);
     out.write(FlightRecorderFileMagic, strlen(FlightRecorderFileMagic)+1);
     PropertiesWrite(config, out);
-    
+
     if (tape_type == FGTapeType_CONTINUOUS)
     {
         // Ensure that all recorded properties are written in first frame.
         //
         flight_recorder->resetExtraProperties();
     }
-    
+
     if (!out)
     {
         out.close();
@@ -920,20 +922,20 @@ bool replayContinuous(FGReplayInternal& self, double time)
     return ret;
 }
 
-/* SGPropertyChangeListener callback for detecing when FDM is initialised and
+/* SGPropertyChangeListener callback for detecting when FDM is initialised and
 for when continuous recording is started or stopped. */
 void Continuous::valueChanged(SGPropertyNode * node)
 {
     bool    prop_continuous = fgGetBool("/sim/replay/record-continuous");
     bool    prop_fdm = fgGetBool("/sim/signals/fdm-initialized");
-    
+
     bool continuous = prop_continuous && prop_fdm;
     if (continuous == (m_out.is_open() ? true : false))
     {
         // No change.
         return;
     }
-    
+
     if (m_out.is_open())
     {
         // Stop existing continuous recording.
@@ -941,7 +943,7 @@ void Continuous::valueChanged(SGPropertyNode * node)
         m_out.close();
         popupTip("Continuous record to file stopped", 5 /*delay*/);
     }
-    
+
     if (continuous)
     {
         // Start continuous recording.
@@ -960,12 +962,12 @@ void Continuous::valueChanged(SGPropertyNode * node)
             popupTip("Continuous record to file failed to start", 5 /*delay*/);
             return;
         }
-        
+
         SG_LOG(SG_SYSTEMS, SG_ALERT, "Starting continuous recording");
-        
+
         /* Make a convenience link to the recording. E.g.
         harrier-gr3-continuous.fgtape -> harrier-gr3-20201224-005034-continuous.fgtape.
-        
+
         Link destination is in same directory as link so we use leafname
         path.file(). */
         path_timeless.remove();

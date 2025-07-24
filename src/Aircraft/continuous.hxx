@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright (C) 2021 Julian Smith
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #pragma once
 
 #include <fstream>

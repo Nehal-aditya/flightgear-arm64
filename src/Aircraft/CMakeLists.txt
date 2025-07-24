@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (C) 2010 James Turner <james@flightgear.org>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 include(FlightGearComponent)
 
 set(SOURCES
@@ -18,8 +21,8 @@ set(HEADERS
 	FlightHistory.hxx
 	initialstate.hxx
 	AircraftPerformance.hxx
-	continuous.hxx    
-	replay-internal.hxx    
+	continuous.hxx
+	replay-internal.hxx
 	)
 
 

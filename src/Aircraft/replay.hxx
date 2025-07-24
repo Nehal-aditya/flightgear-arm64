@@ -2,23 +2,8 @@
 //
 // Written by Curtis Olson, started July 2003.
 //
-// Copyright (C) 2003  Curtis L. Olson  - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-FileCopyrightText: Copyright (C) 2003  Curtis L. Olson
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
@@ -46,7 +31,7 @@ struct FGReplay : SGSubsystem
     static const char* staticSubsystemClassId() { return "replay"; }
 
     /* For built-in 'replay' command - replay using in-memory Normal recording.
-    
+
         new_tape: If true, we start at beginning of tape, otherwise we start at
         loop interval.
     */
@@ -55,7 +40,7 @@ struct FGReplay : SGSubsystem
     /* For save and load tape operations from Flightgear GUI. */
     bool saveTape(const SGPropertyNode* ConfigData);
     bool loadTape(const SGPropertyNode* ConfigData);
-    
+
     /* Attempts to load Continuous recording header properties into
     <properties>. If in is null we use internal std::fstream, otherwise we use
     *in.
@@ -66,7 +51,7 @@ struct FGReplay : SGSubsystem
     For command line --load-tape=...
     */
     static int loadContinuousHeader(const std::string& path, std::istream* in, SGPropertyNode* properties);
-    
+
     /* Start replaying a flight recorder tape from disk.
         filename
             Path of recording.
@@ -92,15 +77,14 @@ struct FGReplay : SGSubsystem
             SGPropertyNode& meta_meta,
             simgear::HTTP::FileRequestRef file_request=nullptr
             );
-    
+
     /* Prepends /sim/replay/tape-directory and/or appends .fgtape etc.
 
      For command line --load-tape=... */
     static std::string  makeTapePath(const std::string& tape_name);
-    
+
     /* Resets out static property nodes; to be called by fgStartNewReset(). */
     static void resetStatisticsProperties();
-    
+
     std::unique_ptr<struct FGReplayInternal>    m_internal;
 };
-
