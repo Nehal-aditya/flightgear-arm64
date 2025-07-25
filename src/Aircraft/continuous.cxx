@@ -577,13 +577,11 @@ SGPropertyNode_ptr continuousWriteHeader(
     flight_recorder->getConfig(signals);
 
     out.open(path.c_str(), std::ofstream::binary | std::ofstream::trunc);
-    if (!out)
-    {
+    if (!out) {
         SG_LOG(SG_SYSTEMS, SG_ALERT, "Failed to open recording file: " << path);
     }
     out.write(FlightRecorderFileMagic, strlen(FlightRecorderFileMagic)+1);
-    if (!out)
-    {
+    if (!out) {
         SG_LOG(SG_SYSTEMS, SG_ALERT, "Failed to write to recording file: " << path);
     }
     PropertiesWrite(config, out);
