@@ -675,7 +675,7 @@ static bool replayContinuousInternal(
 }
 
 // fixme: this is duplicated in replay.cxx.
-static void popupTip(const char* message, int delay)
+static void popupTip(const std::string& message, int delay)
 {
     SGPropertyNode_ptr args(new SGPropertyNode);
     args->setStringValue("label", message);
@@ -969,7 +969,7 @@ void Continuous::valueChanged(SGPropertyNode * node)
         {
             std::string message = "Continuous record to file failed to start: " + path.str();
             SG_LOG(SG_SYSTEMS, SG_ALERT, message);
-            popupTip(message.c_str(), 5 /*delay*/);
+            popupTip(message, 5 /*delay*/);
             return;
         }
 

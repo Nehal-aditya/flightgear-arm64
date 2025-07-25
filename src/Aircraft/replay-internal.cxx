@@ -661,7 +661,7 @@ static void replayMessage(FGReplayInternal& self, double time)
     self.m_last_msg_time = time;
 }
 
-/** 
+/**
  * given two FGReplayData elements and a time, interpolate between them
  */
 static void replayNormal2(
@@ -677,7 +677,7 @@ static void replayNormal2(
     self.m_flight_recorder->replay(time, current_frame, old_frame, xpos, ypos, xsize, ysize);
 }
 
-/** 
+/**
  * interpolate a specific time from a specific list
  */
 static void interpolate(FGReplayInternal& self, double time, const std::deque<FGReplayData*>& list)
@@ -774,7 +774,7 @@ bool replayNormal(FGReplayInternal& self, double time)
     return false;
 }
 
-/** 
+/**
  *  Replay a saved frame based on time, interpolate from the two
  *  nearest saved frames.
  *  Returns true when replay sequence has finished, false otherwise.
@@ -1386,9 +1386,9 @@ static void indexContinuousRecording(FGReplayInternal& self, const void* data, s
             self.m_continuous->m_indexing_in.seekg(compressed_size, std::ios_base::cur);
         } else {
             // Skip frame data.
-            auto datas = self.m_continuous->m_in_config->getChildren("data");
-            SG_LOG(SG_SYSTEMS, SG_BULK, "datas.size()=" << datas.size());
-            for (auto l_data : datas) {
+            auto data = self.m_continuous->m_in_config->getChildren("data");
+            SG_LOG(SG_SYSTEMS, SG_BULK, "data.size()=" << data.size());
+            for (auto l_data : data) {
                 uint32_t length;
                 readRaw(self.m_continuous->m_indexing_in, length);
                 SG_LOG(SG_SYSTEMS, SG_BULK,
