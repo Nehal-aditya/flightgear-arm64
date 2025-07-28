@@ -22,7 +22,7 @@
 class FGAIBallistic : public FGAIBase
 {
 public:
-    explicit FGAIBallistic(object_type ot = object_type::otBallistic);
+    explicit FGAIBallistic(object_type oty = object_type::otBallistic);
     virtual ~FGAIBallistic() = default;
 
     std::string_view getTypeString(void) const override { return "ballistic"; }

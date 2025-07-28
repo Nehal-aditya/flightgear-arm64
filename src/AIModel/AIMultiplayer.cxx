@@ -50,7 +50,7 @@ bool FGAIMultiplayer::init(ModelSearchOrder searchOrder)
         isTanker = true;
         // cout << "isTanker " << isTanker << " " << mCallSign <<endl;
     }
-    // ensure that these are created prior to calling base class init 
+    // ensure that these are created prior to calling base class init
     // as otherwise the MP list will break
     m_lagPPSAveragedNode = props->getNode("lag/pps-averaged", true);
     m_lagPPSAveragedNode->setDoubleValue(0);
@@ -61,12 +61,12 @@ bool FGAIMultiplayer::init(ModelSearchOrder searchOrder)
     bool result = FGAIBase::init(searchOrder);
     // propagate installation state (used by MP pilot list)
     props->setBoolValue("model-installed", _installed);
-    
+
     m_node_simple_time_latest           = props->getNode("simple-time/latest", true);
     m_node_simple_time_offset           = props->getNode("simple-time/offset", true);
     m_node_simple_time_offset_smoothed  = props->getNode("simple-time/offset-smoothed", true);
     m_node_simple_time_compensation     = props->getNode("simple-time/compensation", true);
-   
+
     return result;
 }
 
@@ -86,10 +86,10 @@ void FGAIMultiplayer::bind()
     _uBodyNode = props->getNode("velocities/uBody-fps", true);
     _vBodyNode = props->getNode("velocities/vBody-fps", true);
     _wBodyNode = props->getNode("velocities/wBody-fps", true);
-    
+
     m_node_ai_latch = props->getNode("ai-latch", true /*create*/);
     m_node_log_multiplayer = globals->get_props()->getNode("/sim/log-multiplayer-callsign", true /*create*/);
-    
+
 #define AIMPROProp(type, name) \
 SGRawValueMethods<FGAIMultiplayer, type>(*this, &FGAIMultiplayer::get##name)
 
@@ -182,7 +182,7 @@ void FGAIMultiplayer::FGAIMultiplayerInterpolate(
                                 pIt->second->setFloatValue(val);
                             }
                             break;
-                        
+
                         case simgear::props::STRING:
                         case simgear::props::UNSPECIFIED:
                             //cout << "Str: " << (*nextPropIt)->string_value << "\n";
@@ -256,10 +256,10 @@ void FGAIMultiplayer::FGAIMultiplayerExtrapolate(
     double normAngularVel = norm(angularVel);
     props->setDoubleValue("lag/norm-vel", normVel);
     props->setDoubleValue("lag/norm-angular-vel", normAngularVel);
-    
+
     // not doing rotational prediction for small speed or rotation rate,
     // to avoid agitated parked plane
-    
+
     if (( normAngularVel > 0.05 ) || ( normVel > 1.0 ))
     {
         ecOrient += t*ecOrient.derivative(angularVel);
@@ -426,7 +426,7 @@ void FGAIMultiplayer::update(double dt)
             motion_logging = true;
         }
     }
-    
+
     double curtime;
     double tInterp;
     if (m_simple_time_enabled->getBoolValue())
@@ -590,7 +590,7 @@ void FGAIMultiplayer::update(double dt)
 
     MotionInfo::iterator nextIt = mMotionInfo.upper_bound(tInterp);
     MotionInfo::iterator prevIt = nextIt;
-    
+
     if (nextIt != mMotionInfo.end() && nextIt->first >= tInterp)
     {
         // Ok, we need a time previous to the last available packet,
@@ -616,7 +616,7 @@ void FGAIMultiplayer::update(double dt)
                 tau = (tInterp - intervalStart) / intervalLen;
             }
         }
-        
+
         FGAIMultiplayerInterpolate(prevIt, nextIt, tau, ecPos, ecOrient, ecLinearVel);
     }
     else
@@ -632,7 +632,7 @@ void FGAIMultiplayer::update(double dt)
     // the future.
     //
     mMotionInfo.erase(mMotionInfo.begin(), prevIt);
-    
+
     // extract the position
     pos = SGGeod::fromCart(ecPos);
     double recent_alt_ft = altitude_ft;
@@ -667,7 +667,7 @@ void FGAIMultiplayer::update(double dt)
     _uBodyNode->setValue(ecLinearVel[0] * SG_METER_TO_FEET);
     _vBodyNode->setValue(ecLinearVel[1] * SG_METER_TO_FEET);
     _wBodyNode->setValue(ecLinearVel[2] * SG_METER_TO_FEET);
-    
+
     if (ecLinearVel[0] == 0) {
         // MP packets for carriers have zero ecLinearVel, but do specify
         // velocities/speed-kts.
@@ -675,7 +675,7 @@ void FGAIMultiplayer::update(double dt)
         double speed_fps = speed_kts * SG_KT_TO_FPS;
         _uBodyNode->setDoubleValue(speed_fps);
     }
-    
+
     std::string ai_latch = m_node_ai_latch->getStringValue();
     if (ai_latch != m_ai_latch) {
         SG_LOG(SG_AI, SG_ALERT, "latching _callsign=" << _callsign << " to mp " << ai_latch);
@@ -704,7 +704,7 @@ void FGAIMultiplayer::update(double dt)
         m_node_ai_latch_ubody_fps->setDoubleValue(_uBodyNode->getDoubleValue());
         m_node_ai_latch_vbody_fps->setDoubleValue(_vBodyNode->getDoubleValue());
         m_node_ai_latch_wbody_fps->setDoubleValue(_wBodyNode->getDoubleValue());
-        
+
         // /ai/models/carrier[]/velocities/speed-kts seems to be used
         // to calculate friction between carrier deck and our aircraft
         // undercarriage when brakes are on, so we set it here from
@@ -729,7 +729,7 @@ void FGAIMultiplayer::update(double dt)
     {
         s_MotionLogging(_callsign, tInterp, ecPos, pos);
     }
-    
+
     //###########################//
     // do calculations for radar //
     //###########################//
@@ -777,7 +777,7 @@ FGAIMultiplayer::addMotionInfo(FGExternalMotionData& motionInfo,
                 ? m_sim_replay_time->getDoubleValue()
                 : globals->get_subsystem<TimeManager>()->getMPProtocolClockSec()
                 ;
-    
+
         m_simple_time_offset = motionInfo.time - t;
         if (m_simple_time_first_time)
         {
@@ -813,7 +813,7 @@ FGAIMultiplayer::addMotionInfo(FGExternalMotionData& motionInfo,
             // mMotionInfo[].time.
             //
             m_simple_time_compensation = -m_simple_time_offset_smoothed;
-            
+
             // m_simple_time_offset_smoothed will usually be too big to be
             // useful here.
             //
@@ -824,7 +824,7 @@ FGAIMultiplayer::addMotionInfo(FGExternalMotionData& motionInfo,
             m_simple_time_compensation = 0;
             m_lagModAveragedNode->setDoubleValue(m_simple_time_offset_smoothed);
         }
-        
+
         m_node_simple_time_latest->setDoubleValue(motionInfo.time);
         m_node_simple_time_offset->setDoubleValue(m_simple_time_offset);
         m_node_simple_time_offset_smoothed->setDoubleValue(m_simple_time_offset_smoothed);
@@ -843,7 +843,7 @@ FGAIMultiplayer::addMotionInfo(FGExternalMotionData& motionInfo,
         }
 
         m_simple_time_recent_packet_time = t_key;
-        
+
         // We use compensated time <t_key> as key in mMotionInfo.
         // m_time_compensation is set to non-zero if packets seem to have
         // wildly different times from us, if simple-time mode is enabled.
@@ -862,7 +862,7 @@ FGAIMultiplayer::addMotionInfo(FGExternalMotionData& motionInfo,
     // We just copied the property (pointer) list - they are ours now. Clear the
     // properties list in given/returned object, so former owner won't deallocate them.
     motionInfo.properties.clear();
-  
+
     {
         // Gather data on multiplayer speed, used by scripts/python/recordreplay.py.
         //
@@ -870,25 +870,24 @@ FGAIMultiplayer::addMotionInfo(FGExternalMotionData& motionInfo,
         {
             static SGVec3d pos_prev;
             static double t_prev = 0;
-            
+
             double distance = length(motionInfo.position - pos_prev);
             double dt = motionInfo.time - t_prev;
             double speed = distance / dt;
-            
+
             double linear_vel = norm(motionInfo.linearVel);
-            
+
             SGPropertyNode* item = fgGetNode("/sim/log-multiplayer", true /*create*/)->addChild("mppacket");
             item->setDoubleValue("distance", distance);
             item->setDoubleValue("speed", speed);
             item->setDoubleValue("dt", dt);
             item->setDoubleValue("linear_vel", linear_vel);
             item->setDoubleValue("t", motionInfo.time );
-            
+
             pos_prev = motionInfo.position;
             t_prev = motionInfo.time;
         }
     }
-    
 }
 
 #if 0

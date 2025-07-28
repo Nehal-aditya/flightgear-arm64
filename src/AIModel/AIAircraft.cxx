@@ -791,7 +791,7 @@ void FGAIAircraft::scheduleForATCTowerRunwayControl()
 {
 }
 
-/** 
+/**
  * Process ATC instructions and report back
  */
 

@@ -9,17 +9,17 @@
 
 #include <Main/globals.hxx>
 
-FGAIBaseAircraft::FGAIBaseAircraft(object_type ot) : FGAIBase(ot, false),
-                                                     m_gearPos(0.0),
-                                                     m_flapsPos(0.0),
-                                                     m_spoilerPos(0.0),
-                                                     m_speedbrakePos(0.0),
-                                                     m_beaconLight(false),
-                                                     m_cabinLight(false),
-                                                     m_landingLight(false),
-                                                     m_navLight(false),
-                                                     m_strobeLight(false),
-                                                     m_taxiLight(false)
+FGAIBaseAircraft::FGAIBaseAircraft(object_type oty) : FGAIBase(oty, false),
+                                                      m_gearPos(0.0),
+                                                      m_flapsPos(0.0),
+                                                      m_spoilerPos(0.0),
+                                                      m_speedbrakePos(0.0),
+                                                      m_beaconLight(false),
+                                                      m_cabinLight(false),
+                                                      m_landingLight(false),
+                                                      m_navLight(false),
+                                                      m_strobeLight(false),
+                                                      m_taxiLight(false)
 {
 }
 

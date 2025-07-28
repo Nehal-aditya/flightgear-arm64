@@ -138,7 +138,7 @@ void FGAIManager::init()
     _groundSpeedKts_node = fgGetNode("/velocities/groundspeed-kt", true);
 
     // Create an (invisible) AIAircraft representation of the current
-    // users's aircraft, that mimicks the user aircraft's behavior.
+    // users's aircraft, that mimics the user aircraft's behavior.
 
     _userAircraft = new FGAIAircraft;
     _userAircraft->setCallSign(fgGetString("/sim/multiplay/callsign"));
@@ -669,7 +669,7 @@ FGAIManager::loadScenarioFile(const std::string& scenarioName, SGPath& outPath)
             } catch (const sg_exception& t) {
                 SG_LOG(SG_AI, SG_ALERT, "Failed to load scenario '" << path << "': " << t.getFormattedMessage());
                 simgear::reportFailure(simgear::LoadFailure::BadData, simgear::ErrorCode::ScenarioLoad,
-                                       "Failed to laod scenario XML:" + t.getFormattedMessage(),
+                                       "Failed to load scenario XML:" + t.getFormattedMessage(),
                                        t.getLocation());
             }
         }

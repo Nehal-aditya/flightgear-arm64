@@ -2,11 +2,10 @@
 // Written by Dave Culp, started Aug 2004
 // With major additions by Vivian Meaaza 2004 - 2007
 //
-// This file is in the Public Domain and comes with no warranty.
+// SPDX-FileCopyrightText: Written by David Culp, started August 2004 - davidculp2@comcast.net
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <algorithm>
 

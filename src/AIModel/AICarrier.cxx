@@ -54,7 +54,7 @@ void FGAICarrier::readFromScenario(SGPropertyNode* scFileNode) {
   setMPControl(scFileNode->getBoolValue("mp-control", false));
   setAIControl(scFileNode->getBoolValue("ai-control", false));
   setCallSign(scFileNode->getStringValue("callsign", ""));
-  
+
   _angled_deck_degrees = scFileNode->getDoubleValue("angled-deck-degrees", -8.5);
 
     SGPropertyNode* flolsNode = getPositionFromNode(scFileNode, "flols-pos", _flolsPosOffset);
@@ -65,9 +65,9 @@ void FGAICarrier::readFromScenario(SGPropertyNode* scFileNode) {
     else {
         _flolsPosOffset(2) = -(_deck_altitude_ft * SG_FEET_TO_METER + 10);
     }
-    
+
     //// the FLOLS (or IFLOLS) position doesn't produce an accurate angle;
-    //// so to fix this we can definition the touchdown position which 
+    //// so to fix this we can definition the touchdown position which
     //// is the centreline of the 3rd wire
 
     _flolsTouchdownPosition = _flolsPosOffset; // default to the flolsPosition
@@ -149,7 +149,7 @@ void FGAICarrier::update(double dt) {
     // Now update the position and heading. This will compute new hdg and
     // roll values required for the rotation speed computation.
     FGAIShip::update(dt);
-    
+
     if (_is_user_craft->getBoolValue()) {
         _latitude_node->setDoubleValue(pos.getLatitudeDeg());
         _longitude_node->setDoubleValue(pos.getLongitudeDeg());
@@ -286,7 +286,7 @@ void FGAICarrier::update(double dt) {
       _flols_visible_light = 6;
     else
       _flols_visible_light = 0;
-      
+
     // only bother with waveoff FLOLS when ownship within a reasonable range.
     // red ball is <= 3.075 to 2.65, below this is off. above this is orange.
     // only do this when within ~1.8nm
@@ -369,7 +369,7 @@ void FGAICarrier::bind(){
     FGAIShip::bind();
     _is_user_craft = props->getNode("is-user-craft", true /*create*/);
     _ai_latch_node = props->getNode("ai-latch", true /*create*/);
-    
+
     props->untie("velocities/true-airspeed-kt");
 
     props->getNode("position/deck-altitude-feet", true)->setDoubleValue(_deck_altitude_ft);
@@ -521,8 +521,7 @@ void FGAICarrier::UpdateWind( double dt) {
     double rel_wind_speed_from_north_kts = wind_speed_from_north_kts + speed_north_kts;
 
     //combine relative speeds north and east to get relative windspeed in kts
-    _rel_wind_speed_kts = sqrt((rel_wind_speed_from_east_kts * rel_wind_speed_from_east_kts) 
-                       + (rel_wind_speed_from_north_kts * rel_wind_speed_from_north_kts));
+    _rel_wind_speed_kts = sqrt((rel_wind_speed_from_east_kts * rel_wind_speed_from_east_kts) + (rel_wind_speed_from_north_kts * rel_wind_speed_from_north_kts));
 
     //calculate the relative wind direction
     _rel_wind_from_deg = SGMiscd::rad2deg(atan2(rel_wind_speed_from_east_kts, rel_wind_speed_from_north_kts));

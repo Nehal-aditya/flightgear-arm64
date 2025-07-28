@@ -2,26 +2,11 @@
  * AIFlightPlanCreateCruise.cxx
  * Written by Durk Talsma, started February, 2006.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- *
+ * SPDX-FileCopyrightText: Written by Durk Talsma, started February, 2006
+ * SPDX-License-Identifier: GPL-2.0-or-later
  **************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <fstream>
 
@@ -182,14 +167,14 @@ void FGAIFlightPlan::createCruise(bool firstFlight, FGAirport *dep,
       dist *= SG_METER_TO_NM;
 
       // We're only interested in the absolute value of crsDiff
-      // wich should fall in the 0-180 deg range.
+      // which should fall in the 0-180 deg range.
       crsDiff = fabs(crse-course);
       if (crsDiff > 180)
         crsDiff = 360-crsDiff;
       // These are the three conditions that we consider including
       // in our flight plan:
       // 1) current waypoint is less then 100 miles away OR
-      // 2) curren waypoint is ahead of us, at any distance
+      // 2) current waypoint is ahead of us, at any distance
       SG_LOG(SG_AI, SG_BULK, " Distance : " << dist << " : Course diff " << crsDiff
            << " crs to dest : " << course
            << " crs to wpt  : " << crse);

@@ -21,7 +21,7 @@ class FGAIManager;
 class FGAIShip : public FGAIBase
 {
 public:
-    explicit FGAIShip(object_type ot = object_type::otShip);
+    explicit FGAIShip(object_type oty = object_type::otShip);
     virtual ~FGAIShip() = default;
 
     std::string_view getTypeString(void) const override { return "ship"; }

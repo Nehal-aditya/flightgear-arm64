@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Written by Durk Talsma, started May, 2007
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #pragma once
 
 class FGAIAircraft;

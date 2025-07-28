@@ -5,9 +5,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
 
 #include <algorithm>
 #include <iterator>
@@ -666,7 +664,7 @@ time_t FGAIFlightPlan::calcArrivalTimes() const
     for(const auto wp : waypoints) {
         SGGeod lastPos = previousWP->getPos();
         SGGeod currentPos = wp->getPos();
-        double dist_m = SGGeodesy::distanceM(lastPos, currentPos);            
+        double dist_m = SGGeodesy::distanceM(lastPos, currentPos);
         double speed_mps = wp->getSpeed()  * SG_KT_TO_MPS;
         double time_s = dist_m / speed_mps;
         runtime += time_s;
@@ -676,7 +674,6 @@ time_t FGAIFlightPlan::calcArrivalTimes() const
         }
     }
     SG_LOG(SG_AI, SG_DEBUG, "Runtime : " << runtime << " " << getLeg() );
-    
+
     return runtime;
 }
-

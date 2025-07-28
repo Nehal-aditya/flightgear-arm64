@@ -1,22 +1,8 @@
 // FGAIGroundVehicle - FGAIShip-derived class creates an AI Ground Vehicle
 // by adding a ground following utility
-//
-// Written by Vivian Meazza, started August 2009.
-// - vivian.meazza at lineone.net
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+// SPDX-FileCopyrightText: Copyright (C) 2009 Vivian Meazza
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <simgear/sg_inlines.h>
 
@@ -66,7 +52,6 @@ void FGAIGroundVehicle::readFromScenario(SGPropertyNode* scFileNode) {
     //we may need these later for towed vehicles
     //    setSubID(scFileNode->getIntValue("SubID", 0));
     //    setGroundOffset(scFileNode->getDoubleValue("ground-offset", 0.0));
-    //    setFormate(scFileNode->getBoolValue("formate", true));
 }
 
 void FGAIGroundVehicle::bind() {
@@ -197,8 +182,8 @@ void FGAIGroundVehicle::setTowAngle(double ta, double dt, double coeff){
     ta *= _tow_angle_gain;
     double factor = -0.0045 * speed + 1;
     double limit = _tow_angle_limit * factor;
-//	cout << "speed "<< speed << " _factor " << _factor<<" " <<_tow_angle_limit<< endl; 
-     _tow_angle = pow(ta,2) * sign(ta) * factor;
+    //	cout << "speed "<< speed << " _factor " << _factor<<" " <<_tow_angle_limit<< endl;
+    _tow_angle = pow(ta, 2) * sign(ta) * factor;
     SG_CLAMP_RANGE(_tow_angle, -limit, limit);
 }
 
@@ -448,7 +433,7 @@ void FGAIGroundVehicle::RunGroundVehicle(double dt){
 
     string parent_next_name = _selected_ac->getStringValue("waypoint/name-next");
     bool parent_waiting = _selected_ac->getBoolValue("waypoint/waiting");
-    //bool parent_restart = _selected_ac->getBoolValue("controls/restart"); 
+    //bool parent_restart = _selected_ac->getBoolValue("controls/restart");
 
     if (parent_next_name == "END" && fp->getNextWaypoint()->getName() != "END" ){
         SG_LOG(SG_AI, SG_DEBUG, "AIGroundVeh1cle: " << _name
@@ -484,9 +469,7 @@ void FGAIGroundVehicle::RunGroundVehicle(double dt){
         setWPNames();
     } else if (_range_ft > (_x_offset +_parent_x_offset)* 4
         ){
-        SG_LOG(SG_AI, SG_ALERT, "AIGroundVeh1cle: " << _name
-            << " rescue: reforming train " << _range_ft 
-            );
+        SG_LOG(SG_AI, SG_ALERT, "AIGroundVeh1cle: " << _name << " rescue: reforming train " << _range_ft);
 
         setTowAngle(0, dt, 1);
         setSpeed(_parent_speed + (10 * sign(_parent_speed)));

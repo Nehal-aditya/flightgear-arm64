@@ -9,7 +9,7 @@
 
 namespace AILeg {
 enum Type {
-    UNKNOWN, 
+    UNKNOWN,
     STARTUP_PUSHBACK = 1,
     RUNWAY_TAXI = 2,
     TAKEOFF = 3,

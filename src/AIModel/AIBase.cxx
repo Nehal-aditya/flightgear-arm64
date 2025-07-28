@@ -118,7 +118,7 @@ public:
     bool hasHighResolutionModel(void) { return _hasHighResolutionModel;}
     void setHasHighResolutionModel(bool hasHighResolutionModel) { _hasHighResolutionModel = hasHighResolutionModel; }
 
-    // The indices used by the LoD node depend on what models are actually available.
+    // The indices used by the LOD node depend on what models are actually available.
     // The maximal case is a list of [low, high, interior], but [low, interior] and
     // [low, high] and [low] are also possible.
     int getInteriorLoDIndex(void) { assert(_hasInteriorPath); return _hasHighResolutionModel ? 2 : 1; }
@@ -143,18 +143,18 @@ private:
     ErrorContext _errorContext;
 };
 
-FGAIBase::FGAIBase(object_type ot, bool enableHot) : replay_time(fgGetNode("sim/replay/time", true)),
-                                                     model_removed(fgGetNode("/ai/models/model-removed", true)),
-                                                     pos(SGGeod::fromDeg(0.0, 0.0)),
-                                                     _impact_lat(0),
-                                                     _impact_lon(0),
-                                                     _impact_elev(0),
-                                                     _impact_hdg(0),
-                                                     _impact_pitch(0),
-                                                     _impact_roll(0),
-                                                     _impact_speed(0),
-                                                     _refID(_newAIModelID()),
-                                                     _otype(ot)
+FGAIBase::FGAIBase(object_type otype, bool enableHot) : replay_time(fgGetNode("sim/replay/time", true)),
+                                                        model_removed(fgGetNode("/ai/models/model-removed", true)),
+                                                        pos(SGGeod::fromDeg(0.0, 0.0)),
+                                                        _impact_lat(0),
+                                                        _impact_lon(0),
+                                                        _impact_elev(0),
+                                                        _impact_hdg(0),
+                                                        _impact_pitch(0),
+                                                        _impact_roll(0),
+                                                        _impact_speed(0),
+                                                        _refID(_newAIModelID()),
+                                                        _otype(otype)
 {
     tgt_heading = hdg = tgt_altitude_ft = tgt_speed = 0.0;
     tgt_roll = roll = tgt_pitch = tgt_yaw = tgt_vs = vs_fps = pitch = 0.0;
@@ -396,7 +396,7 @@ void FGAIBase::updateLOD()
         if (distance_mode) {
             _model->setRangeMode(osg::LOD::DISTANCE_FROM_EYE_POINT);
 
-            // In distance mode  we simple display a different LoD model depending on how far away the object is.  
+            // In distance mode  we simple display a different LOD model depending on how far away the object is.
 
             if (maxRangeDetail < 0) {
                 // Only use the highest level detail model (interior handled later)
@@ -407,7 +407,7 @@ void FGAIBase::updateLOD()
                 } else {
                     // Only a single resolution model available.
                     _model->setRange(_modeldata->getLowResolutionLoDIndex(), 0.0, maxRangeBare);
-                } 
+                }
             } else if ((int)maxRangeBare == (int)maxRangeDetail) {
                 // Only use the low detail model if available, otherwise we will use whatever is available.
                 if (_modeldata->hasHighResolutionModel()) {
@@ -464,7 +464,7 @@ void FGAIBase::updateLOD()
                 } else {
                     //Only a single resolution model available.
                     _model->setRange(_modeldata->getLowResolutionLoDIndex(), maxRangeBare, FLT_MAX);
-                } 
+                }
             } else if ((int)maxRangeBare == (int)maxRangeDetail) {
                 // Only use the low detail model if available, otherwise we will use whatever is available.
                 if (_modeldata->hasHighResolutionModel()) {
@@ -474,7 +474,7 @@ void FGAIBase::updateLOD()
                 } else {
                     // Only a single resolution model available.
                     _model->setRange(_modeldata->getLowResolutionLoDIndex(), maxRangeBare, FLT_MAX);
-                } 
+                }
             } else {
                 // We have three visibility ranges:
                 // 1) From closeby to a size of maxRangeDetail we will use the high resolution model
@@ -614,12 +614,12 @@ std::vector<std::string> FGAIBase::resolveModelPath(ModelSearchOrder searchOrder
         if (!p.empty()) {
             _installed = true;
             SG_LOG(SG_AI, SG_DEBUG, "Found DATA model " << p);
-            path_list.insert(path_list.end(), p);            
+            path_list.insert(path_list.end(), p);
         }
     }
 
     /*
-     * We return either one or two models.  LoD logic elsewhere relies on this,
+     * We return either one or two models.  LOD logic elsewhere relies on this,
      * so anything else is a logic error in the above code.
      */
     assert(path_list.size() != 0);
@@ -652,8 +652,8 @@ bool FGAIBase::init(ModelSearchOrder searchOrder)
 
     // Load models
     std::vector<string> model_list = resolveModelPath(searchOrder);
-    
-    // Now load the set of models as an LoD range.
+
+    // Now load the set of models as an LOD range.
     _model = SGModelLib::loadPagedModel(model_list, props, _modeldata);
     _model->setName("AI-model range animation node");
     _model->setRadius(getDefaultModelRadius());
@@ -665,7 +665,7 @@ bool FGAIBase::init(ModelSearchOrder searchOrder)
         aip.init( _model.get() );
         aip.setVisible(true);
         invisible = false;
-        
+
         auto scenery = globals->get_scenery();
         if (scenery) {
             scenery->get_models_branch()->addChild(aip.getSceneGraph());

@@ -19,7 +19,7 @@
  * This class is just a refactoring of the AA refueling related code in FGAIAircraft. The idea
  * is to have a clean generic AIAircraft class without any special functionality. In your
  * scenario specification use 'tanker' as the scenario type to use this class.
- * 
+ *
  * @author Thomas F�ster <t.foerster@biologie.hu-berlin.de>
 */
 

@@ -55,7 +55,7 @@ public:
         MAX_OBJECTS // Needs to be last!!!
     };
 
-    FGAIBase(object_type ot, bool enableHot);
+    FGAIBase(object_type oty, bool enableHot);
     virtual ~FGAIBase();
 
     virtual void readFromScenario(SGPropertyNode* scFileNode);
@@ -546,11 +546,11 @@ inline void FGAIBase::setMaxSpeed(double m)
 
 /*
  * Default height and lengths for AI submodel collision detection.
- * The difference in height is used first and then the range must be within 
- * the value specifed in the length field. This effective chops the top and 
+ * The difference in height is used first and then the range must be within
+ * the value specified in the length field. This effective chops the top and
  * bottom off the circle - but does not take into account the orientation of the
  * AI model; so this algorithm is fast but fairly inaccurate.
- * 
+ *
  * Default values:
  * +---------------+-------------+------------+
  * | Type          | Height(m)   |  Length(m) |

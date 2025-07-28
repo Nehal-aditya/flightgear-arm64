@@ -8,12 +8,7 @@
 
 #include <cmath>
 
-#ifdef _MSC_VER
-#include <float.h>
-double fgIsFinite(double x) { return _finite(x); }
-#else
 double fgIsFinite(double x) { return std::isfinite(x); }
-#endif
 
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/math/sg_random.hxx>
@@ -27,34 +22,34 @@ double fgIsFinite(double x) { return std::isfinite(x); }
 #include "AIShip.hxx"
 
 
-FGAIShip::FGAIShip(object_type ot) : // allow HOT to be enabled
-                                     FGAIBase(ot, true),
-                                     _waiting(false),
-                                     _new_waypoint(true),
-                                     _tunnel(false),
-                                     _initial_tunnel(false),
-                                     _restart(false),
-                                     _hdg_constant(0.01),
-                                     _limit(100),
-                                     _elevation_ft(0),
-                                     _tow_angle(0),
-                                     _missed_count(0),
-                                     _wp_range(0),
-                                     _dt_count(0),
-                                     _next_run(0),
-                                     _roll_constant(0.001),
-                                     _roll_factor(-0.0083335),
-                                     _old_range(0),
-                                     _range_rate(0),
-                                     _missed_time_sec(30),
-                                     _day(86400),
-                                     _lead_angle(0),
-                                     _xtrack_error(0),
-                                     _curr_alt(0),
-                                     _prev_alt(0),
-                                     _until_time(""),
-                                     _fp_init(false),
-                                     _missed(false)
+FGAIShip::FGAIShip(object_type objTy) : // allow HOT to be enabled
+                                        FGAIBase(objTy, true),
+                                        _waiting(false),
+                                        _new_waypoint(true),
+                                        _tunnel(false),
+                                        _initial_tunnel(false),
+                                        _restart(false),
+                                        _hdg_constant(0.01),
+                                        _limit(100),
+                                        _elevation_ft(0),
+                                        _tow_angle(0),
+                                        _missed_count(0),
+                                        _wp_range(0),
+                                        _dt_count(0),
+                                        _next_run(0),
+                                        _roll_constant(0.001),
+                                        _roll_factor(-0.0083335),
+                                        _old_range(0),
+                                        _range_rate(0),
+                                        _missed_time_sec(30),
+                                        _day(86400),
+                                        _lead_angle(0),
+                                        _xtrack_error(0),
+                                        _curr_alt(0),
+                                        _prev_alt(0),
+                                        _until_time(""),
+                                        _fp_init(false),
+                                        _missed(false)
 {
     _elevation_m = 0.0;
     invisible = false;

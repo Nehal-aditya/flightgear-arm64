@@ -50,7 +50,7 @@ public:
     FGAIWaypoint();
     virtual ~FGAIWaypoint(){};
 
-    void setName(const std::string& nam) { name = nam; };
+    void setName(const std::string& n) { name = n; };
     void setLatitude(double lat);
     void setLongitude(double lon);
     void setAltitude(double alt);

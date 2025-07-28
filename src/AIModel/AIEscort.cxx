@@ -1,26 +1,9 @@
 // FGAIEscort - FGAIShip-derived class creates an AI Ground Vehicle
 // by adding a ground following utility
-//
-// Written by Vivian Meazza, started August 2009.
-// - vivian.meazza at lineone.net
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: Copyright (C) 2009 Vivian Meazza
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <algorithm>
 #include <string>
@@ -225,7 +208,7 @@ void FGAIEscort::setParent()
         //cout << _name <<" set rel"<<endl;
     } else {
         _stn_truebrg = _stn_brg;
-        _stn_relbrg = calcRelBearingDeg(_stn_brg, _parent_hdg); 
+        _stn_relbrg = calcRelBearingDeg(_stn_brg, _parent_hdg);
         //cout << _name << " set true"<<endl;
     }
 

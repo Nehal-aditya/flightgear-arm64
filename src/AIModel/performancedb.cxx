@@ -1,6 +1,7 @@
-#ifdef HAVE_CONFIG_H
-  #include "config.h"
-#endif
+// SPDX-FileCopyrightText: Written by Durk Talsma, started May, 2007
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "config.h"
 
 #include "performancedb.hxx"
 

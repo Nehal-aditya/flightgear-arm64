@@ -1,25 +1,9 @@
 // FGAIWingman - FGAIBllistic-derived class creates an AI Wingman
 //
-// Written by Vivian Meazza, started February 2008.
-// - vivian.meazza at lineone.net 
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: Copyright (C) 2008 Vivian Meazza
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <simgear/sg_inlines.h>
 
@@ -64,7 +48,7 @@ void FGAIWingman::readFromScenario(SGPropertyNode* scFileNode) {
     setRolloffset(scFileNode->getDoubleValue("roll-offset", 0.0));
     setYawoffset(scFileNode->getDoubleValue("yaw-offset", 0.0));
     setGroundOffset(scFileNode->getDoubleValue("ground-offset", 0.0));
-    setFormate(scFileNode->getBoolValue("formate", true));
+    setFormate(scFileNode->getBoolValue("formate", true)); // codespell:ignore formate
     setMaxSpeed(scFileNode->getDoubleValue("max-speed-kts", 300.0));
     setCoeffHdg(scFileNode->getDoubleValue("coefficients/heading", 5.0));
     setCoeffPch(scFileNode->getDoubleValue("coefficients/pitch", 5.0));
