@@ -661,7 +661,7 @@ static void replayMessage(FGReplayInternal& self, double time)
     self.m_last_msg_time = time;
 }
 
-/** 
+/**
  * given two FGReplayData elements and a time, interpolate between them
  */
 static void replayNormal2(
@@ -677,7 +677,7 @@ static void replayNormal2(
     self.m_flight_recorder->replay(time, current_frame, old_frame, xpos, ypos, xsize, ysize);
 }
 
-/** 
+/**
  * interpolate a specific time from a specific list
  */
 static void interpolate(FGReplayInternal& self, double time, const std::deque<FGReplayData*>& list)
@@ -774,7 +774,7 @@ bool replayNormal(FGReplayInternal& self, double time)
     return false;
 }
 
-/** 
+/**
  *  Replay a saved frame based on time, interpolate from the two
  *  nearest saved frames.
  *  Returns true when replay sequence has finished, false otherwise.

@@ -2,4 +2,5 @@
 ; SPDX-License-Identifier: GPL-2.0-or-later
 
 [codespell]
-ignore-words-list = vor,ned,NED,LOD
+; datas needed for replay-internal.cxx
+ignore-words-list = vor,ned,NED,LOD,datas
