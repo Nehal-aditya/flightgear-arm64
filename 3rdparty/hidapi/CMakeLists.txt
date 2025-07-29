@@ -7,7 +7,14 @@ set(HIDAPI_SOURCES
 )
 
 if (WIN32)
-    list(APPEND HIDAPI_SOURCES windows/hid.c)
+    list(APPEND HIDAPI_SOURCES 
+        windows/hid.c
+        windows/hidapi_cfgmgr32.h
+        windows/hidapi_descriptor_reconstruct.c
+        windows/hidapi_descriptor_reconstruct.h
+        windows/hidapi_hidclass.h
+        windows/hidapi_hidpi.h
+        windows/hidapi_hidsdi.h)
 elseif(APPLE)
     list(APPEND HIDAPI_SOURCES mac/hid.c)
 else()
@@ -23,7 +30,13 @@ add_library(hidapi STATIC
 )
 
 if(WIN32)
-    target_link_libraries(hidapi PUBLIC SetupApi)
+    target_compile_definitions(hidapi
+        # prevent marking functions as __declspec(dllexport) for static library build
+        # #480: this should be refactored for v1.0
+        PUBLIC HID_API_NO_EXPORT_DEFINE
+    )
+
+ #   target_link_libraries(hidapi PUBLIC SetupApi)
 elseif(APPLE)
     find_library(IOKIT_FRAMEWORK IOKit)
     target_link_libraries(hidapi ${IOKIT_FRAMEWORK})

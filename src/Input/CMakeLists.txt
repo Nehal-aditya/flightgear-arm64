@@ -1,7 +1,10 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SPDX-FileCopyrightText: 2011 James Turner <james@flightgear.org>
+
 include(FlightGearComponent)
 
 IF(APPLE)
-	# no Mac implemention, use HID
+	# no Mac implementation, use HID
 elseif(WIN32)
 	# no Win32 specific implementation, at least for now
 else()
@@ -10,8 +13,8 @@ else()
 endif()
 
 if (ENABLE_HID_INPUT)
-	list(APPEND EVENT_INPUT_SOURCES FGHIDEventInput.cxx)
-	list(APPEND EVENT_INPUT_HEADERS FGHIDEventInput.hxx)	
+	list(APPEND EVENT_INPUT_SOURCES FGHIDEventInput.cxx FGHIDUsage.cxx)
+	list(APPEND EVENT_INPUT_HEADERS FGHIDEventInput.hxx FGHIDUsage.hxx)
 endif()
 
 set(SOURCES
@@ -73,11 +76,11 @@ endif()
 
 if (ENABLE_HID_INPUT)
 	if (COMMAND flightgear_test)
-		set(HID_INPUT_TEST_SOURCES test_hidinput.cxx FGEventInput.cxx 
+		set(HID_INPUT_TEST_SOURCES test_hidinput.cxx FGEventInput.cxx
 			FGCommonInput.cxx FGDeviceConfigurationMap.cxx)
 
 		flightgear_test(hidinput "${HID_INPUT_TEST_SOURCES}")
-		target_link_libraries(hidinput ${EVENT_INPUT_LIBRARIES} hidapi)	
+		target_link_libraries(hidinput ${EVENT_INPUT_LIBRARIES} hidapi)
 	endif()
 endif()
 

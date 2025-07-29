@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: (C) 2025 James Turner <james@flightgear.org>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+# Skip the 3rdparty directory completely
+3rdparty/**/*
+
+# Skip JSBSim since it's from upstream
+src/FDM/JSBSim/**/*
