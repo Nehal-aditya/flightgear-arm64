@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: sidstar.hxx
  * SPDX-FileComment: a class to store and maintain data for SID and STAR procedures
- * SPDX-FileCopyrightText: Written by Durk Talsma, started March 2009
+ * SPDX-FileCopyrightText: 2009 Durk Talsma
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 

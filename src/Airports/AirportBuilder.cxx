@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: AirportBuilder.cxx
  * SPDX-FileComment: Builder to create airports based on airport data for rendering in the scenery
- * SPDX-FileCopyrightText: Copyright (C) 2020  Stuart Buchanan stuart13@gmail.com
+ * SPDX-FileCopyrightText: 2020 Stuart Buchanan <stuart13@gmail.com>
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -533,7 +533,7 @@ osg::Node* AirportBuilder::createLine(const osg::Matrixd mat, const SGVec3f cent
 
   //  We should be using different Effects for different lines, and/or
   //  parameterizing a single Effect to encode some line type information so
-  //  we can use a single Effect for all lines.  
+  //  we can use a single Effect for all lines.
   EffectGeode* geode = new EffectGeode;
   ref_ptr<Effect> effect = getMaterialEffect("lf_sng_solid_yellow", options);
   geode->setEffect(effect.get());

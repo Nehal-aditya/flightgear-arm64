@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: runwayprefs.hxx
  * SPDX-FileComment: A number of classes to configure runway assignments by the AI code
- * SPDX-FileCopyrightText: Copyright (C) 2004 Durk Talsma.
+ * SPDX-FileCopyrightText: 2004 Durk Talsma
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 

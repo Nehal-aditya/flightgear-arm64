@@ -1,8 +1,9 @@
 // Calculate ILS heading
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+// SPDX-FileCopyrightText: 2003 Curtis L. Olson
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include <config.h>
 
 #include <simgear/compiler.h>
 
@@ -43,8 +44,8 @@ int main( int argc, char **argv ) {
 
     // calculate runway threshold point
     double thresh_lat = 0.0, thresh_lon = 0.0, return_az = 0.0;
-    geo_direct_wgs_84 ( 0.0, rwy_lat, rwy_lon, rwy_hdg, 
-                        rwy_len / 2.0, &thresh_lat, &thresh_lon, &return_az );
+    geo_direct_wgs_84(0.0, rwy_lat, rwy_lon, rwy_hdg,
+                      rwy_len / 2.0, &thresh_lat, &thresh_lon, &return_az);
     cout << "Threshold = " << thresh_lat << "," << thresh_lon << endl;
 
     // calculate distance from threshold to localizer
@@ -55,8 +56,8 @@ int main( int argc, char **argv ) {
 
     // back project that distance along the runway center line
     double nloc_lat = 0.0, nloc_lon = 0.0;
-    geo_direct_wgs_84 ( 0.0, thresh_lat, thresh_lon, rwy_hdg + 180.0, 
-                        dist_m, &nloc_lat, &nloc_lon, &return_az );
+    geo_direct_wgs_84(0.0, thresh_lat, thresh_lon, rwy_hdg + 180.0,
+                      dist_m, &nloc_lat, &nloc_lon, &return_az);
     printf("New localizer = %.6f %.6f\n", nloc_lat, nloc_lon );
 
     return 0;

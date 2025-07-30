@@ -1,21 +1,7 @@
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2007 Durk Talsma
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
 #include <cstdio>
 #include <utility>
@@ -103,8 +89,8 @@ void XMLLoader::load(FGRunwayPreference* p) {
   loadAirportXMLDataIntoVisitor(p->getId(), "rwyuse", visitor);
 }
 
-bool XMLLoader::findAirportData(const std::string& aICAO, 
-    const std::string& aFileName, SGPath& aPath)
+bool XMLLoader::findAirportData(const std::string& aICAO,
+                                const std::string& aFileName, SGPath& aPath)
 {
   FGAirportRef airport = FGAirport::findByIdent(aICAO);
   if (!airport) {
@@ -121,32 +107,32 @@ bool XMLLoader::findAirportData(const std::string& aICAO,
 
   PathList sc = globals->get_fg_scenery();
   char buffer[128];
-  ::snprintf(buffer, 128, "%c/%c/%c/%s.%s", 
-    aICAO[0], aICAO[1], aICAO[2], 
-    aICAO.c_str(), fileName.c_str());
+  ::snprintf(buffer, 128, "%c/%c/%c/%s.%s",
+             aICAO[0], aICAO[1], aICAO[2],
+             aICAO.c_str(), fileName.c_str());
 
-    for (PathList::const_iterator it = sc.begin(); it != sc.end(); ++it) {
-    // fg_senery contains empty strings as "markers" (see FGGlobals::set_fg_scenery)
-    if (!it->isNull()) {
-        const SGPath path = *it / "Airports" / buffer;
-        if (path.exists()) {
-          aPath = std::move(path);
-          return true;
-        } // of path exists
+  for (PathList::const_iterator it = sc.begin(); it != sc.end(); ++it) {
+      // fg_senery contains empty strings as "markers" (see FGGlobals::set_fg_scenery)
+      if (!it->isNull()) {
+          const SGPath path = *it / "Airports" / buffer;
+          if (path.exists()) {
+              aPath = std::move(path);
+              return true;
+          } // of path exists
 
-        // Unless we are in “full traversal mode”, don't look in scenery paths
-        // that come after the one which contributed the apt.dat file for the
-        // airport.
-        if (!performFullTraversal && *it == airport->sceneryPath()) {
-            return false;
-        }
-    }
+          // Unless we are in “full traversal mode”, don't look in scenery paths
+          // that come after the one which contributed the apt.dat file for the
+          // airport.
+          if (!performFullTraversal && *it == airport->sceneryPath()) {
+              return false;
+          }
+      }
   } // of scenery path iteration
   return false;
 }
 
-bool XMLLoader::loadAirportXMLDataIntoVisitor(const string& aICAO, 
-    const string& aFileName, XMLVisitor& aVisitor)
+bool XMLLoader::loadAirportXMLDataIntoVisitor(const string& aICAO,
+                                              const string& aFileName, XMLVisitor& aVisitor)
 {
   SGPath path;
   if (!findAirportData(aICAO, aFileName, path)) {
@@ -162,7 +148,6 @@ bool XMLLoader::loadAirportXMLDataIntoVisitor(const string& aICAO,
         readXMLOk = false;
         SG_LOG(SG_NAVAID, SG_WARN, "XML errors trying to read:" << path);
     }
-    
+
     return readXMLOk;
 }
-

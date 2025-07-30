@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: (C) 2000 Curtis L. Olson - http://www.flightgear.org/~curt
+ * SPDX-FileCopyrightText: 2000 Curtis L. Olson
  * SPDX_FileComment: a simple class to manage airport runway info
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -48,7 +48,7 @@ public:
     double score(double aLengthWt, double aWidthWt, double aSurfaceWt, double aIlsWt) const;
 
     /**
-   * Get the runway beginning point - this is syntatic sugar, equivalent to
+   * Get the runway beginning point - this is syntactic sugar, equivalent to
    * calling pointOnCenterline(0.0);
    */
     SGGeod begin() const;
@@ -61,7 +61,7 @@ public:
     /**
    * Retrieve a position on the extended centerline. Positive values
    * are in the direction of the runway heading, negative values are in the
-   * opposited direction. 0.0 corresponds to the possibly threshold   
+   * opposited direction. 0.0 corresponds to the possibly threshold
    */
     SGGeod pointOnCenterlineDisplaced(double aOffset) const;
 

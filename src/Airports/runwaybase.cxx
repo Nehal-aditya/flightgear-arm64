@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: (C) 2000 Curtis L. Olson - http://www.flightgear.org/~curt
+ * SPDX-FileCopyrightText: 2000 Curtis L. Olson
  * SPDX_FileComment: represent a runway or taxiway
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -95,7 +95,7 @@ SGGeod FGRunwayBase::pointOnCenterline(double aOffset) const
 {
   SGGeod result = SGGeodesy::direct(geod(), _heading, aOffset);
   result.setElevationM(geod().getElevationM());
-    
+
   return result;
 }
 

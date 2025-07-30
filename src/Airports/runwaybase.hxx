@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: (C) 2000 Curtis L. Olson - http://www.flightgear.org/~curt
+ * SPDX-FileCopyrightText: 2000 Curtis L. Olson
  * SPDX_FileComment: represent a runway or taxiway
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -20,7 +20,7 @@
  * a direct instantiation of this class.
  */
 class FGRunwayBase : public FGPositioned
-{    
+{
 public:
     FGRunwayBase(PositionedID aGuid, Type aTy, const std::string& aIdent,
                  const SGGeod& aGeod,
@@ -40,32 +40,32 @@ public:
     double lengthFt() const
     {
         return _length * SG_METER_TO_FEET; }
-  
+
   double lengthM() const
   { return _length; }
-  
+
   double widthFt() const
   { return _width * SG_METER_TO_FEET; }
-  
+
   double widthM() const
   { return _width; }
-  
+
    /**
    * Runway heading in degrees.
    */
   double headingDeg() const
   { return _heading; }
-  
+
   /**
    * Predicate to test if this runway has a hard surface. For the moment, this
    * means concrete or asphalt
    */
   bool isHardSurface() const;
-  
+
   /**
    * Retrieve runway surface code, as define in Robin Peel's data
    */
-  int surface() const 
+  int surface() const
   { return _surface_code; }
 
   /**
@@ -77,7 +77,6 @@ public:
   FGAirportRef airport() const;
 
   protected:
-    
   double _heading;
   double _length;
   double _width;

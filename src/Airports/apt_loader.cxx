@@ -1,13 +1,11 @@
 /*
  * SPDX-FileName: apt_loader.cxx
  * SPDX-FileComment: a front end loader of the apt.dat file.  This loader populates the runway and basic classes.
- * SPDX-FileCopyrightText: Copyright (C) 2004  Curtis L. Olson  - http://www.flightgear.org/~curt
+ * SPDX-FileCopyrightText: 2004 Curtis L. Olson
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
 
 #include <algorithm>
 #include <cerrno>

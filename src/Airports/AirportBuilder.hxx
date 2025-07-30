@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: AirportBuilder.hxx
  * SPDX-FileComment: Builder to create airports based on airport data for rendering in the scenery
- * SPDX-FileCopyrightText: Copyright (C) 2020  Stuart Buchanan stuart13@gmail.com
+ * SPDX-FileCopyrightText: 2020 Stuart Buchanan <stuart13@gmail.com>
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 

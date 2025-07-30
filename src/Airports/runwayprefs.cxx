@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: runwayprefs.cxx
  * SPDX-FileComment: class implementations corresponding to runwayprefs.hxx assignments by the AI code
- * SPDX-FileCopyrightText: Copyright (C) 2004 Durk Talsma.
+ * SPDX-FileCopyrightText: 2004 Durk Talsma
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -229,7 +229,7 @@ void RunwayGroup::setActive(const FGAirport* airport,
 
             rwy = airport->getRunwayByIdent(ident);
 
-            //cerr << "Succes" << endl;
+            //cerr << "Success" << endl;
             hdgDiff = fabs(windHeading - rwy->headingDeg());
             std::string l_name = rwy->name();
 

@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: dynamics.cxx
  * SPDX-FileComment: Code to manage the higher order airport ground activities
- * SPDX-FileCopyrightText: Written by Durk Talsma, started December 2004
+ * SPDX-FileCopyrightText: 2004 Durk Talsma
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -96,16 +96,16 @@ ParkingAssignment::ParkingAssignment(FGParking* pk, FGAirportDynamics* dyn) : _s
     }
 }
 
-ParkingAssignment::ParkingAssignment(const ParkingAssignment& aOther) : _sharedData(aOther._sharedData)
+ParkingAssignment::ParkingAssignment(const ParkingAssignment& other) : _sharedData(other._sharedData)
 {
     if (_sharedData) {
         _sharedData->retain();
     }
 }
 
-void ParkingAssignment::operator=(const ParkingAssignment& aOther)
+void ParkingAssignment::operator=(const ParkingAssignment& other)
 {
-    if (_sharedData == aOther._sharedData) {
+    if (_sharedData == other._sharedData) {
         return; // self-assignment, special case
     }
 
@@ -113,7 +113,7 @@ void ParkingAssignment::operator=(const ParkingAssignment& aOther)
         _sharedData->release();
     }
 
-    _sharedData = aOther._sharedData;
+    _sharedData = other._sharedData;
     if (_sharedData) {
         _sharedData->retain();
     }
@@ -143,7 +143,7 @@ FGParking* ParkingAssignment::parking() const
  * @brief Helper to cache all AIObject positions near the airport when
  * searching for available parkings. This allows us to reject parkings
  * which we might not have marked as occupied, but which an object is
- * neverthless close to; such as the primary user or MP aircraft.
+ * nevertheless close to; such as the primary user or MP aircraft.
  * FIXME should be replaced by AirportGroundRadar
  */
 class NearbyAIObjectCache
@@ -213,7 +213,7 @@ FGAirportDynamics::~FGAirportDynamics()
 
 /**
  * Initialization required after XMLRead
- */ 
+ */
 void FGAirportDynamics::init()
 {
     groundRadar = new AirportGroundRadar(_ap);
@@ -295,7 +295,7 @@ ParkingAssignment FGAirportDynamics::getAvailableParking(double radius,
 {
     SG_UNUSED(acType); // sadly not used at the moment
 
-    // most exact seach - airline codes must be present and match
+    // most exact search - airline codes must be present and match
     FGParking* result = innerGetAvailableParking(radius, flType, airline, true);
     if (result) {
         return ParkingAssignment(result, this);
@@ -831,7 +831,7 @@ void FGAirportDynamics::getActiveRunway(const std::string& trafficType,
                                         int action, std::string& runway,
                                         double heading)
 {
-    //FIXME must allign with FGAirport::findBestRunwayForHeading
+    //FIXME must align with FGAirport::findBestRunwayForHeading
 
     bool ok = innerGetActiveRunway(trafficType, action, runway, heading);
     if (!ok || runway.empty()) {
@@ -851,7 +851,7 @@ ActiveRunwayQueue *FGAirportDynamics::getRunwayQueue(const string& name)
         }
     }
     if (rwy == activeRunways.end()) {
-        ActiveRunwayQueue aRwy(_ap->getId(), name, 0);        
+        ActiveRunwayQueue aRwy(_ap->getId(), name, 0);
         activeRunways.push_back(aRwy);
         rwy = activeRunways.end() - 1;
     }

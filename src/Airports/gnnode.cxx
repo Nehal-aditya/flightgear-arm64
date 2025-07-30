@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2007 Durk Talsma
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "config.h"
 
 #include <Main/globals.hxx>

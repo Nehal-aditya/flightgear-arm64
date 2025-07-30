@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: pavement.hxx
  * SPDX-FileComment: class to represent complex taxiway specified in v850 apt.dat
- * SPDX-FileCopyrightText: Copyright (C) 2009 Frederic Bouvier
+ * SPDX-FileCopyrightText: 2009 Frederic Bouvier
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 

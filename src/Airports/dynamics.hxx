@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: dynamics.hxx
  * SPDX-FileComment: a class to manage the higher order airport ground activities
- * SPDX-FileCopyrightText: Written by Durk Talsma, started December 2004.
+ * SPDX-FileCopyrightText: 2004 Durk Talsma
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -32,7 +32,7 @@ namespace RunwayAction {
         LANDING = 2
     };
     }
-    
+
 class ParkingAssignment
 {
 public:
@@ -42,8 +42,8 @@ public:
     // create a parking assignment (and mark it as unavailable)
     ParkingAssignment(FGParking* pk, FGAirportDynamics* apt);
 
-    ParkingAssignment(const ParkingAssignment& aOther);
-    void operator=(const ParkingAssignment& aOther);
+    ParkingAssignment(const ParkingAssignment& other);
+    void operator=(const ParkingAssignment& other);
 
     bool isValid() const;
     FGParking* parking() const;

@@ -1,13 +1,11 @@
 /*
  * SPDX-FileName: sidstar.cxx
  * SPDX-FileComment: Code to manage departure / arrival procedures
- * SPDX-FileCopyrightText: Written by Durk Talsma, started March 2009
+ * SPDX-FileCopyrightText: 2009 Durk Talsma
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
 
 #include <iostream>
 #include <stdlib.h>

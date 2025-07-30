@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: airport.hxx
  * SPDX-FileComment: a really simplistic class to manage airport ID, lat, lon of the center of one of it's runways, and elevation in feet.
- * SPDX-FileCopyrightText: Copyright (C) 1998  Curtis L. Olson  - http://www.flightgear.org/~curt
+ * SPDX-FileCopyrightText: 1998 Curtis L. Olson
  * SPDX-FileContributor: Updated by Durk Talsma, started December 2004.
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -121,7 +121,7 @@ public:
         double deviationWeight;
         double ilsWeight;
     };
-    FGRunwayRef findBestRunwayForHeading(double aHeading, struct FindBestRunwayForHeadingParams* parms = NULL) const;
+    FGRunwayRef findBestRunwayForHeading(double aHeading, struct FindBestRunwayForHeadingParams* params = NULL) const;
 
     /**
      * return the most likely target runway based on a position.

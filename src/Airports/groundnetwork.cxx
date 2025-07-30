@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: groundnet.cxx
  * SPDX-FileComment: Implementation of the FlightGear airport ground handling code
- * SPDX-FileCopyrightText: Copyright (C) 2004 Durk Talsma
+ * SPDX-FileCopyrightText: 2004 Durk Talsma
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -115,8 +115,8 @@ void FGTaxiSegment::unblock(time_t now)
  **************************************************************************/
 
 /**
-  * @param nds The FGTaxiNodes 
-  * @param rts The ids of the nodes 
+  * @param nds The FGTaxiNodes
+  * @param rts The ids of the nodes
   * @param dist The length of this FGTaxiRoute in m
   * @param score The score it achieved. If greater than length then there were penalties.
   */
@@ -180,7 +180,7 @@ FGGroundNetwork::~FGGroundNetwork()
 
 /**
  * Postprocess the ground network
- * * join forward/backard segments
+ * * join forward/backward segments
  * * add penalties for crossing runway
  */
 
@@ -333,9 +333,9 @@ FGTaxiNodeRef FGGroundNetwork::findNearestNodeOnRunwayEntry(const SGGeod& aGeod)
 /**
  * Returns the nearest node in that is in direction of runway heading. Falls back to ones behind aircraft
  * @param aGeod Reference point
- * @param aRunway 
- * @return 
- * 
+ * @param aRunway
+ * @return
+ *
  */
 FGTaxiNodeRef FGGroundNetwork::findNearestNodeOnRunwayExit(const SGGeod& aGeod, FGRunway* aRunway) const
 {
@@ -481,7 +481,7 @@ FGTaxiSegment* FGGroundNetwork::findSegment(const FGTaxiNode* from, const FGTaxi
 
 /**
  * Calculate a penalty for an TaxiSegment
- * 
+ *
  */
 
 static int edgePenalty(FGTaxiSegment* ts)

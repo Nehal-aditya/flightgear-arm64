@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: airport.cxx
  * SPDX-FileComment: Classes representing airports, seaports and helipads
- * SPDX-FileCopyrightText: Copyright (C) 1998  Curtis L. Olson  - http://www.flightgear.org/~curt
+ * SPDX-FileCopyrightText: 1998 Curtis L. Olson
  * SPDX-FileContributor: Updated by Durk Talsma, started December, 2004
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -208,25 +208,25 @@ FGHelipadRef FGAirport::getHelipadByIdent(const std::string& aIdent) const
 }
 
 //------------------------------------------------------------------------------
-FGRunwayRef FGAirport::findBestRunwayForHeading(double aHeading, struct FindBestRunwayForHeadingParams * parms ) const
+FGRunwayRef FGAirport::findBestRunwayForHeading(double aHeading, struct FindBestRunwayForHeadingParams* params) const
 {
-  //FIXME must allign with FGAirportDynamics::getActiveRunway
-  loadRunways();
+    //FIXME must align with FGAirportDynamics::getActiveRunway
+    loadRunways();
 
-  FGRunway* result = NULL;
-  double currentBestQuality = 0.0;
+    FGRunway* result = NULL;
+    double currentBestQuality = 0.0;
 
-  struct FindBestRunwayForHeadingParams fbrfhp;
-  if( NULL != parms ) fbrfhp = *parms;
+    struct FindBestRunwayForHeadingParams fbrfhp;
+    if (NULL != params) fbrfhp = *params;
 
-  SGPropertyNode_ptr searchNode = fgGetNode("/sim/airport/runways/search");
-  if( searchNode.valid() ) {
-    fbrfhp.lengthWeight = searchNode->getDoubleValue("length-weight", fbrfhp.lengthWeight );
-    fbrfhp.widthWeight = searchNode->getDoubleValue("width-weight", fbrfhp.widthWeight );
-    fbrfhp.surfaceWeight = searchNode->getDoubleValue("surface-weight", fbrfhp.surfaceWeight );
-    fbrfhp.deviationWeight = searchNode->getDoubleValue("deviation-weight", fbrfhp.deviationWeight );
-    fbrfhp.ilsWeight = searchNode->getDoubleValue("ils-weight", fbrfhp.ilsWeight );
-  }
+    SGPropertyNode_ptr searchNode = fgGetNode("/sim/airport/runways/search");
+    if (searchNode.valid()) {
+        fbrfhp.lengthWeight = searchNode->getDoubleValue("length-weight", fbrfhp.lengthWeight);
+        fbrfhp.widthWeight = searchNode->getDoubleValue("width-weight", fbrfhp.widthWeight);
+        fbrfhp.surfaceWeight = searchNode->getDoubleValue("surface-weight", fbrfhp.surfaceWeight);
+        fbrfhp.deviationWeight = searchNode->getDoubleValue("deviation-weight", fbrfhp.deviationWeight);
+        fbrfhp.ilsWeight = searchNode->getDoubleValue("ils-weight", fbrfhp.ilsWeight);
+    }
 
   for (auto rwy : mRunways) {
     double good = rwy->score( fbrfhp.lengthWeight,  fbrfhp.widthWeight,  fbrfhp.surfaceWeight,  fbrfhp.ilsWeight );
@@ -402,7 +402,7 @@ void FGAirport::addLineFeature(FGPavementRef linefeature)
 FGRunwayRef FGAirport::getActiveRunwayForUsage() const
 {
   auto envMgr = globals->get_subsystem<FGEnvironmentMgr>();
-  
+
   // This forces West-facing rwys to be used in no-wind situations
   // which is consistent with Flightgear's initial setup.
   double hdg = 270;

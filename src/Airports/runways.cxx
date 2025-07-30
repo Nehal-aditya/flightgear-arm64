@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: (C) 2000 Curtis L. Olson - http://www.flightgear.org/~curt
+ * SPDX-FileCopyrightText: 2000 Curtis L. Olson
  * SPDX_FileComment: a simple class to manage airport runway info
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -41,7 +41,7 @@ FGRunway::FGRunway(PositionedID aGuid,
 
 string FGRunway::reverseIdent(const string& aRunwayIdent)
 {
-    // Helipads don't have a seperate number per end
+    // Helipads don't have a separate number per end
     if (aRunwayIdent.size() && (aRunwayIdent[0] == 'H' || aRunwayIdent[0] == 'h' || aRunwayIdent[0] == 'x')) {
         return aRunwayIdent;
     }
