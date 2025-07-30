@@ -3,28 +3,11 @@
 // Written by Torsten Dreyer, started August 2009
 // Based on work from David Megginson, started May 2001.
 //
-// Copyright (C) 2009 Torsten Dreyer, Torsten (at) t3r _dot_ de
-// Copyright (C) 2001 David Megginson, david@megginson.com
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2001 David Megginson <david@megginson.com>
+// SPDX-FileCopyrightText: 2009 Torsten Dreyer
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include "FGDeviceConfigurationMap.hxx"
 
@@ -56,7 +39,7 @@ FGDeviceConfigurationMap::FGDeviceConfigurationMap( const string& relative_path,
       overrideDict[nameProp->getStringValue() + suffix] = preloaded;
     } // of names iteration
   } // of defined overrides iteration
-  
+
   scan_dir( SGPath(globals->get_fg_home(), relative_path));
   scan_dir( SGPath(globals->get_fg_root(), relative_path));
 }
@@ -88,13 +71,13 @@ FGDeviceConfigurationMap::configurationForDeviceName(const std::string& name)
   if (j != overrideDict.end()) {
     return j->second;
   }
-  
+
 // no override, check out list of config files
   auto it = namePathMap.find(name);
   if (it == namePathMap.end()) {
     return {};
   }
-      
+
   SGPropertyNode_ptr result(new SGPropertyNode);
   try {
       readProperties(it->second, result);
@@ -115,7 +98,7 @@ bool FGDeviceConfigurationMap::hasConfiguration(const std::string& name) const
   if (j != overrideDict.end()) {
     return true;
   }
-  
+
   return namePathMap.find(name) != namePathMap.end();
 }
 
@@ -124,14 +107,14 @@ void FGDeviceConfigurationMap::scan_dir(const SGPath & path)
   SG_LOG(SG_INPUT, SG_DEBUG, "Scanning " << path << " for input devices");
   if (!path.exists())
     return;
-  
+
   flightgear::NavDataCache* cache = flightgear::NavDataCache::instance();
   flightgear::NavDataCache::Transaction txn(cache);
-  
+
   simgear::Dir dir(path);
-  simgear::PathList children = dir.children(simgear::Dir::TYPE_FILE | 
-    simgear::Dir::TYPE_DIR | simgear::Dir::NO_DOT_OR_DOTDOT);
-  
+  simgear::PathList children = dir.children(simgear::Dir::TYPE_FILE |
+                                            simgear::Dir::TYPE_DIR | simgear::Dir::NO_DOT_OR_DOTDOT);
+
   for (SGPath path : children) {
     if (path.isDir()) {
       scan_dir(path);
@@ -143,7 +126,7 @@ void FGDeviceConfigurationMap::scan_dir(const SGPath & path)
       } // of cached file stamp is valid
     } // of child is a file with '.xml' extension
   } // of directory children iteration
-  
+
   txn.commit();
 }
 
@@ -185,7 +168,7 @@ void FGDeviceConfigurationMap::refreshCacheForFile(const SGPath& path)
       namePathMap.insert(std::make_pair(name, path));
     }
   }
-  
+
   auto cache = flightgear::NavDataCache::instance();
   if (!cache->isReadOnly()) {
       cache->stampCacheFile(path);

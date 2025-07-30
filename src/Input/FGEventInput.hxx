@@ -2,26 +2,10 @@
 //
 // Written by Torsten Dreyer, started July 2009
 //
-// Copyright (C) 2009 Torsten Dreyer, Torsten (at) t3r _dot_ de
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2009 Torsten Dreyer
 
-#ifndef __FGEVENTINPUT_HXX
-#define __FGEVENTINPUT_HXX
+#pragma once
 
 #include "FGCommonInput.hxx"
 
@@ -55,7 +39,7 @@ class FGEventSetting : public SGReferenced
 {
 public:
     FGEventSetting( SGPropertyNode_ptr base );
-    // return evaluted condition or true if condition is nullptr
+    // return evaluated condition or true if condition is nullptr
     bool Test();
     // return either value of valueNode or value if valueNode is nullptr
     double GetValue();
@@ -129,7 +113,7 @@ public:
 
 protected:
     virtual void fire(SGAbstractBinding* binding, FGEventData& eventData);
-    /* A more or less meaningfull description of the event */
+    /* A more or less meaningful description of the event */
     std::string desc;
 
     /* One of the predefined names of the event */
@@ -267,7 +251,7 @@ protected:
     // of the same device
     std::string serialNumber;
 
-    // print out events comming in from the device
+    // print out events coming in from the device
     // if true
     bool debugEvents = false;
 
@@ -329,5 +313,3 @@ protected:
 private:
     std::string computeDeviceIndexName(FGInputDevice *dev) const;
 };
-
-#endif
