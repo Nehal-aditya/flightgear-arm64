@@ -4,6 +4,26 @@ A Qt-based remote canvas application for FlightGear. This app can connect to
 a FlightGear instance which has the built-in HTTPD server enabled and display
 any canvas in real-time.
 
+## Building
+
+On a Debian based system you have to install these packages:
+
+```text
+git cmake ninja-build gcc \
+qtbase5-dev qtbase5-private-dev \
+libqt5websockets5-dev \
+qtdeclarative5-dev qtdeclarative5-private-dev \
+qtquickcontrols2-5-dev qtquickcontrols2-5-private-dev \
+qml-module-qtquick2
+```
+
+* Clone the flightgear repo with
+  `git clone https://gitlab.com/flightgear/flightgear.git`
+* Change into the `utils/fgqcanvas/` directory
+* Run `cmake . -G Ninja && cmake --build .`
+* If you want to install FGQcanvas system wide, run
+  `cmake --install . --prefix=/your/install/path`
+
 ## Usage
 
 Start FlightGear with the '--httpd' option, passing a port number. This can be
@@ -27,7 +47,6 @@ Example Canvas path:
 ## Limitations
 
 * Clipping is still being worked on
-* Fonts are not loaded from the host instance yet
 * Image loading is still being worked on, no support for remote image loading
   yet.
 * Performance is mediocre due to proof-of-concept implementation
