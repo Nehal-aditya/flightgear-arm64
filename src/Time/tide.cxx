@@ -2,22 +2,8 @@
 //
 // Written by Erik Hofman, Octover 2020
 //
-// Copyright (C) 2020  Erik Hofman <erik@ehofman.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+// SPDX-FileCopyrightText: 2020 Erik Hofman <erik@ehofman.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <simgear/constants.h>
 #include <simgear/timing/sg_time.hxx>
@@ -62,7 +48,7 @@ void FGTide::update(double dt)
     // Don't know where the 60 degrees offset comes from but it matches
     // the tides perfectly at EHAL. Something to figure out.
     // Eureka: It was the latitude (53.45 degrees north).
-    // It turns out that the moon is draging the tide with an almost
+    // It turns out that the moon is dragging the tide with an almost
     // perfect 45 degrees 'bow-wave' along the equator. Tests at SMBQ
     // (0 degrees latitude) confirmed this finding.
     double viewer_lon = (viewLon->getDoubleValue()

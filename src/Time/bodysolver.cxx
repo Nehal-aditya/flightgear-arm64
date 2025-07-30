@@ -5,28 +5,11 @@
  *
  * Written by Curtis Olson, started September 2003.
  *
- * Copyright (C) 2003  Curtis L. Olson  - http://www.flightgear.org/~curt
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- * $Id$
+ * SPDX-FileCopyrightText: 2003 Curtis L. Olson
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#ifdef HAVE_CONFIG_H
-#      include <config.h>
-#endif
+#include <config.h>
 
 #include <cmath>
 #include <ctime>
@@ -69,7 +52,7 @@ void fgBodyPositionGST(double gst, double& lon, double& lat, bool sun_not_moon) 
     double dec = atan2(ze, sqrt(xs * xs + ye * ye));
 
     tmp = ra - (SGD_2PI/24)*gst;
-    
+
     double signedPI = (tmp < 0.0) ? -SGD_PI : SGD_PI;
     tmp = fmod(tmp+signedPI, SGD_2PI) - signedPI;
 
@@ -88,13 +71,13 @@ static double body_angle( const SGTime &t, const SGVec3d& world_up, bool sun_not
                                                         SGGeodesy::EQURAD));
 
     SG_LOG( SG_EVENT, SG_DEBUG, "    t.cur_time = " << t.get_cur_time() );
-    SG_LOG( SG_EVENT, SG_DEBUG, 
-	    "    " << body << " geocentric lat = " << gc_lat );
+    SG_LOG(SG_EVENT, SG_DEBUG,
+           "    " << body << " geocentric lat = " << gc_lat);
 
     // calculate the body's relative angle to local up
     SGVec3d nup = normalize(world_up);
     SGVec3d nbody = normalize(bodypos);
-    // cout << "nup = " << nup[0] << "," << nup[1] << "," 
+    // cout << "nup = " << nup[0] << "," << nup[1] << ","
     //      << nup[2] << endl;
     // cout << "nbody = " << nbody[0] << "," << nbody[1] << ","
     //      << nbody[2] << endl;

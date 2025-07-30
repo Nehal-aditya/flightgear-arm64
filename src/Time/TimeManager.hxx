@@ -1,25 +1,10 @@
-// TimeManager.hxx -- simulation-wide time management
-//
-// Written by James Turner, started July 2010.
-//
-// Copyright (C) 2010  Curtis L. Olson  - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+/*
+ * SPDX-FileComment: simulation-wide time management
+ * SPDX-FileCopyrightText: 2010 James Turner
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 
-#ifndef FG_TIME_TIMEMANAGER_HXX
-#define FG_TIME_TIMEMANAGER_HXX
+#pragma once
 
 #include <simgear/props/props.hxx>
 #include <simgear/structure/subsystem_mgr.hxx>
@@ -49,7 +34,7 @@ public:
     static const char* staticSubsystemClassId() { return "time"; }
 
     void computeTimeDeltas(double& simDt, double& realDt);
-    
+
     void computeTimeDeltasSimple(double& simDt, double& realDt);
 
     // SGPropertyChangeListener overrides
@@ -68,7 +53,7 @@ private:
 
     /**
      * Ensure a consistent update-rate using a combination of
-     * sleep()-ing and busy-waiting.  
+     * sleep()-ing and busy-waiting.
      */
     void throttleUpdateRate();
 
@@ -130,7 +115,7 @@ private:
     SGPropertyNode_ptr _modelHz;
     SGPropertyNode_ptr _timeDelta;
     SGPropertyNode_ptr _simTimeDelta;
-    
+
     bool    _simpleTimeEnabledPrev = false;
     SGPropertyNode_ptr _simpleTimeEnabled;
     SGPropertyNode_ptr _simpleTimeUtc;
@@ -138,5 +123,3 @@ private:
     double _simple_time_utc = 0;
     double _simple_time_fdm = 0;
 };
-
-#endif // of FG_TIME_TIMEMANAGER_HXX

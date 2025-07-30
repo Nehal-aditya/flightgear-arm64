@@ -1,13 +1,11 @@
 /*
  * SPDX-FileName: TimeManager.cxx
  * SPDX-FileComment: simulation-wide time management
- * SPDX-FileCopyrightText: Written by James Turner, started July 2010.
+ * SPDX-FileCopyrightText: 2010 James Turner
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#include "config.h"
 
 #include "TimeManager.hxx"
 
@@ -36,7 +34,7 @@ static bool do_timeofday (const SGPropertyNode * arg, SGPropertyNode * root)
     // wrap value (orig_warp) is retained in setTimeOffset. Ick.
         fgSetInt("/sim/time/warp", 0);
     }
-    
+
     self->setTimeOffset(offset_type, offset);
     return true;
 }
@@ -57,16 +55,16 @@ void TimeManager::init()
 {
   if (_inited) {
     // time manager has to be initialised early, so needs to be defensive
-    // about multiple initialisation 
-    return; 
+    // about multiple initialisation
+    return;
   }
-  
+
   _firstUpdate = true;
   _inited = true;
   _dtRemainder = 0.0;
   _mpProtocolClock = _steadyClock = 0.0;
   _adjustWarpOnUnfreeze = false;
-  
+
   _maxDtPerFrame = fgGetNode("/sim/max-simtime-per-frame", true);
   _clockFreeze = fgGetNode("/sim/freeze/clock", true);
   _timeOverride = fgGetNode("/sim/time/cur-time-override", true);
@@ -78,19 +76,19 @@ void TimeManager::init()
   _warpDelta = fgGetNode("/sim/time/warp-delta", true);
   _frameNumber = fgGetNode("/sim/frame-number", true);
   _simFixedDt = fgGetNode("/sim/time/fixed-dt", true);
-  
+
   SGPath zone(globals->get_fg_root());
   zone.append("Timezone");
-  
+
   _impl = new SGTime(globals->get_aircraft_position(), zone, _timeOverride->getLongValue());
-  
+
   _warpDelta->setDoubleValue(0.0);
   updateLocalTime();
-  
+
   _impl->update(globals->get_aircraft_position(), _timeOverride->getLongValue(),
                _warp->getIntValue());
   globals->set_time_params(_impl);
-    
+
   // frame-rate / worst-case latency / update-rate counters
   _frameRate = fgGetNode("/sim/frame-rate", true);
   _frameLatency = fgGetNode("/sim/frame-latency-max-ms", true);
@@ -98,7 +96,7 @@ void TimeManager::init()
   _lastFrameTime = 0;
   _frameLatencyMax = 0.0;
   _frameCount = 0;
-    
+
     _sceneryLoaded = fgGetNode("sim/sceneryloaded", true);
     _modelHz = fgGetNode("sim/model-hz", true);
     _timeDelta = fgGetNode("sim/time/delta-realtime-sec", true);
@@ -171,7 +169,7 @@ void TimeManager::reinit()
 void TimeManager::shutdown()
 {
   _warp->removeChangeListener(this);
-  
+
   globals->set_time_params(NULL);
   delete _impl;
   _impl = NULL;
@@ -187,7 +185,7 @@ void TimeManager::valueChanged(SGPropertyNode* aProp)
     // they specified.
       _adjustWarpOnUnfreeze = false;
     }
-    
+
     _impl->update(globals->get_aircraft_position(),
                    _timeOverride->getLongValue(),
                    _warp->getIntValue());
@@ -224,7 +222,7 @@ void TimeManager::computeTimeDeltasSimple(double& simDt, double& realDt)
     else
     {
         t = TimeUTC();
-        
+
         if (fixed_dt_prev)
         {
             // We are changing from fixed-dt mode to normal mode; avoid bogus
@@ -261,11 +259,11 @@ void TimeManager::computeTimeDeltasSimple(double& simDt, double& realDt)
         }
     }
     else {
-        // suppress framerate while initial scenery isn't loaded yet (splash screen still active) 
+        // suppress framerate while initial scenery isn't loaded yet (splash screen still active)
         _lastFrameTime=0;
         _frameCount = 0;
     }
-    
+
     // Increment <_simple_time_fdm> by a multiple of the FDM interval, such
     // that it is as close as possible, but not greater than, the current UTC
     // time <t>.
@@ -274,7 +272,7 @@ void TimeManager::computeTimeDeltasSimple(double& simDt, double& realDt)
     _simple_time_fdm += dt_fdm;
     _frameLatencyMax = std::max(_frameLatencyMax, t - _simple_time_utc);
     _simple_time_utc = t;
-    
+
     _simpleTimeUtc->setDoubleValue(_simple_time_utc);
     _simpleTimeFdm->setDoubleValue(_simple_time_fdm);
 
@@ -358,7 +356,7 @@ void TimeManager::computeTimeDeltas(double& simDt, double& realDt)
   if (!wait_for_scenery) {
     throttleUpdateRate();
   } else {
-      // suppress framerate while initial scenery isn't loaded yet (splash screen still active) 
+      // suppress framerate while initial scenery isn't loaded yet (splash screen still active)
       _lastFrameTime=0;
       _frameCount = 0;
   }
@@ -399,9 +397,9 @@ void TimeManager::computeTimeDeltas(double& simDt, double& realDt)
   if (0 < dtMax && dtMax < dt) {
     dt = dtMax;
   }
-    
-  SGSubsystemGroup* fdmGroup = 
-    globals->get_subsystem_mgr()->get_group(SGSubsystemMgr::FDM);
+
+  SGSubsystemGroup* fdmGroup =
+      globals->get_subsystem_mgr()->get_group(SGSubsystemMgr::FDM);
   fdmGroup->set_fixed_update_time(1.0 / modelHz);
 
   // round the real time down to a multiple of 1/model-hz.
@@ -469,15 +467,15 @@ void TimeManager::update(double dt)
       // account for speed-up in warp value. This implies when speed-up is not
       // 1.0 we need to continually adjust warp, either forwards for speed-up,
       // or backwards for a slow-down. Eg for a speed up of 4x, we want to
-      // incease warp by 3 additional seconds per elapsed real second.
-      // for a 1/2x factor, we want to decrease warp by half a second per
-      // elapsed real second.
-      double speedUp = _simTimeFactor->getDoubleValue() - 1.0;
-      if (speedUp != 0.0) {
-          double realDt = _timeDelta->getDoubleValue();
-          double speedUpOffset = speedUp * realDt;
-          _warp->setDoubleValue(_warp->getDoubleValue() + speedUpOffset);
-      }
+    // increase warp by 3 additional seconds per elapsed real second.
+    // for a 1/2x factor, we want to decrease warp by half a second per
+    // elapsed real second.
+    double speedUp = _simTimeFactor->getDoubleValue() - 1.0;
+    if (speedUp != 0.0) {
+        double realDt = _timeDelta->getDoubleValue();
+        double speedUpOffset = speedUp * realDt;
+        _warp->setDoubleValue(_warp->getDoubleValue() + speedUpOffset);
+    }
   } // of sim not frozen
 
     // scale warp-delta by real-dt, so rate is constant with frame-rate,
@@ -515,7 +513,7 @@ void TimeManager::computeFrameRate()
     _frameCount = 0;
     _frameLatencyMax = 0.0;
   }
-  
+
   _lastFrameTime = _impl->get_cur_time();
   ++_frameCount;
 }
@@ -546,7 +544,7 @@ void TimeManager::reposition()
 }
 
 // periodic time updater wrapper
-void TimeManager::updateLocalTime() 
+void TimeManager::updateLocalTime()
 {
     _lastTimeZoneCheckPosition = globals->get_aircraft_position_cart();
     _impl->updateLocal(globals->get_aircraft_position(), globals->get_fg_root() / "Timezone");
@@ -560,7 +558,7 @@ void TimeManager::updateLocalTimeString()
     if (!_impl->get_zonename()) {
         return;
     }
-    
+
     struct tm* aircraftLocalTime = fgLocaltime(&cur_time, _impl->get_zonename());
     static char buf[16];
     snprintf(buf, 16, "%.2d:%.2d:%.2d",
@@ -594,13 +592,13 @@ void TimeManager::setTimeOffset(const std::string& offset_type, long int offset)
   time_t cur_time = _impl->get_cur_time();
   time_t currGMT = sgTimeGetGMT( gmtime(&cur_time) );
   time_t systemLocalTime = sgTimeGetGMT( localtime(&cur_time) );
-  time_t aircraftLocalTime = 
-      sgTimeGetGMT( fgLocaltime(&cur_time, _impl->get_zonename() ) );
-    
+  time_t aircraftLocalTime =
+      sgTimeGetGMT(fgLocaltime(&cur_time, _impl->get_zonename()));
+
   // Okay, we now have several possible scenarios
   SGGeod loc = globals->get_aircraft_position();
   int warp = 0;
-  
+
   if ( offset_type == "real" ) {
       warp = 0;
   } else if ( offset_type == "dawn" ) {
@@ -631,13 +629,13 @@ void TimeManager::setTimeOffset(const std::string& offset_type, long int offset)
   } else if ( offset_type == "gmt" ) {
       warp = offset - cur_time;
   } else if ( offset_type == "latitude" ) {
-      warp = offset - (aircraftLocalTime - currGMT)- cur_time; 
+      warp = offset - (aircraftLocalTime - currGMT) - cur_time;
   } else {
     SG_LOG( SG_GENERAL, SG_ALERT,
           "TimeManager::setTimeOffset: unsupported offset: " << offset_type );
      warp = 0;
   }
-  
+
   if( fgGetBool("/sim/time/warp-easing", false) && !fgGetBool("/devices/status/keyboard/ctrl", false)) {
     double duration = fgGetDouble("/sim/time/warp-easing-duration-secs", 5.0 );
     const std::string easing = fgGetString("/sim/time/warp-easing-method", "swing" );

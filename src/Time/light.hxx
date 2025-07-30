@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: light.hxx
  * SPDX-FileComment: lighting routines
- * SPDX-FileCopyrightText: Copyright (C) 1998  Curtis L. Olson  - http://www.flightgear.org/~curt
+ * SPDX-FileCopyrightText: 1998 Curtis L. Olson
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
