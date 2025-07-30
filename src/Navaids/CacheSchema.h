@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2013 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #pragma once
 
 const int SCHEMA_VERSION = 27;

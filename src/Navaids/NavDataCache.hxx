@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: (C) 2012 James Turner <james@flightgear.org>
+ * SPDX-FileCopyrightText: 2012 James Turner <james@flightgear.org>
  * SPDX_FileComment: Defines a unified binary cache for navigation data, parsed from text/XMl sources
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -274,7 +274,7 @@ public:
    */
     int getOctreeBranchChildren(int64_t octreeNodeId);
 
-    void defineOctreeNode(Octree::Branch* pr, Octree::Node* nd);
+    void defineOctreeNode(Octree::Branch* pr, Octree::Node* n);
 
     /**
    * given an octree leaf, return all its child positioned items and their types
@@ -298,7 +298,7 @@ public:
     bool isInAirwayNetwork(int network, PositionedID pos);
 
     /**
-   * retrive all the destination points reachable from a positioned
+   * retrieve all the destination points reachable from a positioned
    * in an airway
    */
     AirwayEdgeVec airwayEdgesFrom(int network, PositionedID pos);

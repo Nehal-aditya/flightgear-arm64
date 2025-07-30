@@ -1,27 +1,9 @@
 // awynet.cxx
 // by Durk Talsma, started June 2005.
-//
-// Copyright (C) 2004 Durk Talsma.
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-FileCopyrightText: 2005 Durk Talsma
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <math.h>
 #include <algorithm>
@@ -409,34 +391,33 @@ void FGAirwayNetwork::trace(FGNode *currNode, int end, int depth, double distanc
 
   // search if the currentNode has been encountered before
   // if so, we should step back one level, because it is
-  // rather rediculous to proceed further from here.
-  // if the current node has not been encountered before,
-  // i should point to traceStack.end()-1; and we can continue
-  // if i is not traceStack.end, the previous node was found,
-  // and we should return.
-  // This only works at trace levels of 1 or higher though
-  if (depth > 0) {
-    intVecIterator i = traceStack.begin();
-    while ((*i) != currNode->getIndex()) {
-      //cerr << "Route so far : " << (*i) << endl;
-      i++;
+    // rather ridiculous to proceed further from here.
+    // if the current node has not been encountered before,
+    // i should point to traceStack.end()-1; and we can continue
+    // if i is not traceStack.end, the previous node was found,
+    // and we should return.
+    // This only works at trace levels of 1 or higher though
+    if (depth > 0) {
+        intVecIterator i = traceStack.begin();
+        while ((*i) != currNode->getIndex()) {
+            //cerr << "Route so far : " << (*i) << endl;
+            i++;
+        }
+        if (i != traceStack.end() - 1) {
+            traceStack.pop_back();
+            totalDistance -= distance;
+            return;
+        }
+        // If the total distance from start to the current waypoint
+        // is longer than that of a route we can also stop this trace
+        // and go back one level.
+        if ((totalDistance > maxDistance) && foundRoute) {
+            cerr << "Stopping rediculously long trace: " << totalDistance << endl;
+            traceStack.pop_back();
+            totalDistance -= distance;
+            return;
+        }
     }
-    if (i != traceStack.end()-1) {
-      traceStack.pop_back();
-      totalDistance -= distance;
-      return;
-    }
-    // If the total distance from start to the current waypoint
-    // is longer than that of a route we can also stop this trace
-    // and go back one level.
-    if ((totalDistance > maxDistance) && foundRoute)
-      {
-	cerr << "Stopping rediculously long trace: " << totalDistance << endl;
-	traceStack.pop_back();
-	totalDistance -= distance;
-	return;
-      }
-  }
 
   //cerr << "2" << endl;
   if (currNode->getBeginRoute() != currNode->getEndRoute())

@@ -1,6 +1,7 @@
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+// SPDX-FileCopyrightText: 2012 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "config.h"
 
 #include <algorithm>
 
@@ -89,14 +90,14 @@ void NavdataVisitor::startElement(const char* name, const XMLAttributes &atts)
 
     _approach = new Approach(_ident, ty);
     _procedure = _approach;
-  } else if ((tag == "Sid_Transition") || 
+  } else if ((tag == "Sid_Transition") ||
              (tag == "App_Transition") ||
              (tag == "Star_Transition")) {
-    _transIdent = atts.getValue("Name");
-    _transition = new Transition(_transIdent, PROCEDURE_TRANSITION, _procedure);
-    _transWaypts.clear();
+      _transIdent = atts.getValue("Name");
+      _transition = new Transition(_transIdent, PROCEDURE_TRANSITION, _procedure);
+      _transWaypts.clear();
   } else if (tag == "RunwayTransition") {
-    _transIdent = atts.getValue("Runway");
+      _transIdent = atts.getValue("Runway");
       if (!_airport->hasRunwayWithIdent(_transIdent)) {
           _transIdent.clear();
           _transition = nullptr;
@@ -105,7 +106,7 @@ void NavdataVisitor::startElement(const char* name, const XMLAttributes &atts)
           _transWaypts.clear();
       }
   } else {
-    // nothing here, we warn on unrecognized in endElement
+      // nothing here, we warn on unrecognized in endElement
   }
 }
 
@@ -115,14 +116,14 @@ void NavdataVisitor::processRunways(ArrivalDeparture* aProc, const XMLAttributes
   if (atts.hasAttribute("Runways")) {
     v = atts.getValue("Runways");
   }
-  
+
   if (v == "All") {
     for (unsigned int r=0; r<_airport->numRunways(); ++r) {
       aProc->addRunway(_airport->getRunwayByIndex(r));
     }
     return;
   }
-  
+
   auto rwys = simgear::strutils::split_on_any_of(v, " ,");
   for (auto rwy : rwys) {
       if (!_airport->hasRunwayWithIdent(rwy)) {
@@ -147,32 +148,31 @@ void NavdataVisitor::endElement(const char* name)
       (tag == "Star_Waypoint"))
   {
     _waypoints.push_back(buildWaypoint(_procedure));
-  } else if ((tag == "AppTr_Waypoint") || 
+  } else if ((tag == "AppTr_Waypoint") ||
              (tag == "SidTr_Waypoint") ||
              (tag == "RwyTr_Waypoint") ||
-             (tag == "StarTr_Waypoint")) 
-  {
-    _transWaypts.push_back(buildWaypoint(_transition));
+             (tag == "StarTr_Waypoint")) {
+      _transWaypts.push_back(buildWaypoint(_transition));
   } else if (tag == "Sid_Transition") {
-    assert(_sid);
-    // SID waypoints are stored backwards, to share code with STARs
-    std::reverse(_transWaypts.begin(), _transWaypts.end());
-    _transition->setPrimary(_transWaypts);
-    _sid->addTransition(_transition);
+      assert(_sid);
+      // SID waypoints are stored backwards, to share code with STARs
+      std::reverse(_transWaypts.begin(), _transWaypts.end());
+      _transition->setPrimary(_transWaypts);
+      _sid->addTransition(_transition);
   } else if (tag == "Star_Transition") {
-    assert(_star);
-    _transition->setPrimary(_transWaypts);
-    _star->addTransition(_transition);
+      assert(_star);
+      _transition->setPrimary(_transWaypts);
+      _star->addTransition(_transition);
   } else if (tag == "App_Transition") {
-    assert(_approach);
-    _transition->setPrimary(_transWaypts);
-    _approach->addTransition(_transition);
+      assert(_approach);
+      _transition->setPrimary(_transWaypts);
+      _approach->addTransition(_transition);
   } else if (tag == "RunwayTransition") {
       if (!_transition) {
           // transition was skipped for some reason
           return;
       }
-      
+
     ArrivalDeparture* ad;
     if (_sid) {
       // SID waypoints are stored backwards, to share code with STARs
@@ -186,57 +186,56 @@ void NavdataVisitor::endElement(const char* name)
     FGRunwayRef rwy = _airport->getRunwayByIdent(_transIdent);
     ad->addRunwayTransition(rwy, _transition);
   } else if (tag == "Approach") {
-    finishApproach();
+      finishApproach();
   } else if (tag == "Sid") {
-    finishSid();
+      finishSid();
   } else if (tag == "Star") {
-    finishStar();  
+      finishStar();
   } else if (tag == "Longitude") {
-    _longitude = atof(_text.c_str());
+      _longitude = atof(_text.c_str());
   } else if (tag == "Latitude") {
-    _latitude = atof(_text.c_str());
+      _latitude = atof(_text.c_str());
   } else if (tag == "Name") {
-    _wayptName = _text;
+      _wayptName = _text;
   } else if (tag == "Type") {
-    _wayptType = _text;
+      _wayptType = _text;
   } else if (tag == "Speed") {
-    _speed = atoi(_text.c_str());
+      _speed = atoi(_text.c_str());
   } else if (tag == "Altitude") {
-    _altitude = atof(_text.c_str());
+      _altitude = atof(_text.c_str());
   } else if (tag == "AltitudeRestriction") {
       _altRestrict = restrictionFromString(_text);
   } else if (tag == "Hld_Rad_or_Inbd") {
-    if (_text == "Inbd") {
-      _holdRadial = -1.0;
-    }
+      if (_text == "Inbd") {
+          _holdRadial = -1.0;
+      }
   } else if (tag == "Hld_Time_or_Dist") {
-    _holdDistance = (_text == "Dist");
+      _holdDistance = (_text == "Dist");
   } else if (tag == "Hld_Rad_value") {
-    _holdRadial = atof(_text.c_str());
+      _holdRadial = atof(_text.c_str());
   } else if (tag == "Hld_Turn") {
-    _holdRighthanded = (_text == "Right");
+      _holdRighthanded = (_text == "Right");
   } else if (tag == "Hld_td_value") {
-    _holdTD = atof(_text.c_str());
+      _holdTD = atof(_text.c_str());
   } else if (tag == "Hdg_Crs") {
-    _courseFlag = atoi(_text.c_str());
+      _courseFlag = atoi(_text.c_str());
   } else if (tag == "Hdg_Crs_value") {
-    _courseOrHeading = atof(_text.c_str());
+      _courseOrHeading = atof(_text.c_str());
   } else if (tag == "DMEtoIntercept") {
-    _dmeDistance = atof(_text.c_str());
+      _dmeDistance = atof(_text.c_str());
   } else if (tag == "RadialtoIntercept") {
-    _radial = atof(_text.c_str());
+      _radial = atof(_text.c_str());
   } else if (tag == "Flytype") {
-    // values are 'Fly-by' and 'Fly-over'
-    _overflightWaypt = (_text == "Fly-over");
+      // values are 'Fly-by' and 'Fly-over'
+      _overflightWaypt = (_text == "Fly-over");
   } else if ((tag == "AltitudeCons") ||
              (tag == "BankLimit") ||
              (tag == "Sp_Turn") ||
              (tag == "Airport") ||
-             (tag == "ProceduresDB"))
-  {
-    // ignored but don't warn
+             (tag == "ProceduresDB")) {
+      // ignored but don't warn
   } else {
-    SG_LOG(SG_IO, SG_INFO, "unrecognized Level-D XML element:" << tag);
+      SG_LOG(SG_IO, SG_INFO, "unrecognized Level-D XML element:" << tag);
   }
 }
 
@@ -275,13 +274,13 @@ Waypt* NavdataVisitor::buildWaypoint(RouteBase* owner)
     } else {
       h->setLeftHanded();
     }
-    
+
     if (_holdDistance) {
       h->setHoldDistance(_holdTD);
     } else {
       h->setHoldTime(_holdTD * 60.0);
     }
-    
+
     if (_holdRadial >= 0.0) {
       h->setHoldRadial(_holdRadial);
     }
@@ -304,20 +303,20 @@ Waypt* NavdataVisitor::buildWaypoint(RouteBase* owner)
     SG_LOG(SG_NAVAID, SG_ALERT, "implement waypoint type:" << _wayptType);
     throw sg_format_exception("Unrecognized waypt type", _wayptType);
   }
-  
+
   assert(wp);
   if ((_altitude > 0.0) && (_altRestrict != RESTRICT_NONE)) {
     wp->setAltitude(_altitude,_altRestrict);
   }
-  
+
   if (_speed > 0.0) {
     wp->setSpeed(_speed, RESTRICT_AT); // or _BELOW?
   }
-  
+
   if (_overflightWaypt) {
     wp->setFlag(WPT_OVERFLIGHT);
   }
-  
+
   return wp;
 }
 
@@ -325,32 +324,32 @@ void NavdataVisitor::finishApproach()
 {
   WayptVec::iterator it;
   FGRunwayRef rwy;
-  
+
 // find the runway node
   for (it = _waypoints.begin(); it != _waypoints.end(); ++it) {
     FGPositionedRef navid = (*it)->source();
     if (!navid) {
       continue;
     }
-    
+
     if (navid->type() == FGPositioned::RUNWAY) {
       rwy = (FGRunway*) navid.get();
       break;
     }
   }
-  
+
   if (!rwy) {
       SG_LOG(SG_NAVAID, SG_DEV_WARN, "Parsing:" << _path << " found approach without a runway:" << _ident);
       delete _approach;
       _approach = nullptr;
       return;
   }
-  
+
   WayptVec primary(_waypoints.begin(), it);
   // erase all points up to and including the runway, to leave only the
   // missed segments
   _waypoints.erase(_waypoints.begin(), ++it);
-  
+
   _approach->setRunway(rwy);
   _approach->setPrimaryAndMissed(primary, _waypoints);
   _airport->addApproach(_approach);

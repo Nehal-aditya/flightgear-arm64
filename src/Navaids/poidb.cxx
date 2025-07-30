@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: (C) Christian Schmitt, March 2013
+ * SPDX-FileCopyrightText: 2013 Christian Schmitt
  * SPDX_FileComment: points of interest management routines
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -29,7 +29,7 @@ mapPOITypeToFGPType(int aTy)
   case 12: return FGPositioned::CITY;
   case 13: return FGPositioned::TOWN;
   case 14: return FGPositioned::VILLAGE;
-  
+
   case 1000: return FGPositioned::VISUAL_REPORTING_POINT;
   case 1001: return FGPositioned::WAYPOINT;
 
@@ -47,16 +47,14 @@ static const double DUPLICATE_DETECTION_RADIUS_NM = 10;
 
 static const double DUPLICATE_DETECTION_RADIUS_SQR_M = DUPLICATE_DETECTION_RADIUS_NM * DUPLICATE_DETECTION_RADIUS_NM * SG_NM_TO_METER * SG_NM_TO_METER;
 
-static bool isNearby(const SGVec3d& pos1, const SGVec3d& pos2) 
+static bool isNearby(const SGVec3d& pos1, const SGVec3d& pos2)
 {
   const double d = distSqr(pos1, pos2);
   return d <= DUPLICATE_DETECTION_RADIUS_SQR_M;
 }
 
-POILoader::POILoader() : 
-  _cache(NavDataCache::instance())
-{ 
-
+POILoader::POILoader() : _cache(NavDataCache::instance())
+{
 }
 
 
@@ -125,7 +123,7 @@ PositionedID POILoader::readPOIFromStream(std::istream& aStream,
         aStream >> skipeol;
         return 0;
     }
-    
+
   int rawType;
   aStream >> rawType;
   double lat, lon;

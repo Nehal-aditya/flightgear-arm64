@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (C) 2004  Curtis L. Olson - http://www.flightgear.org/~curt
+ * SPDX-FileCopyrightText: 2004 Curtis L. Olson
  * SPDX_FileComment: top level navaids management routines
  * SPDX-License-Identifier: GPL-2.0-or-later
  */

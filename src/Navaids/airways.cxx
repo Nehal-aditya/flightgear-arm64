@@ -1,21 +1,8 @@
 // airways.cxx - storage of airways network, and routing between nodes
 // Written by James Turner, started 2009.
 //
-// Copyright (C) 2009  Curtis L. Olson
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2009 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
 #include "simgear/debug/debug_types.h"
@@ -54,31 +41,30 @@ typedef SGSharedPtr<FGPositioned> FGPositionedRef;
 class AStarOpenNode : public SGReferenced
 {
 public:
-  AStarOpenNode(FGPositionedRef aNode, double aLegDist, 
-    int aAirway,
-    FGPositionedRef aDest, AStarOpenNode* aPrev) :
-    node(aNode),
-    previous(aPrev),
-    airway(aAirway)
-  { 
-    distanceFromStart = aLegDist;
-    if (previous) {
-      distanceFromStart +=  previous->distanceFromStart;
+    AStarOpenNode(FGPositionedRef aNode, double aLegDist,
+                  int aAirway,
+                  FGPositionedRef aDest, AStarOpenNode* aPrev) : node(aNode),
+                                                                 previous(aPrev),
+                                                                 airway(aAirway)
+    {
+        distanceFromStart = aLegDist;
+        if (previous) {
+            distanceFromStart += previous->distanceFromStart;
+        }
+
+        directDistanceToDestination = SGGeodesy::distanceM(node->geod(), aDest->geod());
     }
-    
-		directDistanceToDestination = SGGeodesy::distanceM(node->geod(), aDest->geod());
-  }
-  
+
   virtual ~AStarOpenNode()
   {
   }
-  
+
   FGPositionedRef node;
   SGSharedPtr<AStarOpenNode> previous;
   int airway;
   double distanceFromStart; // aka 'g(x)'
   double directDistanceToDestination; // aka 'h(x)'
-  
+
   /**
 	 * aka 'f(x)'
 	 */
@@ -94,12 +80,12 @@ using AStarOpenNodeRef = SGSharedPtr<AStarOpenNode>;
 Airway::Network* Airway::lowLevel()
 {
   static Network* static_lowLevel = nullptr;
-  
+
   if (!static_lowLevel) {
       static_lowLevel = new Network;
       static_lowLevel->_networkID = Airway::LowLevel;
   }
-  
+
   return static_lowLevel;
 }
 
@@ -110,7 +96,7 @@ Airway::Network* Airway::highLevel()
     static_highLevel = new Network;
       static_highLevel->_networkID = Airway::HighLevel;
   }
-  
+
   return static_highLevel;
 }
 
@@ -150,14 +136,14 @@ void Airway::loadAWYDat(const SGPath& path)
     if (identStart == "99") {
       break;
     }
-    
+
     in >> latStart >> lonStart >> identEnd >> latEnd >> lonEnd >> type >> base >> top >> name;
     in >> skipeol;
 
     // type = 1; low-altitude (victor)
     // type = 2; high-altitude (jet)
     Network* net = (type == 1) ? lowLevel() : highLevel();
-  
+
     SGGeod startPos(SGGeod::fromDeg(lonStart, latStart)),
       endPos(SGGeod::fromDeg(lonEnd, latEnd));
 
@@ -205,7 +191,7 @@ bool Airway::canVia(const WayptRef& from, const WayptRef& to) const
     if ((fit == _elements.end()) || (tit == _elements.end())) {
         return false;
     }
-    
+
     if (fit < tit) {
         // forward progression
         for (++fit; fit != tit; ++fit) {
@@ -247,7 +233,7 @@ WayptVec Airway::via(const WayptRef& from, const WayptRef& to) const
     }
 
     // establish the ordering of the transitions, i.e are we moving forward or
-    // backard along the airway.
+    // backward along the airway.
     if (fit < tit) {
         // forward progression
         for (++fit; fit != tit; ++fit) {
@@ -268,7 +254,7 @@ bool Airway::containsNavaid(const FGPositionedRef &navaid) const
 {
     if (!navaid)
         return false;
-    
+
     loadWaypoints();
     auto it = std::find_if(_elements.begin(), _elements.end(),
                            [navaid](WayptRef w)
@@ -340,7 +326,7 @@ AirwayRef Airway::findByIdent(const std::string& aIdent, Level level)
         return NavDataCache::instance()->loadAirway(cacheId);
         ;
     }
-    
+
 void Airway::loadWaypoints() const
 {
     NavDataCache* ndc = NavDataCache::instance();
@@ -356,19 +342,19 @@ void Airway::loadWaypoints() const
         }
     }
 }
-    
+
 AirwayRef Airway::findByIdentAndVia(const std::string& aIdent, const WayptRef& from, const WayptRef& to)
 {
     AirwayRef hi = findByIdent(aIdent, HighLevel);
     if (hi && hi->canVia(from, to)) {
         return hi;
     }
-    
+
     AirwayRef low = findByIdent(aIdent, LowLevel);
     if (low && low->canVia(from, to)) {
         return low;
     }
-    
+
     return nullptr;
 }
 
@@ -399,12 +385,12 @@ AirwayRef Airway::findByIdentAndNavaid(const std::string& aIdent, const FGPositi
     if (hi && hi->containsNavaid(nav)) {
         return hi;
     }
-    
+
     AirwayRef low = findByIdent(aIdent, LowLevel);
     if (low && low->containsNavaid(nav)) {
         return low;
     }
-    
+
     return nullptr;
 }
 
@@ -417,7 +403,7 @@ WayptRef Airway::findEnroute(const std::string &aIdent) const
         if (!w) return false;
         return w->ident() == aIdent;
     });
-    
+
     if (it != _elements.end())
         return *it;
     return {};
@@ -432,29 +418,29 @@ WayptRef Airway::findEnroute(const FGPositionedRef& nav) const
         if (!w) return false;
         return w->source() == nav;
     });
-    
+
     if (it != _elements.end())
         return *it;
     return {};
 }
 
 void Airway::Network::addEdge(int aWay, const SGGeod& aStartPos,
-  const std::string& aStartIdent, 
-  const SGGeod& aEndPos, const std::string& aEndIdent)
+                              const std::string& aStartIdent,
+                              const SGGeod& aEndPos, const std::string& aEndIdent)
 {
   FGPositionedRef start = FGPositioned::findClosestWithIdent(aStartIdent, aStartPos);
   FGPositionedRef end = FGPositioned::findClosestWithIdent(aEndIdent, aEndPos);
-    
+
   if (!start) {
     SG_LOG(SG_NAVAID, SG_DEBUG, "unknown airways start pt: '" << aStartIdent << "'");
     start = FGPositioned::createWaypoint(FGPositioned::WAYPOINT, aStartIdent, aStartPos);
   }
-  
+
   if (!end) {
     SG_LOG(SG_NAVAID, SG_DEBUG, "unknown airways end pt: '" << aEndIdent << "'");
     end = FGPositioned::createWaypoint(FGPositioned::WAYPOINT, aEndIdent, aEndPos);
   }
-  
+
   NavDataCache::instance()->insertEdge(_networkID, aWay, start->guid(), end->guid());
 }
 
@@ -466,26 +452,26 @@ static double headingDiffDeg(double a, double b)
     SG_NORMALIZE_RANGE(rawDiff, -180.0, 180.0);
     return rawDiff;
 }
-    
+
 bool Airway::Network::inNetwork(PositionedID posID) const
 {
   NetworkMembershipDict::iterator it = _inNetworkCache.find(posID);
   if (it != _inNetworkCache.end()) {
     return it->second; // cached, easy
   }
-  
+
   bool r =  NavDataCache::instance()->isInAirwayNetwork(_networkID, posID);
   _inNetworkCache.insert(it, std::make_pair(posID, r));
   return r;
 }
 
-bool Airway::Network::route(WayptRef aFrom, WayptRef aTo, 
-  WayptVec& aPath)
+bool Airway::Network::route(WayptRef aFrom, WayptRef aTo,
+                            WayptVec& aPath)
 {
   if (!aFrom || !aTo) {
     throw sg_exception("invalid waypoints to route between");
   }
-  
+
 // find closest nodes on the graph to from/to
 // if argument waypoints are directly on the graph (which is frequently the
 // case), note this so we don't duplicate them in the output.
@@ -494,7 +480,7 @@ bool Airway::Network::route(WayptRef aFrom, WayptRef aTo,
   bool exactTo, exactFrom;
   std::tie(from, exactFrom) = findClosestNode(aFrom);
   std::tie(to, exactTo) = findClosestNode(aTo);
-  
+
 #ifdef DEBUG_AWY_SEARCH
   SG_LOG(SG_NAVAID, SG_INFO, "from:" << from->ident() << "/" << from->name());
   SG_LOG(SG_NAVAID, SG_INFO, "to:" << to->ident() << "/" << to->name());
@@ -504,10 +490,10 @@ bool Airway::Network::route(WayptRef aFrom, WayptRef aTo,
   if (!ok) {
     return false;
   }
-  
+
   return cleanGeneratedPath(aFrom, aTo, aPath, exactTo, exactFrom);
 }
-  
+
 bool Airway::Network::cleanGeneratedPath(WayptRef aFrom, WayptRef aTo, WayptVec& aPath,
                                 bool exactTo, bool exactFrom)
 {
@@ -522,23 +508,23 @@ bool Airway::Network::cleanGeneratedPath(WayptRef aFrom, WayptRef aTo, WayptVec&
   // note we delete a maximum of one leg, and no more. This is a heuristic - we
   // could check the next (previous) legs, but at some point we'll end up
   // deleting too much.
-  
+
   const double MAX_DOG_LEG = 90.0;
   double enrouteCourse = SGGeodesy::courseDeg(aFrom->position(), aTo->position()),
   finalLegCourse = SGGeodesy::courseDeg(aPath.back()->position(), aTo->position());
-  
+
   bool isDogLeg = fabs(headingDiffDeg(enrouteCourse, finalLegCourse)) > MAX_DOG_LEG;
   if (exactTo || isDogLeg) {
     aPath.pop_back();
   }
-  
+
   // edge case - if from and to are equal, which can happen, don't
   // crash here. This happens routing EGPH -> EGCC; 'DCS' is common
   // to the EGPH departure and EGCC STAR.
   if (aPath.empty()) {
     return true;
   }
-  
+
   double initialLegCourse = SGGeodesy::courseDeg(aFrom->position(), aPath.front()->position());
   isDogLeg = fabs(headingDiffDeg(enrouteCourse, initialLegCourse)) > MAX_DOG_LEG;
   if (exactFrom || isDogLeg) {
@@ -548,7 +534,7 @@ bool Airway::Network::cleanGeneratedPath(WayptRef aFrom, WayptRef aTo, WayptVec&
   return true;
 }
 
-std::pair<FGPositionedRef, bool> 
+std::pair<FGPositionedRef, bool>
 Airway::Network::findClosestNode(WayptRef aRef)
 {
     if (aRef->source()) {
@@ -557,7 +543,7 @@ Airway::Network::findClosestNode(WayptRef aRef)
             return std::make_pair(aRef->source(), true);
         }
     }
-  
+
     return findClosestNode(aRef->position());
 }
 
@@ -567,33 +553,33 @@ public:
   InAirwayFilter(const Airway::Network* aNet) :
     _net(aNet)
   { ; }
-  
+
   virtual bool pass(FGPositioned* aPos) const
   {
     return _net->inNetwork(aPos->guid());
   }
-  
+
   virtual FGPositioned::Type minType() const
   { return FGPositioned::WAYPOINT; }
-  
+
   virtual FGPositioned::Type maxType() const
   { return FGPositioned::VOR; }
-  
+
 private:
   const Airway::Network* _net;
 };
 
-std::pair<FGPositionedRef, bool> 
+std::pair<FGPositionedRef, bool>
 Airway::Network::findClosestNode(const SGGeod& aGeod)
 {
   InAirwayFilter f(this);
   FGPositionedRef r = FGPositioned::findClosest(aGeod, 800.0, &f);
   bool exact = false;
-  
+
   if (r && (SGGeodesy::distanceM(aGeod, r->geod()) < 100.0)) {
     exact = true; // within 100 metres, let's call that exact
   }
-  
+
   return make_pair(r, exact);
 }
 
@@ -615,7 +601,7 @@ static void buildWaypoints(AStarOpenNodeRef aNode, WayptVec& aRoute)
   AStarOpenNodeRef n = aNode;
   for (; n != nullptr; ++count, n = n->previous) {;}
   aRoute.resize(count);
-  
+
 // run over the route, creating waypoints
   for (n = aNode; n; n=n->previous) {
       // get / create airway to be the owner for this waypoint
@@ -630,7 +616,7 @@ static void buildWaypoints(AStarOpenNodeRef aNode, WayptVec& aRoute)
 }
 
 /**
- * Inefficent (linear) helper to find an open node in the heap
+ * Inefficient (linear) helper to find an open node in the heap
  */
 static AStarOpenNodeRef
 findInOpen(const OpenNodeHeap& aHeap, FGPositioned* aPos)
@@ -640,7 +626,7 @@ findInOpen(const OpenNodeHeap& aHeap, FGPositioned* aPos)
       return aHeap[i];
     }
   }
-  
+
   return nullptr;
 }
 
@@ -655,34 +641,34 @@ public:
 
 bool Airway::Network::search2(FGPositionedRef aStart, FGPositionedRef aDest,
   WayptVec& aRoute)
-{  
-  typedef set<PositionedID> ClosedNodeSet;
-  
-  OpenNodeHeap openNodes;
-  ClosedNodeSet closedNodes;
-  HeapOrder ordering;
-  
-  openNodes.push_back(new AStarOpenNode(aStart, 0.0, 0, aDest, nullptr));
-  
-// A* open node iteration
-  while (!openNodes.empty()) {
-    std::pop_heap(openNodes.begin(), openNodes.end(), ordering);
-    AStarOpenNodeRef x = openNodes.back();
-    FGPositioned* xp = x->node;    
-    openNodes.pop_back();
-    closedNodes.insert(xp->guid());
-  
+{
+    typedef set<PositionedID> ClosedNodeSet;
+
+    OpenNodeHeap openNodes;
+    ClosedNodeSet closedNodes;
+    HeapOrder ordering;
+
+    openNodes.push_back(new AStarOpenNode(aStart, 0.0, 0, aDest, nullptr));
+
+    // A* open node iteration
+    while (!openNodes.empty()) {
+        std::pop_heap(openNodes.begin(), openNodes.end(), ordering);
+        AStarOpenNodeRef x = openNodes.back();
+        FGPositioned* xp = x->node;
+        openNodes.pop_back();
+        closedNodes.insert(xp->guid());
+
 #ifdef DEBUG_AWY_SEARCH
     SG_LOG(SG_NAVAID, SG_INFO, "x:" << xp->ident() << ", f(x)=" << x->totalCost());
 #endif
-    
+
   // check if xp is the goal; if so we're done, since there cannot be an open
   // node with lower f(x) value.
     if (xp == aDest) {
       buildWaypoints(x, aRoute);
       return true;
     }
-    
+
   // adjacent (neighbour) iteration
     NavDataCache* cache = NavDataCache::instance();
     for (auto other : cache->airwayEdgesFrom(_networkID, xp->guid())) {
@@ -703,7 +689,7 @@ bool Airway::Network::search2(FGPositionedRef aStart, FGPositionedRef aDest,
 #endif
           continue;
         }
-        
+
       // we need to update y. Unfortunately this means rebuilding the heap,
       // since y's score can change arbitrarily
 #ifdef DEBUG_AWY_SEARCH
@@ -722,8 +708,8 @@ bool Airway::Network::search2(FGPositionedRef aStart, FGPositionedRef aDest,
         std::push_heap(openNodes.begin(), openNodes.end(), ordering);
       }
     } // of neighbour iteration
-  } // of open node iteration
-  
+    } // of open node iteration
+
   SG_LOG(SG_NAVAID, SG_INFO, "A* failed to find route");
   return false;
 }

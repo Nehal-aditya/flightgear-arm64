@@ -1,27 +1,10 @@
 /**
  * SHPParser - parse ESRI ShapeFiles containing PolyLines */
 
-// Written by James Turner, started 2013.
-//
-// Copyright (C) 2013 James Turner <zakalawe@mac.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2013 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifdef HAVE_CONFIG_H
-     #include "config.h"
-#endif
+#include "config.h"
 
 #include "SHPParser.hxx"
 
@@ -70,16 +53,16 @@ void readSHPRecordHeader(gzFile fd, int &recordNumber, int& contentLength)
     sgReadIntBE(fd, contentLength);
 }
 
-void parseSHPPoints2D(gzFile fd, int numPoints, flightgear::SGGeodVec& aPoints)
+void parseSHPPoints2D(gzFile fd, int numPoints, flightgear::SGGeodVec& points)
 {
-    aPoints.reserve(numPoints);
+    points.reserve(numPoints);
     std::vector<double> ds;
     ds.resize(numPoints * 2);
     sgReadDouble(fd, numPoints * 2, ds.data());
 
     unsigned int index = 0;
     for (int i=0; i<numPoints; ++i, index += 2) {
-        aPoints.push_back(SGGeod::fromDeg(ds[index], ds[index+1]));
+        points.push_back(SGGeod::fromDeg(ds[index], ds[index + 1]));
     }
 }
 
@@ -147,7 +130,7 @@ void SHPParser::parsePolyLines(const SGPath& aPath, PolyLine::Type aTy,
             }
 
             if (recordShapeType != shapeType) {
-                // vesion 1000 requires files to have homogenous shape type
+                // version 1000 requires files to have homogeneous shape type
                 throw sg_io_exception("SHP file shape-type mismatch", aPath);
             }
         // read PolyLine record from now on

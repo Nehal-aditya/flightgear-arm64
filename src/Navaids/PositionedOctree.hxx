@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: (C) 2012 James Turner <james@flightgear.org>
+ * SPDX-FileCopyrightText: 2012 James Turner <james@flightgear.org>
  * SPDX_FileComment: define a spatial octree containing Positioned items
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -234,5 +234,4 @@ private:
 } // of namespace Octree
 
 
-} // of namespace flightgear
-
+} // namespace flightgear

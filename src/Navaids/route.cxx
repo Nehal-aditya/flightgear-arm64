@@ -2,21 +2,8 @@
 
 // Written by James Turner, started 2009.
 //
-// Copyright (C) 2009  Curtis L. Olson
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2009 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
 
@@ -126,7 +113,7 @@ static double convertSpeedToKnots(RouteUnits aUnits, double aAltitudeFt, double 
     case SPEED_KNOTS:   return aValue;
     case SPEED_KPH:     return aValue * SG_KMH_TO_MPS * SG_MPS_TO_KT;
     case SPEED_MACH:    return FGAtmo::knotsFromMachAtAltitudeFt(aValue, aAltitudeFt);
-                
+
     default:
         throw sg_format_exception("Can't convert unit to Knots", "convertSpeedToKnots");
     }
@@ -138,12 +125,12 @@ static double convertSpeedFromKnots(RouteUnits aUnits, double aAltitudeFt, doubl
         // TODO : use KPH is simulator is in metric
         aUnits = SPEED_KNOTS;
     }
-    
+
     switch (aUnits) {
     case SPEED_KNOTS:   return aValue;
     case SPEED_KPH:     return aValue * SG_KT_TO_MPS * SG_MPS_TO_KMH;
     case SPEED_MACH:    return FGAtmo::machFromKnotsAtAltitudeFt(aValue, aAltitudeFt);
-                
+
     default:
         throw sg_format_exception("Can't convert to unit", "convertSpeedFromKnots");
     }
@@ -163,7 +150,7 @@ double convertAltitudeUnits(RouteUnits aSrc, RouteUnits aDest, double aValue)
         // TODO : use meters if sim is in metric
         aDest = ALTITUDE_FEET;
     }
-    
+
     double altFt = 0.0;
     switch (aSrc) {
     case ALTITUDE_FEET: altFt = aValue; break;
@@ -172,7 +159,7 @@ double convertAltitudeUnits(RouteUnits aSrc, RouteUnits aDest, double aValue)
     default:
         throw sg_format_exception("Unsupported source altitude units", "convertAltitudeUnits");
     }
-    
+
     switch (aDest) {
     case ALTITUDE_FEET: return altFt;
     case ALTITUDE_METER: return altFt * SG_FEET_TO_METER;
@@ -212,26 +199,26 @@ void Waypt::setFlag(WayptFlag aFlag, bool aV)
   if (aV) _flags |= aFlag;
 }
 
-bool Waypt::matches(Waypt* aOther) const
+bool Waypt::matches(Waypt* other) const
 {
-  assert(aOther);
-  if (ident() != aOther->ident()) { // cheap check first
-    return false;
-  }
+    assert(other);
+    if (ident() != other->ident()) { // cheap check first
+        return false;
+    }
 
-  return matches(aOther->position());
+    return matches(other->position());
 }
-    
+
 bool Waypt::matches(FGPositioned* aPos) const
 {
     if (!aPos)
         return false;
-    
+
     // if w ehave no source, match on position and ident
     if (!source()) {
         return (ident() == aPos->ident()) && matches(aPos->geod());
     }
-    
+
     return (aPos == source());
 }
 
@@ -246,7 +233,7 @@ void Waypt::setAltitude(double aAlt, RouteRestriction aRestrict, RouteUnits aUni
     if (aUnit == DEFAULT_UNITS) {
         aUnit = ALTITUDE_FEET;
     }
-    
+
   _altitude = aAlt;
     _altitudeUnits = aUnit;
   _altRestrict = aRestrict;
@@ -266,7 +253,7 @@ void Waypt::setSpeed(double aSpeed, RouteRestriction aRestrict, RouteUnits aUnit
             aUnit = SPEED_KNOTS;
         }
     }
-    
+
   _speed = aSpeed;
   _speedUnits = aUnit;
   _speedRestrict = aRestrict;
@@ -292,7 +279,7 @@ double Waypt::speed(RouteUnits aUnits) const
     if (aUnits == _speedUnits) {
         return _speed;
     }
-    
+
     return convertSpeedUnits(_speedUnits, aUnits, altitudeFt(), _speed);
 }
 
@@ -301,7 +288,7 @@ double Waypt::altitude(RouteUnits aUnits) const
     if (aUnits == _altitudeUnits) {
         return _altitude;
     }
-    
+
     return convertAltitudeUnits(_altitudeUnits, aUnits, _altitude);
 }
 
@@ -309,11 +296,11 @@ double Waypt::constraintAltitude(RouteUnits aUnits) const
 {
     if (!_constraintAltitude.has_value())
         return 0.0;
-    
+
     if (aUnits == _altitudeUnits) {
         return _constraintAltitude.value_or(0.0);
     }
-    
+
     return convertAltitudeUnits(_altitudeUnits, aUnits, _constraintAltitude.value_or(0.0));
 }
 
@@ -423,7 +410,7 @@ WayptRef Waypt::createFromProperties(RouteBase* aOwner, SGPropertyNode_ptr aProp
       if (aProp->hasValue("network")) {
           level = static_cast<flightgear::Airway::Level>(aProp->getIntValue("network"));
       }
-      
+
       via = flightgear::Airway::findByIdent(aProp->getStringValue("airway"), level);
       if (via) {
           // override owner if we are from an airway
@@ -431,10 +418,10 @@ WayptRef Waypt::createFromProperties(RouteBase* aOwner, SGPropertyNode_ptr aProp
       }
   }
 
-    WayptRef nd(createInstance(aOwner, aProp->getStringValue("type")));
-    if (nd->initFromProperties(aProp)) {
-        return nd;
-    }
+  WayptRef n(createInstance(aOwner, aProp->getStringValue("type")));
+  if (n->initFromProperties(aProp)) {
+      return n;
+  }
     SG_LOG(SG_GENERAL, SG_WARN, "failed to create waypoint, trying basic");
 
 
@@ -496,7 +483,7 @@ WayptRef Waypt::createFromString(RouteBase* aOwner, const std::string& s, const 
     double alt = 0.0;
     RouteRestriction altSetting = RESTRICT_NONE;
     RouteUnits altitudeUnits = ALTITUDE_FEET;
-    
+
     size_t pos = target.find('@');
     if (pos != string::npos) {
         auto altStr = simgear::strutils::uppercase(target.substr(pos + 1));
@@ -506,7 +493,7 @@ WayptRef Waypt::createFromString(RouteBase* aOwner, const std::string& s, const 
         } else if (fgGetString("/sim/startup/units") == "meter") {
             altitudeUnits = ALTITUDE_METER;
         }
-        
+
         alt = std::stof(altStr);
         target = target.substr(0, pos);
         altSetting = RESTRICT_AT;
@@ -582,31 +569,31 @@ bool Waypt::initFromProperties(SGPropertyNode_ptr aProp)
     if (aProp->hasChild("generated")) {
         setFlag(WPT_GENERATED, aProp->getBoolValue("generated"));
     }
-    
+
     if (aProp->hasChild("overflight")) {
         setFlag(WPT_OVERFLIGHT, aProp->getBoolValue("overflight"));
     }
-    
+
     if (aProp->hasChild("arrival")) {
         setFlag(WPT_ARRIVAL, aProp->getBoolValue("arrival"));
     }
-    
+
     if (aProp->hasChild("approach")) {
         setFlag(WPT_APPROACH, aProp->getBoolValue("approach"));
     }
-    
+
     if (aProp->hasChild("departure")) {
         setFlag(WPT_DEPARTURE, aProp->getBoolValue("departure"));
     }
-    
+
     if (aProp->hasChild("miss")) {
         setFlag(WPT_MISS, aProp->getBoolValue("miss"));
     }
-    
+
     if (aProp->hasChild("airway")) {
         setFlag(WPT_VIA, true);
     }
-    
+
     if (aProp->hasChild("alt-restrict")) {
         _altRestrict = restrictionFromString(aProp->getStringValue("alt-restrict"));
         if (aProp->hasChild("altitude-ft")) {
@@ -619,7 +606,7 @@ bool Waypt::initFromProperties(SGPropertyNode_ptr aProp)
             _altitude = aProp->getIntValue("flight-level");
             _altitudeUnits = ALTITUDE_FLIGHTLEVEL;
         }
-        
+
         if (aProp->hasChild("constraint-altitude")) {
             _constraintAltitude = aProp->getDoubleValue("constraint-altitude");
         }
@@ -631,7 +618,7 @@ bool Waypt::initFromProperties(SGPropertyNode_ptr aProp)
       if (_speedRestrict == SPEED_RESTRICT_MACH) {
           units = SPEED_MACH;
       }
-      
+
       if (aProp->hasChild("speed-mach")) {
           units = SPEED_MACH;
           _speed = aProp->getDoubleValue("speed-mach");
@@ -641,7 +628,7 @@ bool Waypt::initFromProperties(SGPropertyNode_ptr aProp)
     } else {
         _speed = aProp->getDoubleValue("speed");
     }
-    
+
       _speedUnits = units;
   }
 
@@ -691,7 +678,7 @@ void Waypt::writeToProperties(SGPropertyNode_ptr aProp) const
           aProp->setDoubleValue("altitude-ft", _altitude);
       }
   }
-    
+
     if (_constraintAltitude.has_value()) {
         aProp->setDoubleValue("constraint-altitude", _constraintAltitude.value_or(0.0));
     }
@@ -705,7 +692,7 @@ void Waypt::writeToProperties(SGPropertyNode_ptr aProp) const
 RouteBase::~RouteBase()
 {
 }
-    
+
 void RouteBase::dumpRouteToKML(const WayptVec& aRoute, const std::string& aName)
 {
   SGPath p = SGPath::desktop() / (aName + ".kml");

@@ -1,24 +1,10 @@
 // waypoint.hxx - waypoints that can occur in routes/procedures
 // Written by James Turner, started 2009.
 //
-// Copyright (C) 2009  Curtis L. Olson
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2009 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifndef FG_WAYPOINT_HXX
-#define FG_WAYPOINT_HXX
+#pragma once
 
 #include <Airports/airports_fwd.hxx>
 #include <Navaids/route.hxx>
@@ -31,14 +17,13 @@ namespace flightgear
 class BasicWaypt : public Waypt
 {
 public:
-  
-  BasicWaypt(const SGGeod& aPos, const std::string& aIdent, RouteBase* aOwner);
-    
-  BasicWaypt(RouteBase* aOwner);
-  
-  virtual SGGeod position() const
+    BasicWaypt(const SGGeod& aPos, const std::string& aIdent, RouteBase* aOwner);
+
+    BasicWaypt(RouteBase* aOwner);
+
+    virtual SGGeod position() const
     { return _pos; }
-  
+
   virtual std::string ident() const
     { return _ident; }
 
@@ -48,11 +33,12 @@ protected:
     void writeToProperties(SGPropertyNode_ptr aProp) const override;
 
     virtual std::string type() const
-    { return "basic"; } 
+    {
+        return "basic";
+    }
 
   SGGeod _pos;
   std::string _ident;
-  
 };
 
 /**
@@ -63,14 +49,14 @@ class NavaidWaypoint : public Waypt
 {
 public:
   NavaidWaypoint(FGPositioned* aPos, RouteBase* aOwner);
-  
+
   NavaidWaypoint(RouteBase* aOwner);
-  
+
   virtual SGGeod position() const;
-  
+
   virtual FGPositioned* source() const
     { return _navaid; }
-    
+
   virtual std::string ident() const;
 
   protected:
@@ -79,18 +65,18 @@ public:
 
   virtual std::string type() const
   { return "navaid"; }
-    
+
   FGPositionedRef _navaid;
 };
 
 class OffsetNavaidWaypoint : public NavaidWaypoint
 {
-public:	
-  OffsetNavaidWaypoint(FGPositioned* aPos, RouteBase* aOwner, double aRadial, double aDistNm);
+public:
+    OffsetNavaidWaypoint(FGPositioned* aPos, RouteBase* aOwner, double aRadial, double aDistNm);
 
-  OffsetNavaidWaypoint(RouteBase* aOwner);
-  
-  virtual SGGeod position() const
+    OffsetNavaidWaypoint(RouteBase* aOwner);
+
+    virtual SGGeod position() const
     { return _geod; }
 
 protected:
@@ -99,17 +85,17 @@ protected:
 
     virtual std::string type() const
     { return "offset-navaid"; }
-    
+
 private:
   void init();
-  
+
   SGGeod _geod;
   double _radial; // true, degrees
   double _distanceNm;
 };
 
 /**
- * Waypoint based upon a runway. 
+ * Waypoint based upon a runway.
  * Runways are handled specially in various places, so it's cleaner
  * to be able to distuinguish them from other navaid waypoints
  */
@@ -117,20 +103,21 @@ class RunwayWaypt : public Waypt
 {
 public:
   RunwayWaypt(FGRunway* aPos, RouteBase* aOwner);
-  
+
   RunwayWaypt(RouteBase* aOwner);
-  
+
   virtual SGGeod position() const;
-  
+
   virtual FGPositioned* source() const;
-    
+
   virtual std::string ident() const;
 
   FGRunway* runway() const
     { return _runway; }
 
   virtual double headingRadialDeg() const;
-protected:	
+
+  protected:
   virtual std::string type() const
     { return "runway"; }
 
@@ -145,28 +132,28 @@ class Hold : public BasicWaypt
 {
 public:
   Hold(const SGGeod& aPos, const std::string& aIdent, RouteBase* aOwner);
-  
+
   Hold(RouteBase* aOwner);
-  
+
   void setHoldRadial(double aInboundRadial);
   void setHoldDistance(double aDistanceNm);
   void setHoldTime(double aTimeSec);
-  
+
   void setRightHanded();
   void setLeftHanded();
-  
+
   double inboundRadial() const
   { return _bearing; }
-  
+
   bool isLeftHanded() const
   { return !_righthanded; }
-  
+
   bool isDistance() const
   { return _isDistance; }
-  
+
   double timeOrDistance() const
   { return _holdTD;}
-  
+
   virtual double headingRadialDeg() const
   { return inboundRadial(); }
 protected:
@@ -175,7 +162,7 @@ protected:
 
     virtual std::string type() const
     { return "hold"; }
-    
+
 private:
   double _bearing;
   bool _righthanded;
@@ -187,7 +174,7 @@ class HeadingToAltitude : public Waypt
 {
 public:
   HeadingToAltitude(RouteBase* aOwner, const std::string& aIdent, double aMagHdg);
-  
+
   HeadingToAltitude(RouteBase* aOwner);
 
   bool initFromProperties(SGPropertyNode_ptr aProp) override;
@@ -198,16 +185,16 @@ public:
 
   virtual SGGeod position() const
     { return SGGeod(); }
-    
+
   virtual std::string ident() const
     { return _ident; }
-    
+
   double headingDegMagnetic() const
     { return _magHeading; }
-  
+
   virtual double magvarDeg() const
     { return 0.0; }
-  
+
   virtual double headingRadialDeg() const
   { return headingDegMagnetic(); }
 private:
@@ -220,7 +207,7 @@ class DMEIntercept : public Waypt
 public:
   DMEIntercept(RouteBase* aOwner, const std::string& aIdent, const SGGeod& aPos,
     double aCourseDeg, double aDistanceNm);
-  
+
   DMEIntercept(RouteBase* aOwner);
 
   bool initFromProperties(SGPropertyNode_ptr aProp) override;
@@ -231,16 +218,16 @@ public:
 
   virtual SGGeod position() const
     { return _pos; }
-    
+
   virtual std::string ident() const
     { return _ident; }
-  
+
   double courseDegMagnetic() const
     { return _magCourse; }
-    
+
   double dmeDistanceNm() const
     { return _dmeDistanceNm; }
-  
+
   virtual double headingRadialDeg() const
   { return courseDegMagnetic(); }
 private:
@@ -255,7 +242,7 @@ class RadialIntercept : public Waypt
 public:
   RadialIntercept(RouteBase* aOwner, const std::string& aIdent, const SGGeod& aPos,
     double aCourseDeg, double aRadialDeg);
-  
+
   RadialIntercept(RouteBase* aOwner);
 
   bool initFromProperties(SGPropertyNode_ptr aProp) override;
@@ -266,13 +253,13 @@ public:
 
   virtual SGGeod position() const
     { return _pos; }
-    
+
   virtual std::string ident() const
     { return _ident; }
-  
+
   double courseDegMagnetic() const
     { return _magCourse; }
-    
+
   double radialDegMagnetic() const
     { return _radial; }
 
@@ -286,7 +273,7 @@ private:
 };
 
 
-/** 
+/**
  * Represent ATC radar vectored segment. Common at the end of published
  * missed approach procedures, and from STAR arrival points to final approach
  */
@@ -295,7 +282,7 @@ class ATCVectors : public Waypt
 public:
   ATCVectors(RouteBase* aOwner, FGAirport* aFacility);
   virtual ~ATCVectors();
-  
+
   ATCVectors(RouteBase* aOwner);
 
   bool initFromProperties(SGPropertyNode_ptr aProp) override;
@@ -305,9 +292,9 @@ public:
     { return "vectors"; }
 
   virtual SGGeod position() const;
-    
+
   virtual std::string ident() const;
-  
+
 private:
   /**
    * ATC facility. Using an airport here is incorrect, since often arrivals
@@ -370,7 +357,5 @@ private:
     AirwayRef _airway;
     FGPositionedRef _to;
 };
-  
-} // of namespace flighgear
 
-#endif // of FG_WAYPOINT_HXX
+} // namespace flightgear

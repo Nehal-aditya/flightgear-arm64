@@ -1,25 +1,10 @@
 // waypoint.cxx - waypoints that can occur in routes/procedures
 // Written by James Turner, started 2009.
 //
-// Copyright (C) 2009  Curtis L. Olson
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2009 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#include "config.h"
 
 #include "waypoint.hxx"
 
@@ -57,8 +42,8 @@ bool BasicWaypt::initFromProperties(SGPropertyNode_ptr aProp)
   if (!Waypt::initFromProperties(aProp))
       return false;
 
-  _pos = SGGeod::fromDeg(aProp->getDoubleValue("lon"), 
-    aProp->getDoubleValue("lat"));
+  _pos = SGGeod::fromDeg(aProp->getDoubleValue("lon"),
+                         aProp->getDoubleValue("lat"));
   _ident = aProp->getStringValue("ident");
   return true;
 }
@@ -66,7 +51,7 @@ bool BasicWaypt::initFromProperties(SGPropertyNode_ptr aProp)
 void BasicWaypt::writeToProperties(SGPropertyNode_ptr aProp) const
 {
   Waypt::writeToProperties(aProp);
-  
+
   aProp->setStringValue("ident", _ident);
   aProp->setDoubleValue("lon", _pos.getLongitudeDeg());
   aProp->setDoubleValue("lat", _pos.getLatitudeDeg());
@@ -76,7 +61,7 @@ std::string BasicWaypt::icaoDescription() const
 {
     return simgear::strutils::formatGeodAsString(_pos, simgear::strutils::LatLonFormat::ICAO_ROUTE_DEGREES);
 }
-    
+
 //////////////////////////////////////////////////////////////////////////////
 
 NavaidWaypoint::NavaidWaypoint(FGPositioned* aPos, RouteBase* aOwner) :
@@ -97,8 +82,8 @@ NavaidWaypoint::NavaidWaypoint(RouteBase* aOwner) :
 SGGeod NavaidWaypoint::position() const
 {
   return SGGeod::fromGeodFt(_navaid->geod(), altitudeFt());
-}  
- 
+}
+
 std::string NavaidWaypoint::ident() const
 {
   return _navaid->ident();
@@ -119,9 +104,9 @@ bool NavaidWaypoint::initFromProperties(SGPropertyNode_ptr aProp)
   if (aProp->hasChild("lon")) {
     p = SGGeod::fromDeg(aProp->getDoubleValue("lon"), aProp->getDoubleValue("lat"));
   }
-  
+
   // FIXME - resolve co-located DME, etc
-  // is it sufficent just to ignore DMEs, actually?
+  // is it sufficient just to ignore DMEs, actually?
   FGPositionedRef nav = FGPositioned::findClosestWithIdent(idn, p, nullptr);
   if (!nav) {
       SG_LOG(SG_AUTOPILOT, SG_WARN, "unknown navdaid ident:" << idn);
@@ -136,7 +121,7 @@ bool NavaidWaypoint::initFromProperties(SGPropertyNode_ptr aProp)
       SG_LOG(SG_AUTOPILOT, SG_WARN, "Waypoint navaid for ident:" << idn << " is too far from the specified lat/lon");
       return false;
   }
-  
+
   _navaid = nav;
   return true;
 }
@@ -144,7 +129,7 @@ bool NavaidWaypoint::initFromProperties(SGPropertyNode_ptr aProp)
 void NavaidWaypoint::writeToProperties(SGPropertyNode_ptr aProp) const
 {
   Waypt::writeToProperties(aProp);
-  
+
   aProp->setStringValue("ident", _navaid->ident());
   // write lon/lat to disambiguate
   aProp->setDoubleValue("lon", _navaid->geod().getLongitudeDeg());
@@ -214,7 +199,7 @@ SGGeod RunwayWaypt::position() const
 {
   return _runway->threshold();
 }
-  
+
 std::string RunwayWaypt::ident() const
 {
   return _runway->airport()->ident() + "-" + _runway->ident();
@@ -224,7 +209,7 @@ FGPositioned* RunwayWaypt::source() const
 {
   return _runway;
 }
-  
+
 double RunwayWaypt::headingRadialDeg() const
 {
   return _runway->headingDeg();
@@ -332,11 +317,10 @@ void Hold::writeToProperties(SGPropertyNode_ptr aProp) const
 
 /////////////////////////////////////////////////////////////////////////////
 
-HeadingToAltitude::HeadingToAltitude(RouteBase* aOwner, const string& aIdent, 
-  double aMagHdg) :
-  Waypt(aOwner),
-  _ident(aIdent),
-  _magHeading(aMagHdg)
+HeadingToAltitude::HeadingToAltitude(RouteBase* aOwner, const string& aIdent,
+                                     double aMagHdg) : Waypt(aOwner),
+                                                       _ident(aIdent),
+                                                       _magHeading(aMagHdg)
 {
   setFlag(WPT_DYNAMIC);
 }
@@ -408,7 +392,7 @@ bool DMEIntercept::initFromProperties(SGPropertyNode_ptr aProp)
 void DMEIntercept::writeToProperties(SGPropertyNode_ptr aProp) const
 {
   Waypt::writeToProperties(aProp);
-  
+
   aProp->setStringValue("ident", _ident);
   aProp->setDoubleValue("lon", _pos.getLongitudeDeg());
   aProp->setDoubleValue("lat", _pos.getLatitudeDeg());
@@ -456,7 +440,7 @@ bool RadialIntercept::initFromProperties(SGPropertyNode_ptr aProp)
 void RadialIntercept::writeToProperties(SGPropertyNode_ptr aProp) const
 {
   Waypt::writeToProperties(aProp);
-  
+
   aProp->setStringValue("ident", _ident);
   aProp->setDoubleValue("lon", _pos.getLongitudeDeg());
   aProp->setDoubleValue("lat", _pos.getLatitudeDeg());
@@ -486,7 +470,7 @@ SGGeod ATCVectors::position() const
 {
   return _facility->geod();
 }
-    
+
 string ATCVectors::ident() const
 {
   return "VECTORS-" + _facility->ident();
@@ -600,7 +584,7 @@ bool Via::initFromProperties(SGPropertyNode_ptr aProp)
         SG_LOG(SG_AUTOPILOT, SG_WARN, "VIA TO navaid: " << idn << " not found");
         return false;
     }
-    
+
     if (!_airway->containsNavaid(nav)) {
         // warn but don't block this
         SG_LOG(SG_AUTOPILOT, SG_WARN, "VIA TO navaid: " << idn << " not found on airway " << _airway);
@@ -615,7 +599,7 @@ void Via::writeToProperties(SGPropertyNode_ptr aProp) const
     Waypt::writeToProperties(aProp);
     aProp->setStringValue("airway", _airway->ident());
     aProp->setIntValue("level", _airway->level());
-    
+
     aProp->setStringValue("to", _to->ident());
     // write lon/lat to disambiguate
     aProp->setDoubleValue("lon", _to->geod().getLongitudeDeg());
@@ -625,7 +609,7 @@ void Via::writeToProperties(SGPropertyNode_ptr aProp) const
 WayptVec Via::expandToWaypoints(WayptRef aPreceeding) const
 {
     if (!aPreceeding) {
-        throw sg_exception("invalid preceeding waypoint");
+        throw sg_exception("invalid preceding waypoint");
     }
 
   // this waypoint is noly used for the search, it's not part

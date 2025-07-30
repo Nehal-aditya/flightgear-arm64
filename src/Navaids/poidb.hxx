@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: (C) Christian Schmitt, March 2013
+ * SPDX-FileCopyrightText: 2013 Christian Schmitt
  * SPDX_FileComment: points of interest management routines
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -23,7 +23,7 @@ class sg_gzifstream;
 
 namespace flightgear
 {
-    
+
 class POILoader
 {
 public:
@@ -51,5 +51,4 @@ private:
 };
 
 
-} // of namespace flightgear
-
+} // namespace flightgear

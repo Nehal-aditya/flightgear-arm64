@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: (C) 2008 James Turner <james@flightgear.org>
+ * SPDX-FileCopyrightText: 2008 James Turner <james@flightgear.org>
  * SPDX_FileComment: base class for objects which are spatially located in the simulated world
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -104,7 +104,7 @@ public:
 
   /**
    * Return the name of this positioned. By default this is the same as the
-   * ident, but for many derived classes it's more meaningful - the aiport or
+   * ident, but for many derived classes it's more meaningful - the airport or
    * navaid name, for example.
    */
   virtual const std::string& name() const
@@ -112,7 +112,7 @@ public:
 
   virtual const SGGeod& geod() const
   { return mPosition; }
-  
+
   PositionedID guid() const
   { return mGuid; }
 
@@ -123,13 +123,13 @@ public:
 
   double latitude() const
   { return geod().getLatitudeDeg(); }
-  
+
   double longitude() const
   { return geod().getLongitudeDeg(); }
-  
+
   double elevation() const
   { return geod().getElevationFt(); }
-  
+
   double elevationM() const
   { return geod().getElevationM(); }
 
@@ -141,61 +141,61 @@ public:
   {
   public:
     virtual ~Filter() { ; }
-    
+
     /**
      * Over-rideable filter method. Default implementation returns true.
      */
     virtual bool pass(FGPositioned* aPos) const
     { return true; }
-    
+
     virtual Type minType() const
     { return INVALID; }
-    
+
     virtual Type maxType() const
     { return INVALID; }
-    
-    
+
+
     bool operator()(FGPositioned* aPos) const
     { return pass(aPos); }
   };
-  
+
   class TypeFilter : public Filter
   {
   public:
     TypeFilter(Type aTy = INVALID);
-      
+
     TypeFilter(std::initializer_list<Type> types);
 
     /**
      * @brief Construct a new Type Filter based on a sequential range of types
-     * 
-     * @param aMinType 
-     * @param aMaxType 
+     *
+     * @param aMinType
+     * @param aMaxType
      */
     TypeFilter(Type aMinType, Type aMaxType);
 
     bool pass(FGPositioned* aPos) const override;
-    
+
     Type minType() const override
     { return mMinType; }
-    
+
     Type maxType() const override
     { return mMaxType; }
-    
+
     void addType(Type aTy);
-      
+
     static TypeFilter fromString(const std::string& aFilterSpec);
-  private:
-      
+
+private:
     std::vector<Type> types;
     Type mMinType = LAST_TYPE,
       mMaxType = INVALID;
   };
-  
+
   static FGPositionedList findWithinRange(const SGGeod& aPos, double aRangeNm, Filter* aFilter);
-  
+
   static FGPositionedList findWithinRangePartial(const SGGeod& aPos, double aRangeNm, Filter* aFilter, bool& aPartial);
-        
+
   static FGPositionedRef findClosestWithIdent(const std::string& aIdent, const SGGeod& aPos, Filter* aFilter = NULL);
 
   static FGPositionedRef findFirstWithIdent(const std::string& aIdent, Filter* aFilter);
@@ -205,45 +205,45 @@ public:
    * @param aFilter - optional filter on items
    */
   static FGPositionedList findAllWithIdent(const std::string& aIdent, Filter* aFilter = NULL, bool aExact = true);
-  
+
   /**
    * As above, but searches names instead of idents
    */
   static FGPositionedList findAllWithName(const std::string& aName, Filter* aFilter = NULL, bool aExact = true);
-  
+
   /**
    * Sort an FGPositionedList by distance from a position
    */
   static void sortByRange(FGPositionedList&, const SGGeod& aPos);
-  
+
   /**
    * Find the closest item to a position, which pass the specified filter
    * A cutoff range in NM must be specified, to constrain the search acceptably.
    * Very large cutoff values will make this slow.
-   * 
+   *
    * @result The closest item passing the filter, or NULL
    * @param aCutoffNm - maximum distance to search within, in nautical miles
    */
   static FGPositionedRef findClosest(const SGGeod& aPos, double aCutoffNm, Filter* aFilter = NULL);
-  
+
   /**
    * Find the closest N items to a position, which pass the specified filter
    * A cutoff range in NM must be specified, to constrain the search acceptably.
    * Very large cutoff values will make this slow.
-   * 
+   *
    * @result The matches (possibly less than N, depending on the filter and cutoff),
    *    sorted by distance from the search pos
    * @param aN - number of matches to find
    * @param aCutoffNm - maximum distance to search within, in nautical miles
    */
   static FGPositionedList findClosestN(const SGGeod& aPos, unsigned int aN, double aCutoffNm, Filter* aFilter = NULL);
-    
+
   /**
    * Same as above, but with a time-bound in msec too.
    */
   static FGPositionedList findClosestNPartial(const SGGeod& aPos, unsigned int aN, double aCutoffNm, Filter* aFilter,
                            bool& aPartial);
-  
+
   template<class T>
   static SGSharedPtr<T> loadById(PositionedID id)
   {
@@ -297,7 +297,7 @@ protected:
   const PositionedID mGuid;
   const Type mType;
   const std::string mIdent;
-  
+
 private:
   SG_DISABLE_COPY(FGPositioned);
 

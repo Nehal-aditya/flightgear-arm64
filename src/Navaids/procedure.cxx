@@ -1,21 +1,8 @@
 // procedure.cxx - define route storing an approach, arrival or departure procedure
 // Written by James Turner, started 2009.
 //
-// Copyright (C) 2009  Curtis L. Olson
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2009 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "procedure.hxx"
 
@@ -33,7 +20,7 @@ using std::string;
 
 namespace flightgear
 {
-  
+
 static void markWaypoints(WayptVec& wps, WayptFlag f)
 {
   for (unsigned int i=0; i<wps.size(); ++i) {
@@ -46,9 +33,8 @@ Procedure::Procedure(const string& aIdent) :
 {
 }
 
-Approach::Approach(const string& aIdent, ProcedureType ty) : 
-  Procedure(aIdent),
-  _type(ty)
+Approach::Approach(const string& aIdent, ProcedureType ty) : Procedure(aIdent),
+                                                             _type(ty)
 {
 
 }
@@ -79,16 +65,16 @@ RunwayVec Approach::runways() const
   r.push_back(_runway);
   return r;
 }
-  
+
 void Approach::setPrimaryAndMissed(const WayptVec& aPrimary, const WayptVec& aMissed)
 {
   _primary = aPrimary;
   _primary[0]->setFlag(WPT_IAF, true);
   _primary[_primary.size()-1]->setFlag(WPT_FAF, true);
   markWaypoints(_primary, WPT_APPROACH);
-  
+
   _missed = aMissed;
-  
+
   if (!_missed.empty()) {
     // mark the first point as the published missed-approach point
     _missed[0]->setFlag(WPT_MAP, true);
@@ -118,15 +104,15 @@ bool Approach::route(FGRunwayRef runway, WayptRef aIAF, WayptVec& aWps)
 {
   if (aIAF.valid()) {
     bool haveTrans = false;
-    for (auto te : _transitions) {
-      auto t = te.second;
-      if (t->enroute()->matches(aIAF)) {
-        t->route(aWps);
-        haveTrans = true;
-        break;
-      }
+    for (auto tpair : _transitions) {
+        auto t = tpair.second;
+        if (t->enroute()->matches(aIAF)) {
+            t->route(aWps);
+            haveTrans = true;
+            break;
+        }
     } // of transitions iteration
-    
+
     if (!haveTrans) {
       if (_primary.front()->matches(aIAF)) {
         // direct IAF on the approach, no transition is needed
@@ -139,15 +125,15 @@ bool Approach::route(FGRunwayRef runway, WayptRef aIAF, WayptVec& aWps)
       }
     }
   }
-  
+
   bool ok = routeFromVectors(aWps);
-  
+
   if (ok && !aWps.empty() && aIAF.valid() && aWps.front()->matches(aIAF)) {
     // don't duplicate the IAF into the route we return. This avoids a
     // duplicated waypt between the end of a STAR and the approach
     aWps.erase(aWps.begin());
   }
-  
+
   return ok;
 }
 
@@ -208,7 +194,7 @@ bool ArrivalDeparture::isForRunway(const FGRunway* aWay) const
   if (!aWay) {
     return true;
   }
-  
+
   FGRunwayRef r(const_cast<FGRunway*>(aWay));
   return (_runways.count(r) > 0);
 }
@@ -220,10 +206,10 @@ RunwayVec ArrivalDeparture::runways() const
   for (; it != _runways.end(); ++it) {
     r.push_back(it->first);
   }
-  
+
   return r;
 }
-    
+
 void ArrivalDeparture::addTransition(Transition* aTrans)
 {
   WayptRef entry = aTrans->enroute();
@@ -240,14 +226,14 @@ string_list ArrivalDeparture::transitionIdents() const
   }
   return r;
 }
-  
+
 void ArrivalDeparture::addRunwayTransition(FGRunwayRef aWay, Transition* aTrans)
 {
   assert(aWay->ident() == aTrans->ident());
   if (!isForRunway(aWay)) {
     throw sg_io_exception("adding transition for unspecified runway:" + aWay->ident(), ident());
   }
-  
+
   aTrans->mark(flagType());
   _runways[aWay] = aTrans;
 }
@@ -274,7 +260,7 @@ bool ArrivalDeparture::commonRoute(Transition* t, WayptVec& aPath, FGRunwayRef a
         break;
       }
     } // of common points
-    
+
     // if we hit this point, the transition doesn't end (start, for a SID) on
     // a common point. We assume this means we should just append the entire
     // common section after the transition.
@@ -282,15 +268,15 @@ bool ArrivalDeparture::commonRoute(Transition* t, WayptVec& aPath, FGRunwayRef a
   } else {
     // no tranasition
   } // of not using a transition
-  
+
   // append (some) common points
   aPath.insert(aPath.end(), firstCommon, _common.end());
-  
+
   if (!aRwy) {
     // no runway specified, we're done
     return true;
   }
-  
+
   RunwayTransitionMap::iterator r = _runways.find(aRwy);
   if (r == _runways.end()) {
       // runway doesn't match STAR/SID; this may be intentional (cf. EDDF
@@ -306,7 +292,7 @@ bool ArrivalDeparture::commonRoute(Transition* t, WayptVec& aPath, FGRunwayRef a
     // if required, or maybe there's an approach transition defined.
     return true;
   }
-  
+
   SG_LOG(SG_NAVAID, SG_INFO, ident() << " using runway transition for " << r->first->ident());
   r->second->route(aPath);
   return true;
@@ -317,30 +303,30 @@ Transition* ArrivalDeparture::findTransitionByEnroute(Waypt* aEnroute) const
   if (!aEnroute) {
     return NULL;
   }
-  
+
   WptTransitionMap::const_iterator eit;
   for (eit = _enrouteTransitions.begin(); eit != _enrouteTransitions.end(); ++eit) {
     if (eit->second->enroute()->matches(aEnroute)) {
       return eit->second;
     }
   } // of enroute transition iteration
-  
+
   return NULL;
 }
-    
+
 Transition* ArrivalDeparture::findTransitionByEnroute(FGPositioned* aEnroute) const
 {
     if (!aEnroute) {
         return NULL;
     }
-    
+
     WptTransitionMap::const_iterator eit;
     for (eit = _enrouteTransitions.begin(); eit != _enrouteTransitions.end(); ++eit) {
         if (eit->second->enroute()->matches(aEnroute)) {
             return eit->second;
         }
     } // of enroute transition iteration
-    
+
     return NULL;
 }
 
@@ -351,7 +337,7 @@ WayptRef ArrivalDeparture::findBestTransition(const SGGeod& aPos) const
     SG_LOG(SG_NAVAID, SG_INFO, "no enroute transitions for " << ident());
     return _common.front();
   }
-  
+
   double d = 1e9;
   WayptRef w;
   WptTransitionMap::const_iterator eit;
@@ -360,13 +346,13 @@ WayptRef ArrivalDeparture::findBestTransition(const SGGeod& aPos) const
     SG_LOG(SG_NAVAID, SG_INFO, "findBestTransition for " << ident() << ", looking at " << c->ident());
     // assert(c->hasFixedPosition());
     double cd = SGGeodesy::distanceM(aPos, c->position());
-    
+
     if (cd < d) { // distance to 'c' is less, new best match
       d = cd;
       w = c;
     }
   } // of transitions iteration
-  
+
   assert(w);
   return w;
 }
@@ -379,7 +365,7 @@ Transition* ArrivalDeparture::findTransitionByName(const string& aIdent) const
       return eit->second;
     }
   }
-  
+
   return NULL;
 }
 
@@ -396,27 +382,27 @@ bool SID::route(FGRunwayRef aWay, Transition* trans, WayptVec& aPath)
     SG_LOG(SG_NAVAID, SG_WARN, "SID " << ident() << " not for runway " << aWay->ident());
     return false;
   }
-  
+
   WayptVec path;
   if (!commonRoute(trans, path, aWay)) {
     return false;
   }
-  
+
   // SID waypoints (including transitions) are stored reversed, so we can
-  // re-use the routing code. This is where we fix the ordering for client code
+  // reuse the routing code. This is where we fix the ordering for client code
   std::back_insert_iterator<WayptVec> bi(aPath);
   std::reverse_copy(path.begin(), path.end(), bi);
 
   return true;
 }
-    
+
 SID* SID::createTempSID(const std::string& aIdent, FGRunway* aRunway, const WayptVec& aPath)
 {
 // flip waypoints since SID stores them reversed
     WayptVec path;
     std::back_insert_iterator<WayptVec> bi(path);
     std::reverse_copy(aPath.begin(), aPath.end(), bi);
-    
+
     SID* sid = new SID(aIdent, aRunway->airport());
     sid->setCommon(path);
     sid->addRunway(aRunway);
@@ -435,7 +421,7 @@ bool STAR::route(FGRunwayRef aWay, Transition* trans, WayptVec& aPath)
   if (aWay && !isForRunway(aWay)) {
     return false;
   }
-    
+
   return commonRoute(trans, aPath, aWay);
 }
 
@@ -448,7 +434,7 @@ Transition::Transition(const std::string& aIdent, ProcedureType ty, Procedure* a
 {
   assert(aPr);
 }
-  
+
 void Transition::setPrimary(const WayptVec& aWps)
 {
   _primary = aWps;
@@ -478,10 +464,10 @@ FGAirport* Transition::airport() const
 {
   return _parent->airport();
 }
-  
+
 void Transition::mark(WayptFlag f)
 {
   markWaypoints(_primary, f);
 }
-  
+
 } // of namespace

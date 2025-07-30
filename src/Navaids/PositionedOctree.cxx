@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: (C) 2012 James Turner <james@flightgear.org>
+ * SPDX-FileCopyrightText: 2012 James Turner <james@flightgear.org>
  * SPDX_FileComment: define a spatial octree containing Positioned items
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -61,9 +61,9 @@ Node::~Node()
 {
 }
 
-void Node::addPolyLine(const PolyLineRef& aLine)
+void Node::addPolyLine(const PolyLineRef& line)
 {
-    lines.push_back(aLine);
+    lines.push_back(line);
 }
 
 void Node::visitForLines(const SGVec3d& aPos, double aCutoff,
@@ -342,23 +342,23 @@ bool findNearestN(const SGVec3d& aPos, unsigned int aN, double aCutoffM, FGPosit
 
   while (!pq.empty() && (tm.elapsedMSec() < aCutoffMsec)) {
     if (!results.empty()) {
-      // terminate the search if we have sufficent results, and we are
-      // sure no node still on the queue contains a closer match
-      double furthestResultOrder = results.back().order();
-      if ((results.size() >= aN) && (furthestResultOrder < pq.top().order())) {
-    // clear the PQ to mark this has 'full results' instead of partial
-        pq = FindNearestPQueue();
-        break;
-      }
+        // terminate the search if we have sufficient results, and we are
+        // sure no node still on the queue contains a closer match
+        double furthestResultOrder = results.back().order();
+        if ((results.size() >= aN) && (furthestResultOrder < pq.top().order())) {
+            // clear the PQ to mark this has 'full results' instead of partial
+            pq = FindNearestPQueue();
+            break;
+        }
     }
 
-    Node* nd = pq.top().get();
+    Node* n = pq.top().get();
     pq.pop();
 
-    nd->visit(aPos, cut, aFilter, results, pq);
+    n->visit(aPos, cut, aFilter, results, pq);
   } // of queue iteration
 
-  // depending on leaf population, we may have (slighty) more results
+  // depending on leaf population, we may have (slightly) more results
   // than requested
   unsigned int numResults = std::min((unsigned int) results.size(), aN);
   // copy results out
@@ -383,10 +383,10 @@ bool findAllWithinRange(const SGVec3d& aPos, double aRangeM, FGPositioned::Filte
   tm.stamp();
 
   while (!pq.empty() && (tm.elapsedMSec() < aCutoffMsec)) {
-    Node* nd = pq.top().get();
-    pq.pop();
+      Node* n = pq.top().get();
+      pq.pop();
 
-    nd->visit(aPos, rng, aFilter, results, pq);
+      n->visit(aPos, rng, aFilter, results, pq);
   } // of queue iteration
 
   unsigned int numResults = results.size();

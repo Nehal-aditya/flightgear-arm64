@@ -1,7 +1,7 @@
 
 /*
- * SPDX-FileCopyrightText: (C) 2012 James Turner <james@flightgear.org>
- * SPDX_FileComment: Defins a unified binary cache for navigation data, parsed from text/XMl sources
+ * SPDX-FileCopyrightText: 2012 James Turner <james@flightgear.org>
+ * SPDX_FileComment: Defines a unified binary cache for navigation data, parsed from text/XMl sources
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -26,7 +26,7 @@
 // otherwise things will go bad quickly.
   #include "sqlite3.h"
 #else
-// to ensure compatability between sqlite3_int64 and PositionedID,
+// to ensure compatibility between sqlite3_int64 and PositionedID,
 // force the type used by sqlite to match PositionedID explicitly
 #define SQLITE_INT64_TYPE int64_t
 #define SQLITE_UINT64_TYPE uint64_t
@@ -388,30 +388,30 @@ public:
     NavDataCache::DatFileType datFileType,
     bool verbose);
 
-    
+
     sqlite3_stmt_ptr prepareSQL(const std::string& sql)
     {
         sqlite3_stmt_ptr stmt;
         int result = sqlite3_prepare_v2(db, sql.c_str(), sql.length(), &stmt, nullptr);
         int retries = 0;
         int retryMSec = 1;
-        
+
         while (result == SQLITE_BUSY) {
             if (retries > MAX_RETRIES) {
                 break;
             }
-            
+
             ++retries;
             SGTimeStamp::sleepForMSec(retryMSec);
             retryMSec = retryMSec << 1; // double each time
             // try again
             result = sqlite3_prepare_v2(db, sql.c_str(), sql.length(), &stmt, nullptr);
         }
-        
+
         if (result == SQLITE_OK) {
             return stmt; // common case, all good
         }
-        
+
       string errMsg;
       if (result == SQLITE_MISUSE) {
         errMsg = "Sqlite API abuse";
@@ -681,7 +681,7 @@ public:
     // three-way join to get the navaid ident and runway ident in a single select.
     // we're joining positioned to itself by the navaid runway, with the complication
     // that we need to join the navaids table to get the runway ID.
-    // we also need to filter by type to excluse glideslope (GS) matches
+    // we also need to filter by type to exclude glideslope (GS) matches
     findILS = prepare("SELECT nav.rowid FROM positioned AS nav, positioned AS rwy, navaid WHERE "
                       "nav.ident=?1 AND nav.airport=?2 AND rwy.ident=?3 "
                       "AND rwy.rowid = navaid.runway AND navaid.rowid=nav.rowid "
@@ -959,11 +959,11 @@ public:
 
   void flushDeferredOctreeUpdates()
   {
-    for (Octree::Branch* nd : deferredOctreeUpdates) {
-      sqlite3_bind_int64(updateOctreeChildren, 1, nd->guid());
-      sqlite3_bind_int(updateOctreeChildren, 2, nd->childMask());
-      execUpdate(updateOctreeChildren);
-    }
+      for (Octree::Branch* n : deferredOctreeUpdates) {
+          sqlite3_bind_int64(updateOctreeChildren, 1, n->guid());
+          sqlite3_bind_int(updateOctreeChildren, 2, n->childMask());
+          execUpdate(updateOctreeChildren);
+      }
 
     deferredOctreeUpdates.clear();
   }
@@ -1169,7 +1169,7 @@ bool NavDataCache::NavDataCachePrivate::isCachedFileModified(const SGPath& path,
   if (!isModified) {
     // the mode time check failed, but the hashes matched. Let's update our modtime so we
     // don't compute the hash until the mod-time changes again.
-    SG_LOG(SG_NAVCACHE, logLevel, "NavCache: " << path << " has changed modtime but contents are unchanged, re-setting cahced mod-time");
+    SG_LOG(SG_NAVCACHE, logLevel, "NavCache: " << path << " has changed modtime but contents are unchanged, re-setting cached mod-time");
     outer->stampCacheFile(path, fileHash);
   }
 
@@ -1406,7 +1406,7 @@ NavDataCache::~NavDataCache()
 
   if (d->rebuilder) {
       addSentryBreadcrumb("shutting down cache with rebuild active", "info");
-      // setting thsi will cause DB operations to throw the special
+      // setting this will cause DB operations to throw the special
       // AbandonCache exception, and hence cause the rebuild thread to
       // exit pretty quickly, so the join() won't take too long.
       d->abandonCache = true;
@@ -1496,8 +1496,8 @@ bool NavDataCache::isRebuildRequired()
     }
 
     if (!strcmp(environmentOverride, "1")) {
-      SG_LOG(SG_NAVCACHE, SG_MANDATORY_INFO, "NavCache: forcing rebuild becuase FG_NAVCACHE_REBUILD=1");
-      return true;
+        SG_LOG(SG_NAVCACHE, SG_MANDATORY_INFO, "NavCache: forcing rebuild because FG_NAVCACHE_REBUILD=1");
+        return true;
     }
   }
 
@@ -1557,7 +1557,7 @@ RebuildLockStatus accquireRebuildLock()
             return RebuildLockAlreadyLocked;
         }
 
-        // accquire the mutex, so that other processes can check the status.
+        // acquire the mutex, so that other processes can check the status.
         const int result = WaitForSingleObject(static_fgNavCacheRebuildMutex, 100);
         if (result != WAIT_OBJECT_0) {
             SG_LOG(SG_IO, SG_ALERT, "Failed to lock NavCache rebuild mutex:" << GetLastError());
@@ -1650,7 +1650,7 @@ bool NavDataCache::isAnotherProcessRebuilding()
     // poll the named mutex
     auto result = WaitForSingleObject(static_fgNavCacheRebuildMutex, 0);
     if (result == WAIT_OBJECT_0) {
-        // we accquired it, release it and we're done
+        // we acquired it, release it and we're done
         // (there could be multiple read-only copies in this situation)
         ReleaseMutex(static_fgNavCacheRebuildMutex);
         CloseHandle(static_fgNavCacheRebuildMutex);
@@ -1658,7 +1658,7 @@ bool NavDataCache::isAnotherProcessRebuilding()
         return false;
     }
 
-    // failed to accquire the mutex, so assume another FGFS.exe is rebuilding,
+    // failed to acquire the mutex, so assume another FGFS.exe is rebuilding,
     // the GU should wait.
     return true;
 #else
@@ -2123,7 +2123,7 @@ void NavDataCache::updatePosition(PositionedID item, const SGGeod &pos)
     auto it = d->cache.find(item);
 
     // transient item, update the transient octree : this is much easier than the
-    // persistent octree case (see logic below) becuase we know the tree is fully
+    // persistent octree case (see logic below) because we know the tree is fully
     // loaded, and there's no DB table to keep in sync; we just update the in-memory
     // leaves once we found them.
     if (isTemporary) {
@@ -2159,7 +2159,7 @@ void NavDataCache::updatePosition(PositionedID item, const SGGeod &pos)
         // bug 905; the octree leaf may change here, but the leaf may already be
         // loaded, and caching its children. (Either the old or new leaf!). Worse,
         // we may be called here as a result of loading one of those leaf's children.
-        // instead of dealing with all those possibilites, such as modifying
+        // instead of dealing with all those possibilities, such as modifying
         // the in-memory leaf's STL child container, we simply leave the runtime
         // structures alone. This is fine providing items do no move very far, since
         // all the spatial searches ultimately use the items' real cartesian position,
@@ -2398,27 +2398,27 @@ int NavDataCache::getOctreeBranchChildren(int64_t octreeNodeId)
         // but will still call this code speculatively.
         // see the early-return just below in defineOctreeNode
         return 0;
-    }   
+    }
 
   int children = sqlite3_column_int(d->getOctreeChildren, 0);
   d->reset(d->getOctreeChildren);
   return children;
 }
 
-void NavDataCache::defineOctreeNode(Octree::Branch* pr, Octree::Node* nd)
+void NavDataCache::defineOctreeNode(Octree::Branch* pr, Octree::Node* n)
 {
   if (isReadOnly()) {
     return;
   }
-  
-  sqlite3_bind_int64(d->insertOctree, 1, nd->guid());
+
+  sqlite3_bind_int64(d->insertOctree, 1, n->guid());
   d->execInsert(d->insertOctree);
 
 #ifdef LAZY_OCTREE_UPDATES
   d->deferredOctreeUpdates.insert(pr);
 #else
   // lowest three bits of node ID are 0..7 index of the child in the parent
-  int childIndex = nd->guid() & 0x07;
+  int childIndex = n->guid() & 0x07;
 
   sqlite3_bind_int64(d->updateOctreeChildren, 1, pr->guid());
 // mask has bit N set where child N exists
@@ -2958,7 +2958,7 @@ void NavDataCache::Transaction::commit()
     if (_instance->isReadOnly()) {
         return;
     }
-        
+
     assert(!_committed);
     _committed = true;
     _instance->commitTransaction();
@@ -3019,8 +3019,8 @@ NavDataCache::ThreadedGUISearch::ThreadedGUISearch(const std::string& term, bool
         sql = "SELECT rowid FROM positioned WHERE name LIKE '%" + term
                 + "%' AND (type >= 1 AND type <= 3)";
     } else {
-        // types are hard-coded here becuase this is only used by NavaidSearchModel
-        // in ther launcher. We would ideally use a TypeFilter but that would
+        // types are hard-coded here because this is only used by NavaidSearchModel
+        // in the launcher. We would ideally use a TypeFilter but that would
         // mean loading each positioned to filter them, which is inefficient.
         sql = "SELECT rowid FROM positioned WHERE name LIKE '%" + term
                 + "%' AND ((type >= 1 AND type <= 3) OR ((type >= 9 AND type <= 11)) OR (type=18 AND name LIKE '% TACAN') ) ";

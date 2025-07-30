@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: (C) 2008 James Turner <james@flightgear.org>
+ * SPDX-FileCopyrightText: 2008 James Turner <james@flightgear.org>
  * SPDX_FileComment: base class for objects which are spatially located in the simulated world
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
@@ -42,7 +42,7 @@ static bool validateFilter(FGPositioned::Filter* filter)
         SG_LOG(SG_GENERAL, SG_WARN, "invalid positioned filter specified");
         return false;
     }
-    
+
     return true;
 }
 
@@ -228,13 +228,13 @@ FGPositioned::Type FGPositioned::typeFromName(const std::string& aName)
       {NULL, INVALID}};
 
   std::string lowerName = simgear::strutils::lowercase(aName);
-  
+
   for (const NameTypeEntry* n = names; (n->_name != NULL); ++n) {
     if (::strcmp(n->_name, lowerName.c_str()) == 0) {
       return n->_ty;
     }
   }
-  
+
   SG_LOG(SG_NAVAID, SG_WARN, "FGPositioned::typeFromName: couldn't match:" << aName);
   return INVALID;
 }
@@ -288,8 +288,8 @@ const char* FGPositioned::nameForType(Type aTy)
 FGPositionedRef
 FGPositioned::findClosestWithIdent(const std::string& aIdent, const SGGeod& aPos, Filter* aFilter)
 {
-  validateSGGeod(aPos);  
-  return NavDataCache::instance()->findClosestWithIdent(aIdent, aPos, aFilter);
+    validateSGGeod(aPos);
+    return NavDataCache::instance()->findClosestWithIdent(aIdent, aPos, aFilter);
 }
 
 FGPositionedRef
@@ -298,13 +298,13 @@ FGPositioned::findFirstWithIdent(const std::string& aIdent, Filter* aFilter)
   if (aIdent.empty()) {
     return NULL;
   }
-  
+
   FGPositionedList r =
     NavDataCache::instance()->findAllWithIdent(aIdent, aFilter, true);
   if (r.empty()) {
     return NULL;
   }
-  
+
   return r.front();
 }
 
@@ -316,10 +316,10 @@ FGPositioned::findWithinRange(const SGGeod& aPos, double aRangeNm, Filter* aFilt
     if (!validateFilter(aFilter)) {
         return FGPositionedList();
     }
-    
+
   FGPositionedList result;
-  Octree::findAllWithinRange(SGVec3d::fromGeod(aPos), 
-    aRangeNm * SG_NM_TO_METER, aFilter, result, 0xffffff);
+  Octree::findAllWithinRange(SGVec3d::fromGeod(aPos),
+                             aRangeNm * SG_NM_TO_METER, aFilter, result, 0xffffff);
   return result;
 }
 
@@ -327,11 +327,11 @@ FGPositionedList
 FGPositioned::findWithinRangePartial(const SGGeod& aPos, double aRangeNm, Filter* aFilter, bool& aPartial)
 {
   validateSGGeod(aPos);
-  
+
     if (!validateFilter(aFilter)) {
         return FGPositionedList();
     }
-    
+
   int limitMsec = 32;
   FGPositionedList result;
   aPartial = Octree::findAllWithinRange(SGVec3d::fromGeod(aPos),
@@ -346,7 +346,7 @@ FGPositioned::findAllWithIdent(const std::string& aIdent, Filter* aFilter, bool 
     if (!validateFilter(aFilter)) {
         return FGPositionedList();
     }
-    
+
   return NavDataCache::instance()->findAllWithIdent(aIdent, aFilter, aExact);
 }
 
@@ -356,7 +356,7 @@ FGPositioned::findAllWithName(const std::string& aName, Filter* aFilter, bool aE
     if (!validateFilter(aFilter)) {
         return FGPositionedList();
     }
-    
+
   return NavDataCache::instance()->findAllWithName(aName, aFilter, aExact);
 }
 
@@ -364,11 +364,11 @@ FGPositionedRef
 FGPositioned::findClosest(const SGGeod& aPos, double aCutoffNm, Filter* aFilter)
 {
   validateSGGeod(aPos);
-  
+
     if (!validateFilter(aFilter)) {
         return NULL;
     }
-    
+
   FGPositionedList l(findClosestN(aPos, 1, aCutoffNm, aFilter));
   if (l.empty()) {
     return NULL;
@@ -382,7 +382,7 @@ FGPositionedList
 FGPositioned::findClosestN(const SGGeod& aPos, unsigned int aN, double aCutoffNm, Filter* aFilter)
 {
   validateSGGeod(aPos);
-  
+
   FGPositionedList result;
   int limitMsec = 0xffff;
   Octree::findNearestN(SGVec3d::fromGeod(aPos), aN, aCutoffNm * SG_NM_TO_METER, aFilter, result, limitMsec);
@@ -393,7 +393,7 @@ FGPositionedList
 FGPositioned::findClosestNPartial(const SGGeod& aPos, unsigned int aN, double aCutoffNm, Filter* aFilter, bool &aPartial)
 {
     validateSGGeod(aPos);
-    
+
     FGPositionedList result;
     int limitMsec = 32;
     aPartial = Octree::findNearestN(SGVec3d::fromGeod(aPos), aN, aCutoffNm * SG_NM_TO_METER, aFilter, result,
@@ -405,7 +405,7 @@ void
 FGPositioned::sortByRange(FGPositionedList& aResult, const SGGeod& aPos)
 {
   validateSGGeod(aPos);
-  
+
   SGVec3d cartPos(SGVec3d::fromGeod(aPos));
 // computer ordering values
   Octree::FindNearestResults r;
@@ -414,10 +414,10 @@ FGPositioned::sortByRange(FGPositionedList& aResult, const SGGeod& aPos)
     double d2 = distSqr((*it)->cart(), cartPos);
     r.push_back(Octree::OrderedPositioned(*it, d2));
   }
-  
+
 // sort
   std::sort(r.begin(), r.end());
-  
+
 // convert to a plain list
   unsigned int count = aResult.size();
   for (unsigned int i=0; i<count; ++i) {
@@ -470,7 +470,7 @@ void FGPositioned::TypeFilter::addType(Type aTy)
   if (aTy == INVALID) {
     return;
   }
-  
+
   types.push_back(aTy);
   mMinType = std::min(mMinType, aTy);
   mMaxType = std::max(mMaxType, aTy);
@@ -482,14 +482,14 @@ FGPositioned::TypeFilter::fromString(const std::string& aFilterSpec)
   if (aFilterSpec.empty()) {
     throw sg_format_exception("empty filter spec:", aFilterSpec);
   }
-  
+
   string_list parts = simgear::strutils::split(aFilterSpec, ",");
   TypeFilter f;
-  
+
   for (std::string token : parts) {
     f.addType(typeFromName(token));
   }
-  
+
   return f;
 }
 
@@ -499,7 +499,7 @@ FGPositioned::TypeFilter::pass(FGPositioned* aPos) const
   if (types.empty()) {
     return true;
   }
-  
+
     std::vector<Type>::const_iterator it = types.begin(),
         end = types.end();
     for (; it != end; ++it) {
@@ -507,7 +507,7 @@ FGPositioned::TypeFilter::pass(FGPositioned* aPos) const
             return true;
         }
     }
-    
+
     return false;
 }
 

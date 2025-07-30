@@ -3,26 +3,10 @@
  * departure, cruise, arrival information and waypoints
  */
 
-// Written by James Turner, started 2012.
-//
-// Copyright (C) 2012 James Turner
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2012 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifndef FG_FLIGHTPLAN_HXX
-#define FG_FLIGHTPLAN_HXX
+#pragma once
 
 #include <functional>
 
@@ -53,7 +37,7 @@ enum class ICAOFlightType
     Military,
     Other // type X
 };
-    
+
 class FlightPlan : public RouteBase
 {
 public:
@@ -63,29 +47,31 @@ public:
         create a FlightPlan with isRoute *not* set
      */
     static FlightPlanRef create();
-    
+
     /**
         @factory to create a FlightPlan with isRoute=true
      */
     static FlightPlanRef createRoute();
-    
+
   virtual std::string ident() const;
   void setIdent(const std::string& s);
 
-    // propogate the GPS/FMS setting for this through to the RoutePath
-    void setFollowLegTrackToFixes(bool tf);
-    bool followLegTrackToFixes() const;
+  // propagate the GPS/FMS setting for this through to the RoutePath
+  void setFollowLegTrackToFixes(bool tf);
+  bool followLegTrackToFixes() const;
 
-    void setMaxFlyByTurnAngle(double deg);
-    double maxFlyByTurnAngle() const;
+  void setMaxFlyByTurnAngle(double deg);
+  double maxFlyByTurnAngle() const;
 
-    // aircraft approach category as per CFR 97.3, etc
-    // http://www.flightsimaviation.com/data/FARS/part_97-3.html
-    std::string icaoAircraftCategory() const;
-    void setIcaoAircraftCategory(const std::string& cat);
+  // aircraft approach category as per CFR 97.3, etc
+  // http://www.flightsimaviation.com/data/FARS/part_97-3.html
+  std::string icaoAircraftCategory() const;
+  void setIcaoAircraftCategory(const std::string& cat);
 
-    std::string icaoAircraftType() const
-    { return _aircraftType; }
+  std::string icaoAircraftType() const
+  {
+      return _aircraftType;
+  }
 
     void setIcaoAircraftType(const std::string& ty);
 
@@ -94,10 +80,10 @@ public:
     /**
      is this flight-pan a route (for planning) or an active flight-plan (which can be flown?)
      Routes can contain Via, and cannot be active:  FlightPlans contain Legs for procedures and
-     airways, i.e what the GPS/FMC actally flies.
+     airways, i.e what the GPS/FMC actually flies.
      */
     bool isRoute() const;
-    
+
   /**
    * flight-plan leg encapsulation
    */
@@ -122,18 +108,18 @@ public:
      * (eg a runway or dynamic waypoint)
      */
     bool setHoldCount(int count);
-    
+
     int holdCount() const;
-    
-      
+
+
     bool convertWaypointToHold();
-      
+
     unsigned int index() const;
 
     int altitudeFt() const;
     double speed(RouteUnits units = DEFAULT_UNITS) const;
     double altitude(RouteUnits units = DEFAULT_UNITS) const;
-          
+
     int speedKts() const;
     double speedMach() const;
 
@@ -161,7 +147,7 @@ public:
     Leg* cloneFor(FlightPlan* owner) const;
 
       void writeToProperties(SGPropertyNode* node) const;
-      
+
     const FlightPlan* _parent;
     RouteRestriction _speedRestrict = RESTRICT_NONE,
       _altRestrict = RESTRICT_NONE;
@@ -175,7 +161,7 @@ public:
     // This only works if _waypt is a Hold, either defined by a procedure
     // or modified to become one
     int _holdCount = 0;
-      
+
     WayptRef _waypt;
     /// length of this leg following the flown path
     mutable double _pathDistance = -1.0;
@@ -183,7 +169,7 @@ public:
     /// total distance of this leg from departure point
     mutable double _distanceAlongPath = 11.0;
   };
-    
+
   using LegRef = SGSharedPtr<Leg>;
 
   class DelegateFactory;
@@ -200,7 +186,7 @@ public:
     virtual void cruiseChanged()  { }
     virtual void cleared() { }
     virtual void activated() { }
-    
+
       /**
        * Invoked when the C++ code determines the active leg is done / next
        * leg should be sequenced. The default route-manager delegate will
@@ -210,17 +196,17 @@ public:
        * the waypoint twice.
        */
     virtual void sequence() { }
-    
+
     virtual void currentWaypointChanged() { }
     virtual void endOfFlightPlan() { }
-      
+
       virtual void loaded() { }
   protected:
     Delegate();
 
   private:
     friend class FlightPlan;
-    
+
     // record the factory which created us, so we have the option to clean up
     DelegateFactoryRef _factory;
   };
@@ -237,7 +223,7 @@ public:
   { return _currentIndex; }
 
   void sequence();
-    
+
   void setCurrentIndex(int index);
 
   void activate();
@@ -245,7 +231,7 @@ public:
   void finish();
 
     bool isActive() const;
-        
+
   LegRef currentLeg() const;
   LegRef nextLeg() const;
   LegRef previousLeg() const;
@@ -262,7 +248,7 @@ public:
     int indexOfFirstArrivalWaypoint() const;
     int indexOfFirstApproachWaypoint() const;
     int indexOfDestinationRunwayWaypoint() const;
-    
+
   bool load(const SGPath& p);
   bool save(const SGPath& p) const;
 
@@ -288,7 +274,7 @@ public:
   void setDeparture(FGRunway* rwy);
 
     void clearDeparture();
-    
+
   SID* sid() const
   { return _sid; }
 
@@ -299,12 +285,12 @@ public:
   void setSID(Transition* sidWithTrans);
 
     void clearSID();
-    
+
   void setDestination(FGAirport* apt);
   void setDestination(FGRunway* rwy);
 
     void clearDestination();
-    
+
     FGAirportRef alternate() const;
     void setAlternate(FGAirportRef alt);
 
@@ -316,9 +302,9 @@ public:
 
     void setApproach(Transition* approachWithTrans);
 
-    
+
     Transition* approachTransition() const;
-    
+
   STAR* star() const
   { return _star; }
 
@@ -329,7 +315,7 @@ public:
   void setSTAR(Transition* starWithTrans);
 
   void clearSTAR();
-    
+
   double totalDistanceNm() const
   { return _totalDistance; }
 
@@ -353,16 +339,16 @@ public:
 
   /**
         given a waypoint index, find a point at a normalised offset, which must be [-1 .. 1]
-                eg an offset of -0.5 will be half-way between aIndex and the preceeding waypoint,
+                eg an offset of -0.5 will be half-way between aIndex and the preceding waypoint,
         and an offset of 0.3 will be 30% of the distance from aIndex to the next waypoint.
      */
   SGGeod pointAlongRouteNorm(int aIndex, double aOffsetNorm) const;
 
   /**
     @brief given an index to insert a waypoint into the plan, find the geographical vicinity.
-        This is used to aid disambiguration searches, etc: see the vicinity paramter to 'waypointFromString'
+        This is used to aid disambiguration searches, etc: see the vicinity parameter to 'waypointFromString'
         below, for example
-     
+
      When aIndex is negative, the vicinity used is the end of the current flight-plan, i.e appending to
      the waypoints rather than appending.
      */
@@ -396,30 +382,30 @@ public:
   void setCallsign(const std::string& callsign);
   std::string callsign() const
   { return _callsign; }
-    
+
     void setRemarks(const std::string& remarks);
     std::string remarks() const
     { return _remarks; }
-    
+
 // cruise data
     void setCruiseSpeedKnots(int kts);
     int cruiseSpeedKnots() const;
-    
+
     void setCruiseSpeedMach(double mach);
     double cruiseSpeedMach() const;
-    
+
     void setCruiseSpeedKPH(int kmh);
     int cruiseSpeedKPH() const;
 
     void setCruiseFlightLevel(int flightLevel);
     int cruiseFlightLevel() const;
-    
+
     void setCruiseAltitudeFt(int altFt);
     int cruiseAltitudeFt() const;
 
     void setCruiseAltitudeM(int altM);
     int cruiseAltitudeM() const;
-    
+
   /**
    * abstract interface for creating delegates automatically when a
    * flight-plan is created or loaded
@@ -430,27 +416,27 @@ public:
     virtual Delegate* createFlightPlanDelegate(FlightPlan* fp) = 0;
     virtual void destroyFlightPlanDelegate(FlightPlan* fp, Delegate* d);
   };
-    
+
   static void registerDelegateFactory(DelegateFactoryRef df);
   static void unregisterDelegateFactory(DelegateFactoryRef df);
 
   void addDelegate(Delegate* d);
   void removeDelegate(Delegate* d);
-    
+
     using LegVisitor = std::function<void(Leg*)>;
     void forEachLeg(const LegVisitor& lv);
 private:
     FlightPlan(bool isRoute);
 
   friend class Leg;
-  
+
   int findLegIndex(const Leg* l) const;
-    
+
   void lockDelegates();
   void unlockDelegates();
 
   void notifyCleared();
-    
+
   unsigned int _delegateLock = 0;
   bool _arrivalChanged = false,
     _departureChanged = false,
@@ -458,9 +444,9 @@ private:
     _currentWaypointChanged = false,
     _cruiseDataChanged = false;
   bool _didLoadFP = false;
-    
+
     void saveToProperties(SGPropertyNode* d) const;
-    
+
   bool loadXmlFormat(const SGPath& path);
   bool loadGpxFormat(const SGPath& path);
   bool loadPlainTextFormat(const SGPath& path);
@@ -472,18 +458,18 @@ private:
 
   double magvarDegAt(const SGGeod& pos) const;
   bool parseICAOLatLon(const std::string &s, SGGeod &p);
-    
+
     /**
         helper to convert VIA legs into a list of regular waypoints after load, etc
      */
     bool expandVias();
-    
+
   std::string _ident;
   std::string _callsign;
   std::string _remarks;
   std::string _aircraftType;
     const bool _isRoute;
-    
+
   int _currentIndex;
     bool _followLegTrackToFix;
     char _aircraftCategory;
@@ -515,6 +501,4 @@ private:
     std::vector<Delegate*> _delegates;
 };
 
-} // of namespace flightgear
-
-#endif // of FG_FLIGHTPLAN_HXX
+} // namespace flightgear

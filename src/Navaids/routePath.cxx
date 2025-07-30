@@ -1,19 +1,7 @@
 // routePath.hxx - compute data about planned route
 //
-// Copyright (C) 2018  James Turner  <james@flightgear.org>
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
 
@@ -115,23 +103,23 @@ double pointsKnownDistanceFromGC(const SGGeoc& a, const SGGeoc&b, const SGGeoc& 
 {
   double A = SGGeodesy::courseRad(a, d) - SGGeodesy::courseRad(a, b);
   double bDist = SGGeodesy::distanceRad(a, d);
-  
+
   // r=(cos(b)^2+sin(b)^2*cos(A)^2)^(1/2)
-  double r = pow(sqr(cos(bDist)) + sqr(sin(bDist)) * sqr(cos(A)), 0.5); 
-  
+  double r = pow(sqr(cos(bDist)) + sqr(sin(bDist)) * sqr(cos(A)), 0.5);
+
   double p = atan2(sin(bDist)*cos(A), cos(bDist));
-  
+
   if (sqr(cos(dist)) > sqr(r)) {
     SG_LOG(SG_NAVAID, SG_INFO, "pointsKnownDistanceFromGC, no points exist");
     return -1.0;
   }
-  
+
   double dp1 = p + acos(cos(dist)/r);
   double dp2 = p - acos(cos(dist)/r);
-  
+
   double dp1Nm = fabs(dp1 * SG_RAD_TO_NM);
   double dp2Nm = fabs(dp2 * SG_RAD_TO_NM);
-  
+
   return SGMiscd::min(dp1Nm, dp2Nm);
 }
 
@@ -262,7 +250,7 @@ public:
     flyOver(w->flag(WPT_OVERFLIGHT))
   {
   }
-  
+
   void initPass0()
   {
     const std::string& ty(wpt->type());
@@ -280,7 +268,7 @@ public:
   }
 
   /**
-   * test if course of this leg can be adjusted or is contrained to an exact value
+   * test if course of this leg can be adjusted or is constrained to an exact value
    */
   bool isCourseConstrained() const
   {
@@ -333,24 +321,24 @@ public:
     if (legCourseValid) {
       return;
     }
-    
+
     if ((wpt->type() == "via") || (wpt->type() == "discontinuty"))
     {
       // do nothing, we can't compute a valid leg course for these types
       // we'll generate sharp turns in the path but that's no problem.
       return;
     }
-    
+
     if (!previous || !previous->posValid) {
       // all the cases below assume previous pas exists and has a valid position
       SG_LOG(SG_NAVAID, SG_WARN, "RoutePath: Asked to compute leg course, but, previous is invalid");
       return;
     }
-    
+
     if (wpt->type() == "runway") {
       FGRunway* rwy = static_cast<RunwayWaypt*>(wpt.get())->runway();
       flyOver = true;
-      
+
       TurnInfo ti = turnCenterAndAngleFromExit(rwy->threshold(),
                                                rwy->headingDeg(),
                                                radiusM, previous->pos);
@@ -368,7 +356,7 @@ public:
       legCourseValid = true;
       return;
     }
-      
+
       SGGeod previousPos = previous->pos;
       // use correct location for runway, otherwise use threshold
       // and get weird courses
@@ -376,7 +364,7 @@ public:
           FGRunway* rwy = static_cast<RunwayWaypt*>(previous->wpt.get())->runway();
           previousPos = rwy->end();
       }
-    
+
     if (posValid) {
       legCourseTrue = SGGeodesy::courseDeg(previousPos, pos);
       legCourseValid = true;
@@ -477,12 +465,12 @@ public:
                     SGGeod tc2 = SGGeodesy::direct(turnExitCenter,
                                                    offsetAngle,
                                                    turnRadius * 2.0);
-                    
-       
+
+
                     turnExitPos = SGGeodesy::direct(tc2, next.legCourseTrue + p , turnRadius);
                     overflightCompensationAngle = -theta;
 
-                    // sign of angles will differ, so compute distances seperately
+                    // sign of angles will differ, so compute distances separately
                     turnPathDistanceM = pathDistanceForTurnAngle(turnExitAngle) +
                                         pathDistanceForTurnAngle(overflightCompensationAngle);
                 } else {
@@ -519,12 +507,12 @@ public:
             turnPathDistanceM = pathDistanceForTurnAngle(turnEntryAngle);
         }
   }
-  
+
   double turnDistanceM() const
   {
       return turnPathDistanceM;
   }
-  
+
   void turnEntryPath(SGGeodVec& path) const
   {
     if (!hasEntry || fabs(turnEntryAngle) < 0.5 ) {
@@ -540,7 +528,7 @@ public:
         h += stepIncrement;
     }
   }
-  
+
   void turnExitPath(SGGeodVec& path) const
   {
     if (fabs(turnExitAngle) < 0.5) {
@@ -550,7 +538,7 @@ public:
 
     int steps = std::max(SGMiscd::roundToInt(fabs(turnExitAngle) / 3.0), 1);
     double stepIncrement = turnExitAngle / steps;
-    
+
     // initial exit heading
       double h = legCourseTrue + (flyOver ? 0.0 : turnEntryAngle);
       if (wpt->type() == "runway") {
@@ -571,7 +559,7 @@ public:
     if (flyOver && (overflightCompensationAngle != 0.0)) {
       // skew by compensation angle back
       steps = std::max(SGMiscd::roundToInt(fabs(overflightCompensationAngle) / 3.0), 1);
-      
+
       // step in opposite direction to the turn angle to swing back onto
       // the next leg course
       stepIncrement = overflightCompensationAngle / steps;
@@ -591,7 +579,7 @@ public:
   SGGeod pointAlongExitPath(double distanceM) const
   {
       double basicTurnDistance = pathDistanceForTurnAngle(turnExitAngle);
-      
+
       if (distanceM > basicTurnDistance) {
           assert(flyOver);
           assert(overflightCompensationAngle != 0.0);
@@ -610,7 +598,7 @@ public:
           return SGGeodesy::direct(tc2,
                                    legCourseTrue + turnExitAngle + theta + p, turnRadius);
       }
-      
+
       double theta = (distanceM / turnRadius) * SG_RADIANS_TO_DEGREES;
       theta = copysign(theta, turnExitAngle);
       double inboundCourse = legCourseTrue + (flyOver ? 0.0 : turnExitAngle);
@@ -624,7 +612,7 @@ public:
       theta = copysign(theta, turnEntryAngle);
       return pointOnEntryTurnFromHeading(legCourseTrue + theta);
   }
-  
+
   WayptRef wpt;
   bool hasEntry, posValid, legCourseValid, skipped;
   SGGeod pos, turnEntryPos, turnExitPos, turnEntryCenter, turnExitCenter;
@@ -653,7 +641,7 @@ public:
     {
         auto previous(previousValidWaypoint(index));
         if ((previous == waypoints.end()) || !previous->posValid) {
-            SG_LOG(SG_NAVAID, SG_WARN, "couldn't compute position for dynamic waypoint: no preceeding valid waypoint");
+            SG_LOG(SG_NAVAID, SG_WARN, "couldn't compute position for dynamic waypoint: no preceding valid waypoint");
             return;
         }
 
@@ -725,7 +713,7 @@ public:
             // no turn data
         }
   }
-  
+
   double computeVNAVAltitudeFt(int index)
   {
     WayptRef w = waypoints[index].wpt;
@@ -735,7 +723,7 @@ public:
       if (next < 0) {
         return 0.0;
       }
-      
+
       double fixedAlt = altitudeForIndex(next);
       double distanceM = distanceBetweenIndices(index, next);
       return perf.computePreviousAltitude(distanceM, fixedAlt);
@@ -745,96 +733,96 @@ public:
       if (prev < 0) {
         return 0.0;
       }
-      
+
       double fixedAlt = altitudeForIndex(prev);
       double distanceM = distanceBetweenIndices(prev, index);
       return perf.computeNextAltitude(distanceM, fixedAlt);
     }
   }
-  
+
   int findPreceedingKnownAltitude(int index) const
   {
     const WayptData& w(waypoints[index]);
     if (w.wpt->altitudeRestriction() == RESTRICT_AT) {
       return index;
     }
-    
+
     // principal base case is runways.
     const std::string& ty(w.wpt->type());
     if (ty == "runway") {
       return index; // runway always has a known elevation
     }
-    
+
     if (index == 0) {
       SG_LOG(SG_NAVAID, SG_WARN, "findPreceedingKnownAltitude: no preceding altitude value found");
       return -1;
     }
-    
+
     // recurse earlier in the route
     return findPreceedingKnownAltitude(index - 1);
   }
-  
+
   int findNextKnownAltitude(unsigned int index) const
   {
     if (index >= waypoints.size()) {
       SG_LOG(SG_NAVAID, SG_WARN, "findNextKnownAltitude: no next altitude value found");
       return -1;
     }
-    
+
     const WayptData& w(waypoints[index]);
     if (w.wpt->altitudeRestriction() == RESTRICT_AT) {
       return index;
     }
-    
+
     // principal base case is runways.
     const std::string& ty(w.wpt->type());
     if (ty == "runway") {
       return index; // runway always has a known elevation
     }
-    
+
     if (index == waypoints.size() - 1) {
       SG_LOG(SG_NAVAID, SG_WARN, "findNextKnownAltitude: no next altitude value found");
       return -1;
     }
-    
+
     return findNextKnownAltitude(index + 1);
   }
-  
+
   double altitudeForIndex(int index) const
   {
     const WayptData& w(waypoints[index]);
     if (w.wpt->altitudeRestriction() != RESTRICT_NONE) {
       return w.wpt->altitudeFt();
     }
-    
+
     const std::string& ty(w.wpt->type());
     if (ty == "runway") {
       FGRunway* rwy = static_cast<RunwayWaypt*>(w.wpt.get())->runway();
       return rwy->threshold().getElevationFt();
     }
-    
+
     SG_LOG(SG_NAVAID, SG_WARN, "altitudeForIndex: waypoint has no explicit altitude");
     return 0.0;
   }
-  
+
   double distanceBetweenIndices(int from, int to) const
   {
     double total = 0.0;
-    
+
     for (int i=from+1; i<= to; ++i) {
       total += waypoints[i].pathDistanceM;
     }
-    
+
     return total;
   }
-  
+
     WayptDataVec::iterator previousValidWaypoint(unsigned int index)
     {
         do {
             if (index == 0) {
                 return waypoints.end();
             }
-            
+
             --index;
         } while (waypoints.at(index).skipped || (waypoints.at(index).wpt->type() == "discontinuity"));
 
@@ -903,7 +891,7 @@ void RoutePath::commonInit()
   for (auto& w : d->waypoints) {
     w.initPass0();
   }
-  
+
   for (unsigned int i=1; i<d->waypoints.size(); ++i) {
     WayptData* nextPtr = ((i + 1) < d->waypoints.size()) ? &d->waypoints[i+1] : nullptr;
     auto prev = d->previousValidWaypoint(i);
@@ -944,7 +932,7 @@ void RoutePath::commonInit()
       d->waypoints[i].turnExitPos = d->waypoints[i].pos;
       d->waypoints[i].turnEntryPos = d->waypoints[i].pos;
     }
-    
+
     // now turn is computed, can resolve distances
     d->waypoints[i].pathDistanceM = computeDistanceForIndex(i);
   }
@@ -959,11 +947,11 @@ SGGeodVec RoutePath::pathForIndex(int index) const
   const WayptData& w(d->waypoints[index]);
   const std::string& ty(w.wpt->type());
   SGGeodVec r;
-  
+
   if (d->waypoints[index].skipped) {
     return {};
   }
-  
+
   // don't show any path
   if (w.wpt->flag(WPT_HIDDEN)) {
     return {};
@@ -981,11 +969,11 @@ SGGeodVec RoutePath::pathForIndex(int index) const
     // ideally we'd show a stippled line to connect the route?
     return {};
   }
-  
+
   if (ty == "discontinuity") {
     return {}; // no points for a discontinuity of course
   }
-  
+
   if (ty == "via") {
     return pathForVia(static_cast<Via*>(d->waypoints[index].wpt.get()), index);
   }
@@ -993,10 +981,10 @@ SGGeodVec RoutePath::pathForIndex(int index) const
 
   if (prevIt != d->waypoints.end()) {
     prevIt->turnExitPath(r);
-    
+
     SGGeod from = prevIt->turnExitPos,
     to = w.turnEntryPos;
-    
+
     // compute rounding offset, we want to round towards the direction of travel
     // which depends on the east/west sign of the longitude change
     double lonDelta = to.getLongitudeDeg() - from.getLongitudeDeg();
@@ -1004,23 +992,23 @@ SGGeodVec RoutePath::pathForIndex(int index) const
       interpolateGreatCircle(from, to, r);
     }
   } // of have previous waypoint
-  
+
   w.turnEntryPath(r);
-  
+
   // hold is the normal leg and then the hold waypoints as well
   if (ty== "hold") {
     const auto h = static_cast<Hold*>(d->waypoints[index].wpt.get());
     const auto holdPath = pathForHold(h);
     r.insert(r.end(), holdPath.begin(), holdPath.end());
   }
-  
+
   if (ty == "runway") {
     // runways get an extra point, at the end. this is particularly
     // important so missed approach segments draw correctly
     FGRunway* rwy = static_cast<RunwayWaypt*>(w.wpt.get())->runway();
     r.push_back(rwy->end());
   }
-  
+
   return r;
 }
 
@@ -1028,16 +1016,16 @@ void RoutePath::interpolateGreatCircle(const SGGeod& aFrom, const SGGeod& aTo, S
 {
   SGGeoc gcFrom = SGGeoc::fromGeod(aFrom),
     gcTo = SGGeoc::fromGeod(aTo);
-  
+
   double lonDelta = gcTo.getLongitudeRad() - gcFrom.getLongitudeRad();
   if (fabs(lonDelta) < 1e-3) {
     return;
   }
-  
-  lonDelta = SGMiscd::normalizeAngle(lonDelta);    
+
+  lonDelta = SGMiscd::normalizeAngle(lonDelta);
   int steps = static_cast<int>(fabs(lonDelta) * SG_RADIANS_TO_DEGREES * 2);
   double lonStep = (lonDelta / steps);
-  
+
   double lon = gcFrom.getLongitudeRad() + lonStep;
   for (int s=0; s < (steps - 1); ++s) {
     lon = SGMiscd::normalizeAngle(lon);
@@ -1115,7 +1103,7 @@ SGGeodVec RoutePath::pathForHold(Hold* hold) const
         SGGeodesy::direct(pos, hdg, legDist, pos, az2);
         r.push_back(pos);
     } // of leg+turn duplication
-    
+
     return r;
 }
 
@@ -1135,7 +1123,7 @@ double RoutePath::computeDistanceForIndex(int index) const
     if (ty == "via") {
         return distanceForVia(static_cast<Via*>(it->wpt.get()), index);
     }
-    
+
     if (ty == "discontinuity") {
         return 0.0;
     }
@@ -1152,7 +1140,7 @@ double RoutePath::computeDistanceForIndex(int index) const
         // add entry distance
         dist += it->turnDistanceM();
     }
-    
+
     return dist;
 }
 
@@ -1222,12 +1210,12 @@ SGGeod RoutePath::positionForDistanceFrom(int index, double distanceM) const
   if (index < 0) {
     index = sz - 1; // map negative values to end of the route
   }
-  
+
   if ((index < 0) || (index >= sz)) {
     throw sg_range_exception("waypt index out of range",
                              "RoutePath::positionForDistanceFrom");
   }
-  
+
   // find the actual leg we're within
   if (distanceM < 0.0) {
     // scan backwards
@@ -1236,17 +1224,17 @@ SGGeod RoutePath::positionForDistanceFrom(int index, double distanceM) const
       // we want to look at index n-1 (so, 3), and see if this makes
       // distance positive. We need to offset by distance from 3 -> 4,
       // which is waypoint 4's path distance.
-      
+
       // note pathDistanceM is 0 for skipped waypoints, so this works out
       distanceM += d->waypoints[index].pathDistanceM;
       --index;
     }
-    
+
     if (distanceM < 0.0) {
       // still negative, return route start
       return d->waypoints[0].pos;
     }
-    
+
   } else {
     // scan forwards
     int nextIndex = index + 1;
@@ -1255,41 +1243,41 @@ SGGeod RoutePath::positionForDistanceFrom(int index, double distanceM) const
       index = nextIndex++;
     }
   }
-  
+
   auto nextIt = d->nextValidWaypoint(index);
   if (nextIt == d->waypoints.end()) {
     // past route end, just return final position
     return d->waypoints[sz - 1].pos;
   }
-  
+
   // this is important so we start from a valid WP if we're
   // working either side of a DISCON
   auto curIt = d->previousValidWaypoint(nextIt);
   if (curIt == d->waypoints.end()) {
-    SG_LOG(SG_NAVAID, SG_WARN, "Couldn't find valid preceeding waypoint " << index);
-    return nextIt->pos;
+      SG_LOG(SG_NAVAID, SG_WARN, "Couldn't find valid preceding waypoint " << index);
+      return nextIt->pos;
   }
-  
+
   const WayptData& wpt = *curIt;
   const WayptData& next = *nextIt;
-  
+
   if (next.wpt->type() == "via") {
     return positionAlongVia(static_cast<Via*>(next.wpt.get()), index, distanceM);
   }
-  
+
   if (wpt.turnPathDistanceM > distanceM) {
     // on the exit path of current wpt
     return wpt.pointAlongExitPath(distanceM);
   } else {
     distanceM -= wpt.turnPathDistanceM;
   }
-  
+
   double corePathDistance = next.pathDistanceM - next.turnPathDistanceM;
   if (next.hasEntry && (distanceM > corePathDistance)) {
     // on the entry path of next waypoint
     return next.pointAlongEntryPath(distanceM - corePathDistance);
   }
-  
+
   // linear between turn exit and turn entry points
   return SGGeodesy::direct(wpt.turnExitPos, next.legCourseTrue, distanceM);
 }
