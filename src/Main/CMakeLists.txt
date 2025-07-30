@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2010 James Turner <james@flightgear.org>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # CMake module includes.
 include(FlightGearComponent)
 include(SetupFGFSBundle)
@@ -91,7 +94,7 @@ if(APPLE)
     setup_fgfs_bundle(fgfs)
 endif()
 
-target_precompile_headers(fgfs PRIVATE 
+target_precompile_headers(fgfs PRIVATE
         "$<$<COMPILE_LANGUAGE:CXX>:${PROJECT_SOURCE_DIR}/src/Include/flightgear_precompile.h>")
 
 # Set up the target links.
@@ -127,7 +130,7 @@ if (MSVC)
   file(TO_NATIVE_PATH "${FG_QT_BIN_DIR}/../qml" _qt_qml_dir_native)
 
   set_property(TARGET fgfs PROPERTY
-  VS_GLOBAL_LocalDebuggerEnvironment 
+  VS_GLOBAL_LocalDebuggerEnvironment
     "PATH=${_osg_bin_dir_native};${_install_bin_dir};${_msvc_3rdparty_bin_dir};${_qt_bin_dir_native}\nQT_PLUGIN_PATH=${_qt_plugin_dir_native}\nQML_IMPORT_PATH=${_qt_qml_dir_native}"
 )
 endif()

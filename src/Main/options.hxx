@@ -2,27 +2,10 @@
 //
 // Written by Curtis Olson, started April 1998.
 //
-// Copyright (C) 1998  Curtis L. Olson  - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-FileCopyrightText: 1998 Curtis L. Olson
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-
-#ifndef _OPTIONS_HXX
-#define _OPTIONS_HXX
+#pragma once
 
 #include <memory>
 #include <optional>
@@ -36,14 +19,14 @@ class SGPath;
 namespace flightgear
 {
 
-    /**
-     * return the default platform dependant download directory.
+/**
+     * return the default platform-dependent download directory.
      * This must be a user-writeable location, the question is if it should
      * be a user visible location. On Windows we default to a subdir of
      * Documents (FlightGear), on Unixes we default to FG_HOME, which is
      * typically invisible.
      */
-    SGPath defaultDownloadDir();
+SGPath defaultDownloadDir();
 
 
 /// option processing can have various result values
@@ -84,7 +67,7 @@ namespace flightgear
         OptionResult init(int argc, char* argv[], const SGPath& appDataPath);
 
         /**
-    * parse a config file (eg, .fgfsrc) 
+    * parse a config file (eg, .fgfsrc)
     */
         void readConfig(const SGPath& path);
 
@@ -155,7 +138,7 @@ namespace flightgear
 
         /**
    * apply option values to the simulation state
-   * (set properties, etc). 
+   * (set properties, etc).
    */
         OptionResult processOptions();
 
@@ -170,18 +153,18 @@ namespace flightgear
         OptionResult initAircraft();
 
         /**
-   * should defualt configuration files be loaded and processed or not?
+   * should default configuration files be loaded and processed or not?
    * There's many configuration files we have historically read by default
    * on startup - fgfs.rc in various places and so on.
    * --no-default-config allows this behaviour to be changed, so only
-   * expicitly listed files are read Expose
+   * explicitly listed files are read Expose
    * the value of the option here.
    */
         bool shouldLoadDefaultConfig() const;
 
         /**
      * when using the built-in launcher, we disable the default config files.
-     * explicitly loaded confg files are still permitted.
+     * explicitly loaded config files are still permitted.
      */
         void setShouldLoadDefaultConfig(bool load);
 
@@ -306,5 +289,3 @@ namespace flightgear
 } // of namespace flightgear
 
 void fgSetDefaults();
-
-#endif /* _OPTIONS_HXX */

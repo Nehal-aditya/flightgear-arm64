@@ -1,6 +1,7 @@
 /*
  * SPDX-FileName: fg_commands.hxx
  * SPDX-FileComment: built-in commands for FlightGear.
+ * SPDX-FileCopyrightText: 1997 Curtis L. Olson
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -123,13 +124,13 @@ split_value (double full_value, const char * mask,
 }
 
 /**
- * @brief Retrive a typed value from a node, either from <foo> directly or indirectly
- * 
+ * @brief Retrieve a typed value from a node, either from <foo> directly or indirectly
+ *
  * @param node - base node from the command to look inside
  * @param name - direct name of the argument, eg 'min' or 'max'
  * @param indirectName - indirect name to use, eg, 'min-path'. If empty, the name is formed using the base
  *  name and appending '-prop', eg 'min-prop' and 'max-prop'.
- * @return std::optional<T> 
+ * @return std::optional<T>
  */
 template <class T>
 static std::optional<T>
@@ -1113,7 +1114,7 @@ static struct {
 } built_ins[] = {
     {"null", do_null},
     {"nasal", do_nasal},
-    {"nasal-reload", do_reload_nasal_module}, // avoid conflict with modules.nas which defines 'nasal-module-reload' 
+    {"nasal-reload", do_reload_nasal_module}, // avoid conflict with modules.nas which defines 'nasal-module-reload'
     {"pause", do_pause},
     {"load", do_load},
     {"save", do_save},
@@ -1172,7 +1173,7 @@ fgInitCommands ()
   // set our property root as the implicit default root for the
   // command managr
   SGCommandMgr::instance()->setImplicitRoot(globals->get_props());
-    
+
   SG_LOG(SG_GENERAL, SG_BULK, "Initializing basic built-in commands:");
   for (int i = 0; built_ins[i].name != 0; i++) {
     SG_LOG(SG_GENERAL, SG_BULK, "  " << built_ins[i].name);

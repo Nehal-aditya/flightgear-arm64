@@ -1,7 +1,7 @@
 /*
 * SPDX-FileComment: Flight Gear top level initialization routines
 * SPDX-License-Identifier: GPL-2.0-or-later
-* SPDX-FileCopyrightText: Copyright (C) 1997 Curtis L. Olson
+* SPDX-FileCopyrightText: 1997 Curtis L. Olson
 */
 
 #pragma once
@@ -20,7 +20,7 @@ std::string fgBasePackageVersion(const SGPath& path);
 
 /**
  * @brief structure holding parsed info from <base-package>/base_package.json
- * 
+ *
  */
 struct FGBasePackageInfo {
     std::string buildDate;
@@ -29,9 +29,9 @@ struct FGBasePackageInfo {
 
 /**
  * @brief Parse the base package info JSON
- * 
- * @param path 
- * @return std::optional<FGBasePackageInfo> 
+ *
+ * @param path
+ * @return std::optional<FGBasePackageInfo>
  */
 std::optional<FGBasePackageInfo>
 fgBasePackageInfo(const SGPath& path);
@@ -56,8 +56,8 @@ int fgInitConfig ( int argc, char **argv, bool reinit );
 void fgInitAircraftPaths(bool reinit);
 
 /**
- * @brief 
- * 
+ * @brief
+ *
  * @param reinit : is this a second(+) call of the function, i.e after reset
  * @param didUseLauncher : allow adjusting UI feedback if we used the launcher or not
  * @return int : an Options result to indicate if we should continue, quit, etc
@@ -82,7 +82,7 @@ bool fgInitGeneral ();
 void fgCreateSubsystems(bool duringReset);
 
 // called after the subsystems have been bound and initialised,
-// to peform final init
+// to perform final init
 void fgPostInitSubsystems();
 
 // Re-position: when only location is changing, we can do considerably
@@ -100,6 +100,3 @@ int fgUninstall();
 
 // flightgear specific exit(status) function
 void fgExit(int status);
-
-
-

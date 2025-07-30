@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2004 Andy Ross <andy@plausible.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <cstdio>
 #include <cstring>
@@ -139,7 +141,7 @@ int main(int argc, char** argv)
 
     // Run it.
     result = naCall(ctx, code, argc-2, args, naNil(), naNil());
-    (void)result; // surpeess a compiler waring;
+    (void)result; // suppress a compiler warning;
     free(args);
 
 #if 0

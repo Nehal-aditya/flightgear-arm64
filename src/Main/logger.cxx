@@ -1,11 +1,10 @@
 // logger.cxx - log properties.
 // Written by David Megginson, started 2002.
 //
-// This file is in the Public Domain, and comes with no warranty.
+// SPDX-FileCopyrightText: 2002 David Megginson <david@megginson.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
 #include "logger.hxx"
 
@@ -75,7 +74,7 @@ FGLogger::init ()
         delimiter = ",";
         child->setStringValue("delimiter", delimiter.c_str());
     }
-        
+
     log.interval_ms = child->getLongValue("interval-ms");
     log.last_time_ms = globals->get_sim_time_sec() * 1000;
     log.delimiter = delimiter.c_str()[0];

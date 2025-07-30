@@ -2,23 +2,8 @@
 //
 // Written by David Megginson, started 2000.
 //
-// Copyright (C) 2000, 2001 David Megginson - david@megginson.com
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-FileCopyrightText: 2000 David Megginson <david@megginson.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
 
@@ -161,13 +146,13 @@ static const char *
 getDateString ()
 {
   static char buf[64];		// FIXME
-  
+
   SGTime * st = globals->get_time_params();
   if (!st) {
     buf[0] = 0;
     return buf;
   }
-  
+
   struct tm * t = st->getGmt();
   snprintf(buf, 64, "%.4d-%.2d-%.2dT%.2d:%.2d:%.2d",
            t->tm_year + 1900, t->tm_mon + 1, t->tm_mday,
@@ -212,7 +197,7 @@ setDateString (const char * date_string)
 				// too difficult, by the way.
   long int warp =
     mktime(&new_time) - mktime(current_time) + globals->get_warp();
-    
+
   fgSetInt("/sim/time/warp", warp);
 }
 
@@ -228,7 +213,7 @@ getGMTString ()
     buf[0] = 0;
     return buf;
   }
-  
+
   struct tm *t = st->getGmt();
   snprintf(buf, 16, "%.2d:%.2d:%.2d",
       t->tm_hour, t->tm_min, t->tm_sec);
@@ -249,7 +234,7 @@ const char* FGProperties::getLongitudeString ()
   const double d = _longDeg->getDoubleValue();
   auto format = static_cast<strutils::LatLonFormat>(_lonLatformat->getIntValue());
   const char c = d < 0.0 ? 'W' : 'E';
-  
+
   static char longitudeBuffer[64];
   const auto s = strutils::formatLatLonValueAsString(d, format, c);
   memcpy(longitudeBuffer, s.c_str(), s.size() + 1);
@@ -261,7 +246,7 @@ const char* FGProperties::getLatitudeString ()
   const double d = _latDeg->getDoubleValue();
   auto format = static_cast<strutils::LatLonFormat>(_lonLatformat->getIntValue());
   const char c = d < 0.0 ? 'S' : 'N';
-  
+
   static char latitudeBuffer[64];
   const auto s = strutils::formatLatLonValueAsString(d, format, c);
   memcpy(latitudeBuffer, s.c_str(), s.size() + 1);
@@ -403,7 +388,7 @@ FGProperties::update (double dt)
     const double magvar = _magVar->getDoubleValue();
     const auto hdgMag = SGMiscd::normalizePeriodic(0, 360.0, _trueHeading->getDoubleValue() - magvar);
     _headingMagnetic->setDoubleValue(hdgMag);
-    
+
     const auto trackMag = SGMiscd::normalizePeriodic(0, 360.0, _trueTrack->getDoubleValue() - magvar);
     _trackMagnetic->setDoubleValue(trackMag);
 }
@@ -497,8 +482,8 @@ fgGetNode (const char * path, bool create)
   return globals->get_props()->getNode(path, create);
 }
 
-SGPropertyNode * 
-fgGetNode (const char * path, int index, bool create)
+SGPropertyNode*
+fgGetNode(const char* path, int index, bool create)
 {
   return globals->get_props()->getNode(path, index, create);
 }
@@ -599,9 +584,9 @@ fgSetArchivable (const char * name, bool state)
 {
   SGPropertyNode * node = globals->get_props()->getNode(name);
   if (node == 0)
-    SG_LOG(SG_GENERAL, SG_DEBUG,
-	   "Attempt to set archive flag for non-existant property "
-	   << name);
+      SG_LOG(SG_GENERAL, SG_DEBUG,
+             "Attempt to set archive flag for non-existent property "
+                 << name);
   else
     node->setAttribute(SGPropertyNode::ARCHIVE, state);
 }
@@ -611,9 +596,9 @@ fgSetReadable (const char * name, bool state)
 {
   SGPropertyNode * node = globals->get_props()->getNode(name);
   if (node == 0)
-    SG_LOG(SG_GENERAL, SG_DEBUG,
-	   "Attempt to set read flag for non-existant property "
-	   << name);
+      SG_LOG(SG_GENERAL, SG_DEBUG,
+             "Attempt to set read flag for non-existent property "
+                 << name);
   else
     node->setAttribute(SGPropertyNode::READ, state);
 }
@@ -623,9 +608,9 @@ fgSetWritable (const char * name, bool state)
 {
   SGPropertyNode * node = globals->get_props()->getNode(name);
   if (node == 0)
-    SG_LOG(SG_GENERAL, SG_DEBUG,
-	   "Attempt to set write flag for non-existant property "
-	   << name);
+      SG_LOG(SG_GENERAL, SG_DEBUG,
+             "Attempt to set write flag for non-existent property "
+                 << name);
   else
     node->setAttribute(SGPropertyNode::WRITE, state);
 }
@@ -638,11 +623,11 @@ fgUntie(const char * name)
     SG_LOG(SG_GENERAL, SG_WARN, "fgUntie: unknown property " << name);
     return;
   }
-  
+
   if (!node->isTied()) {
     return;
   }
-  
+
   if (!node->untie()) {
     SG_LOG(SG_GENERAL, SG_WARN, "Failed to untie property " << name);
   }

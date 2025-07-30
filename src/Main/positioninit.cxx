@@ -1,20 +1,7 @@
 // positioninit.cxx - helpers relating to setting initial aircraft position
 //
-// Copyright (C) 2012 James Turner  zakalawe@mac.com
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2012 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
 
@@ -185,7 +172,7 @@ static bool airportParkingSetVicinity(const string& id)
       SG_LOG( SG_GENERAL, SG_ALERT, "Failed to find airport " << id );
       return false;
     }
-    
+
     setInitialPosition(apt->geod(), 0.0);
     return true;
 }
@@ -198,13 +185,13 @@ static bool finalizePositionForParkpos( const string& id, const string& parkpos 
         SG_LOG( SG_GENERAL, SG_ALERT, "finalizePositionForParkpos: >> failed to find AI manager / user aircraft");
         return false;
     }
-    
+
     auto userAIFP = aiManager->getUserAircraft()->GetFlightPlan();
     if (!userAIFP) {
         SG_LOG( SG_GENERAL, SG_ALERT, "finalizePositionForParkpos: >> failed to find user aircraft AI flight-plan");
         return false;
     }
-    
+
     auto pkr = userAIFP->getParkingGate();
     if (!pkr) {
         SG_LOG( SG_GENERAL, SG_ALERT,
@@ -326,7 +313,7 @@ static bool fgSetPosFromNAV( const string& id,
 
         if( navlist.size() > 1 ) {
           std::ostringstream buf;
-          buf << "Ambigous NAV-ID: '" << id << "'. Specify id and frequency. Available stations:" << endl;
+          buf << "Ambiguous NAV-ID: '" << id << "'. Specify id and frequency. Available stations:" << endl;
           for( const auto& nav : navlist ) {
             // NDB stored in kHz, VOR stored in MHz * 100 :-P
             double factor = nav->type() == FGPositioned::NDB ? 1.0 : 1/100.0;
@@ -422,7 +409,7 @@ static InitPosResult setFinalPosFromCarrier( const string& carrier, const string
 
   auto res = checkCarrierSceneryLoaded(carrierRef);
   if (res != VicinityPosition) {
-      return res; // either failrue or keep waiting for scenery load
+      return res; // either failure or keep waiting for scenery load
   }
 
   SGGeod geodPos;
@@ -853,7 +840,7 @@ void finalizePosition()
         bool ok = finalizePositionForParkpos(apt, parkpos);
         if (!ok) {
             SG_LOG(SG_GENERAL, SG_WARN, "finalizePositionForParkPos failed, reverting to best runway");
-            
+
             // clear this so finalizeMetar works as expected
             fgSetString("/sim/presets/parkpos", "");
             finalizeMetar();

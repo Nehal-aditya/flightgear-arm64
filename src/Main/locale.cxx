@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2012 Thorsten Brehm - brehmt (at) gmail com
+// SPDX-FileCopyrightText: 2012 Thorsten Brehm <brehmt (at) gmail com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 /**
@@ -125,8 +125,8 @@ FGLocale::getUserLanguages() const
 		// skip to next string, past this string and trailing NULL
 		localeNameBuf += (ws.size() + 1);
 		result.push_back(simgear::strutils::convertWStringToUtf8(ws));
-		SG_LOG(SG_GENERAL, SG_INFO, "User langauge " << l << ":" << result.back());
-	}
+        SG_LOG(SG_GENERAL, SG_INFO, "User language " << l << ":" << result.back());
+    }
 
     return result;
 }

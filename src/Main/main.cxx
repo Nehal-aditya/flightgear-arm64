@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: main.cxx
  * SPDX-FileComment: top level sim routines
- * SPDX-FileCopyrightText: Copyright (C) 1997 - 2002  Curtis L. Olson  - http://www.flightgear.org/~curt
+ * SPDX-FileCopyrightText: 1997 Curtis L. Olson
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -105,7 +105,7 @@ static void fgMainLoop( void )
     // This has a cost of between 5ms and 50ms (depending on the amount of currently active Nasal).
     // The result is unscheduled and unpredictable pauses during normal operation when the garbage collector
     // runs; which typically occurs at intervals between 1sec and 20sec.
-    // 
+    //
     // The solution to this, which overall increases CPU load, is to use a thread to do this; as Nasal is thread safe
     // so what we do is to launch the garbage collection at the end of the main loop and then wait for completion at the start of the
     // next main loop.
@@ -176,7 +176,7 @@ static void initTerrasync()
 
     terra_sync->bind();
     terra_sync->init();
-    
+
     if (fgGetBool("/sim/terrasync/enabled")) {
         flightgear::addSentryTag("terrasync", "enabled");
     }
@@ -224,7 +224,7 @@ static void checkOpenGLVersion()
     flightgear::addSentryTag("gl-version", fgGetString("/sim/rendering/gl-info/gl-version"));
     flightgear::addSentryTag("gl-renderer", fgGetString("/sim/rendering/gl-info/gl-vendor"));
     flightgear::addSentryTag("gl-vendor", fgGetString("/sim/rendering/gl-info/gl-renderer"));
-    
+
 #if defined(SG_MAC)
     // Mac users can't upgrade their drivers, so complaining about
     // versions doesn't help them much
@@ -432,8 +432,8 @@ static void fgIdleFunction ( void ) {
         ngccn = new simgear::Notifications::NasalGarbageCollectionConfigurationNotification(nasal_gc_threaded->getBoolValue(), nasal_gc_threaded_wait->getBoolValue());
          simgear::Emesary::GlobalTransmitter::instance()->NotifyAll(ngccn);
          simgear::Emesary::GlobalTransmitter::instance()->NotifyAll(mln_started);
-#endif        
-        flightgear::addSentryBreadcrumb("entering main loop", "info");
+#endif
+         flightgear::addSentryBreadcrumb("entering main loop", "info");
     }
 
     if ( idle_state == 2000 ) {
@@ -459,7 +459,7 @@ void fgInitSecureMode()
         "(such as a firewall which blocks external connections).\n");
         secureMode = false;
     }
-    
+
     // it's by design that we overwrite any existing property tree value
     // here - this prevents an aircraft or add-on setting the property
     // value underneath us, eg in their -set.xml
@@ -538,14 +538,14 @@ int fgMainInit( int argc, char **argv )
 {
     sglog().setLogLevels( SG_ALL, SG_WARN );
     sglog().setStartupLoggingEnabled(true);
-    
+
     globals = new FGGlobals;
     auto initHomeResult = fgInitHome();
     if (initHomeResult == InitHomeAbort) {
         flightgear::fatalMessageBoxThenExit("Unable to create lock file",
                                 "FlightGear was unable to create the lock file in FG_HOME");
     }
-    
+
 #if defined(HAVE_QT)
     flightgear::initApp(argc, argv);
 #endif
@@ -570,7 +570,7 @@ int fgMainInit( int argc, char **argv )
         }
     }
 #endif
-    
+
     {
         SGPropertyNode* sglogdeltas = globals->get_props()->getNode("/sim/sg-log-deltas", true /*create*/);
         assert(sglogdeltas);
@@ -580,9 +580,9 @@ int fgMainInit( int argc, char **argv )
             sglogdeltas->setStringValue(sglogdeltas_value);
         }
     }
-    
+
     globals->get_props()->getNode("/sim", true /*create*/)->setAttribute(SGPropertyNode::VALUE_CHANGED_DOWN, true);
-    
+
     {
         SGPropertyNode* active = globals->get_props()->getNode("/sim/property-locking/active", true /*create*/);
         SGPropertyNode* verbose = globals->get_props()->getNode("/sim/property-locking/verbose", true /*create*/);
@@ -590,7 +590,7 @@ int fgMainInit( int argc, char **argv )
         SGPropertyNode* parent_listeners = globals->get_props()->getNode("/sim/property-locking/parent_listeners", true /*create*/);
         SGPropertyLockControl(active, verbose, timing, parent_listeners);
     }
-    
+
     const bool readOnlyFGHome = fgGetBool("/sim/fghome-readonly");
     if (!readOnlyFGHome) {
         // now home is initialised, we can log to a file inside it
@@ -609,7 +609,7 @@ int fgMainInit( int argc, char **argv )
 
 
     flightgear::addSentryTag("osg-version", osgGetVersion());
-    
+
 #ifdef __OpenBSD__
     {
         /* OpenBSD defaults to a small maximum data segment, which can cause
@@ -641,7 +641,7 @@ int fgMainInit( int argc, char **argv )
 
     if (showLauncher) {
         // to minimise strange interactions when launcher and config files
-        // set overlaping options, we disable the default files. Users can
+        // set overlapping options, we disable the default files. Users can
         // still explicitly request config files via --config options if they choose.
         flightgear::Options::sharedInstance()->setShouldLoadDefaultConfig(false);
     }
@@ -681,7 +681,7 @@ int fgMainInit( int argc, char **argv )
         SG_LOG(SG_GENERAL, SG_ALERT, "\n!Launcher requested, but FlightGear was compiled without Qt support!\n");
     }
 #endif
-    
+
     fgInitSecureMode();
     fgInitAircraftPaths(false);
 

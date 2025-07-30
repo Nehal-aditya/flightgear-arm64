@@ -1,10 +1,10 @@
 // fg_props.hxx - Declarations and inline methods for property handling.
 // Written by David Megginson, started 2000.
 //
-// This file is in the Public Domain, and comes with no warranty.
+// SPDX-FileCopyrightText: 2000 David Megginson <david@megginson.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifndef __FG_PROPS_HXX
-#define __FG_PROPS_HXX 1
+#pragma once
 
 #include <iosfwd>
 #include <algorithm>
@@ -47,7 +47,7 @@ private:
     SGPropertyNode_ptr _offset;
     SGPropertyNode_ptr _uyear, _umonth, _uday, _uhour, _umin, _usec, _uwday, _udsec;
     SGPropertyNode_ptr _ryear, _rmonth, _rday, _rhour, _rmin, _rsec, _rwday, _rdsec;
-    
+
     SGPropertyNode_ptr _headingMagnetic, _trackMagnetic;
     SGPropertyNode_ptr _magVar;
     SGPropertyNode_ptr _trueHeading, _trueTrack;
@@ -857,6 +857,3 @@ fgTie (const char * name, T * obj, int index,
     SG_LOG(SG_GENERAL, SG_DEV_WARN,
            "Failed to tie property " << name << " to indexed object methods");
 }
-
-#endif // __FG_PROPS_HXX
-

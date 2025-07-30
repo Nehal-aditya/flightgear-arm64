@@ -1,10 +1,10 @@
 // logger.hxx - log properties.
 // Written by David Megginson, started 2002.
 //
-// This file is in the Public Domain, and comes with no warranty.
+// SPDX-FileCopyrightText: 2002 David Megginson <david@megginson.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifndef __LOGGER_HXX
-#define __LOGGER_HXX 1
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -46,5 +46,3 @@ private:
 
     std::vector< std::unique_ptr<Log> > _logs;
 };
-
-#endif // __LOGGER_HXX

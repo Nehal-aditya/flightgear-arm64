@@ -1,6 +1,6 @@
 // sentryIntegration.cxx - Interface with Sentry.io crash reporting
 //
-// SPDX-FileCopyrightText: James Turner <james@flightgear.org>
+// SPDX-FileCopyrightText: 2020 James Turner <james@flightgear.org>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"

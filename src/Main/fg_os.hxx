@@ -1,9 +1,9 @@
-#ifndef _FG_OS_HXX
-#define _FG_OS_HXX
+// SPDX-FileCopyrightText: 2004 Andy Ross <andy@plausible.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#pragma once
+
+#include <config.h>
 
 #include <string>
 #include <vector>
@@ -80,4 +80,3 @@ void fgRegisterWindowResizeHandler(fgWindowResizeHandler func);
 void fgRegisterKeyHandler(fgKeyHandler func);
 void fgRegisterMouseClickHandler(fgMouseClickHandler func);
 void fgRegisterMouseMotionHandler(fgMouseMotionHandler func);
-#endif // _FG_OS_HXX

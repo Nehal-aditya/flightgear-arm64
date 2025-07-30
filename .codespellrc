@@ -3,4 +3,5 @@
 
 [codespell]
 ; datas needed for replay-internal.cxx
-ignore-words-list = vor,ned,NED,LOD,datas
+; 'sav' needed for use as a file extension
+ignore-words-list = vor,ned,NED,LOD,datas,sav

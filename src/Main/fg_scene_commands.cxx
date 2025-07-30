@@ -1,6 +1,8 @@
 /*
  * SPDX-FileName: fg_scene_commands.cxx
  * SPDX-FileComment: internal FGFS commands
+ * SPDX-FileCopyrightText: 2001 Curtis L. Olson
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -109,8 +111,8 @@ do_switch_aircraft (const SGPropertyNode * arg, SGPropertyNode * root)
 
     // We assume that we are changing the aircraft, so we remove the aircraft path.
     // this forces aircraft-dir to be recomputed by a full search as the user hopefully
-    // expects. 
-    // We could allow pasing the dir as an optional argument to this command, if that
+    // expects.
+    // We could allow passing the dir as an optional argument to this command, if that
     // is ever needed in the future.
     fgGetNode("/sim")->removeChild("aircraft-dir");
 

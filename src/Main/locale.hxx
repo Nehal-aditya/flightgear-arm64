@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2012 Thorsten Brehm - brehmt (at) gmail com
+// SPDX-FileCopyrightText: 2012 Thorsten Brehm <brehmt (at) gmail com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 /**

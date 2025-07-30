@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: fg_io.hxx
  * SPDX-FileComment: Higher level I/O management routines
- * SPDX-FileCopyrightText: Copyright (C) 1999  Curtis L. Olson - http://www.flightgear.org/~curt
+ * SPDX-FileCopyrightText: 1999 Curtis L. Olson
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 

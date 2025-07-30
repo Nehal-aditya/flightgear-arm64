@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: ErrorReporter.cxx
  * SPDX-FileComment: This file is part of the program FlightGear
- * SPDX-FileCopyrightText: Copyright (C) 2021 James Turner
+ * SPDX-FileCopyrightText: 2021 James Turner
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 

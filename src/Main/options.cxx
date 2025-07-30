@@ -2,24 +2,8 @@
 //
 // Written by Curtis Olson, started April 1998.
 //
-// Copyright (C) 1998  Curtis L. Olson  - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
-
+// SPDX-FileCopyrightText: 1998 Curtis L. Olson
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <config.h>
 
@@ -119,7 +103,7 @@ atoi( const string& str )
 static int fgSetupProxy( const char *arg );
 
 // define conversion of SGpath to JSON. Must be in the global namespace
-// becuase SGPath is in it.
+// because SGPath is in it.
 void to_json(nlohmann::json& j, const SGPath& p)
 {
     j = p.utf8Str();
@@ -276,7 +260,7 @@ void fgSetDefaults ()
 ///////////////////////////////////////////////////////////////////////////////
 // helper object to implement the --show-aircraft command.
 // resides here so we can share the fgFindAircraftInDir template above,
-// and hence ensure this command lists exectly the same aircraft as the normal
+// and hence ensure this command lists exactly the same aircraft as the normal
 // loading path.
 class ShowAircraft : public AircraftDirVistorBase
 {
@@ -374,7 +358,7 @@ private:
 
 /*
  * Search in the current directory, and in on directory deeper
- * for <aircraft>-set.xml configuration files and show the aircaft name
+ * for <aircraft>-set.xml configuration files and show the aircraft name
  * and the contents of the<description> tag in a sorted manner.
  *
  * @parampath the directory to search for configuration files
@@ -1693,7 +1677,7 @@ fgOptLoadTape(const char* arg)
 
         long max_download_speed = fgGetLong("/sim/replay/download-max-bytes-per-sec");
         if (max_download_speed != 0) {
-            // Can be useful to limite download speed for testing background
+            // Can be useful to limit download speed for testing background
             // download.
             //
             SG_LOG(SG_GENERAL, SG_MANDATORY_INFO, "Limiting download speed"
@@ -2897,7 +2881,7 @@ int Options::setOption(const string &key, const string &value)
     if (!(desc->type & OPTION_MULTI)) {
         OptionValueVec::iterator it = p->findValue(key);
         if (it != p->values.end()) {
-            // remove existing valye
+            // remove existing value
             p->values.erase(it);
         }
     }
@@ -3577,12 +3561,12 @@ bool Options::checkForArg(int argc, char* argv[], const char* checkArg)
             continue;
         }
 
-        if (*arg != '-') { // we only care about args with a leading hypen
+        if (*arg != '-') { // we only care about args with a leading hyphen
             continue;
         }
 
         arg++;
-        if (*arg == '-') { // skip double hypens
+        if (*arg == '-') { // skip double hyphens
             arg++;
         }
 
@@ -3602,12 +3586,12 @@ std::optional<bool> Options::checkForBoolArg(int argc, char* argv[], const strin
             continue;
         }
 
-        if (*arg != '-') { // we only care about args with a leading hypen
+        if (*arg != '-') { // we only care about args with a leading hyphen
             continue;
         }
 
         arg++;
-        if (*arg == '-') { // skip double hypens
+        if (*arg == '-') { // skip double hyphens
             arg++;
         }
 

@@ -1,24 +1,9 @@
 // bootstrap.cxx -- bootstrap routines: main()
 //
 // Written by Curtis Olson, started May 1997.
-//
-// Copyright (C) 1997 - 2002  Curtis L. Olson  - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+
+// SPDX-FileCopyrightText: 1997 Curtis L. Olson
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <config.h>
 
@@ -30,11 +15,11 @@
 // set link for setting _GNU_SOURCE before including fenv.h
 // http://man7.org/linux/man-pages/man3/fenv.3.html
 
-  #ifndef _GNU_SOURCE
-    #define _GNU_SOURCE
-  #endif
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 
-  #include <fenv.h>
+#include <fenv.h>
 #endif
 
 #ifndef _WIN32
@@ -129,7 +114,7 @@ static void initFPE(bool)
 #if defined(SG_WINDOWS)
 int main ( int argc, char **argv );
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-                             LPSTR lpCmdLine, int nCmdShow) 
+                   LPSTR lpCmdLine, int nCmdShow)
 {
 	// convert wchar_t args to UTF-8 which is what we expect cross-platform
     int     numArgs  = 0;
@@ -271,7 +256,7 @@ int _bootstrap_OSInit;
 // Main entry point; catch any exceptions that have made it this far.
 int main ( int argc, char **argv )
 {
-    // we don't want to accidently show a GUI box and block startup in
+    // we don't want to accidentally show a GUI box and block startup in
     // non_GUI setups, so check this value early here, before options are
     // processed
     const bool headless = flightgear::Options::checkForArgDisable(argc, argv, "gui");
@@ -309,7 +294,7 @@ int main ( int argc, char **argv )
 #endif
 
   _bootstrap_OSInit = 0;
-    
+
 #if defined(HAVE_SENTRY)
   const bool noSentry = flightgear::Options::checkForArgDisable(argc, argv, "sentry");
   if (!noSentry) {
@@ -339,7 +324,7 @@ int main ( int argc, char **argv )
     if (flightgear::Options::checkForArg(argc, argv, "uninstall")) {
         return fgUninstall();
     }
-    
+
     bool fgviewer = flightgear::Options::checkForArg(argc, argv, "fgviewer");
     int exitStatus = EXIT_FAILURE;
     try {
@@ -350,7 +335,7 @@ int main ( int argc, char **argv )
 
         std::set_terminate(fg_terminate);
         atexit(fgExitCleanup);
-        
+
         if (fgviewer) {
             exitStatus = fgviewerMain(argc, argv);
         } else {
@@ -389,7 +374,7 @@ int main ( int argc, char **argv )
 
 // do some clean up on exit.  Specifically we want to delete the sound-manager,
 // so OpenAL device and context are released cleanly
-void fgExitCleanup() 
+void fgExitCleanup()
 {
     flightgear::addSentryBreadcrumb("starting fgExitCleanup", "info");
 
@@ -420,4 +405,3 @@ void fgExit(int status)
 #endif
     exit(status);
 }
-

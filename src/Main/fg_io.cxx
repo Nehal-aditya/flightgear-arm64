@@ -2,23 +2,8 @@
 //
 // Written by Curtis Olson, started November 1999.
 //
-// Copyright (C) 1999  Curtis L. Olson - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-FileCopyrightText: 1999 Curtis L. Olson
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
 
@@ -92,7 +77,7 @@ FGIO::parse_port_config( const string& config, bool& o_ok )
         o_ok = false;
         return nullptr;
     }
-    
+
     return parse_port_config(tokens, o_ok);
 }
 
@@ -397,7 +382,7 @@ FGIO::init()
             SG_LOG( SG_IO, SG_ALERT, "add_channel() failed. config=" << config);
         }
     } // of channel options iteration
-    
+
     auto cmdMgr = globals->get_commands();
     cmdMgr->addCommand("add-io-channel", this, &FGIO::commandAddChannel);
     cmdMgr->addCommand("remove-io-channel", this, &FGIO::commandRemoveChannel);
@@ -486,7 +471,7 @@ FGIO::shutdown()
     }
 
     io_channels.clear();
-    
+
     auto cmdMgr = globals->get_commands();
     cmdMgr->removeCommand("add-io-channel");
     cmdMgr->removeCommand("remove-io-channel");
@@ -507,14 +492,14 @@ bool FGIO::isMultiplayerRequested()
     // launcher sets these properties directly, as does the in-sim dialog
     std::string txAddress = fgGetString("/sim/multiplay/txhost");
     if (!txAddress.empty()) return true;
-    
+
     // check the channel options list for a multiplay setting - this
     // is easier than checking the raw Options arguments, but works before
-    // this subsytem is actually created.
+    // this subsystem is actually created.
     auto channels = globals->get_channel_options_list();
     if (!channels)
         return false; // happens running tests
-    
+
     auto it = std::find_if(channels->begin(), channels->end(),
                            [](const std::string& channelOption)
                            { return (channelOption.find("multiplay") == 0); });
@@ -539,7 +524,7 @@ bool FGIO::commandAddChannel(const SGPropertyNode * arg, SGPropertyNode * root)
     if (!protocol) {
         return true;
     }
-    
+
     if (!name.empty()) {
         const string validName = simgear::strutils::makeStringSafeForPropertyName(name);
         if (name.compare(validName) != 0) {
@@ -570,7 +555,7 @@ bool FGIO::commandRemoveChannel(const SGPropertyNode * arg, SGPropertyNode * roo
     if (!arg->hasChild("name")) {
         SG_LOG(SG_NETWORK, SG_WARN, "remove-io-channel: missing 'name' argument");
     }
-    
+
     const string name = arg->getStringValue("name");
     auto it = find_if(io_channels.begin(), io_channels.end(),
                       [name](const FGProtocol* proto)
