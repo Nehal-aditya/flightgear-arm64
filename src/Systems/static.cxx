@@ -1,12 +1,11 @@
-// static.cxx - the static air system.
-// Written by David Megginson, started 2002.
-//
-// Last modified by Eric van den Berg, 09 Nov 2013
-// This file is in the Public Domain and comes with no warranty.
+/*
+ * SPDX-FileComment: the static air system
+ * SPDX-FileCopyrightText: 2002 David Megginson
+ * SPDX-FileContributor: modified by Eric van den Berg, 01 Nov 2013
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
 #include "static.hxx"
 

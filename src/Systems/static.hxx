@@ -1,18 +1,13 @@
-// static.hxx - the static air system.
-// Written by David Megginson, started 2002.
-//
-// Last modified by Eric van den Berg, 09 November 2013
-// This file is in the Public Domain and comes with no warranty.
+/*
+ * SPDX-FileComment: the static air system
+ * SPDX-FileCopyrightText: 2002 David Megginson
+ * SPDX-FileContributor: modified by Eric van den Berg, 01 Nov 2013
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 
+#pragma once
 
-#ifndef __SYSTEMS_STATIC_HXX
-#define __SYSTEMS_STATIC_HXX 1
-
-#ifndef __cplusplus
-# error This library requires C++
-#endif
-
-#include <simgear/props/props.hxx>
+#include <simgear/props/propsfwd.hxx>
 #include <simgear/structure/subsystem_mgr.hxx>
 
 
@@ -63,5 +58,3 @@ private:
     SGPropertyNode_ptr _alpha_node;
     SGPropertyNode_ptr _mach_node;
 };
-
-#endif // __SYSTEMS_STATIC_HXX

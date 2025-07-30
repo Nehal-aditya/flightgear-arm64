@@ -1,14 +1,12 @@
 /*
  * SPDX-FileName: pitot.cxx
  * SPDX-FileComment: the pitot air system
- * SPDX-FileCopyrightText: Written by David Megginson, started 2002.
+ * SPDX-FileCopyrightText: 2002 David Megginson
  * SPDX-FileContributor: modified by Eric van den Berg, 01 Nov 2013
- * SPDX-License-Identifier: This file is in the Public Domain and comes with no warranty.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <simgear/constants.h>
 

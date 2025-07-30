@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2010 James Turner <james@flightgear.org>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 include(FlightGearComponent)
 
 set(SOURCES
@@ -16,5 +19,5 @@ set(HEADERS
 	vacuum.hxx
 	)
 
-	
+
 flightgear_component(Systems "${SOURCES}" "${HEADERS}")

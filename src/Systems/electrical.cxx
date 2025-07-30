@@ -1,13 +1,11 @@
 /*
  * SPDX-FileName: electrical.cxx
  * SPDX-FileComment: a flexible, generic electrical system model
- * SPDX-FileCopyrightText: Copyright (C) 2002  Curtis L. Olson  - http://www.flightgear.org/~curt
+ * SPDX-FileCopyrightText: 2002 Curtis L. Olson
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -34,15 +32,15 @@ FGElectricalComponent::FGElectricalComponent() :
 
 void FGElectricalComponent::add_prop(const std::string &s)
 {
-    auto nd = fgGetNode(s, true);
-    props.push_back(nd);
+    auto n = fgGetNode(s, true);
+    props.push_back(n);
 }
 
 void FGElectricalComponent::publishVoltageToProps() const
 {
     const auto v = get_volts();
-    for (const auto& nd : props) {
-        nd->setFloatValue(v);
+    for (const auto& n : props) {
+        n->setFloatValue(v);
     }
 }
 
@@ -449,7 +447,7 @@ void FGElectricalSystem::update (double dt)
 
     // cout << "Updating electrical system, dt = " << dt << endl;
     _serviceable = _serviceable_node->getBoolValue();
-    
+
     unsigned int i;
 
     // zero out the voltage before we start, but don't clear the
@@ -530,7 +528,7 @@ void FGElectricalSystem::update (double dt)
     float alt_norm
         = fgGetFloat("/systems/electrical/suppliers/alternator") / 60.0;
 
-    // impliment an extremely simplistic voltage model (assumes
+    // implement an extremely simplistic voltage model (assumes
     // certain naming conventions in electrical system config)
     // FIXME: we probably want to be able to feed power from all
     // engines if they are running and the master-alt is switched on
@@ -553,7 +551,7 @@ void FGElectricalSystem::update (double dt)
     }
     _volts_out->setFloatValue( volts );
 
-    // impliment an extremely simplistic amps model (assumes certain
+    // implement an extremely simplistic amps model (assumes certain
     // naming conventions in the electrical system config) ... FIXME:
     // make this more generic
     float amps = 0.0;

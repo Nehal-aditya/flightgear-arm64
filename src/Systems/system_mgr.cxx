@@ -1,13 +1,11 @@
 /*
  * SPDX-FileName: system_mgr.cxx
  * SPDX-FileComment: manage aircraft systems
- * SPDX-FileCopyrightText: Written by David Megginson, started 2002.
- * SPDX-License-Identifier: This file is in the Public Domain and comes with no warranty.
+ * SPDX-FileCopyrightText: 2002 David Megginson
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <simgear/structure/exception.hxx>
 #include <simgear/misc/sg_path.hxx>
@@ -82,14 +80,14 @@ bool FGSystemMgr::build (SGPropertyNode* config_props)
             set_subsystem( "electrical" + temp.str(),
                            new FGElectricalSystem( node ) );
         } else if ( name == "pitot" ) {
-            set_subsystem( "system" + temp.str(), 
-                           new PitotSystem( node ) );
+            set_subsystem("system" + temp.str(),
+                          new PitotSystem(node));
         } else if ( name == "static" ) {
-            set_subsystem( "system" + temp.str(), 
-                           new StaticSystem( node ) );
+            set_subsystem("system" + temp.str(),
+                          new StaticSystem(node));
         } else if ( name == "vacuum" ) {
-            set_subsystem( "system" + temp.str(), 
-                           new VacuumSystem( node ) );
+            set_subsystem("system" + temp.str(),
+                          new VacuumSystem(node));
         } else {
             SG_LOG(SG_SYSTEMS, SG_ALERT, "Ignoring unknown system: " << name);
         }

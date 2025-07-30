@@ -1,15 +1,10 @@
-// vacuum.hxx - a vacuum pump connected to the aircraft engine.
-// Written by David Megginson, started 2002.
-//
-// This file is in the Public Domain and comes with no warranty.
+/*
+ * SPDX-FileComment: a vacuum pump connected to the aircraft engine.
+ * SPDX-FileCopyrightText: 2002 David Megginson
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 
-
-#ifndef __SYSTEMS_VACUUM_HXX
-#define __SYSTEMS_VACUUM_HXX 1
-
-#ifndef __cplusplus
-# error This library requires C++
-#endif
+#pragma once
 
 #include <simgear/math/sg_types.hxx>
 #include <simgear/props/props.hxx>
@@ -60,5 +55,3 @@ private:
     SGPropertyNode_ptr _pressure_node;
     SGPropertyNode_ptr _suction_node;
 };
-
-#endif // __SYSTEMS_VACUUM_HXX

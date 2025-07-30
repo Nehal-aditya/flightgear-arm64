@@ -1,24 +1,14 @@
-// system_mgr.hxx - manage aircraft systems.
-// Written by David Megginson, started 2002.
-//
-// This file is in the Public Domain and comes with no warranty.
+/*
+ * SPDX-FileComment: manage aircraft systems
+ * SPDX-FileCopyrightText: 2002 David Megginson
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 
-
-#ifndef __SYSTEM_MGR_HXX
-#define __SYSTEM_MGR_HXX 1
-
-#ifndef __cplusplus
-# error This library requires C++
-#endif
-
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#pragma once
 
 #include <simgear/compiler.h>
-#include <simgear/props/props.hxx>
+#include <simgear/props/propsfwd.hxx>
 #include <simgear/structure/subsystem_mgr.hxx>
-
 
 /**
  * Manage aircraft systems.
@@ -36,5 +26,3 @@ public:
 
     bool build (SGPropertyNode* config_props);
 };
-
-#endif // __SYSTEM_MGR_HXX

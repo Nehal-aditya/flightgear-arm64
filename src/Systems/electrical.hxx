@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: electrical.hxx
  * SPDX-FileComment: a flexible, generic electrical system model
- * SPDX-FileCopyrightText: Copyright (C) 2002  Curtis L. Olson  - http://www.flightgear.org/~curt
+ * SPDX-FileCopyrightText: 2002 Curtis L. Olson
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 

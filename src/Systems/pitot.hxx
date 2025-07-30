@@ -1,15 +1,11 @@
-// pitot.hxx - the pitot air system.
-// Written by David Megginson, started 2002.
-//
-// Last modified by Eric van den Berg, 01 Nov 2013
-// This file is in the Public Domain and comes with no warranty.
-
+/*
+ * SPDX-FileComment: the pitot air system
+ * SPDX-FileCopyrightText: 2002 David Megginson
+ * SPDX-FileContributor: modified by Eric van den Berg, 01 Nov 2013
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
 
 #pragma once
-
-#ifndef __cplusplus
-# error This library requires C++
-#endif
 
 #include <simgear/compiler.h>
 
