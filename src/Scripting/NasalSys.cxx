@@ -1,18 +1,5 @@
-// Copyright (C) 2013  James Turner
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2004 Curtis L. Olson
 
 #include "config.h"
 
@@ -525,7 +512,7 @@ struct SimNasalLogFileLine : SGPropertyChangeListener
     void valueChanged(SGPropertyNode* node) override {
         _file_line = node->getIntValue();
     }
-    
+
     static bool _file_line;
 };
 
@@ -576,7 +563,7 @@ static naRef f_print(naContext c, naRef me, int argc, naRef* args)
 static naRef f_logprint(naContext c, naRef me, int argc, naRef* args)
 {
   if (argc < 1)
-    naRuntimeError(c, "no prioirty argument to logprint()");
+      naRuntimeError(c, "no priority argument to logprint()");
 
   naRef priority = args[0];
   string buf;
@@ -1156,7 +1143,7 @@ void FGNasalSys::init()
 
     // Now load the various source files in the Nasal directory
     simgear::Dir nasalDir(SGPath(globals->get_fg_root(), "Nasal"));
-    
+
     // load core Nasal scripts. In GUI startup mode, we restrict to a limited
     // set of modules deliberately
     loadScriptDirectory(nasalDir,
@@ -1328,7 +1315,7 @@ void FGNasalSys::loadScriptDirectory(simgear::Dir nasalDir, SGPropertyNode* load
     if (excludeUnspecifiedInLoadOrder) {
         return;
     }
-    
+
     // Load any remaining scripts.
     // Note: simgear::Dir already reports file entries in a deterministic order,
     // so a fixed loading sequence is guaranteed (same for every user)
@@ -1650,7 +1637,7 @@ naRef FGNasalSys::parse(naContext ctx, const char* filename,
             " in "<< filename <<", line " << errLine;
         errors = errorMessageStream.str();
         SG_LOG(SG_NASAL, SG_ALERT, errors);
-        
+
         // Show the line, in case <filename> isn't a real file, e.g. nasal code
         // is in an .xml file.
         const char* line_begin = buf;
@@ -1905,7 +1892,7 @@ bool FGNasalSys::removeCommand(const std::string& name)
 {
     auto it = d->_commands.find(name);
     if (it == d->_commands.end()) {
-        SG_LOG(SG_NASAL, SG_WARN, "remove of unknwon command:" << name);
+        SG_LOG(SG_NASAL, SG_WARN, "remove of unknown command:" << name);
         return false;
     }
 

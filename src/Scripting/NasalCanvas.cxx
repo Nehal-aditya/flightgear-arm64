@@ -2,21 +2,9 @@
 //
 // Written by James Turner, started 2012.
 //
-// Copyright (C) 2012 James Turner
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2012 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 
 #include "config.h"
 
@@ -553,18 +541,18 @@ naRef initNasalCanvas(naRef globals, naContext c)
     .member("keyCode", &sc::KeyboardEvent::keyCode);
 
   NasalMouseEvent::init("canvas.MouseEvent")
-    .bases<NasalDeviceEvent>()
-    .member("screenX", &sc::MouseEvent::getScreenX)
-    .member("screenY", &sc::MouseEvent::getScreenY)
-    .member("clientX", &sc::MouseEvent::getClientX)
-    .member("clientY", &sc::MouseEvent::getClientY)
-    .member("localX", &sc::MouseEvent::getLocalX)
-    .member("localY", &sc::MouseEvent::getLocalY)
-    .member("deltaX", &sc::MouseEvent::getDeltaX)
-    .member("deltaY", &sc::MouseEvent::getDeltaY)
-    .member("button", &sc::MouseEvent::getButton)
-    .member("buttons", &sc::MouseEvent::getButtonMask)
-    .member("click_count", &sc::MouseEvent::getCurrentClickCount);
+      .bases<NasalDeviceEvent>()
+      .member("screenX", &sc::MouseEvent::getScreenX)
+      .member("screenY", &sc::MouseEvent::getScreenY)
+      .member("clientX", &sc::MouseEvent::getClientX)
+      .member("clientY", &sc::MouseEvent::getClientY)
+      .member("localX", &sc::MouseEvent::getLocalX)
+      .member("localY", &sc::MouseEvent::getLocalY)
+      .member("deltaX", &sc::MouseEvent::getDeltaX)
+      .member("deltaY", &sc::MouseEvent::getDeltaY)
+      .member("button", &sc::MouseEvent::getButton)
+      .member("buttons", &sc::MouseEvent::getButtonMask)
+      .member("click_count", &sc::MouseEvent::getCurrentClickCount);
 
 
   NasalKeyBinding::init("canvas.KeyBinding")
@@ -706,7 +694,7 @@ naRef initNasalCanvas(naRef globals, naContext c)
 
     NasalSpacerItem::init("canvas.SpacerItem")
         .bases<NasalLayoutItem>();
-    
+
     canvas_module.createHash("HBoxLayout")
                  .set("new", &f_newAsBase<sc::HBoxLayout, sc::BoxLayout>);
     canvas_module.createHash("VBoxLayout")

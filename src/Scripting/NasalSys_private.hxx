@@ -1,6 +1,6 @@
 // NasalSys.hxx -
 // SPDX-License-Identifier: GPL-2.0-or-later
-// SPDX-FileCopyrightText: Copyright (C) 2013  James Turner
+// SPDX-FileCopyrightText: 2013 James Turner
 
 #pragma once
 
@@ -19,7 +19,7 @@ class FGNasalModuleListener;
 class NasalCommand;
 
 /**
-  @breif wrapper for naEqual which recursively checks vec/hash equality
+  @brief wrapper for naEqual which recursively checks vec/hash equality
     Probably not very performant.
  */
 int nasalStructEqual(naContext ctx, naRef a, naRef b);
@@ -28,16 +28,16 @@ class FGNasalListener : public SGPropertyChangeListener {
 public:
     FGNasalListener(SGPropertyNode* node, naRef code, FGNasalSys* nasal,
                     int key, int id, int init, int type);
-    
+
     virtual ~FGNasalListener();
     virtual void valueChanged(SGPropertyNode* node);
     virtual void childAdded(SGPropertyNode* parent, SGPropertyNode* child);
     virtual void childRemoved(SGPropertyNode* parent, SGPropertyNode* child);
-    
+
 private:
     bool changed(SGPropertyNode* node);
     void call(SGPropertyNode* which, naRef mode);
-    
+
     friend class FGNasalSys;
     SGPropertyNode_ptr _node;
     naRef _code;
@@ -58,16 +58,16 @@ class NasalXMLVisitor : public XMLVisitor {
 public:
     NasalXMLVisitor(naContext c, int argc, naRef* args);
     virtual ~NasalXMLVisitor() { naFreeContext(_c); }
-    
+
     virtual void startElement(const char* tag, const XMLAttributes& a);
     virtual void endElement(const char* tag);
     virtual void data(const char* str, int len);
     virtual void pi(const char* target, const char* data);
-    
+
 private:
     void call(naRef func, int num, naRef a = naNil(), naRef b = naNil());
     naRef make_string(const char* s, int n = -1);
-    
+
     naContext _c;
     naRef _start_element, _end_element, _data, _pi;
 };
@@ -79,10 +79,10 @@ private:
 struct NasalTimer
 {
     NasalTimer(naRef handler, FGNasalSys* sys);
-    
+
     void timerExpired();
     ~NasalTimer();
-    
+
     naRef handler;
     int gcKey = 0;
     FGNasalSys* nasal = nullptr;

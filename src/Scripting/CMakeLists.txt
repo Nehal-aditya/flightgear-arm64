@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2010 James Turner
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 include(FlightGearComponent)
 
 set(SOURCES
@@ -16,7 +19,7 @@ set(SOURCES
   NasalTranslations.cxx
   NasalFlightPlan.cxx
   sqlitelib.cxx
-  # we don't add this here becuase we need to exclude it the testSuite
+  # we don't add this here because we need to exclude it in the testSuite
   # so it can't go nto fgfsObjects library
   #   NasalUnitTesting.cxx
 )
@@ -59,7 +62,6 @@ endif()
 
 
 # NasalSys.cxx is passed as TEST_SOURCES since we need to compile it
-# seperately when building the test_suite
+# separately when building the test_suite
 
 flightgear_component(Scripting "${SOURCES}" "${HEADERS}"  NasalSys.cxx)
-

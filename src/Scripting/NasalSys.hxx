@@ -1,5 +1,6 @@
 // NasalSys.hxx -
 // SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2004 Curtis L. Olson
 
 #pragma once
 
@@ -145,7 +146,7 @@ public:
      */
     bool checkIOrules();
 
-    /// retrive the associated log object, for displaying log
+    /// retrieve the associated log object, for displaying log
     /// output somewhere (a UI, presumably)
     simgear::BufferedLogCallback* log() const;
 

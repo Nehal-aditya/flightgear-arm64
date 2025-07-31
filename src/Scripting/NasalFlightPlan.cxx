@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: NasalFlightPlan.cxx
  * SPDX-FileComment: expose FlightPlan classes to Nasal
- * SPDX-FileCopyrightText: Copyright (C) 2020 James Turner
+ * SPDX-FileCopyrightText: 2020 James Turner
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -1111,7 +1111,7 @@ static naRef f_createFlightplan(naContext c, naRef me, int argc, naRef* args)
         // args[0] is a string file name, args[1] is our flag
         asRoute = args[1].num != 0.0;
     }
-    
+
     flightgear::FlightPlanRef fp(asRoute ? FlightPlan::createRoute() : FlightPlan::create());
 
     if ((argc > 0) && naIsString(args[0])) {
@@ -1345,7 +1345,7 @@ static WayptRef wayptFromArg(naRef arg)
 
     FGPositioned* pos = positionedGhost(arg);
     if (!pos) {
-        // let's check if the arg is hash, coudl extra a geod and hence build
+        // let's check if the arg is hash, could extract a geod and hence build
         // a simple waypoint
 
         return WayptRef();
@@ -1673,7 +1673,7 @@ static naRef f_flightplan_numRemainingWaypoints(naContext c, naRef me, int argc,
         naRuntimeError(c, "flightplan.f_flightplan_numRemainingWaypoints called on non-flightplan object");
     }
 
-    // for an inactive flightplan, just reutnr the total number of WPs
+    // for an inactive flightplan, just return the total number of WPs
     if (fp->currentIndex() < 0) {
         return naNum(fp->numLegs());
     }
@@ -1810,7 +1810,7 @@ static naRef f_flightplan_clearWPType(naContext c, naRef me, int argc, naRef* ar
     }
 
     if (argc < 1) {
-        naRuntimeError(c, "insufficent args to flightplan.clearWPType");
+        naRuntimeError(c, "insufficient args to flightplan.clearWPType");
     }
 
     WayptFlag flag = wayptFlagFromString(naStr_data(args[0]));
@@ -1863,7 +1863,7 @@ static naRef f_flightplan_finish(naContext c, naRef me, int argc, naRef* args)
     if (!fp) {
         naRuntimeError(c, "flightplan.finish called on non-flightplan object");
     }
-    
+
     // forbid on isRoute FPs?
 
     fp->finish();
@@ -1876,7 +1876,7 @@ static naRef f_flightplan_activate(naContext c, naRef me, int argc, naRef* args)
     if (!fp) {
         naRuntimeError(c, "activate called on non-flightplan object");
     }
-    
+
     if (fp->isRoute()) {
         naRuntimeError(c, "activate called on isRoute flightplan");
     }
@@ -2039,23 +2039,23 @@ static naRef f_leg_setAltitude(naContext c, naRef me, int argc, naRef* args)
             if ((argc < 2) || (naVec_size(altTuple) != 2)) {
                 naRuntimeError(c, "missing/bad arguments to leg.setAltitude");
             }
-            
+
             rr = routeRestrictionFromArg(args[1]);
             if (rr != RESTRICT_BETWEEN) {
                 naRuntimeError(c, "leg.setAltitude: passed a 2-tuple, but restriction type is not 'between'");
             }
-            
+
             double constraintAltitude;
             const auto ok = convertToNum(naVec_get(altTuple, 0), constraintAltitude)
                 && convertToNum(naVec_get(altTuple, 1), altitude);
             if (!ok) {
                 naRuntimeError(c, "leg.setAltitude: tuple members not convertible to numeric altitudes");
             }
-            
+
             if (argc > 2) {
                 units = routeUnitsFromArg(args[2]);
             }
-            
+
             // TODO: store constraint altitude
         }
 
@@ -2264,7 +2264,7 @@ static naRef f_airway_viaWaypoints(naContext c, naRef me, int argc, naRef* args)
     if (!awy) {
         naRuntimeError(c, "airway.viaWaypoints called on non-airway object");
     }
-    
+
     if ((argc < 1) || (argc > 2)) {
         naRuntimeError(c, "Airway.viaWaypoints: needs one ro two arguments");
     }

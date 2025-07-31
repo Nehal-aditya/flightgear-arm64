@@ -4,19 +4,8 @@
 //
 // Copyright (C) 2012 James Turner
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2012 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
 
@@ -449,7 +438,7 @@ static const char* fixGhostGetMember(naContext c, void* g, naRef field, naRef* o
   if (!strcmp(fieldName, "id")) *out = stringToNasal(c, fix->ident());
   else if (!strcmp(fieldName, "lat")) *out = naNum(fix->get_lat());
   else if (!strcmp(fieldName, "lon")) *out = naNum(fix->get_lon());
-    // for homogenity with other values returned by navinfo()
+  // for consistency with other values returned by navinfo()
   else if (!strcmp(fieldName, "type")) *out = stringToNasal(c, "fix");
   else if (!strcmp(fieldName, "name")) *out = stringToNasal(c, fix->ident());
   else if (!strcmp(fieldName, "guid"))
@@ -548,7 +537,7 @@ bool geodFromHash(naRef ref, SGGeod& result)
   if (hashIsCoord(ref)) {
     naRef polarDirtyFlag = naHash_cget(ref, (char*) "_pdirty");
     naRef cartesianDirtyFlag = naHash_cget(ref, (char*) "_cdirty");
-    
+
     if (naNumValue(polarDirtyFlag).num == 0) {
       // polar values are valid
       naRef lat = naHash_cget(ref, (char*) "_lat");
@@ -896,7 +885,7 @@ static naRef f_airportinfo(naContext c, naRef me, int argc, naRef* args)
       apt = FGAirport::findByIdent(naStr_data(args[0]));
       if (!apt) {
         // return nil here, but don't raise a runtime error; this is a
-        // legitamate way to validate an ICAO code, for example in a
+        // legitimate way to validate an ICAO code, for example in a
         // dialog box or similar.
         return naNil();
       }
@@ -1407,7 +1396,7 @@ static naRef f_findNDBByFrequency(naContext c, naRef me, int argc, naRef* args)
   argOffset += geodFromArgs(args, 0, argc, pos);
 
   if (!naIsNum(args[argOffset])) {
-    naRuntimeError(c, "findNDBByFrquency expectes frequency (in kHz) as arg %d", argOffset);
+      naRuntimeError(c, "findNDBByFrquency expects frequency (in kHz) as arg %d", argOffset);
   }
 
   double dbFreq = args[argOffset++].num;
@@ -1427,7 +1416,7 @@ static naRef f_findNDBsByFrequency(naContext c, naRef me, int argc, naRef* args)
   argOffset += geodFromArgs(args, 0, argc, pos);
 
   if (!naIsNum(args[argOffset])) {
-    naRuntimeError(c, "findNDBsByFrquency expectes frequency (in kHz) as arg %d", argOffset);
+      naRuntimeError(c, "findNDBsByFrquency expects frequency (in kHz) as arg %d", argOffset);
   }
 
   double dbFreq = args[argOffset++].num;
@@ -1451,7 +1440,7 @@ static naRef f_findNavaidByFrequency(naContext c, naRef me, int argc, naRef* arg
   argOffset += geodFromArgs(args, 0, argc, pos);
 
   if (!naIsNum(args[argOffset])) {
-    naRuntimeError(c, "findNavaidByFrequency expectes frequency (in Mhz) as arg %d", argOffset);
+      naRuntimeError(c, "findNavaidByFrequency expects frequency (in Mhz) as arg %d", argOffset);
   }
 
   FGPositioned::Type type = FGPositioned::INVALID;
@@ -1459,7 +1448,7 @@ static naRef f_findNavaidByFrequency(naContext c, naRef me, int argc, naRef* arg
   if (argOffset < argc) {
     type = FGPositioned::typeFromName(naStr_data(args[argOffset]));
     if (type == FGPositioned::NDB) {
-      naRuntimeError(c, "Use findNDBByFrquency to seach NDBs");
+        naRuntimeError(c, "Use findNDBByFrquency to search NDBs");
     }
   }
 
@@ -1479,7 +1468,7 @@ static naRef f_findNavaidsByFrequency(naContext c, naRef me, int argc, naRef* ar
   argOffset += geodFromArgs(args, 0, argc, pos);
 
   if (!naIsNum(args[argOffset])) {
-    naRuntimeError(c, "findNavaidsByFrequency expectes frequency (in Mhz) as arg %d", argOffset);
+      naRuntimeError(c, "findNavaidsByFrequency expects frequency (in Mhz) as arg %d", argOffset);
   }
 
   FGPositioned::Type type = FGPositioned::INVALID;
@@ -1487,7 +1476,7 @@ static naRef f_findNavaidsByFrequency(naContext c, naRef me, int argc, naRef* ar
   if (argOffset < argc) {
     type = FGPositioned::typeFromName(naStr_data(args[argOffset]));
     if (type == FGPositioned::NDB) {
-      naRuntimeError(c, "Use findNDBsByFrquency to seach NDBs");
+        naRuntimeError(c, "Use findNDBsByFrquency to search NDBs");
     }
   }
 
@@ -1508,7 +1497,7 @@ static naRef f_findCommByFrequency(naContext c, naRef me, int argc, naRef* args)
   argOffset += geodFromArgs(args, 0, argc, pos);
 
   if (!naIsNum(args[argOffset])) {
-    naRuntimeError(c, "findCommByFrequencyMhz expectes frequency (in Mhz) as arg %d", argOffset);
+      naRuntimeError(c, "findCommByFrequencyMhz expects frequency (in Mhz) as arg %d", argOffset);
   }
 
   // initial filter is all comm types
@@ -1535,7 +1524,7 @@ static naRef f_findCommsByFrequency(naContext c, naRef me, int argc, naRef* args
     argOffset += geodFromArgs(args, 0, argc, pos);
 
     if (!naIsNum(args[argOffset])) {
-        naRuntimeError(c, "f_findCommsByFrequency expectes frequency (in Mhz) as arg %d", argOffset);
+        naRuntimeError(c, "f_findCommsByFrequency expects frequency (in Mhz) as arg %d", argOffset);
     }
 
     FGPositioned::TypeFilter filter(FGPositioned::FREQ_GROUND, FGPositioned::FREQ_UNICOM);
@@ -1562,7 +1551,7 @@ static naRef f_findNavaidsByIdent(naContext c, naRef me, int argc, naRef* args)
   argOffset += geodFromArgs(args, 0, argc, pos);
 
   if (!naIsString(args[argOffset])) {
-    naRuntimeError(c, "findNavaidsByIdent expectes ident string as arg %d", argOffset);
+      naRuntimeError(c, "findNavaidsByIdent expects ident string as arg %d", argOffset);
   }
 
   FGPositioned::Type type = FGPositioned::INVALID;
@@ -1589,7 +1578,7 @@ static naRef f_findFixesByIdent(naContext c, naRef me, int argc, naRef* args)
   argOffset += geodFromArgs(args, 0, argc, pos);
 
   if (!naIsString(args[argOffset])) {
-    naRuntimeError(c, "findFixesByIdent expectes ident string as arg %d", argOffset);
+      naRuntimeError(c, "findFixesByIdent expects ident string as arg %d", argOffset);
   }
 
   std::string ident(naStr_data(args[argOffset]));
@@ -1927,7 +1916,7 @@ naRef initNasalPositioned(naRef globals, naContext c)
 
     waypointPrototype = naNewHash(c);
     naSave(c, waypointPrototype);
-    hashset(c, waypointPrototype, "move", naNewFunc(c, naNewCCode(c, f_waypoint_move)));  
+    hashset(c, waypointPrototype, "move", naNewFunc(c, naNewCCode(c, f_waypoint_move)));
 
     for(int i=0; funcs[i].name; i++) {
       hashset(c, globals, funcs[i].name,

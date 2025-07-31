@@ -1,21 +1,7 @@
-// Copyright (C) 2013  James Turner
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2013 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifndef NASAL_MODEL_DATA_HXX
-#define NASAL_MODEL_DATA_HXX
+#pragma once
 
 #include <simgear/nasal/nasal.h>
 #include <simgear/scene/model/modellib.hxx>
@@ -36,15 +22,15 @@ public:
                       SGPropertyNode* load,
                       SGPropertyNode* unload,
                       osg::Node* branch );
-    
+
     ~FGNasalModelData();
 
     /** Load hook. Always call from inside the main loop. */
     void load();
-    
+
     /** Unload hook. Always call from inside the main loop. */
     void unload();
-    
+
     /**
      * Get osg scenegraph node of model
      */
@@ -83,13 +69,13 @@ public:
     _root(root), _data(0)
     {
     }
-    
+
     ~FGNasalModelDataProxy();
-    
+
     void modelLoaded( const std::string& path,
                       SGPropertyNode *prop,
                       osg::Node *branch );
-    
+
     virtual FGNasalModelDataProxy* clone() const { return new FGNasalModelDataProxy(_root); }
 
     ErrorContext getErrorContext() const override
@@ -101,5 +87,3 @@ protected:
     SGPropertyNode_ptr _root;
     FGNasalModelDataRef _data;
 };
-
-#endif // of NASAL_MODEL_DATA_HXX

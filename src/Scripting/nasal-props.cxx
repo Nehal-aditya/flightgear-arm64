@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2003 Erik Hofmann
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
@@ -835,7 +836,7 @@ static naRef f_unalias(naContext c, naRef me, int argc, naRef* args)
 static naRef f_location(naContext c, naRef me, int argc, naRef* args)
 {
     NODENOARG();
-    const auto ls = node->getLocation().str(); 
+    const auto ls = node->getLocation().str();
     return NASTR(ls.c_str());
 }
 
@@ -944,7 +945,7 @@ naRef FGNasalSys::getPropertyValue(naContext c, SGPropertyNode* node)
     using namespace simgear;
     if (!node)
         return naNil();
-    
+
     switch(node->getType()) {
     case props::BOOL:   case props::INT:
     case props::LONG:   case props::FLOAT:

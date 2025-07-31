@@ -1,6 +1,6 @@
 // SPDX-FileComment: expose SGCondition and SGBinding to Nasal
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (C) 2012 James Turner <james@flightgear.org>
+// SPDX-FileCopyrightText: 2012 James Turner <james@flightgear.org>
 
 #include "config.h"
 

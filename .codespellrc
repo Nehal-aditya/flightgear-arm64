@@ -4,4 +4,5 @@
 [codespell]
 ; datas needed for replay-internal.cxx
 ; 'sav' needed for use as a file extension
-ignore-words-list = vor,ned,NED,LOD,datas,sav
+; localY needed by NasalCanvas.cxx
+ignore-words-list = vor,ned,NED,LOD,datas,sav,localY

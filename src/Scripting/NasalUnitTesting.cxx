@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: NasalUnittesting.cxx
  * SPDX-FileComment: Unit-test API for nasal
- * SPDX-FileCopyrightText: Copyright (C) 2020 James Turner
+ * SPDX-FileCopyrightText: 2020 James Turner
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -9,7 +9,7 @@
 // depending on if we're running the test_suite (using CppUnit) or
 // the normal simulator. The logic is that aircraft-developers and
 // people hacking Nasal likely don't have a way to run the test-suite,
-// whereas core-developers and Jenkins want a way to run all tests 
+// whereas core-developers and Jenkins want a way to run all tests
 // through the standard CppUnit mechanism. So we have a consistent
 // Nasal API, but different implement in fgfs_test_suite vs
 // normal fgfs executable.
@@ -48,16 +48,16 @@ static naRef f_assert(const nasal::CallContext& ctx )
 {
     bool pass = ctx.requireArg<bool>(0);
     auto msg = ctx.getArg<std::string>(1);
-    
+
     if (!pass) {
         if (!static_activeTest) {
             ctx.runtimeError("No active test in progress");
         }
-        
+
         if (static_activeTest->failure) {
             ctx.runtimeError("Active test already failed");
         }
-        
+
         static_activeTest->failure = true;
         static_activeTest->failureMessage = msg;
         static_activeTest->failureFileName = ctx.from_nasal<std::string>(naGetSourceFile(ctx.c_ctx(), 0));
@@ -65,22 +65,22 @@ static naRef f_assert(const nasal::CallContext& ctx )
 
         ctx.runtimeError("Test assert failed");
     }
-    
+
     return naNil();
 }
 
 static naRef f_fail(const nasal::CallContext& ctx )
 {
     auto msg = ctx.getArg<std::string>(0);
-    
+
     if (!static_activeTest) {
        ctx.runtimeError("No active test in progress");
    }
-   
+
    if (static_activeTest->failure) {
        ctx.runtimeError("Active test already failed");
    }
-   
+
    static_activeTest->failure = true;
    static_activeTest->failureMessage = msg;
    static_activeTest->failureFileName = ctx.from_nasal<std::string>(naGetSourceFile(ctx.c_ctx(), 0));
@@ -108,7 +108,7 @@ static naRef f_assert_equal(const nasal::CallContext& ctx )
         static_activeTest->failLineNumber = naGetLine(ctx.c_ctx(), 0);
         ctx.runtimeError(msg.c_str());
     }
-    
+
     return naNil();
 }
 
@@ -129,7 +129,7 @@ static naRef f_assert_doubles_equal(const nasal::CallContext& ctx )
         static_activeTest->failLineNumber = naGetLine(ctx.c_ctx(), 0);
         ctx.runtimeError(msg.c_str());
     }
-    
+
     return naNil();
 }
 
@@ -198,10 +198,10 @@ naRef initNasalUnitTestInSim(naRef nasalGlobals, naContext c)
 void executeNasalTestsInDir(const SGPath& path)
 {
     simgear::Dir d(path);
-    
+
     for (const auto& testFile : d.children(simgear::Dir::TYPE_FILE, "*.nut")) {
         SG_LOG(SG_NASAL, SG_INFO, "Processing test file " << testFile);
-        
+
     } // of test files iteration
 }
 
@@ -222,7 +222,7 @@ static naRef parseTestFile(naContext ctx, const char* filename,
         SG_LOG(SG_NASAL, SG_DEV_ALERT, errors);
         return naNil();
     }
-    
+
     const auto nasalSys = globals->get_subsystem<FGNasalSys>();
     return naBindFunction(ctx, code, nasalSys->nasalGlobals());
 }
@@ -235,7 +235,7 @@ bool executeNasalTest(const SGPath& path)
     const auto nasalSys = globals->get_subsystem<FGNasalSys>();
     sg_ifstream file_in(path);
     const auto source = file_in.read_all();
-    
+
     std::string errors;
     std::string fileName = path.utf8Str();
     naRef code = parseTestFile(ctx, fileName.c_str(),
@@ -247,18 +247,18 @@ bool executeNasalTest(const SGPath& path)
     }
 
     // create test context
-    
+
     auto localNS = nasalSys->getGlobals().createHash("_test_" + path.utf8Str());
     nasalSys->callWithContext(ctx, code, 0, 0, localNS.get_naRef());
-    
-    
+
+
     auto setUpFunc = localNS.get("setUp");
     auto tearDown = localNS.get("tearDown");
-       
+
    for (const auto value : localNS) {
        if (value.getKey().find("test_") == 0) {
            static_activeTest.reset(new ActiveTest);
-           
+
            if (naIsFunc(setUpFunc)) {
                nasalSys->callWithContext(ctx, setUpFunc, 0, nullptr ,localNS.get_naRef());
            }
@@ -276,19 +276,19 @@ bool executeNasalTest(const SGPath& path)
            } else {
                SG_LOG(SG_NASAL, SG_ALERT, testName << ": Test passed");
            }
-           
+
            if (naIsFunc(tearDown)) {
                nasalSys->callWithContext(ctx, tearDown, 0, nullptr ,localNS.get_naRef());
            }
-           
+
            static_activeTest.reset();
        }
    }
-    
-    // remvoe test hash/namespace
 
-    naFreeContext(ctx);
-    return true;
+   // remove test hash/namespace
+
+   naFreeContext(ctx);
+   return true;
 }
 
 

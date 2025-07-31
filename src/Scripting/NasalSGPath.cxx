@@ -1,6 +1,6 @@
 // Expose SGPath module to Nasal
 // SPDX-License-Identifier: GPL-2.0-or-later
-// SPDX-FileCopyrightText: Copyright (C) 2013  James Turner - james@flightgear.org
+// SPDX-FileCopyrightText: 2013  James Turner
 
 #include "config.h"
 

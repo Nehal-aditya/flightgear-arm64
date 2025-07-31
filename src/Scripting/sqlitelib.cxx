@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023 Erik Hofmann
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 #include "config.h"
 
 #include <cstdlib>
