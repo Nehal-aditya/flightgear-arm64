@@ -173,6 +173,7 @@ public:
     std::mutex _lock;
     SGTimeStamp _nextShowTimeout;
     bool _haveDonePostInit = false;
+    bool _isEnabled = true;
 
     SGPropertyNode_ptr _enabledNode;
     SGPropertyNode_ptr _displayNode;
@@ -493,6 +494,11 @@ auto ErrorReporter::ErrorReporterPrivate::getAggregateForOccurence(const ErrorRe
 
         // shouldn't ever happen
         return getAggregate(Aggregation::CustomScenery, {});
+    }
+
+    // assume only FGData can define materials, for now.
+    if (oc.hasContextKey("materials")) {
+        return getAggregate(Aggregation::FGData);
     }
 
     if (oc.hasContextKey("scenario-path")) {
@@ -877,6 +883,13 @@ void ErrorReporter::preinit()
 
     sglog().addCallback(d->_logCallback.get());
     d->_logCallbackRegistered = true;
+
+    // cache these values here
+    d->_fgdataPathPrefix = globals->get_fg_root().utf8Str();
+    d->_terrasyncPathPrefix = globals->get_terrasync_dir().utf8Str();
+
+    const auto aircraftPath = SGPath::fromUtf8(fgGetString("/sim/aircraft-dir"));
+    d->_aircraftDirectoryName = aircraftPath.file();
 }
 
 void ErrorReporter::init()
@@ -888,27 +901,18 @@ void ErrorReporter::init()
     const auto disableInDeveloperMode = !d->_enabledNode->getParent()->getBoolValue("enable-in-developer-mode");
     const auto dd = developerMode && disableInDeveloperMode;
 
-    if (dd || !d->_enabledNode) {
-        SG_LOG(SG_GENERAL, SG_INFO, "Error reporting disabled");
-        simgear::setFailureCallback(simgear::FailureCallback());
-        simgear::setErrorContextCallback(simgear::ContextCallback());
-        if (d->_logCallbackRegistered) {
-            sglog().removeCallback(d->_logCallback.get());
-            d->_logCallbackRegistered = false;
-        }
-        return;
+    if (dd || !d->_enabledNode->getBoolValue()) {
+        d->_isEnabled = false;
+        SG_LOG(SG_GENERAL, SG_INFO, "Error reporting popups disabled");
+    } else {
+        d->_isEnabled = true;
     }
 
+    // most work is done in preinit(), because errors can occur early in startup, before
+    // subsystems are being initialized
     globals->get_commands()->addCommand("dismiss-error-report", d.get(), &ErrorReporterPrivate::dismissReportCommand);
     globals->get_commands()->addCommand("save-error-report-data", d.get(), &ErrorReporterPrivate::saveReportCommand);
     globals->get_commands()->addCommand("show-error-report", d.get(), &ErrorReporterPrivate::showErrorReportCommand);
-
-    // cache these values here
-    d->_fgdataPathPrefix = globals->get_fg_root().utf8Str();
-    d->_terrasyncPathPrefix = globals->get_terrasync_dir().utf8Str();
-
-    const auto aircraftPath = SGPath::fromUtf8(fgGetString("/sim/aircraft-dir"));
-    d->_aircraftDirectoryName = aircraftPath.file();
 }
 
 void ErrorReporter::update(double dt)
@@ -920,11 +924,6 @@ void ErrorReporter::update(double dt)
     // beginning of locked section
     {
         std::lock_guard<std::mutex> g(d->_lock);
-
-        if (!d->_enabledNode->getBoolValue()) {
-            return;
-        }
-
         // we are into the update phase (postinit has occurred). We treat errors
         // after this point with lower severity, to avoid popups into a flight
         d->_haveDonePostInit = true;
@@ -970,7 +969,9 @@ void ErrorReporter::update(double dt)
                     showPopup = true;
                 }
 
-                d->sendReportToSentry(report);
+                if (d->_isEnabled) {
+                    d->sendReportToSentry(report);
+                }
 
                 // if we show one report, don't consider any others for now
                 break;
@@ -984,7 +985,7 @@ void ErrorReporter::update(double dt)
         }
     } // end of locked section
 
-    if (flightgear::isHeadlessMode()) {
+    if (!d->_isEnabled || flightgear::isHeadlessMode()) {
         showDialog = false;
         showPopup = false;
     }
@@ -1010,7 +1011,7 @@ void ErrorReporter::update(double dt)
 
 void ErrorReporter::shutdown()
 {
-    if (d->_enabledNode) {
+    if (d->_isEnabled) {
         globals->get_commands()->removeCommand("dismiss-error-report");
         globals->get_commands()->removeCommand("save-error-report-data");
         globals->get_commands()->removeCommand("show-error-report");
