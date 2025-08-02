@@ -294,26 +294,11 @@ protected:
         _state.geocentric_rates_v[1] = lon;
         _state.geocentric_rates_v[2] = rad;
     }
-    inline void _set_Geocentric_Position(double lat, double lon, double rad)
-    {
-        _state.geocentric_position_v.setLatitudeRad(lat);
-        _state.geocentric_position_v.setLongitudeRad(lon);
-        _state.geocentric_position_v.setRadiusFt(rad);
-    }
-    /*  Don't call _set_L[at|ong]itude() directly, use _set_Geodetic_Position() instead.
-    These methods can't update the track.
- *
-    inline void _set_Latitude(double lat) {
-        geodetic_position_v.setLatitudeRad(lat);
-    }
-    inline void _set_Longitude(double lon) {
-        geodetic_position_v.setLongitudeRad(lon);
-    }
-*/
-    inline void _set_Altitude(double altitude)
-    {
-        _state.geodetic_position_v.setElevationFt(altitude);
-    }
+
+    void _set_Geocentric_Position(double lat, double lon, double rad);
+
+    void _set_Altitude(double alt);
+
     inline void _set_Altitude_AGL(double agl)
     {
         _state.altitude_agl = agl;

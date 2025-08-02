@@ -6,6 +6,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
+#include "simgear/math/SGGeoc.hxx"
 #include "simgear/math/SGVec2.hxx"
 #include "simgear/structure/exception.hxx"
 
@@ -71,6 +72,17 @@ static inline void assign(double* ptr, const SGVec3d& vec)
     ptr[0] = vec[0];
     ptr[1] = vec[1];
     ptr[2] = vec[2];
+}
+
+static bool isNANArray(const double* d, size_t count)
+{
+    for (int i = 0; i < count; ++i) {
+        if (std::isnan(d[i])) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 // Constructor
@@ -496,6 +508,27 @@ bool FGInterface::writeState(SGIOChannel* io)
     return true;
 }
 
+void FGInterface::_set_Altitude(double altitude)
+{
+    if (std::isnan(altitude)) {
+        throw sg_range_exception("FGInterface::_set_Altitude: invalid value");
+    }
+
+    auto newGeod = _state.geodetic_position_v;
+    newGeod.setElevationFt(altitude);
+    _updatePosition(newGeod);
+}
+
+void FGInterface::_set_Geodetic_Position(double lat, double lon, double alt)
+{
+    _updatePosition(SGGeod::fromRadFt(lon, lat, alt));
+}
+
+void FGInterface::_set_Geocentric_Position(double lat, double lon, double rad)
+{
+    _updatePosition(SGGeoc::fromRadFt(lon, lat, rad));
+}
+
 void FGInterface::_updatePositionM(const SGVec3d& cartPos)
 {
     if (isNaN(cartPos)) {
@@ -534,10 +567,15 @@ void FGInterface::_updatePosition(const SGGeod& geod)
 
 void FGInterface::_updatePosition(const SGGeoc& geoc)
 {
+    const SGGeod geod = SGGeod::fromGeoc(geoc);
+    if (!geod.isValid()) {
+        throw sg_range_exception("FGInterface::_updatePositionM: position is not convertible to valid SGGeod");
+    }
+
     TrackComputer tracker(_state.track, _state.path, _state.geodetic_position_v);
     _state.geocentric_position_v = geoc;
     _state.cartesian_position_v = SGVec3d::fromGeoc(_state.geocentric_position_v);
-    _state.geodetic_position_v = SGGeod::fromCart(_state.cartesian_position_v);
+    _state.geodetic_position_v = geod;
 
     _set_Sea_level_radius(SGGeodesy::SGGeodToSeaLevelRadius(_state.geodetic_position_v) * SG_METER_TO_FEET);
     _update_ground_elev_at_pos();
@@ -715,6 +753,10 @@ void FGInterface::_busdump(void)
 bool FGInterface::prepare_ground_cache_m(double startSimTime, double endSimTime,
                                          const double pt[3], double rad)
 {
+    if (isNANArray(pt, 3)) {
+        throw sg_range_exception("FGInterface::prepare_ground_cache_m: invalid WGS84 position");
+    }
+
     return ground_cache.prepare_ground_cache(startSimTime, endSimTime,
                                              SGVec3d(pt), rad);
 }
@@ -722,6 +764,10 @@ bool FGInterface::prepare_ground_cache_m(double startSimTime, double endSimTime,
 bool FGInterface::prepare_ground_cache_ft(double startSimTime, double endSimTime,
                                           const double pt[3], double rad)
 {
+    if (isNANArray(pt, 3)) {
+        throw sg_range_exception("FGInterface::prepare_ground_cache_ft: invalid WGS84 position");
+    }
+
     // Convert units and do the real work.
     SGVec3d pt_ft = SG_FEET_TO_METER * SGVec3d(pt);
     return ground_cache.prepare_ground_cache(startSimTime, endSimTime,
@@ -983,16 +1029,4 @@ bool FGInterface::get_wire_ends_ft(double t, double end[2][3], double vel[2][3])
 void FGInterface::release_wire(void)
 {
     ground_cache.release_wire();
-}
-
-void FGInterface::_set_Geodetic_Position(double lat, double lon, double alt)
-{
-    if (std::isnan(lat) || std::isnan(lon) || std::isnan(alt)) {
-        throw sg_range_exception("FGInterface::_set_Geodetic_Position: passed NaNs");
-    }
-
-    TrackComputer tracker(_state.track, _state.path, _state.geodetic_position_v);
-    _state.geodetic_position_v.setLatitudeRad(lat);
-    _state.geodetic_position_v.setLongitudeRad(lon);
-    _state.geodetic_position_v.setElevationFt(alt);
 }
