@@ -1,24 +1,5 @@
-// trafficrecord.cxx - Implementation of AIModels ATC code.
-//
-// Written by Durk Talsma, started September 2006.
-//
-// Copyright (C) 2006 Durk Talsma.
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-FileCopyrightText: 2006 Durk Talsma
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <config.h>
 
@@ -74,7 +55,7 @@ void ActiveRunwayQueue::removeFromQueue(int id)
         return acft->getId() == id;
     });
     if (it == runwayQueue.end()) {
-        SG_LOG(SG_ATC, SG_WARN, "Erasing non existant aircraft " << rwy << " " << id);
+        SG_LOG(SG_ATC, SG_WARN, "Erasing non existent aircraft " << rwy << " " << id);
         printRunwayQueue();
         return;
     }
@@ -90,9 +71,9 @@ void ActiveRunwayQueue::updateDepartureQueue()
 }
 
 /**
-* Fetch next slot for the active runway. 
+* Fetch next slot for the active runway.
 * @param trafficRecord traffic record containing the arrival time
-* @return newEta: next slot available; starts at eta paramater
+* @return newEta: next slot available; starts at eta parameter
 * and adds SEPARATION as needed
 */
 void ActiveRunwayQueue::requestTimeSlot(SGSharedPtr<FGTrafficRecord> trafficRecord)
@@ -198,9 +179,9 @@ void ActiveRunwayQueue::requestTimeSlot(SGSharedPtr<FGTrafficRecord> trafficReco
 }
 
 /**
-* Update the first and move all records backwards. 
+* Update the first and move all records backwards.
 * @param trafficRecord traffic record containing the arrival time
-* @return newEta: next slot available; starts at eta paramater
+* @return newEta: next slot available; starts at eta parameter
 * and adds SEPARATION as needed
 */
 void ActiveRunwayQueue::updateFirst(SGSharedPtr<FGTrafficRecord> trafficRecord, time_t newETA)

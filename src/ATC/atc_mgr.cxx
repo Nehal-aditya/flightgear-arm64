@@ -1,40 +1,22 @@
-/******************************************************************************
- * atc_mgr.cxx
- * Written by Durk Talsma, started August 1, 2010.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- *
- **************************************************************************/
+// SPDX-FileCopyrightText: 2010 Durk Talsma
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 
 #ifdef HAVE_CONFIG_H
-#  include "config.h"
+#include "config.h"
 #endif
 
-#include <Airports/dynamics.hxx>
-#include <Airports/airportdynamicsmanager.hxx>
-#include <Airports/airport.hxx>
-#include <Scenery/scenery.hxx>
-#include <Main/globals.hxx>
-#include <Main/fg_props.hxx>
 #include <AIModel/AIConstants.hxx>
-#include <AIModel/AIManager.hxx>
-#include <Traffic/Schedule.hxx>
-#include <Traffic/SchedFlight.hxx>
 #include <AIModel/AIFlightPlan.hxx>
+#include <AIModel/AIManager.hxx>
+#include <Airports/airport.hxx>
+#include <Airports/airportdynamicsmanager.hxx>
+#include <Airports/dynamics.hxx>
+#include <Main/fg_props.hxx>
+#include <Main/globals.hxx>
+#include <Scenery/scenery.hxx>
+#include <Traffic/SchedFlight.hxx>
+#include <Traffic/Schedule.hxx>
 
 #include "atc_mgr.hxx"
 
@@ -44,19 +26,19 @@ using std::string;
 /**
 Constructor, initializes values to private boolean and FGATCController instances
 */
-FGATCManager::FGATCManager() :
-    controller(NULL),
-    prevController(NULL),
-    enRouteController(NULL),
-    networkVisible(false),
-    initSucceeded(false)
+FGATCManager::FGATCManager() : controller(NULL),
+                               prevController(NULL),
+                               enRouteController(NULL),
+                               networkVisible(false),
+                               initSucceeded(false)
 {
 }
 
 /**
 Default destructor
 */
-FGATCManager::~FGATCManager() {
+FGATCManager::~FGATCManager()
+{
 }
 
 /**
@@ -75,8 +57,8 @@ void FGATCManager::postinit()
     //  - Starting on ground at a parking position
     //  - Starting on ground at the runway.
     //  - Starting in the air
-    bool onGround  = fgGetBool("/sim/presets/onground");
-    string runway  = fgGetString("/sim/atc/runway");
+    bool onGround = fgGetBool("/sim/presets/onground");
+    string runway = fgGetString("/sim/atc/runway");
     string curAirport = fgGetString("/sim/presets/airport-id");
     string parking = fgGetString("/sim/presets/parkpos");
 
@@ -98,18 +80,18 @@ void FGATCManager::postinit()
 
     // NEXT UP: Create a traffic schedule and fill that with appropriate information. This we can use for flight planning.
     // Note that these are currently only defaults.
-	userAircraftTrafficRef.reset(new FGAISchedule);
+    userAircraftTrafficRef.reset(new FGAISchedule);
     userAircraftTrafficRef->setFlightType("gate");
 
-	userAircraftScheduledFlight.reset(new FGScheduledFlight);
-	userAircraftScheduledFlight->setDepartureAirport(curAirport);
-	userAircraftScheduledFlight->setArrivalAirport(destination);
-	userAircraftScheduledFlight->initializeAirports();
-	userAircraftScheduledFlight->setFlightRules("IFR");
-	userAircraftScheduledFlight->setCallSign(callsign);
+    userAircraftScheduledFlight.reset(new FGScheduledFlight);
+    userAircraftScheduledFlight->setDepartureAirport(curAirport);
+    userAircraftScheduledFlight->setArrivalAirport(destination);
+    userAircraftScheduledFlight->initializeAirports();
+    userAircraftScheduledFlight->setFlightRules("IFR");
+    userAircraftScheduledFlight->setCallSign(callsign);
 
     userAircraftTrafficRef->assign(userAircraftScheduledFlight.get());
-    std::unique_ptr<FGAIFlightPlan> fp ;
+    std::unique_ptr<FGAIFlightPlan> fp;
     userAircraft->setTrafficRef(userAircraftTrafficRef.get());
 
     // string flightPlanName = curAirport + "-" + _routeManagerDestinationAirportNode->getStringValue() + ".xml";
@@ -118,7 +100,7 @@ void FGATCManager::postinit()
     // time_t deptime = 0;        // just make sure how flightplan processing is affected by this...
 
     FGAirportDynamicsRef dcs(flightgear::AirportDynamicsManager::find(curAirport));
-    if (dcs && onGround) {// && !runway.empty()) {
+    if (dcs && onGround) { // && !runway.empty()) {
 
         ParkingAssignment pk;
 
@@ -151,18 +133,17 @@ void FGATCManager::postinit()
             fp.reset(new FGAIFlightPlan);
             controller = dcs->getStartupController();
             int stationFreq = dcs->getGroundFrequency(1);
-            if (stationFreq > 0)
-            {
+            if (stationFreq > 0) {
                 SG_LOG(SG_ATC, SG_DEBUG, "Setting radio frequency to : " << stationFreq);
-                fgSetDouble("/instrumentation/comm[0]/frequencies/selected-mhz", ((double) stationFreq / 100.0));
+                fgSetDouble("/instrumentation/comm[0]/frequencies/selected-mhz", ((double)stationFreq / 100.0));
             }
             leg = AILeg::STARTUP_PUSHBACK;
             //double, lat, lon, head; // Unused variables;
             //int getId = apt->getDynamics()->getParking(gateId, &lat, &lon, &head);
             aircraftRadius = pk.parking()->getRadius();
             string fltType = pk.parking()->getType(); // gate / ramp, ga, etc etc.
-            string aircraftType; // Unused.
-            string airline;      // Currently used for gate selection, but a fallback mechanism will apply when not specified.
+            string aircraftType;                      // Unused.
+            string airline;                           // Currently used for gate selection, but a fallback mechanism will apply when not specified.
             fp->setGate(pk);
             if (!(fp->createPushBack(userAircraft,
                                      false,
@@ -176,16 +157,14 @@ void FGATCManager::postinit()
             }
 
 
-
         } else if (!runway.empty()) {
             // on a runway
 
             controller = dcs->getTowerController();
             int stationFreq = dcs->getTowerFrequency(2);
-            if (stationFreq > 0)
-            {
+            if (stationFreq > 0) {
                 SG_LOG(SG_ATC, SG_DEBUG, "Setting radio frequency to inair frequency : " << stationFreq);
-                fgSetDouble("/instrumentation/comm[0]/frequencies/selected-mhz", ((double) stationFreq / 100.0));
+                fgSetDouble("/instrumentation/comm[0]/frequencies/selected-mhz", ((double)stationFreq / 100.0));
             }
             fp.reset(new FGAIFlightPlan);
             leg = AILeg::TAKEOFF;
@@ -208,11 +187,11 @@ void FGATCManager::postinit()
         }
 
         if (fp && !fp->empty()) {
-            fp->getLastWaypoint()->setName( fp->getLastWaypoint()->getName() + string("legend"));
+            fp->getLastWaypoint()->setName(fp->getLastWaypoint()->getName() + string("legend"));
         }
-     } else {
+    } else {
         controller = nullptr;
-     }
+    }
 
     // Create an initial flightplan and assign it to the ai_ac. We won't use this flightplan, but it is necessary to
     // keep the ATC code happy.
@@ -257,15 +236,15 @@ void FGATCManager::reposition()
 {
     prevController = controller = nullptr;
 
-// remove any parking assignment form the user flight-plan, so it's
-// available again. postinit() will recompute a new value if required
+    // remove any parking assignment form the user flight-plan, so it's
+    // available again. postinit() will recompute a new value if required
     auto aiManager = globals->get_subsystem<FGAIManager>();
     auto userAircraft = aiManager->getUserAircraft();
     if (userAircraft) {
         if (userAircraft->GetFlightPlan()) {
-              auto userAIFP = userAircraft->GetFlightPlan();
-              userAIFP->setGate({}); // clear any assignment
-          }
+            auto userAIFP = userAircraft->GetFlightPlan();
+            userAIFP->setGate({}); // clear any assignment
+        }
 
         userAircraft->clearATCController();
     }
@@ -277,14 +256,15 @@ void FGATCManager::reposition()
 Adds FGATCController instance to std::vector activeStations.
 FGATCController is a basic class for every controller
 */
-void FGATCManager::addController(FGATCController *controller) {
+void FGATCManager::addController(FGATCController* controller)
+{
     activeStations.push_back(controller);
 }
 
 /**
 Searches for and removes FGATCController instance from std::vector activeStations
 */
-void FGATCManager::removeController(FGATCController *controller)
+void FGATCManager::removeController(FGATCController* controller)
 {
     AtcVecIterator it;
     it = std::find(activeStations.begin(), activeStations.end(), controller);
@@ -301,13 +281,14 @@ update its state.
 @param time The delta time, in seconds, since the last
 update.  On first update, delta time will be 0.
 */
-void FGATCManager::update ( double time ) {
+void FGATCManager::update(double time)
+{
     // SG_LOG(SG_ATC, SG_BULK, "ATC update code is running at time: " << time);
 
     // Test code: let my virtual co-pilot handle ATC
     auto aiManager = globals->get_subsystem<FGAIManager>();
     FGAIAircraft* user_ai_ac = aiManager->getUserAircraft();
-    FGAIFlightPlan *fp = user_ai_ac->GetFlightPlan();
+    FGAIFlightPlan* fp = user_ai_ac->GetFlightPlan();
 
     // Update destination
     string result = _routeManagerDestinationAirportNode->getStringValue();
@@ -315,9 +296,9 @@ void FGATCManager::update ( double time ) {
     if (destination != result && result != "") {
         destination = result;
         userAircraftScheduledFlight->setArrivalAirport(destination);
-		userAircraftScheduledFlight->initializeAirports();
-		userAircraftTrafficRef->clearAllFlights();
-		userAircraftTrafficRef->assign(userAircraftScheduledFlight.get());
+        userAircraftScheduledFlight->initializeAirports();
+        userAircraftTrafficRef->clearAllFlights();
+        userAircraftTrafficRef->assign(userAircraftScheduledFlight.get());
 
         auto userAircraft = aiManager->getUserAircraft();
         userAircraft->setTrafficRef(userAircraftTrafficRef.get());
@@ -363,7 +344,7 @@ void FGATCManager::update ( double time ) {
 
     // Controller manager - if controller is set, then will update controller
     if (controller) {
-//        SG_LOG(SG_ATC, SG_DEBUG, "name of previous waypoint : " << fp->getPreviousWaypoint()->getName());
+        //        SG_LOG(SG_ATC, SG_DEBUG, "name of previous waypoint : " << fp->getPreviousWaypoint()->getName());
         SG_LOG(SG_ATC, SG_BULK, "Currently under control of " << controller->getName());
 
         // update aircraft information (simulates transponder)
@@ -376,15 +357,15 @@ void FGATCManager::update ( double time ) {
 
         if (fp) {
             switch (fp->getLeg()) {
-            case AILeg::STARTUP_PUSHBACK:              // Startup and Push back
+            case AILeg::STARTUP_PUSHBACK: // Startup and Push back
                 if (userAircraftTrafficRef->getDepartureAirport()->getDynamics())
                     controller = userAircraftTrafficRef->getDepartureAirport()->getDynamics()->getStartupController();
                 break;
-            case AILeg::RUNWAY_TAXI:              // Taxiing to runway
+            case AILeg::RUNWAY_TAXI: // Taxiing to runway
                 if (userAircraftTrafficRef->getDepartureAirport()->getDynamics()->getGroundController()->exists())
                     controller = userAircraftTrafficRef->getDepartureAirport()->getDynamics()->getGroundController();
                 break;
-            case AILeg::TAKEOFF:              //Take off tower controller
+            case AILeg::TAKEOFF: //Take off tower controller
                 if (userAircraftTrafficRef->getDepartureAirport()->getDynamics()) {
                     controller = userAircraftTrafficRef->getDepartureAirport()->getDynamics()->getTowerController();
                 } else {
@@ -403,7 +384,7 @@ void FGATCManager::update ( double time ) {
                 break;
                 */
             default:
-                if(prevController) {
+                if (prevController) {
                     SG_LOG(SG_AI, SG_BULK, "Will be signing off user ai " << user_ai_ac->getID() << " from " << prevController->getName());
                 }
                 controller = nullptr;
@@ -443,7 +424,7 @@ void FGATCManager::update ( double time ) {
             // render the path for the present controller if the ground network is set to visible
             controller->render(networkVisible);
             if (networkVisible) {
-               SG_LOG(SG_ATC, SG_BULK, "Adding ground network to the scenegraph::update");
+                SG_LOG(SG_ATC, SG_BULK, "Adding ground network to the scenegraph::update");
             }
         }
 
@@ -451,14 +432,15 @@ void FGATCManager::update ( double time ) {
         prevController = controller;
     }
 
-   // update the active ATC stations
-   for (AtcVecIterator atc = activeStations.begin(); atc != activeStations.end(); ++atc) {
-       (*atc)->update(time);
-   }
+    // update the active ATC stations
+    for (AtcVecIterator atc = activeStations.begin(); atc != activeStations.end(); ++atc) {
+        (*atc)->update(time);
+    }
 }
 
-FGATCController *FGATCManager::getEnRouteController() {
-   return enRouteController;
+FGATCController* FGATCManager::getEnRouteController()
+{
+    return enRouteController;
 }
 
 

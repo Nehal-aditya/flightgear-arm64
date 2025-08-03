@@ -1,16 +1,12 @@
-/*
- * SPDX-FileName: CommStation.hxx
- * SPDX-FileComment: class describing a single comm station in the Nav DB
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+// SPDX-FileCopyrightText: 2011 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
 #include <Airports/airports_fwd.hxx>
 #include <Navaids/positioned.hxx>
 
-namespace flightgear
-{
+namespace flightgear {
 
 class CommStation : public FGPositioned
 {
@@ -19,15 +15,19 @@ public:
 
     void setAirport(PositionedID apt);
     FGAirportRef airport() const;
-    
+
     int rangeNm() const
-        { return mRangeNM; }
-        
+    {
+        return mRangeNM;
+    }
+
     int freqKHz() const
-        { return mFreqKhz; }
-        
+    {
+        return mFreqKhz;
+    }
+
     double freqMHz() const;
-    
+
     static CommStationRef findByFreq(int freqKhz, const SGGeod& pos, FGPositioned::Filter* filt = NULL);
 
     static bool isType(FGPositioned::Type ty)

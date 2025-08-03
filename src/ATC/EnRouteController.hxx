@@ -1,9 +1,6 @@
-/*
- * SPDX-FileName: EnRouteController.hxx
- * SPDX-FileComment: ATC Controller controlling Leg 4
- * SPDX-FileCopyrightText: Copyright (C) 2025  Keith Paterson - keith.paterson@gmx.de
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+// SPDX-FileCopyrightText: 2025 Keith Paterson
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #pragma once
 
 #include <Airports/airports_fwd.hxx>

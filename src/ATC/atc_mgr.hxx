@@ -1,10 +1,5 @@
-/*
- * SPDX-FileName: atc_mgr.hxx
- * SPDX-FileComment: Started August 1, 2010; based on earlier work by David C. Luff
- * SPDX-FileCopyrightText: Written by Durk Talsma.
- * SPDX-FileContributor: Updated by Jonathan Redpath. Started June 12, 2019. Documenting and extending functionality of the ATC subsystem
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+// SPDX-FileCopyrightText: 2010 Durk Talsma
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 /**************************************************************************
  * The ATC Manager interfaces the users aircraft within the AI traffic system
@@ -18,8 +13,8 @@
 #include <simgear/structure/subsystem_mgr.hxx>
 
 #include <AIModel/AIAircraft.hxx>
-#include <ATC/trafficcontrol.hxx>
 #include <ATC/EnRouteController.hxx>
+#include <ATC/trafficcontrol.hxx>
 #include <Traffic/SchedFlight.hxx>
 #include <Traffic/Schedule.hxx>
 
@@ -32,7 +27,7 @@ class FGATCManager : public SGSubsystem
 private:
     AtcVec activeStations;
     FGATCController *controller, *prevController; // The ATC controller that is responsible for the user's aircraft.
-    FGATCController *enRouteController;
+    FGATCController* enRouteController;
 
     bool networkVisible;
     bool initSucceeded;

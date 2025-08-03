@@ -1,9 +1,6 @@
-/*
- * SPDX-FileName: EnRouteController.cxx
- * SPDX-FileComment: ATC Controller controlling Leg 3/4
- * SPDX-FileCopyrightText: Copyright (C) 2025  Keith Paterson - keith.paterson@gmx.de
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+// SPDX-FileCopyrightText: 2025 Keith Paterson
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include <Airports/airports_fwd.hxx>
 
 #include <AIModel/AIAircraft.hxx>
@@ -30,7 +27,7 @@ void EnRouteController::announcePosition(int id,
     // Search activeTraffic for a record matching our id
     TrafficVectorIterator i = FGATCController::searchActiveTraffic(id);
 
-    // Add a new TrafficRecord if no one exsists for this aircraft.
+    // Add a new TrafficRecord if no one exists for this aircraft.
     if (i == activeTraffic.end() || activeTraffic.empty()) {
         FGTrafficRecord* rec = new FGTrafficRecord();
         rec->setId(id);

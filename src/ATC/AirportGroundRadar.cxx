@@ -1,83 +1,84 @@
-﻿/*
- * SPDX-FileName: AirportGroundRadar.cxx
- * SPDX-FileComment: Implementation of the FlightGear Ground radar
- * SPDX-FileCopyrightText: Copyright (C) 2023  Keith Paterson
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+﻿// SPDX-FileCopyrightText: 2023 Keith Paterson
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#include <ATC/AirportGroundRadar.hxx>
-#include <simgear/debug/logstream.hxx>
-#include <simgear/math/SGGeod.hxx>
-#include <Airports/airport.hxx>
-#include <Airports/pavement.hxx>
 #include <AIModel/AIAircraft.hxx>
-#include <AIModel/performancedata.hxx>
 #include <AIModel/AIConstants.hxx>
 #include <AIModel/VectorMath.hxx>
+#include <AIModel/performancedata.hxx>
+#include <ATC/AirportGroundRadar.hxx>
+#include <Airports/airport.hxx>
+#include <Airports/pavement.hxx>
+#include <simgear/debug/logstream.hxx>
+#include <simgear/math/SGGeod.hxx>
 
 
-AirportGroundRadar::AirportGroundRadar(SGGeod min, SGGeod max): index(getBox, equal), min(min) {
-	double w = max.getLatitudeDeg() - min.getLatitudeDeg();
-	double h = max.getLongitudeDeg() - min.getLongitudeDeg();
-	assert(w>0);
-	assert(h>0);
-	index.resize(SGRect<double>(min.getLatitudeDeg(), min.getLongitudeDeg(), w, h));
+AirportGroundRadar::AirportGroundRadar(SGGeod min, SGGeod max) : index(getBox, equal), min(min)
+{
+    double w = max.getLatitudeDeg() - min.getLatitudeDeg();
+    double h = max.getLongitudeDeg() - min.getLongitudeDeg();
+    assert(w > 0);
+    assert(h > 0);
+    index.resize(SGRect<double>(min.getLatitudeDeg(), min.getLongitudeDeg(), w, h));
 }
 
-AirportGroundRadar::AirportGroundRadar(FGAirportRef airport): index(getBox, equal) {
-	double INDEX_SIZE_DEG = 1;
-    double minLat = airport->getLatitude() - INDEX_SIZE_DEG/2;
-    double minLon = airport->getLongitude() - INDEX_SIZE_DEG/2;
-	SG_LOG(SG_ATC, SG_DEBUG, "Creating AirportGroundRadar for " << airport->getId());
-	AirportGroundRadar::airport = airport;
-	index.resize(SGRect<double>(minLat, minLon, INDEX_SIZE_DEG, INDEX_SIZE_DEG));
+AirportGroundRadar::AirportGroundRadar(FGAirportRef airport) : index(getBox, equal)
+{
+    double INDEX_SIZE_DEG = 1;
+    double minLat = airport->getLatitude() - INDEX_SIZE_DEG / 2;
+    double minLon = airport->getLongitude() - INDEX_SIZE_DEG / 2;
+    SG_LOG(SG_ATC, SG_DEBUG, "Creating AirportGroundRadar for " << airport->getId());
+    AirportGroundRadar::airport = airport;
+    index.resize(SGRect<double>(minLat, minLon, INDEX_SIZE_DEG, INDEX_SIZE_DEG));
 }
 
-AirportGroundRadar::~AirportGroundRadar() {
+AirportGroundRadar::~AirportGroundRadar()
+{
 }
 
-bool AirportGroundRadar::add(FGTrafficRef aiObject) {
-	bool ret = index.add(aiObject);
-	if (ret) {
-		SG_LOG(SG_ATC, SG_DEBUG, "Added Aircraft " << aiObject->getCallsign() << "(" << aiObject->getId() << ")" << " Leg : " << aiObject->getLeg() << " " << aiObject->getPos() );	
-		//index.printPath(aiObject);
-	} else {
-		double distM = SGGeodesy::distanceM(aiObject->getPos(), airport->geod());
-		SG_LOG(SG_ATC, SG_ALERT, "Couldn't add Aircraft " << aiObject->getCallsign() << "(" << aiObject->getId() << ") to " << airport->getId() << " Dist " << distM << "m Leg " << aiObject->getLeg() );	
-	}
-	return ret;
+bool AirportGroundRadar::add(FGTrafficRef aiObject)
+{
+    bool ret = index.add(aiObject);
+    if (ret) {
+        SG_LOG(SG_ATC, SG_DEBUG, "Added Aircraft " << aiObject->getCallsign() << "(" << aiObject->getId() << ")" << " Leg : " << aiObject->getLeg() << " " << aiObject->getPos());
+        //index.printPath(aiObject);
+    } else {
+        double distM = SGGeodesy::distanceM(aiObject->getPos(), airport->geod());
+        SG_LOG(SG_ATC, SG_ALERT, "Couldn't add Aircraft " << aiObject->getCallsign() << "(" << aiObject->getId() << ") to " << airport->getId() << " Dist " << distM << "m Leg " << aiObject->getLeg());
+    }
+    return ret;
 }
 
 bool AirportGroundRadar::move(const SGRectd& newPos, FGTrafficRef aiObject)
 {
-	bool ret = index.move(newPos, aiObject);
-	if (!ret) {
-		SG_LOG(SG_ATC, SG_DEBUG, "Couldn't move Aircraft " << aiObject->getCallsign() << "(" << aiObject->getId() << ") to " << airport->getId() << " Leg " << aiObject->getLeg() );	
-	}
-	return ret;
+    bool ret = index.move(newPos, aiObject);
+    if (!ret) {
+        SG_LOG(SG_ATC, SG_DEBUG, "Couldn't move Aircraft " << aiObject->getCallsign() << "(" << aiObject->getId() << ") to " << airport->getId() << " Leg " << aiObject->getLeg());
+    }
+    return ret;
 }
 
 bool AirportGroundRadar::remove(FGTrafficRef aiObject)
 {
-	if (!aiObject) {
-		SG_LOG(SG_ATC, SG_ALERT, "Couldn't remove aiObject null" );	
-		return false;
-	}
+    if (!aiObject) {
+        SG_LOG(SG_ATC, SG_ALERT, "Couldn't remove aiObject null");
+        return false;
+    }
 
-	bool ret = index.remove(aiObject);
-	if (!ret) {
-		SG_LOG(SG_ATC, SG_DEV_ALERT, "Couldn't remove " << aiObject->getCallsign() << "(" << aiObject->getId() << ")");	
-	} else {
-		SG_LOG(SG_ATC, SG_DEBUG, "Removed Aircraft " << aiObject->getCallsign() << "(" << aiObject->getId() << ")");	
-	}
-	return ret;
+    bool ret = index.remove(aiObject);
+    if (!ret) {
+        SG_LOG(SG_ATC, SG_DEV_ALERT, "Couldn't remove " << aiObject->getCallsign() << "(" << aiObject->getId() << ")");
+    } else {
+        SG_LOG(SG_ATC, SG_DEBUG, "Removed Aircraft " << aiObject->getCallsign() << "(" << aiObject->getId() << ")");
+    }
+    return ret;
 }
 
-size_t AirportGroundRadar::size() const {return index.size();}
+size_t AirportGroundRadar::size() const { return index.size(); }
 
-int AirportGroundRadar::getSize(FGTrafficRef aiObject){
-	int speedCorrection = (*aiObject).getSpeed()!=0?std::abs(5*(*aiObject).getSpeed()):20; 
-  	return std::abs((*aiObject).getRadius() + speedCorrection);
+int AirportGroundRadar::getSize(FGTrafficRef aiObject)
+{
+    int speedCorrection = (*aiObject).getSpeed() != 0 ? std::abs(5 * (*aiObject).getSpeed()) : 20;
+    return std::abs((*aiObject).getRadius() + speedCorrection);
 }
 
 bool AirportGroundRadar::blocking(FGTrafficRef aiObject, FGTrafficRef other)
@@ -85,7 +86,7 @@ bool AirportGroundRadar::blocking(FGTrafficRef aiObject, FGTrafficRef other)
     const double courseTowardOther = SGGeodesy::courseDeg(aiObject->getPos(), other->getPos());
     const double turningRate = aiObject->getHeadingDiff();
     // For right before left priority
-	const double distM = SGGeodesy::distanceM(aiObject->getPos(), other->getPos());
+    const double distM = SGGeodesy::distanceM(aiObject->getPos(), other->getPos());
     const double headingDiff = SGMiscd::normalizePeriodic(-180, 180, aiObject->getHeading() - courseTowardOther - turningRate);
     const double otherHeadingDiff = SGMiscd::normalizePeriodic(-180, 180, other->getHeading() - courseTowardOther);
     const double threshold = getSize(aiObject) + getSize(other);
@@ -113,54 +114,51 @@ bool AirportGroundRadar::blocking(FGTrafficRef aiObject, FGTrafficRef other)
         SG_LOG(SG_ATC, SG_BULK, aiObject->getId() << " blocked by stopped pointing away" << other->getId() << " Dist " << distM << " Headingdiff " << headingDiff << " Other heading diff " << otherHeadingDiff);
         return true;
     }
-	return false;
+    return false;
 }
 
 bool AirportGroundRadar::isBlocked(FGTrafficRef aiObject)
 {
     auto values = std::vector<FGTrafficRef>();
-	const SGRectd queryBox(aiObject->getPos().getLatitudeDeg()-QUERY_BOX_SIZE/2,
-	aiObject->getPos().getLongitudeDeg()-QUERY_BOX_SIZE/2,
-	QUERY_BOX_SIZE,
-	QUERY_BOX_SIZE);
+    const SGRectd queryBox(aiObject->getPos().getLatitudeDeg() - QUERY_BOX_SIZE / 2,
+                           aiObject->getPos().getLongitudeDeg() - QUERY_BOX_SIZE / 2,
+                           QUERY_BOX_SIZE,
+                           QUERY_BOX_SIZE);
     SG_LOG(SG_ATC, SG_BULK, "Rect : ( " << queryBox.x() << "," << queryBox.y() << "x" << queryBox.width() << "," << queryBox.height() << ")");
-	index.query(queryBox, values);
-    SG_LOG(SG_ATC, SG_BULK, "Search Id : " << aiObject->getCallsign() << "(" << aiObject->getId() <<  ") Index Size : " << index.size() << " Result Size : " << values.size() );
-	for (FGTrafficRef other: values) {
-		double distM = SGGeodesy::distanceM(aiObject->getPos(), other->getPos());
-        if (other->getId()!=aiObject->getId()){
-
-			const double courseTowardOther = SGGeodesy::courseDeg(aiObject->getPos(), other->getPos());
+    index.query(queryBox, values);
+    SG_LOG(SG_ATC, SG_BULK, "Search Id : " << aiObject->getCallsign() << "(" << aiObject->getId() << ") Index Size : " << index.size() << " Result Size : " << values.size());
+    for (FGTrafficRef other : values) {
+        double distM = SGGeodesy::distanceM(aiObject->getPos(), other->getPos());
+        if (other->getId() != aiObject->getId()) {
+            const double courseTowardOther = SGGeodesy::courseDeg(aiObject->getPos(), other->getPos());
             // For right before left priority
             const double headingDiff = SGMiscd::normalizePeriodic(-180, 180, aiObject->getHeading() - courseTowardOther);
             const double otherHeadingDiff = SGMiscd::normalizePeriodic(-180, 180, other->getHeading() - courseTowardOther);
             SG_LOG(SG_ATC, SG_BULK, "Found " << other->getCallsign() << "(" << other->getId() << ") " << other->getPos().getLatitudeDeg() << other->getPos().getLongitudeDeg() << "Dist " << distM << " Headingdiff " << headingDiff << " Other heading diff " << otherHeadingDiff << " courseTowardOther " << courseTowardOther);
-			const int threshold = getSize(aiObject) + getSize(other) + SEPARATION;
-			if ( distM < threshold ) {				
-			    if (headingDiff < 0 && aiObject->getSpeed() > 0 && abs(headingDiff) < 90){
-					// from the right and in front or other is stopped
-                	SG_LOG(SG_ATC, SG_BULK, aiObject->getId() << " blocked by " << other->getId() << " Dist " << distM << " Headingdiff " << headingDiff << " Other heading diff " << otherHeadingDiff << " Heading " << aiObject->getHeading() << " Other Heading " << other->getHeading());
-					return true;
-				}
-			    if (headingDiff < 0 && aiObject->getSpeed() < 0 && abs(headingDiff) > 90){
-					// from the right and in front or other is stopped
-                	SG_LOG(SG_ATC, SG_BULK, aiObject->getId() << " blocked by " << other->getId() << " while reversing Dist " << distM << " Headingdiff " << headingDiff << " Other heading diff " << otherHeadingDiff);
-					return true;
-				}
-			    if (other->getSpeed() == 0 && abs(headingDiff) < 5) {
-					// from the right and in front or other is stopped
-                	SG_LOG(SG_ATC, SG_BULK, aiObject->getId() << " blocked by stopped " << other->getId() << " Dist " << distM << " Headingdiff " << headingDiff << " Other heading diff " << otherHeadingDiff);
-					return true;
-				}
-			}
-		} else {
-			if (distM>10)
-			{
-                SG_LOG(SG_ATC, SG_ALERT, aiObject->getCallsign() << "(" << aiObject->getId() << ") is not near it's shadow in index " << other->getId() << " Dist " << distM );
-			}
-			
-		}
-	}
+            const int threshold = getSize(aiObject) + getSize(other) + SEPARATION;
+            if (distM < threshold) {
+                if (headingDiff < 0 && aiObject->getSpeed() > 0 && abs(headingDiff) < 90) {
+                    // from the right and in front or other is stopped
+                    SG_LOG(SG_ATC, SG_BULK, aiObject->getId() << " blocked by " << other->getId() << " Dist " << distM << " Headingdiff " << headingDiff << " Other heading diff " << otherHeadingDiff << " Heading " << aiObject->getHeading() << " Other Heading " << other->getHeading());
+                    return true;
+                }
+                if (headingDiff < 0 && aiObject->getSpeed() < 0 && abs(headingDiff) > 90) {
+                    // from the right and in front or other is stopped
+                    SG_LOG(SG_ATC, SG_BULK, aiObject->getId() << " blocked by " << other->getId() << " while reversing Dist " << distM << " Headingdiff " << headingDiff << " Other heading diff " << otherHeadingDiff);
+                    return true;
+                }
+                if (other->getSpeed() == 0 && abs(headingDiff) < 5) {
+                    // from the right and in front or other is stopped
+                    SG_LOG(SG_ATC, SG_BULK, aiObject->getId() << " blocked by stopped " << other->getId() << " Dist " << distM << " Headingdiff " << headingDiff << " Other heading diff " << otherHeadingDiff);
+                    return true;
+                }
+            }
+        } else {
+            if (distM > 10) {
+                SG_LOG(SG_ATC, SG_ALERT, aiObject->getCallsign() << "(" << aiObject->getId() << ") is not near it's shadow in index " << other->getId() << " Dist " << distM);
+            }
+        }
+    }
     return false;
 }
 
@@ -171,56 +169,56 @@ bool AirportGroundRadar::isBlocked(FGTrafficRef aiObject)
 bool AirportGroundRadar::isBlockedForPushback(FGTrafficRef aiObject)
 {
     auto values = std::vector<FGTrafficRef>();
-	const SGRectd queryBox(aiObject->getPos().getLatitudeDeg()-QUERY_BOX_SIZE/2,
-	aiObject->getPos().getLongitudeDeg()-QUERY_BOX_SIZE/2,
-	QUERY_BOX_SIZE,
-	QUERY_BOX_SIZE);
+    const SGRectd queryBox(aiObject->getPos().getLatitudeDeg() - QUERY_BOX_SIZE / 2,
+                           aiObject->getPos().getLongitudeDeg() - QUERY_BOX_SIZE / 2,
+                           QUERY_BOX_SIZE,
+                           QUERY_BOX_SIZE);
     SG_LOG(SG_ATC, SG_BULK, "Rect : ( " << queryBox.x() << "," << queryBox.y() << "x" << queryBox.width() << "," << queryBox.height() << ")");
-	index.query(queryBox, values);
-    SG_LOG(SG_ATC, SG_BULK, "Search Id : " << aiObject->getId() <<  " Index Size : " << index.size() << " Result Size : " << values.size() );
-	for (FGTrafficRef other: values) {
-        if (other->getId()!=aiObject->getId()){
-			double distM = SGGeodesy::distanceM(aiObject->getPos(), other->getPos());
+    index.query(queryBox, values);
+    SG_LOG(SG_ATC, SG_BULK, "Search Id : " << aiObject->getId() << " Index Size : " << index.size() << " Result Size : " << values.size());
+    for (FGTrafficRef other : values) {
+        if (other->getId() != aiObject->getId()) {
+            double distM = SGGeodesy::distanceM(aiObject->getPos(), other->getPos());
 
-			const double courseTowardOther = SGGeodesy::courseDeg(aiObject->getPos(), other->getPos());
+            const double courseTowardOther = SGGeodesy::courseDeg(aiObject->getPos(), other->getPos());
             // For right before left priority
             const double headingDiff = SGMiscd::normalizePeriodic(-180, 180, aiObject->getHeading() - courseTowardOther);
             const double otherHeadingDiff = SGMiscd::normalizePeriodic(-180, 180, other->getHeading() - courseTowardOther);
 
-			// We want ample space 
-			const int threshold = 2 * getSize(aiObject) + 2 * getSize(other) + SEPARATION;
-            SG_LOG(SG_ATC, SG_BULK, "Search Id : " << aiObject->getId() <<  " Found Id : " << other->getId() << " Dist \t" << distM << "m Threshold " << threshold << " Headingdiff " << headingDiff << " Other heading diff " << otherHeadingDiff  << " courseTowardOther " << courseTowardOther << " Turning "  << aiObject->getHeadingDiff() << " Speeds : " << aiObject->getSpeed() << "/" << other->getSpeed() << " " << (other->getSpeed()==0?"Other Stopped":""));
+            // We want ample space
+            const int threshold = 2 * getSize(aiObject) + 2 * getSize(other) + SEPARATION;
+            SG_LOG(SG_ATC, SG_BULK, "Search Id : " << aiObject->getId() << " Found Id : " << other->getId() << " Dist \t" << distM << "m Threshold " << threshold << " Headingdiff " << headingDiff << " Other heading diff " << otherHeadingDiff << " courseTowardOther " << courseTowardOther << " Turning " << aiObject->getHeadingDiff() << " Speeds : " << aiObject->getSpeed() << "/" << other->getSpeed() << " " << (other->getSpeed() == 0 ? "Other Stopped" : ""));
 
-			if ( distM < threshold && (abs(headingDiff) > 135) ){
-				// from the right and in front or other is stopped
+            if (distM < threshold && (abs(headingDiff) > 135)) {
+                // from the right and in front or other is stopped
                 SG_LOG(SG_ATC, SG_BULK, aiObject->getCallsign() << "(" << aiObject->getId() << ") blocked for pushback by " << other->getCallsign() << "(" << other->getId() << ")");
-				return true;
-			}
-		}
-	}
+                return true;
+            }
+        }
+    }
     return false;
 }
 
 const FGTrafficRef AirportGroundRadar::getBlockedBy(FGTrafficRef aiObject)
 {
     auto values = std::vector<FGTrafficRef>();
-	const SGRectd queryBox(aiObject->getPos().getLatitudeDeg()-QUERY_BOX_SIZE/2,
-	aiObject->getPos().getLongitudeDeg()-QUERY_BOX_SIZE/2,
-	QUERY_BOX_SIZE,
-	QUERY_BOX_SIZE);
+    const SGRectd queryBox(aiObject->getPos().getLatitudeDeg() - QUERY_BOX_SIZE / 2,
+                           aiObject->getPos().getLongitudeDeg() - QUERY_BOX_SIZE / 2,
+                           QUERY_BOX_SIZE,
+                           QUERY_BOX_SIZE);
     SG_LOG(SG_ATC, SG_BULK, "Rect : ( " << queryBox.x() << "," << queryBox.y() << "x" << queryBox.width() << "," << queryBox.height() << ")");
-	index.query(queryBox, values);
-    SG_LOG(SG_ATC, SG_BULK, "Search Id : " << aiObject->getId() <<  " Index Size : " << index.size() << " Result Size : " << values.size() );
-	FGTrafficRef nearestTrafficRecord = nullptr;
-	double nearestDist = HUGE_VAL;
+    index.query(queryBox, values);
+    SG_LOG(SG_ATC, SG_BULK, "Search Id : " << aiObject->getId() << " Index Size : " << index.size() << " Result Size : " << values.size());
+    FGTrafficRef nearestTrafficRecord = nullptr;
+    double nearestDist = HUGE_VAL;
     for (FGTrafficRef other : values) {
         double distM = SGGeodesy::distanceM(aiObject->getPos(), other->getPos());
-		const double threshold = getSize(aiObject) + getSize(other);
+        const double threshold = getSize(aiObject) + getSize(other);
         if (other->getId() != aiObject->getId()) {
             if (distM < 20 && aiObject->getSpeed() != 0) {
-				const double courseTowardOther = SGGeodesy::courseDeg(aiObject->getPos(), other->getPos());
-				const double headingDiff = SGMiscd::normalizePeriodic(-180, 180, aiObject->getHeading() - courseTowardOther);
-				const double otherHeadingDiff = SGMiscd::normalizePeriodic(-180, 180, other->getHeading() - courseTowardOther);
+                const double courseTowardOther = SGGeodesy::courseDeg(aiObject->getPos(), other->getPos());
+                const double headingDiff = SGMiscd::normalizePeriodic(-180, 180, aiObject->getHeading() - courseTowardOther);
+                const double otherHeadingDiff = SGMiscd::normalizePeriodic(-180, 180, other->getHeading() - courseTowardOther);
                 // We can't have aircraft < 10m of each other
                 SG_LOG(SG_ATC, SG_ALERT, aiObject->getCallsign() << "(" << aiObject->getId() << ") running into " << other->getCallsign() << "(" << other->getId() << ") Dist " << distM << " Heading " << aiObject->getHeading() << " Other Heading " << other->getHeading() << " Headingdiff " << headingDiff << " Other heading diff " << otherHeadingDiff << " courseTowardOther " << courseTowardOther << " Speeds : " << aiObject->getSpeed() << "/" << other->getSpeed() << " Turning: " << aiObject->getHeadingDiff() << " Legs: " << aiObject->getLeg() << "/" << other->getLeg() << " Threshold : " << threshold << " = " << getSize(aiObject) << " + " << getSize(other));
                 if (aiObject->getAircraft() != nullptr && other->getAircraft() != nullptr) {

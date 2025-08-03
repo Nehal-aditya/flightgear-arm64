@@ -1,9 +1,5 @@
-/*
- * SPDX-FileName: ATISEncoder.hxx
- * SPDX-FileComment: Encode an ATIS into spoken words
- * SPDX-FileCopyrightText: Copyright (C) 2014 Torsten Dreyer
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+// SPDX-FileCopyrightText: 2014 Torsten Dreyer
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 

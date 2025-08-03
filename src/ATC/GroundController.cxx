@@ -1,32 +1,12 @@
-// GroundController.hxx - forked from groundnetwork.cxx
-
-// Written by Durk Talsma, started June 2005.
-//
-// Copyright (C) 2004 Durk Talsma.
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-FileCopyrightText: 2004 Durk Talsma
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <config.h>
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <map>
-#include <algorithm>
 
 #include <osg/Geode>
 #include <osg/Geometry>
@@ -35,31 +15,31 @@
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/scene/material/EffectGeode.hxx>
-#include <simgear/scene/material/matlib.hxx>
 #include <simgear/scene/material/mat.hxx>
+#include <simgear/scene/material/matlib.hxx>
 #include <simgear/scene/util/OsgMath.hxx>
 #include <simgear/structure/exception.hxx>
-#include <simgear/timing/timestamp.hxx>
 #include <simgear/timing/sg_time.hxx>
+#include <simgear/timing/timestamp.hxx>
 
 #include <Airports/airport.hxx>
 #include <Airports/dynamics.hxx>
-#include <Airports/runways.hxx>
 #include <Airports/groundnetwork.hxx>
+#include <Airports/runways.hxx>
 
-#include <Main/globals.hxx>
-#include <Main/fg_props.hxx>
 #include <AIModel/AIAircraft.hxx>
-#include <AIModel/performancedata.hxx>
 #include <AIModel/AIFlightPlan.hxx>
+#include <AIModel/performancedata.hxx>
+#include <Main/fg_props.hxx>
+#include <Main/globals.hxx>
 #include <Navaids/NavDataCache.hxx>
 
 #include <ATC/atc_mgr.hxx>
 
 #include <Scenery/scenery.hxx>
 
-#include <ATC/AirportGroundRadar.hxx>
 #include <ATC/ATCController.hxx>
+#include <ATC/AirportGroundRadar.hxx>
 #include <ATC/GroundController.hxx>
 
 using std::string;
@@ -68,7 +48,7 @@ using std::string;
 /***************************************************************************
  * FGGroundController()
  **************************************************************************/
-FGGroundController::FGGroundController(FGAirportDynamics *par)
+FGGroundController::FGGroundController(FGAirportDynamics* par)
 {
     hasNetwork = false;
     count = 0;
@@ -82,7 +62,7 @@ FGGroundController::FGGroundController(FGAirportDynamics *par)
     networkInitialized = true;
 }
 
-FGGroundController::~FGGroundController() 
+FGGroundController::~FGGroundController()
 {
 }
 
@@ -97,12 +77,12 @@ void FGGroundController::signOff(int id)
 }
 
 void FGGroundController::announcePosition(int id,
-                                       FGAIFlightPlan * intendedRoute,
-                                       int currentPosition, double lat,
-                                       double lon, double heading,
-                                       double speed, double alt,
-                                       double radius, int leg,
-                                       FGAIAircraft * aircraft)
+                                          FGAIFlightPlan* intendedRoute,
+                                          int currentPosition, double lat,
+                                          double lon, double heading,
+                                          double speed, double alt,
+                                          double radius, int leg,
+                                          FGAIAircraft* aircraft)
 {
     if (!aircraft || !aircraft->getPerformance()) {
         SG_LOG(SG_ATC, SG_ALERT, "announcePosition: missing aircraft performance");
@@ -115,13 +95,13 @@ void FGGroundController::announcePosition(int id,
     // Add a new TrafficRecord if none exists for this aircraft
     // otherwise set the information for the TrafficRecord
     if (i == activeTraffic.end() || (activeTraffic.empty())) {
-        SG_LOG(SG_ATC, SG_BULK, "Adding " << aircraft->getCallSign() << "(" << id << ")" );	
+        SG_LOG(SG_ATC, SG_BULK, "Adding " << aircraft->getCallSign() << "(" << id << ")");
         FGTrafficRecord* rec = new FGTrafficRecord();
         rec->setId(id);
         rec->setLeg(leg);
         rec->setPositionAndIntentions(currentPosition, intendedRoute);
         rec->setPositionAndHeading(lat, lon, heading, speed, alt, leg);
-        rec->setRadius(radius);  // only need to do this when creating the record.
+        rec->setRadius(radius); // only need to do this when creating the record.
         rec->setCallsign(aircraft->getCallSign());
         rec->setAircraft(aircraft);
         // add to the front of the list of activeTraffic if the aircraft is already taxiing
@@ -132,18 +112,17 @@ void FGGroundController::announcePosition(int id,
             activeTraffic.push_back(sharedRec);
         }
         SG_LOG(SG_ATC, SG_DEBUG,
-            "Added " << sharedRec->getCallsign() << "(" << sharedRec->getId() << ") " << sharedRec);
+               "Added " << sharedRec->getCallsign() << "(" << sharedRec->getId() << ") " << sharedRec);
         airportGroundRadar->add(sharedRec);
     } else {
         bool moved = airportGroundRadar->move(SGRect<double>(lat, lon), *i);
         if (!moved) {
-                    SG_LOG(SG_ATC, SG_ALERT,
-               "Not moved " << (*i)->getCallsign() << "(" << (*i)->getId() << ")");
-
+            SG_LOG(SG_ATC, SG_ALERT,
+                   "Not moved " << (*i)->getCallsign() << "(" << (*i)->getId() << ")");
         }
         (*i)->setPositionAndIntentions(currentPosition, intendedRoute);
         (*i)->setPositionAndHeading(lat, lon, heading, speed, alt, leg);
-        
+
         parent->getRunwayQueue((*i)->getRunway())->updateFirst((*i), intendedRoute->getArrivalTime());
     }
 }
@@ -155,7 +134,7 @@ void FGGroundController::announcePosition(int id,
 * 2 = "Acknowledge "Resume taxi".
 * 3 = "Issue TaxiClearance"
 * 4 = Acknowledge Taxi Clearance"
-* 5 = Post acknowlegde taxiclearance: Start taxiing
+* 5 = Post acknowledge taxiclearance: Start taxiing
 * 6 = Report runway
 * 7 = Acknowledge report runway
 * 8 = Switch tower frequency
@@ -163,8 +142,8 @@ void FGGroundController::announcePosition(int id,
 */
 
 void FGGroundController::updateAircraftInformation(int id, SGGeod geod,
-        double heading, double speed, double alt,
-        double dt)
+                                                   double heading, double speed, double alt,
+                                                   double dt)
 {
     // Check whether aircraft are on hold due to a preceding pushback. If so, make sure to
     // Transmit air-to-ground "Ready to taxi request:
@@ -178,12 +157,11 @@ void FGGroundController::updateAircraftInformation(int id, SGGeod geod,
     // update position of the current aircraft
     if (i == activeTraffic.end() || activeTraffic.empty()) {
         SG_LOG(SG_ATC, SG_DEV_WARN,
-               "AI error: updating aircraft without traffic record at "  << ", id=" << id);
+               "AI error: updating aircraft without traffic record at " << ", id=" << id);
         return;
     }
 
-    SG_LOG(SG_ATC, SG_BULK, "Moving " << (*i)->getCallsign() << "(" << (*i)->getId() << ") Speed : " << speed
-    << " Speed 2 : " << (*i)->getSpeed());	
+    SG_LOG(SG_ATC, SG_BULK, "Moving " << (*i)->getCallsign() << "(" << (*i)->getId() << ") Speed : " << speed << " Speed 2 : " << (*i)->getSpeed());
 
     airportGroundRadar->move(SGRect<double>(geod.getLatitudeDeg(), geod.getLongitudeDeg()), *i);
     (*i)->setPositionAndHeading(geod.getLatitudeDeg(), geod.getLongitudeDeg(), heading, speed, alt, AILeg::UNKNOWN);
@@ -212,20 +190,20 @@ void FGGroundController::updateAircraftInformation(int id, SGGeod geod,
         }
         if ((*i)->getLeg() >= AILeg::APPROACH) {
             if (checkTransmissionState(ATCMessageState::NORMAL, ATCMessageState::LANDING_TAXI, i, now, MSG_TAXI_PARK, ATC_GROUND_TO_AIR)) {
-               (*i)->setState(ATCMessageState::SWITCH_TOWER_TO_GROUND); 
+                (*i)->setState(ATCMessageState::SWITCH_TOWER_TO_GROUND);
             }
         }
     } else {
         (*current)->setHoldPosition(true);
         int state = (*current)->getState();
- 
-        if (checkTransmissionState(ATCMessageState::NORMAL,ATCMessageState::ACK_RESUME_TAXI, current, now, MSG_REQUEST_TAXI_CLEARANCE, ATC_AIR_TO_GROUND)) {
+
+        if (checkTransmissionState(ATCMessageState::NORMAL, ATCMessageState::ACK_RESUME_TAXI, current, now, MSG_REQUEST_TAXI_CLEARANCE, ATC_AIR_TO_GROUND)) {
             (*current)->setState(ATCMessageState::TAXI_CLEARED);
         }
-        if (checkTransmissionState(ATCMessageState::TAXI_CLEARED,ATCMessageState::TAXI_CLEARED, current, now, MSG_ISSUE_TAXI_CLEARANCE, ATC_GROUND_TO_AIR)) {
+        if (checkTransmissionState(ATCMessageState::TAXI_CLEARED, ATCMessageState::TAXI_CLEARED, current, now, MSG_ISSUE_TAXI_CLEARANCE, ATC_GROUND_TO_AIR)) {
             (*current)->setState(ATCMessageState::ACK_TAXI_CLEARED);
         }
-        if (checkTransmissionState(ATCMessageState::ACK_TAXI_CLEARED,ATCMessageState::ACK_TAXI_CLEARED, current, now, MSG_ACKNOWLEDGE_TAXI_CLEARANCE, ATC_AIR_TO_GROUND)) {
+        if (checkTransmissionState(ATCMessageState::ACK_TAXI_CLEARED, ATCMessageState::ACK_TAXI_CLEARED, current, now, MSG_ACKNOWLEDGE_TAXI_CLEARANCE, ATC_AIR_TO_GROUND)) {
             (*current)->setState(ATCMessageState::START_TAXI);
         }
         if ((state == ATCMessageState::START_TAXI) && available) {
@@ -252,53 +230,54 @@ void FGGroundController::updateAircraftInformation(int id, SGGeod geod,
 */
 
 void FGGroundController::checkSpeedAdjustment(int id, double lat,
-        double lon, double heading,
-        double speed, double alt) {
+                                              double lon, double heading,
+                                              double speed, double alt)
+{
     TrafficVectorIterator current;
     // bool previousInstruction;
-	TrafficVectorIterator i = FGATCController::searchActiveTraffic(id);
+    TrafficVectorIterator i = FGATCController::searchActiveTraffic(id);
     if (!activeTraffic.size()) {
         return;
-	}
+    }
     if (i == activeTraffic.end() || (activeTraffic.size() == 0)) {
         SG_LOG(SG_ATC, SG_ALERT,
-               "AI error: Trying to access non-existing aircraft in FGGroundNetwork::checkSpeedAdjustment (" << id << ")" );
+               "AI error: Trying to access non-existing aircraft in FGGroundNetwork::checkSpeedAdjustment (" << id << ")");
     }
     current = i;
 
     auto blocker = airportGroundRadar->getBlockedBy(*i);
     time_t now = globals->get_time_params()->get_cur_time();
-    if (blocker!=nullptr) {
+    if (blocker != nullptr) {
         int oldWaitsForId = (*i)->getWaitsForId();
         (*i)->setWaitsForId(blocker->getId());
-        if(oldWaitsForId!=blocker->getId()) {
+        if (oldWaitsForId != blocker->getId()) {
             (*i)->setWaitingSince(now);
         }
         // https://wiki.flightgear.org/AI_Traffic#Braking
         double distM = SGGeodesy::distanceM((*i)->getPos(), blocker->getPos());
-        double sizeA = (*i)->getRadius()*2;
+        double sizeA = (*i)->getRadius() * 2;
         double sizeB = blocker->getRadius();
-        double distanceSlowdown = std::min((distM-20-sizeB), sizeA); // At 20 m we want to correct to zero
-        double speedCorrection = std::min(std::max((distanceSlowdown/sizeA),0.0),1.0);
+        double distanceSlowdown = std::min((distM - 20 - sizeB), sizeA); // At 20 m we want to correct to zero
+        double speedCorrection = std::min(std::max((distanceSlowdown / sizeA), 0.0), 1.0);
         int newSpeed = blocker->getSpeed() * speedCorrection; // clamp to max speed of other aircraft
-        newSpeed = newSpeed>2?newSpeed:0; // ensure we don't crawl
-        int waittime = (now-(*i)->getWaitingSince());
-        const sgDebugPriority level = waittime > 6000?SG_DEV_WARN:SG_DEBUG; 
+        newSpeed = newSpeed > 2 ? newSpeed : 0;               // ensure we don't crawl
+        int waittime = (now - (*i)->getWaitingSince());
+        const sgDebugPriority level = waittime > 6000 ? SG_DEV_WARN : SG_DEBUG;
         if (blocker->getWaitsForId()) {
-            SG_LOG(SG_ATC, level,        
-                (*i)->getCallsign() << "(" << (*i)->getId() << ") is blocked by " << blocker->getCallsign() << "(" << blocker->getId() << ") for " << waittime << " seconds which is blocked by (" << blocker->getWaitsForId() << ") new speed " << newSpeed << " Dist : " << distM << " Other speed : " << blocker->getSpeed());
+            SG_LOG(SG_ATC, level,
+                   (*i)->getCallsign() << "(" << (*i)->getId() << ") is blocked by " << blocker->getCallsign() << "(" << blocker->getId() << ") for " << waittime << " seconds which is blocked by (" << blocker->getWaitsForId() << ") new speed " << newSpeed << " Dist : " << distM << " Other speed : " << blocker->getSpeed());
             if (blocker->getWaitsForId() == (*i)->getId()) {
-                SG_LOG(SG_ATC, level,        
-                    (*i)->getCallsign() << "(" << (*i)->getId() << ") circular ");
-            }    
+                SG_LOG(SG_ATC, level,
+                       (*i)->getCallsign() << "(" << (*i)->getId() << ") circular ");
+            }
         } else {
-            SG_LOG(SG_ATC, level,        
-                (*i)->getCallsign() << "(" << (*i)->getId() << ") is blocked by " << blocker->getCallsign() << "(" << blocker->getId() << ") for " << waittime << " seconds new speed " << newSpeed << " Dist : " << distM << " Other speed : " << blocker->getSpeed());
+            SG_LOG(SG_ATC, level,
+                   (*i)->getCallsign() << "(" << (*i)->getId() << ") is blocked by " << blocker->getCallsign() << "(" << blocker->getId() << ") for " << waittime << " seconds new speed " << newSpeed << " Dist : " << distM << " Other speed : " << blocker->getSpeed());
         }
-        if (newSpeed!=0) {        
+        if (newSpeed != 0) {
             (*i)->setSpeedAdjustment(newSpeed);
         } else {
-            if (oldWaitsForId!=blocker->getId()) {
+            if (oldWaitsForId != blocker->getId()) {
                 (*i)->setState(ATCMessageState::NORMAL);
                 (*i)->setRequestHoldPosition(true);
             }
@@ -307,15 +286,15 @@ void FGGroundController::checkSpeedAdjustment(int id, double lat,
     } else {
         int oldWaitsForId = (*i)->getWaitsForId();
         int waitTime = now - (*i)->getWaitingSince();
-        if (oldWaitsForId>0 && waitTime > 5) {
+        if (oldWaitsForId > 0 && waitTime > 5) {
             SG_LOG(SG_ATC, SG_DEBUG,
-                (*i)->getCallsign() << "(" << (*i)->getId() << ") cleared of blocker (" << oldWaitsForId << ")");
-            (*i)->setResumeTaxi(true);                
+                   (*i)->getCallsign() << "(" << (*i)->getId() << ") cleared of blocker (" << oldWaitsForId << ")");
+            (*i)->setResumeTaxi(true);
             (*i)->clearSpeedAdjustment();
             (*i)->setWaitingSince(0);
             (*i)->setWaitsForId(0);
         }
-       return;
+        return;
     }
 }
 
@@ -328,8 +307,8 @@ void FGGroundController::checkSpeedAdjustment(int id, double lat,
 */
 
 void FGGroundController::checkHoldPosition(int id, double lat,
-                                        double lon, double heading,
-                                        double speed, double alt)
+                                           double lon, double heading,
+                                           double speed, double alt)
 {
     TrafficVectorIterator current;
     TrafficVectorIterator i = activeTraffic.begin();
@@ -351,7 +330,7 @@ void FGGroundController::checkHoldPosition(int id, double lat,
     }
     if (i == activeTraffic.end() || (activeTraffic.size() == 0)) {
         SG_LOG(SG_ATC, SG_ALERT,
-               "AI error: Trying to access non-existing aircraft in FGGroundNetwork::checkHoldPosition at " );
+               "AI error: Trying to access non-existing aircraft in FGGroundNetwork::checkHoldPosition at ");
     }
     current = i;
     if ((*current)->getTakeOffStatus() == AITakeOffStatus::QUEUED) {
@@ -411,7 +390,7 @@ void FGGroundController::checkHoldPosition(int id, double lat,
         SG_LOG(SG_ATC, SG_DEBUG, "Scheduling " << (*current)->getAircraft()->getCallSign() << " for hold short");
         (*current)->setState(ATCMessageState::REPORT_RUNWAY);
     }
-    if (checkTransmissionState(ATCMessageState::REPORT_RUNWAY ,ATCMessageState::REPORT_RUNWAY , current, now, MSG_REPORT_RUNWAY_HOLD_SHORT, ATC_AIR_TO_GROUND)) {
+    if (checkTransmissionState(ATCMessageState::REPORT_RUNWAY, ATCMessageState::REPORT_RUNWAY, current, now, MSG_REPORT_RUNWAY_HOLD_SHORT, ATC_AIR_TO_GROUND)) {
     }
     if (checkTransmissionState(ATCMessageState::ACK_REPORT_RUNWAY, ATCMessageState::ACK_REPORT_RUNWAY, current, now, MSG_ACKNOWLEDGE_REPORT_RUNWAY_HOLD_SHORT, ATC_GROUND_TO_AIR)) {
     }
@@ -457,7 +436,7 @@ bool FGGroundController::checkForCircularWaits(int id)
     if (i == activeTraffic.end()) {
         // Presumably in towercontroller
         SG_LOG(SG_ATC, SG_BULK,
-               "AI error: Trying to access non-existing aircraft in FGGroundNetwork::checkForCircularWaits at " );
+               "AI error: Trying to access non-existing aircraft in FGGroundNetwork::checkForCircularWaits at ");
     }
 
     current = i;
@@ -505,8 +484,7 @@ bool FGGroundController::checkForCircularWaits(int id)
     SG_LOG(SG_ATC, SG_BULK, "[done] ");
     if (id == target) {
         SG_LOG(SG_ATC, SG_WARN,
-               "Detected circular wait condition: Id = " << id <<
-               "target = " << target);
+               "Detected circular wait condition: Id = " << id << "target = " << target);
         return true;
     } else {
         return false;
@@ -514,15 +492,16 @@ bool FGGroundController::checkForCircularWaits(int id)
 }
 
 /**
- * We share the traffic record much like real life. It gets handed 
+ * We share the traffic record much like real life. It gets handed
  * from one controller to the next.
  * @param aiObject
  * @param leg
 */
-void FGGroundController::handover(SGSharedPtr<FGTrafficRecord> aiObject, int leg) {
+void FGGroundController::handover(SGSharedPtr<FGTrafficRecord> aiObject, int leg)
+{
     FGATCController::handover(aiObject, leg);
     if (leg == AILeg::PARKING_TAXI) {
-        // The first contact 
+        // The first contact
         SG_LOG(SG_ATC, SG_DEBUG,
                "Added " << (aiObject)->getCallsign() << "(" << (aiObject)->getId() << ") " << aiObject);
         parent->getRunwayQueue(aiObject->getRunway())->removeFromQueue(aiObject->getId());
@@ -530,7 +509,7 @@ void FGGroundController::handover(SGSharedPtr<FGTrafficRecord> aiObject, int leg
 }
 
 
-// Note that this function is copied from simgear. for maintanance purposes, it's probabtl better to make a general function out of that.
+// Note that this function is copied from simgear. for maintenance purposes, it's probably better to make a general function out of that.
 static void WorldCoordinate(osg::Matrix& obj_pos, double lat,
                             double lon, double elev, double hdg, double slope)
 {
@@ -547,7 +526,7 @@ static void WorldCoordinate(osg::Matrix& obj_pos, double lat,
 /** Draw visible taxi routes */
 void FGGroundController::render(bool visible)
 {
-    SGMaterialLib *matlib = globals->get_matlib();
+    SGMaterialLib* matlib = globals->get_matlib();
     FGGroundNetwork* network = parent->parent()->groundNetwork();
 
     if (group) {
@@ -564,22 +543,22 @@ void FGGroundController::render(bool visible)
     }
     if (visible) {
         group = new osg::Group;
-        FGScenery * local_scenery = globals->get_scenery();
+        FGScenery* local_scenery = globals->get_scenery();
         // double elevation_meters = 0.0;
-//        double elevation_feet = 0.0;
+        //        double elevation_feet = 0.0;
         time_t now = globals->get_time_params()->get_cur_time();
 
         //for ( FGTaxiSegmentVectorIterator i = segments.begin(); i != segments.end(); i++) {
         //double dx = 0;
 
-        for   (TrafficVectorIterator i = activeTraffic.begin(); i != activeTraffic.end(); i++) {
+        for (TrafficVectorIterator i = activeTraffic.begin(); i != activeTraffic.end(); i++) {
             // Handle start point i.e. the segment that is connected to the aircraft itself on the starting end
             // and to the the first "real" taxi segment on the other end.
             const int pos = (*i)->getCurrentPosition();
             if (pos > 0) {
                 FGTaxiSegment* segment = network->findSegment(pos);
                 SGGeod start = (*i)->getPos();
-                SGGeod end  (segment->getEnd()->geod());
+                SGGeod end(segment->getEnd()->geod());
 
                 double length = SGGeodesy::distanceM(start, end);
                 //heading = SGGeodesy::headingDeg(start->geod(), end->geod());
@@ -593,7 +572,7 @@ void FGGroundController::render(bool visible)
                 ///////////////////////////////////////////////////////////////////////////////
                 // Make a helper function out of this
                 osg::Matrix obj_pos;
-                osg::MatrixTransform *obj_trans = new osg::MatrixTransform;
+                osg::MatrixTransform* obj_trans = new osg::MatrixTransform;
                 obj_trans->setDataVariance(osg::Object::STATIC);
                 // Experimental: Calculate slope here, based on length, and the individual elevations
                 double elevationStart;
@@ -602,36 +581,35 @@ void FGGroundController::render(bool visible)
                 } else {
                     elevationStart = ((*i)->getAircraft()->_getAltitude());
                 }
-                double elevationEnd   = segment->getEnd()->getElevationM();
+                double elevationEnd = segment->getEnd()->getElevationM();
                 SG_LOG(SG_ATC, SG_DEBUG, "Using elevation " << elevationEnd);
 
                 if ((elevationEnd == 0) || (elevationEnd = parent->getElevation())) {
                     SGGeod center2 = end;
                     center2.setElevationM(SG_MAX_ELEVATION_M);
-                    if (local_scenery->get_elevation_m( center2, elevationEnd, NULL )) {
-//                        elevation_feet = elevationEnd * SG_METER_TO_FEET + 0.5;
+                    if (local_scenery->get_elevation_m(center2, elevationEnd, NULL)) {
+                        //                        elevation_feet = elevationEnd * SG_METER_TO_FEET + 0.5;
                         //elevation_meters += 0.5;
-                    }
-                    else {
+                    } else {
                         elevationEnd = parent->getElevation();
                     }
                     segment->getEnd()->setElevation(elevationEnd);
                 }
-                double elevationMean  = (elevationStart + elevationEnd) / 2.0;
-                double elevDiff       = elevationEnd - elevationStart;
+                double elevationMean = (elevationStart + elevationEnd) / 2.0;
+                double elevDiff = elevationEnd - elevationStart;
 
                 double slope = atan2(elevDiff, length) * SGD_RADIANS_TO_DEGREES;
 
                 SG_LOG(SG_ATC, SG_DEBUG, "1. Using mean elevation : " << elevationMean << " and " << slope);
 
-                WorldCoordinate( obj_pos, center.getLatitudeDeg(), center.getLongitudeDeg(), elevationMean+ 0.5, -(heading), slope );
+                WorldCoordinate(obj_pos, center.getLatitudeDeg(), center.getLongitudeDeg(), elevationMean + 0.5, -(heading), slope);
 
-                obj_trans->setMatrix( obj_pos );
+                obj_trans->setMatrix(obj_pos);
                 //osg::Vec3 center(0, 0, 0)
 
-                float width = length /2.0;
+                float width = length / 2.0;
                 osg::Vec3 corner(-width, 0, 0.25f);
-                osg::Vec3 widthVec(2*width + 1, 0, 0);
+                osg::Vec3 widthVec(2 * width + 1, 0, 0);
                 osg::Vec3 heightVec(0, 1, 0);
                 osg::Geometry* geometry;
                 geometry = osg::createTexturedQuadGeometry(corner, widthVec, heightVec);
@@ -639,7 +617,7 @@ void FGGroundController::render(bool visible)
                 geode->setName("test");
                 geode->addDrawable(geometry);
                 //osg::Node *custom_obj;
-                SGMaterial *mat;
+                SGMaterial* mat;
                 if (segment->hasBlock(now)) {
                     mat = matlib->find("UnidirectionalTaperRed", center);
                 } else {
@@ -650,7 +628,7 @@ void FGGroundController::render(bool visible)
                 obj_trans->addChild(geode);
                 // wire as much of the scene graph together as we can
                 //->addChild( obj_trans );
-                group->addChild( obj_trans );
+                group->addChild(obj_trans);
                 /////////////////////////////////////////////////////////////////////
             } else {
                 SG_LOG(SG_ATC, SG_INFO, "BIG FAT WARNING: current position is here : " << pos);
@@ -660,20 +638,19 @@ void FGGroundController::render(bool visible)
                 osg::Matrix obj_pos;
                 const int k = (*j);
                 if (k > 0) {
-                    osg::MatrixTransform *obj_trans = new osg::MatrixTransform;
+                    osg::MatrixTransform* obj_trans = new osg::MatrixTransform;
                     obj_trans->setDataVariance(osg::Object::STATIC);
                     FGTaxiSegment* segmentK = network->findSegment(k);
                     // Experimental: Calculate slope here, based on length, and the individual elevations
                     double elevationStart = segmentK->getStart()->getElevationM();
-                    double elevationEnd   = segmentK->getEnd  ()->getElevationM();
-                    if ((elevationStart == 0)  || (elevationStart == parent->getElevation())) {
+                    double elevationEnd = segmentK->getEnd()->getElevationM();
+                    if ((elevationStart == 0) || (elevationStart == parent->getElevation())) {
                         SGGeod center2 = segmentK->getStart()->geod();
                         center2.setElevationM(SG_MAX_ELEVATION_M);
-                        if (local_scenery->get_elevation_m( center2, elevationStart, NULL )) {
-//                            elevation_feet = elevationStart * SG_METER_TO_FEET + 0.5;
+                        if (local_scenery->get_elevation_m(center2, elevationStart, NULL)) {
+                            //                            elevation_feet = elevationStart * SG_METER_TO_FEET + 0.5;
                             //elevation_meters += 0.5;
-                        }
-                        else {
+                        } else {
                             elevationStart = parent->getElevation();
                         }
                         segmentK->getStart()->setElevation(elevationStart);
@@ -681,33 +658,32 @@ void FGGroundController::render(bool visible)
                     if ((elevationEnd == 0) || (elevationEnd == parent->getElevation())) {
                         SGGeod center2 = segmentK->getEnd()->geod();
                         center2.setElevationM(SG_MAX_ELEVATION_M);
-                        if (local_scenery->get_elevation_m( center2, elevationEnd, NULL )) {
-//                            elevation_feet = elevationEnd * SG_METER_TO_FEET + 0.5;
+                        if (local_scenery->get_elevation_m(center2, elevationEnd, NULL)) {
+                            //                            elevation_feet = elevationEnd * SG_METER_TO_FEET + 0.5;
                             //elevation_meters += 0.5;
-                        }
-                        else {
+                        } else {
                             elevationEnd = parent->getElevation();
                         }
                         segmentK->getEnd()->setElevation(elevationEnd);
                     }
 
-                    double elevationMean  = (elevationStart + elevationEnd) / 2.0;
-                    double elevDiff       = elevationEnd - elevationStart;
-                    double length         = segmentK->getLength();
+                    double elevationMean = (elevationStart + elevationEnd) / 2.0;
+                    double elevDiff = elevationEnd - elevationStart;
+                    double length = segmentK->getLength();
                     double slope = atan2(elevDiff, length) * SGD_RADIANS_TO_DEGREES;
 
                     SG_LOG(SG_ATC, SG_DEBUG, "2. Using mean elevation : " << elevationMean << " and " << slope);
 
                     SGGeod segCenter = segmentK->getCenter();
-                    WorldCoordinate( obj_pos, segCenter.getLatitudeDeg(), segCenter.getLongitudeDeg(),
-                                     elevationMean+ 0.5, -(segmentK->getHeading()), slope );
+                    WorldCoordinate(obj_pos, segCenter.getLatitudeDeg(), segCenter.getLongitudeDeg(),
+                                    elevationMean + 0.5, -(segmentK->getHeading()), slope);
 
-                    obj_trans->setMatrix( obj_pos );
+                    obj_trans->setMatrix(obj_pos);
                     //osg::Vec3 center(0, 0, 0)
 
-                    float width = segmentK->getLength() /2.0;
+                    float width = segmentK->getLength() / 2.0;
                     osg::Vec3 corner(-width, 0, 0.25f);
-                    osg::Vec3 widthVec(2*width + 1, 0, 0);
+                    osg::Vec3 widthVec(2 * width + 1, 0, 0);
                     osg::Vec3 heightVec(0, 1, 0);
                     osg::Geometry* geometry;
                     geometry = osg::createTexturedQuadGeometry(corner, widthVec, heightVec);
@@ -715,7 +691,7 @@ void FGGroundController::render(bool visible)
                     geode->setName("test");
                     geode->addDrawable(geometry);
                     //osg::Node *custom_obj;
-                    SGMaterial *mat;
+                    SGMaterial* mat;
                     if (segmentK->hasBlock(now)) {
                         mat = matlib->find("UnidirectionalTaperRed", segCenter);
                     } else {
@@ -726,7 +702,7 @@ void FGGroundController::render(bool visible)
                     obj_trans->addChild(geode);
                     // wire as much of the scene graph together as we can
                     //->addChild( obj_trans );
-                    group->addChild( obj_trans );
+                    group->addChild(obj_trans);
                 }
             }
             //dx += 0.1;
@@ -735,7 +711,8 @@ void FGGroundController::render(bool visible)
     }
 }
 
-string FGGroundController::getName() const {
+string FGGroundController::getName() const
+{
     return string(parent->parent()->getName() + "-ground");
 }
 
@@ -777,10 +754,10 @@ void FGGroundController::updateStartupTraffic(TrafficVectorIterator i,
         return;
     }
 
-    if( airportGroundRadar->isBlockedForPushback(*i) ) {
+    if (airportGroundRadar->isBlockedForPushback(*i)) {
         return;
     }
-    
+
 
     (*i)->allowPushBack();
     (*i)->setPriority(priority++);
@@ -809,8 +786,9 @@ bool FGGroundController::updateActiveTraffic(TrafficVectorIterator i,
     return true;
 }
 
-int FGGroundController::getFrequency() {
+int FGGroundController::getFrequency()
+{
     int groundFreq = parent->getGroundFrequency(2);
     int towerFreq = parent->getTowerFrequency(2);
-    return groundFreq>0?groundFreq:towerFreq;
+    return groundFreq > 0 ? groundFreq : towerFreq;
 }

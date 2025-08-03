@@ -1,9 +1,5 @@
-/*
- * SPDX-FileName: ATCController.cxx
- * SPDX-FileComment: Extracted from trafficrecord.cxx - Implementation of AIModels ATC code.
- * SPDX-FileCopyrightText: Copyright (C) 2006 Durk Talsma
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+// SPDX-FileCopyrightText: 2006 Durk Talsma
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <config.h>
 
@@ -436,7 +432,7 @@ SGSharedPtr<FGTrafficRecord> FGATCController::getRecord(int id) const
 }
 
 /**
- * We share the traffic record much like real life. It gets handed 
+ * We share the traffic record much like real life. It gets handed
  * from one controller to the next.
  * @param aiObject
  * @param leg

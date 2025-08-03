@@ -1,8 +1,5 @@
-/*
- * SPDX-FileName: CommStation.cxx
- * SPDX-FileComment: class describing a single comm station in the Nav DB
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
+// SPDX-FileCopyrightText: 2011 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
 
@@ -12,22 +9,21 @@
 
 namespace flightgear {
 
-CommStation::CommStation(PositionedID aGuid, const std::string& name, FGPositioned::Type t, const SGGeod& pos, int range, int freq) :
-    FGPositioned(aGuid, t, name, pos),
-    mRangeNM(range),
-    mFreqKhz(freq),
-    mAirport(0)
-{  
+CommStation::CommStation(PositionedID aGuid, const std::string& name, FGPositioned::Type t, const SGGeod& pos, int range, int freq) : FGPositioned(aGuid, t, name, pos),
+                                                                                                                                      mRangeNM(range),
+                                                                                                                                      mFreqKhz(freq),
+                                                                                                                                      mAirport(0)
+{
 }
 
 void CommStation::setAirport(PositionedID apt)
 {
     mAirport = apt;
 }
-  
+
 FGAirportRef CommStation::airport() const
 {
-  return FGPositioned::loadById<FGAirport>(mAirport);
+    return FGPositioned::loadById<FGAirport>(mAirport);
 }
 
 double CommStation::freqMHz() const
@@ -38,7 +34,7 @@ double CommStation::freqMHz() const
 CommStationRef
 CommStation::findByFreq(int freqKhz, const SGGeod& pos, FGPositioned::Filter* filt)
 {
-  return (CommStation*) NavDataCache::instance()->findCommByFreq(freqKhz, pos, filt).ptr();
+    return (CommStation*)NavDataCache::instance()->findCommByFreq(freqKhz, pos, filt).ptr();
 }
 
-} // of namespace flightgear
+} // namespace flightgear
