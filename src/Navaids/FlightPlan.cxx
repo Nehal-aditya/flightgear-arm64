@@ -2146,9 +2146,6 @@ bool FlightPlan::parseICAORouteString(const std::string& routeData)
 
     SG_LOG(SG_AUTOPILOT, SG_INFO, "adding waypoints from string");
     // rebuild legs from waypoints we created
-    for (auto l : _legs) {
-        delete l;
-    }
     _legs.clear();
     insertWayptsAtIndex(enroute, 0);
 
