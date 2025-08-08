@@ -3,32 +3,14 @@
  * @author Nicolas VIVIEN
  * @date 2008-02-10
  *
- * @note Copyright (C) 2008 Nicolas VIVIEN
- *
  * @brief Precipitation manager
  *   This manager calculate the intensity of precipitation in function of the altitude,
  *   calculate the wind direction and velocity, then update the drawing of precipitation.
- *
- * @par Licences
- *   This program is free software; you can redistribute it and/or
- *   modify it under the terms of the GNU General Public License as
- *   published by the Free Software Foundation; either version 2 of the
- *   License, or (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful, but
- *   WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *   General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
  */
+// SPDX-FileCopyrightText: 2008 Nicolas Vivien
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <osg/MatrixTransform>
 
@@ -44,18 +26,18 @@
 
 #include "precipitation_mgr.hxx"
 
-/** 
- * @brief FGPrecipitation Manager constructor 
+/**
+ * @brief FGPrecipitation Manager constructor
  *
  * Build a new object to manage the precipitation object
  */
 FGPrecipitationMgr::FGPrecipitationMgr()
-{	
+{
     // Try to set up the scenegraph.
     setupSceneGraph();
 }
 
-/** 
+/**
  * @brief FGPrecipitaiton Manager destructor
  */
 FGPrecipitationMgr::~FGPrecipitationMgr()
@@ -116,9 +98,9 @@ void FGPrecipitationMgr::setPrecipitationLevel(double a)
     fgSetDouble("environment/params/precipitation-level-ft",a);
 }
 
-/** 
+/**
  * @brief Calculate the max alitutude with precipitation
- * 
+ *
  * @returns Elevation max in meter
  *
  * This function permits you to know what is the altitude max where we can
@@ -130,11 +112,11 @@ float FGPrecipitationMgr::getPrecipitationAtAltitudeMax(void)
     int max;
     float result;
     SGPropertyNode *boundaryNode, *boundaryEntry;
-    
+
     if (fgGetBool("/environment/params/use-external-precipitation-level", false)) {
         // If we're not modeling the precipitation level based on the cloud
         // layers, take it directly from the property tree.
-        return fgGetFloat("/environment/params/external-precipitation-level-m", 0.0);    
+        return fgGetFloat("/environment/params/external-precipitation-level-m", 0.0);
     }
 
 
@@ -143,7 +125,7 @@ float FGPrecipitationMgr::getPrecipitationAtAltitudeMax(void)
     result = 0;
 
      SGSky* thesky = globals->get_renderer()->getSky();
-    
+
     // To avoid messing up
     if (thesky == NULL)
         return result;
@@ -170,7 +152,7 @@ float FGPrecipitationMgr::getPrecipitationAtAltitudeMax(void)
     }
 
 
-    // If we haven't found clouds layers, we read the bounday layers table.
+    // If we haven't found clouds layers, we read the boundary layers table.
     if (result > 0)
         return result;
 
@@ -199,9 +181,9 @@ float FGPrecipitationMgr::getPrecipitationAtAltitudeMax(void)
 }
 
 
-/** 
+/**
  * @brief Update the precipitation drawing
- * 
+ *
  * To seem real, we stop the precipitation above the cloud or boundary layer.
  * If METAR information doesn't give us this altitude, we will see precipitations
  * in space...
@@ -249,19 +231,18 @@ void FGPrecipitationMgr::update(double dt)
 	precipitation->setIllumination(illumination);
    }
 
-    // Get the elevation of aicraft and of the cloud layer
-    altitudeAircraft = fgGetDouble("/position/altitude-ft", 0.0);
+   // Get the elevation of aircraft and of the cloud layer
+   altitudeAircraft = fgGetDouble("/position/altitude-ft", 0.0);
 
-    if ((altitudeCloudLayer > 0) && (altitudeAircraft > altitudeCloudLayer)) {
-        // The aircraft is above the cloud layer
-        rain_intensity = 0;
-        snow_intensity = 0;
-    }
-    else {
-        // The aircraft is bellow the cloud layer
-        rain_intensity = fgGetDouble("/environment/rain-norm", 0.0);
-        snow_intensity = fgGetDouble("/environment/snow-norm", 0.0);
-    }
+   if ((altitudeCloudLayer > 0) && (altitudeAircraft > altitudeCloudLayer)) {
+       // The aircraft is above the cloud layer
+       rain_intensity = 0;
+       snow_intensity = 0;
+   } else {
+       // The aircraft is below the cloud layer
+       rain_intensity = fgGetDouble("/environment/rain-norm", 0.0);
+       snow_intensity = fgGetDouble("/environment/snow-norm", 0.0);
+   }
 
     // Get the current and dew temperature
     dewtemp = fgGetDouble("/environment/dewpoint-degc", 0.0);

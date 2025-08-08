@@ -1,13 +1,11 @@
 /*
  * SPDX-FileName: environment_mgr.cxx
  * SPDX-FileComment: manager for natural environment information
- * SPDX-FileCopyrightText: Copyright (C) 2002  David Megginson - david@megginson.com
+ * SPDX-FileCopyrightText: 2002 David Megginson <david@megginson.com>
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <cstring>
 
@@ -271,7 +269,7 @@ FGEnvironmentMgr::update (double dt)
     fgClouds->set_update_event( fgClouds->get_update_event()+1 );
   }
   updateTowerPosition();
-  
+
   fgSetDouble( "/environment/gravitational-acceleration-mps2",
     Environment::Gravity::instance()->getGravity(aircraftPos));
 }
@@ -353,8 +351,8 @@ void FGEnvironmentMgr::updateClosestAirport()
         //
         nearestIdent = nearestAirport->ident();
         towerDistance = SGGeodesy::distanceM(nearestTowerPosition, pos);
-        
-        // when the tower doesn't move we can clear these. 
+
+        // when the tower doesn't move we can clear these.
         // if the carrier is nearer these variables will be set in that logic.
         towerViewPositionLatDegNode = towerViewPositionLonDegNode = towerViewPositionAltFtNode = nullptr;
     }

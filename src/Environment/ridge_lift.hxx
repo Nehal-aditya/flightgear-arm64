@@ -1,28 +1,13 @@
 // simulates ridge lift
 //
 // Written by Patrice Poly
-// Copyright (C) 2009 Patrice Poly - p.polypa@gmail.com
-//
 //
 // Entirely based  on the paper :
 // http://carrier.csi.cam.ac.uk/forsterlewis/soaring/sim/fsx/dev/sim_probe/sim_probe_paper.html
 // by Ian Forster-Lewis, University of Cambridge, 26th December 2007
 //
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+// SPDX-FileCopyrightText: 2009 Patrice Poly <p.polypa@gmail.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 
 #pragma once

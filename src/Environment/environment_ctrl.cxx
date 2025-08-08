@@ -3,26 +3,10 @@
 // Written by David Megginson, started February 2002.
 // Partly rewritten by Torsten Dreyer, August 2010.
 //
-// Copyright (C) 2002  David Megginson - david@megginson.com
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+// SPDX-FileCopyrightText: 2002 David Megginson <david@megginson.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
 #include <algorithm>
 
@@ -42,7 +26,7 @@ struct LayerTableBucket {
     inline bool operator< (const LayerTableBucket &b) const {
         return (altitude_ft < b.altitude_ft);
     }
-    /** 
+    /**
     * @brief LessThan predicate for bucket pointers.
     */
     static bool lessThan(LayerTableBucket *a, LayerTableBucket *b) {
@@ -89,7 +73,7 @@ public:
 private:
     /**
      * @brief Implementation of SGProertyChangeListener::valueChanged()
-     *        Takes care of consitent sea level pressure for the entire column
+     *        Takes care of consistent sea level pressure for the entire column
      */
     void valueChanged( SGPropertyNode * node );
     SGPropertyNode_ptr _rootNode;
@@ -105,7 +89,7 @@ class LayerInterpolateControllerImplementation : public LayerInterpolateControll
 {
 public:
     LayerInterpolateControllerImplementation( SGPropertyNode_ptr rootNode );
-    
+
     // Subsystem API.
     void bind() override;
     void init() override;
@@ -133,7 +117,7 @@ private:
 
 //////////////////////////////////////////////////////////////////////////////
 
-LayerTable::~LayerTable() 
+LayerTable::~LayerTable()
 {
     for( iterator it = begin(); it != end(); it++ )
         delete (*it);
@@ -164,7 +148,7 @@ void LayerTable::read(FGEnvironment * parent )
                 b->environment = *parent;
             if (i > 0)
                 b->environment = at(i-1)->environment;
-            
+
             b->environment.read(child);
             b->altitude_ft = b->environment.get_elevation_ft();
 
@@ -219,7 +203,7 @@ void LayerTable::Unbind()
     }
 }
 
-void LayerTable::valueChanged( SGPropertyNode * node ) 
+void LayerTable::valueChanged(SGPropertyNode* node)
 {
     // - Make sure all environments in our column use the same sea level pressure
     // - Synchronize layer elevations
@@ -256,7 +240,7 @@ void LayerTable::interpolate( double altitude_ft, FGEnvironment * result )
     } else if (at(length-1)->altitude_ft <= altitude_ft) {
         *result = at(length-1)->environment; // above top of table
         return;
-    } 
+    }
 
     // Search the interpolation table
     int layer;
@@ -287,7 +271,7 @@ LayerInterpolateControllerImplementation::LayerInterpolateControllerImplementati
 void LayerInterpolateControllerImplementation::init ()
 {
     _boundary_table.read();
-    // pass in a pointer to the environment of the last bondary layer as
+    // pass in a pointer to the environment of the last boundary layer as
     // a starting point
     _aloft_table.read(&(*(_boundary_table.end()-1))->environment);
 }
@@ -346,7 +330,7 @@ void LayerInterpolateControllerImplementation::update (double delta_time_sec)
             _boundary_table.interpolate(altitude_agl_ft, &_environment);
             return;
         } else if ((boundary_limit + _boundary_transition) >= altitude_agl_ft) {
-            // If current altitude is above top of boundary layer and within the 
+            // If current altitude is above top of boundary layer and within the
             // transition altitude, interpolate boundary and aloft layers
             FGEnvironment env1, env2;
             _boundary_table.interpolate( altitude_agl_ft, &env1);
@@ -355,7 +339,7 @@ void LayerInterpolateControllerImplementation::update (double delta_time_sec)
             env1.interpolate(env2, fraction, &_environment);
             return;
         }
-    } 
+    }
     // If no boundary layer is defined or altitude is above top boundary-layer plus boundary-transition
     // altitude, use only the aloft table
     _aloft_table.interpolate( altitude_ft, &_environment);

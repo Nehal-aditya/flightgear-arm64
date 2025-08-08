@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: climate.cxx
  * SPDX-FileComment: Köppen-Geiger climate interface class
- * SPDX-FileCopyrightText: Copyright (C) 2020-2021 by Erik Hofman <erik@ehofman.com>
+ * SPDX-FileCopyrightText: 2020 Erik Hofman <erik@ehofman.com>
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -1134,7 +1134,7 @@ double FGClimate::long_high(double val, double min, double max)
     return max - diff*(0.5 - 0.5*cos(pow(2.14503 - 2.14503*val, 1.5)));
 }
 
-// goole: y=cos(atan(x*x))
+// Google: y=cos(atan(x*x))
 // the monsoon is around 0.0
 double FGClimate::monsoonal(double val, double min, double max)
 {

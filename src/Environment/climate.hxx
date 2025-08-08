@@ -2,26 +2,10 @@
 //
 // Written by Erik Hofman, started October 2020
 //
-// Copyright (C) 2020 by Erik Hofman <erik@ehofman.com>
-//
-//  This program is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation; either version 2 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License along
-//  with this program; if not, write to the Free Software Foundation, Inc.,
-//  59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
-//
-// $Id$
+// SPDX-FileCopyrightText: 2020 Erik Hofman <erik@ehofman.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifndef _FGCLIMATE_HXX
-#define _FGCLIMATE_HXX
+#pragma once
 
 #include <osg/ref_ptr>
 #include <osg/Image>
@@ -33,7 +17,7 @@
 
 /*
  * Update environment parameters based on the Köppen-Geiger climate
- * map of the world based on lattitude and longitude.
+ * map of the world based on latitude and longitude.
  */
 
 class FGLight;
@@ -202,5 +186,3 @@ private:
 
     char _metar[256] = "";
 };
-
-#endif // _FGCLIMATE_HXX

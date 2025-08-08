@@ -2,26 +2,10 @@
 //
 // Written by David Megginson, started February 2002.
 //
-// Copyright (C) 2002  David Megginson - david@megginson.com
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+// SPDX-FileCopyrightText: 2002 David Megginson <david@megginson.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <cmath>
 
@@ -44,8 +28,8 @@
 // http://www.av8n.com/physics/altimetry.htm
 
 // Each line of data has 3 elements:
-//   Elevation (ft), 
-//   temperature factor (dimensionless ratio of absolute temp), 
+//   Elevation (ft),
+//   temperature factor (dimensionless ratio of absolute temp),
 //   pressure factor (dimensionless ratio)
 static double atmosphere_data[][3] = {
  {  -3000.00,   1.021,  1.1133 },
@@ -273,73 +257,73 @@ void FGEnvironment::Tie( SGPropertyNode_ptr base, bool archivable )
 {
   _tiedProperties.setRoot( base );
 
-  _tiedProperties.Tie( "visibility-m", this, 
-      &FGEnvironment::get_visibility_m, 
-      &FGEnvironment::set_visibility_m);
+  _tiedProperties.Tie("visibility-m", this,
+                      &FGEnvironment::get_visibility_m,
+                      &FGEnvironment::set_visibility_m);
 
   _tiedProperties.Tie("elevation-ft", this,
                       &FGEnvironment::get_elevation_ft,
                       &FGEnvironment::set_elevation_ft);
 
-  _tiedProperties.Tie("temperature-sea-level-degc", this, 
-      &FGEnvironment::get_temperature_sea_level_degc, 
-      &FGEnvironment::set_temperature_sea_level_degc);
+  _tiedProperties.Tie("temperature-sea-level-degc", this,
+                      &FGEnvironment::get_temperature_sea_level_degc,
+                      &FGEnvironment::set_temperature_sea_level_degc);
 
-  _tiedProperties.Tie("temperature-degc", this, 
-      &FGEnvironment::get_temperature_degc,
-      &FGEnvironment::set_temperature_degc);
+  _tiedProperties.Tie("temperature-degc", this,
+                      &FGEnvironment::get_temperature_degc,
+                      &FGEnvironment::set_temperature_degc);
 
-  _tiedProperties.Tie("dewpoint-sea-level-degc", this, 
-      &FGEnvironment::get_dewpoint_sea_level_degc, 
-      &FGEnvironment::set_dewpoint_sea_level_degc);
+  _tiedProperties.Tie("dewpoint-sea-level-degc", this,
+                      &FGEnvironment::get_dewpoint_sea_level_degc,
+                      &FGEnvironment::set_dewpoint_sea_level_degc);
 
-  _tiedProperties.Tie("dewpoint-degc", this, 
-      &FGEnvironment::get_dewpoint_degc,
-      &FGEnvironment::set_dewpoint_degc);
+  _tiedProperties.Tie("dewpoint-degc", this,
+                      &FGEnvironment::get_dewpoint_degc,
+                      &FGEnvironment::set_dewpoint_degc);
 
-  _tiedProperties.Tie("pressure-sea-level-inhg", this, 
-      &FGEnvironment::get_pressure_sea_level_inhg, 
-      &FGEnvironment::set_pressure_sea_level_inhg);
+  _tiedProperties.Tie("pressure-sea-level-inhg", this,
+                      &FGEnvironment::get_pressure_sea_level_inhg,
+                      &FGEnvironment::set_pressure_sea_level_inhg);
 
-  _tiedProperties.Tie("pressure-inhg", this, 
-      &FGEnvironment::get_pressure_inhg,
-      &FGEnvironment::set_pressure_inhg);
+  _tiedProperties.Tie("pressure-inhg", this,
+                      &FGEnvironment::get_pressure_inhg,
+                      &FGEnvironment::set_pressure_inhg);
 
-  _tiedProperties.Tie("atmosphere/altitude-half-to-sun", this, 
-      &FGEnvironment::get_altitude_half_to_sun_m, 
-      &FGEnvironment::set_altitude_half_to_sun_m);
+  _tiedProperties.Tie("atmosphere/altitude-half-to-sun", this,
+                      &FGEnvironment::get_altitude_half_to_sun_m,
+                      &FGEnvironment::set_altitude_half_to_sun_m);
 
-  _tiedProperties.Tie("atmosphere/altitude-troposphere-top", this, 
-      &FGEnvironment::get_altitude_tropo_top_m, 
-      &FGEnvironment::set_altitude_tropo_top_m);
+  _tiedProperties.Tie("atmosphere/altitude-troposphere-top", this,
+                      &FGEnvironment::get_altitude_tropo_top_m,
+                      &FGEnvironment::set_altitude_tropo_top_m);
 
-  _tiedProperties.Tie("wind-from-heading-deg", this, 
-      &FGEnvironment::get_wind_from_heading_deg, 
-      &FGEnvironment::set_wind_from_heading_deg);
+  _tiedProperties.Tie("wind-from-heading-deg", this,
+                      &FGEnvironment::get_wind_from_heading_deg,
+                      &FGEnvironment::set_wind_from_heading_deg);
 
-  _tiedProperties.Tie("wind-speed-kt", this, 
-      &FGEnvironment::get_wind_speed_kt, 
-      &FGEnvironment::set_wind_speed_kt);
+  _tiedProperties.Tie("wind-speed-kt", this,
+                      &FGEnvironment::get_wind_speed_kt,
+                      &FGEnvironment::set_wind_speed_kt);
 
-  _tiedProperties.Tie("wind-from-north-fps", this, 
-      &FGEnvironment::get_wind_from_north_fps, 
-      &FGEnvironment::set_wind_from_north_fps);
+  _tiedProperties.Tie("wind-from-north-fps", this,
+                      &FGEnvironment::get_wind_from_north_fps,
+                      &FGEnvironment::set_wind_from_north_fps);
 
-  _tiedProperties.Tie("wind-from-east-fps", this, 
-      &FGEnvironment::get_wind_from_east_fps, 
-      &FGEnvironment::set_wind_from_east_fps);
+  _tiedProperties.Tie("wind-from-east-fps", this,
+                      &FGEnvironment::get_wind_from_east_fps,
+                      &FGEnvironment::set_wind_from_east_fps);
 
-  _tiedProperties.Tie("wind-from-down-fps", this, 
-      &FGEnvironment::get_wind_from_down_fps, 
-      &FGEnvironment::set_wind_from_down_fps);
+  _tiedProperties.Tie("wind-from-down-fps", this,
+                      &FGEnvironment::get_wind_from_down_fps,
+                      &FGEnvironment::set_wind_from_down_fps);
 
-  _tiedProperties.Tie("turbulence/magnitude-norm", this, 
-      &FGEnvironment::get_turbulence_magnitude_norm, 
-      &FGEnvironment::set_turbulence_magnitude_norm);
+  _tiedProperties.Tie("turbulence/magnitude-norm", this,
+                      &FGEnvironment::get_turbulence_magnitude_norm,
+                      &FGEnvironment::set_turbulence_magnitude_norm);
 
-  _tiedProperties.Tie("turbulence/rate-hz", this, 
-      &FGEnvironment::get_turbulence_rate_hz, 
-      &FGEnvironment::set_turbulence_rate_hz);
+  _tiedProperties.Tie("turbulence/rate-hz", this,
+                      &FGEnvironment::get_turbulence_rate_hz,
+                      &FGEnvironment::set_turbulence_rate_hz);
 
   _tiedProperties.setAttribute( SGPropertyNode::ARCHIVE, archivable );
 
@@ -665,15 +649,15 @@ void FGEnvironment::set_is_isa(bool isa)
 void
 FGEnvironment::_recalc_hdgspd ()
 {
-  wind_from_heading_deg = 
-    atan2(wind_from_east_fps, wind_from_north_fps) * SGD_RADIANS_TO_DEGREES;
+    wind_from_heading_deg =
+        atan2(wind_from_east_fps, wind_from_north_fps) * SGD_RADIANS_TO_DEGREES;
 
-  if( wind_from_heading_deg < 0 )
-    wind_from_heading_deg += 360.0;
+    if (wind_from_heading_deg < 0)
+        wind_from_heading_deg += 360.0;
 
-  wind_speed_kt = sqrt(wind_from_north_fps * wind_from_north_fps +
-                       wind_from_east_fps * wind_from_east_fps) 
-                  * SG_METER_TO_NM * SG_FEET_TO_METER * 3600;
+    wind_speed_kt = sqrt(wind_from_north_fps * wind_from_north_fps +
+                         wind_from_east_fps * wind_from_east_fps) *
+                    SG_METER_TO_NM * SG_FEET_TO_METER * 3600;
 }
 
 void
@@ -720,7 +704,7 @@ FGEnvironment::_recalc_sl_temperature ()
                                      ? t_strato
                                      : temperature_degc + temperature_shift;
 
-    // Alternative implemenation:
+    // Alternative implementation:
     //  temperature_sea_level_inhg = T_layer(0., elevation_ft * foot,
     //      pressure_inhg * inHg, temperature_degc + freezing, ISA_def[0].lapse) - freezing;
   }
@@ -764,7 +748,7 @@ FGEnvironment::_recalc_sl_pressure ()
 }
 
 // This gets called at frame rate, to account for the aircraft's
-// changing altitude. 
+// changing altitude.
 // Called by set_elevation_ft() which is called by FGEnvironmentMgr::update
 
 void
@@ -775,9 +759,9 @@ FGEnvironment::_recalc_alt_pt ()
   {
     static int count(0);
     if (++count % 1000 == 0) {
-      SG_LOG(SG_ENVIRONMENT, SG_ALERT, 
+      SG_LOG(SG_ENVIRONMENT, SG_ALERT,
            "recalc_alt_pt for: " << elevation_ft
-        << "  using "  << pressure_sea_level_inhg 
+        << "  using "  << pressure_sea_level_inhg
         << "  and "  << temperature_sea_level_degc
         << " :: " << this
         << "  # " << count);
@@ -796,7 +780,7 @@ void
 FGEnvironment::_recalc_density ()
 {
   const double pressure_psf = pressure_inhg * 70.7487;
-  
+
   // adjust for humidity
   // calculations taken from USA Today (oops!) at
   // http://www.usatoday.com/weather/basics/density-calculations.htm
@@ -804,12 +788,12 @@ FGEnvironment::_recalc_density ()
   const double pressure_mb = pressure_inhg * 33.86;
   const double vapor_pressure_mb =
     6.11 * pow(10.0, 7.5 * dewpoint_degc / (237.7 + dewpoint_degc));
-  
+
   if ((pressure_mb <= 0.0) || (vapor_pressure_mb <= 0.0)) {
     density_slugft3 = 0.0;
     return;
   }
-  
+
   double virtual_temperature_degk = temperature_degk / (1 - (vapor_pressure_mb / pressure_mb) * (1.0 - 0.622));
   double virtual_temperature_degr = virtual_temperature_degk * 1.8;
 
@@ -817,7 +801,7 @@ FGEnvironment::_recalc_density ()
   _recalc_density_tropo_avg_kgm3();
 }
 
-// This is used to calculate the average density on the path 
+// This is used to calculate the average density on the path
 // of sunlight to the observer for calculating sun-color
 void
 FGEnvironment::_recalc_density_tropo_avg_kgm3 ()
@@ -830,7 +814,7 @@ FGEnvironment::_recalc_density_tropo_avg_kgm3 ()
     density_tropo_avg_kgm3 = 0.0;
     return;
   }
-  
+
   double density_half = (100 * pressure_mb * exp(-altitude_half_to_sun_m / 8000))
       / (287.05 * virtual_temp);
   double density_tropo = (100 * pressure_mb * exp((-1 * altitude_tropo_top_m) / 8000))
@@ -852,7 +836,7 @@ FGEnvironment::_recalc_relative_humidity ()
 */
   double a = (7.5 * dewpoint_degc)    / ( 237.7 + dewpoint_degc);
   double b = (7.5 * temperature_degc) / ( 237.7 + temperature_degc);
-  relative_humidity = 100 * pow(10.0,a-b); 
+  relative_humidity = 100 * pow(10.0, a - b);
 }
 
 bool

@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: fgmetar.cxx
  * SPDX-FileComment: metar interface class
- * SPDX-FileCopyrightText: Copyright (C) 2005  Melchior FRANZ - mfranz@aon.at
+ * SPDX-FileCopyrightText: 2005 Melchior FRANZ <mfranz@aon.at>
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -17,9 +17,7 @@
  * TODO
  * - NSC & mil. color codes
  */
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
 
 #include <simgear/math/sg_random.hxx>
 #include <simgear/timing/sg_time.hxx>
@@ -149,4 +147,3 @@ long FGMetar::getAge_min() const
 	time_t now = _x_proxy ? _rq_time : time(nullptr);
 	return (now - _time) / 60;
 }
-

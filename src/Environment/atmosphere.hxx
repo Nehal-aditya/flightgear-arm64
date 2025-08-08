@@ -3,27 +3,10 @@
 // Written by David Megginson, started February 2002.
 // Modified by John Denker to correct physics errors in 2007
 //
-// Copyright (C) 2002  David Megginson - david@megginson.com
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-FileCopyrightText: 2002 David Megginson <david@megginson.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-
-#ifndef _ATMOSPHERE_HXX
-#define _ATMOSPHERE_HXX
+#pragma once
 
 #include <simgear/compiler.h>
 #include <simgear/math/interpolater.hxx>
@@ -81,10 +64,10 @@ public:
 
 extern const ISA_layer ISA_def[];
 
-std::pair<double,double> PT_vs_hpt(
-          const double hh, 
-          const double _p0 = atmodel::ISA::P0,
-          const double _t0 = atmodel::ISA::T0);
+std::pair<double, double> PT_vs_hpt(
+    const double hh,
+    const double _p0 = atmodel::ISA::P0,
+    const double _t0 = atmodel::ISA::T0);
 
 double P_layer(const double height, const double href,
   const double Pref, const double Tref, const double lapse );
@@ -97,47 +80,47 @@ double T_layer(const double height, const double href,
 class FGAtmo {
 public:
     double a_vs_p(const double press, const double qnh = atmodel::ISA::P0);
-    double fake_T_vs_a_us(const double h_ft, 
-                const double Tsl = atmodel::ISA::T0) const;
+    double fake_T_vs_a_us(const double h_ft,
+                          const double Tsl = atmodel::ISA::T0) const;
     double fake_dp_vs_a_us(const double dpsl, const double h_ft);
     void check_one(const double height);
 
-// Altimeter setting _in pascals_ 
-//  ... caller gets to convert to inHg or millibars
-// Field elevation in m
-// Field pressure in pascals
-// Valid for fields within the troposphere only.
+    // Altimeter setting _in pascals_
+    //  ... caller gets to convert to inHg or millibars
+    // Field elevation in m
+    // Field pressure in pascals
+    // Valid for fields within the troposphere only.
     double QNH(const double field_elev, const double field_press);
-/**
+    /**
  * Invert the QNH calculation to get the field pressure from a metar
  * report. Valid for fields within the troposphere only.
  * @param field_elev field elevation in m
  * @param qnh altimeter setting in pascals
  * @return field pressure _in pascals_. Caller gets to convert to inHg
- * or millibars 
+ * or millibars
  */
     static double fieldPressure(const double field_elev, const double qnh);
-    
+
     /**
-    Compute the outisde temperature at an altitude, according to the standard atmosphere
-     model. Optionally allow offseting the temperature at seal level, but default to the ISA standard
+    Compute the outside temperature at an altitude, according to the standard atmosphere
+     model. Optionally allow offsetting the temperature at seal level, but default to the ISA standard
      for that value as well
      */
     static double ISATemperatureKAtAltitudeFt(const double alt,
                                              const double Tsl = atmodel::ISA::T0);
-    
+
     /**
         Compute the speed of sound at an altitude
      */
     static double CSMetersPerSecondAtAltitudeFt(const double alt,
                                  const double Tsl = atmodel::ISA::T0);
-    
+
     static double densityAtAltitudeFt(const double alt, const double Tsl = atmodel::ISA::T0);
-    
+
     static double machFromKnotsAtAltitudeFt(const double knots,
                                                     const double altFt,
                                                     const double Tsl = atmodel::ISA::T0);
-    
+
     static double knotsFromMachAtAltitudeFt(const double mach,
                                             const double altFt,
                                             const double Tsl = atmodel::ISA::T0);
@@ -175,5 +158,3 @@ public:
     void dump_stack();
     void dump_stack1(const double Tref);
 };
-
-#endif // _ATMOSPHERE_HXX

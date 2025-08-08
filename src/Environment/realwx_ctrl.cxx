@@ -1,14 +1,12 @@
 /*
  * SPDX-FileName: realwx_ctrl.cxx
  * SPDX-FileComment: Process real weather data
- * SPDX-FileCopyrightText: Copyright (C) 2002  David Megginson - david@megginson.com
+ * SPDX-FileCopyrightText: 2002 David Megginson <david@megginson.com>
  * SPDX-FileContributor: Rewritten by Torsten Dreyer, August 2010, August 2011
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
 #include "realwx_ctrl.hxx"
 
@@ -52,7 +50,7 @@ public:
     // implementation of MetarDataHandler
     virtual void handleMetarData( const std::string & data );
     virtual void handleMetarFailure();
-  
+
     static const unsigned MAX_POLLING_INTERVAL_SECONDS = 10;
     static const unsigned DEFAULT_TIME_TO_LIVE_SECONDS = 900;
 
@@ -108,7 +106,7 @@ void LiveMetarProperties::handleMetarData( const std::string & data )
 {
     SG_LOG( SG_ENVIRONMENT, SG_DEBUG, "LiveMetarProperties::handleMetarData() received METAR for " << getStationId() << ": " << data );
     _timeToLive = DEFAULT_TIME_TO_LIVE_SECONDS;
-    
+
     SGSharedPtr<FGMetar> m;
     static bool haveReportedMETARFailure = false;
     try {
@@ -132,7 +130,7 @@ void LiveMetarProperties::handleMetarData( const std::string & data )
         SG_LOG( SG_ENVIRONMENT, SG_ALERT, "Ignoring outdated METAR for " << getStationId() << " (see /environment/params/metar-max-age-min)");
         return;
     }
-  
+
     _failure = false;
     setMetar( m );
 }
@@ -141,7 +139,7 @@ void LiveMetarProperties::handleMetarFailure()
 {
   _failure = true;
 }
-  
+
 /* -------------------------------------------------------------------------------- */
 
 class BasicRealWxController : public RealWxController
@@ -157,7 +155,7 @@ public:
     void shutdown() override;
     void unbind() override;
     void update(double dt) override;
-    
+
     /**
      * Create a metar-property binding at the specified property path,
      * and initiate a request for the specified station-ID (which may be
@@ -165,7 +163,7 @@ public:
      * will be updated.
      */
     void addMetarAtPath(const std::string& propPath, const std::string& icao);
-  
+
     void removeMetarAtPath(const std::string& propPath);
 
     typedef std::vector<LiveMetarProperties_ptr> MetarPropertiesList;
@@ -193,12 +191,12 @@ static bool commandRequestMetar(const SGPropertyNode * arg, SGPropertyNode * roo
   if (!envMgr) {
     return false;
   }
-  
+
   BasicRealWxController* self = (BasicRealWxController*) envMgr->get_subsystem("realwx");
   if (!self) {
     return false;
   }
-  
+
   std::string icao(arg->getStringValue("station"));
   std::transform(icao.begin(), icao.end(), icao.begin(), static_cast<int(*)(int)>(std::toupper));
 
@@ -206,24 +204,24 @@ static bool commandRequestMetar(const SGPropertyNode * arg, SGPropertyNode * roo
   self->addMetarAtPath(path, icao);
   return true;
 }
-  
+
 static bool commandClearMetar(const SGPropertyNode * arg, SGPropertyNode * root)
 {
   auto envMgr = (SGSubsystemGroup*) globals->get_subsystem_mgr()->get_subsystem("environment");
   if (!envMgr) {
     return false;
   }
-  
+
   BasicRealWxController* self = (BasicRealWxController*) envMgr->get_subsystem("realwx");
   if (!self) {
     return false;
   }
-  
+
   std::string path = arg->getStringValue("path");
   self->removeMetarAtPath(path);
   return true;
 }
-  
+
 /* -------------------------------------------------------------------------------- */
 /*
 Properties
@@ -239,7 +237,6 @@ BasicRealWxController::BasicRealWxController( SGPropertyNode_ptr rootNode, Metar
   _wasEnabled(false),
   _requester(metarRequester)
 {
-    
     globals->get_commands()->addCommand("request-metar", commandRequestMetar);
     globals->get_commands()->addCommand("clear-metar", commandClearMetar);
 }
@@ -253,13 +250,13 @@ BasicRealWxController::~BasicRealWxController()
 void BasicRealWxController::init()
 {
     _wasEnabled = false;
-    
+
     // at least instantiate MetarProperties for /environment/metar
     SGPropertyNode_ptr metarNode = fgGetNode( _rootNode->getStringValue("metar", "/environment/metar"), true );
     _metarProperties.push_back( new LiveMetarProperties(metarNode,
                                                         _requester,
                                                         getMetarMaxAgeMin()));
-    
+
     for( auto n : _rootNode->getChildren("metar") ) {
         SGPropertyNode_ptr metarNode = fgGetNode( n->getStringValue(), true );
         addMetarAtPath(metarNode->getPath(), "");
@@ -267,7 +264,7 @@ void BasicRealWxController::init()
 
     checkNearbyMetar();
     update(0); // fetch data ASAP
-    
+
     globals->get_event_mgr()->addTask("checkNearbyMetar",
                                       [this](){ this->checkNearbyMetar(); }, 10 );
 }
@@ -278,7 +275,7 @@ void BasicRealWxController::reinit()
     checkNearbyMetar();
     update(0); // fetch data ASAP
 }
-    
+
 void BasicRealWxController::shutdown()
 {
     globals->get_event_mgr()->removeTask("checkNearbyMetar");
@@ -296,20 +293,20 @@ void BasicRealWxController::unbind()
 }
 
 void BasicRealWxController::update( double dt )
-{  
-  if( _enabled ) {
-    bool firstIteration = !_wasEnabled;
-    // clock tick for every METAR in stock
-    for(auto p : _metarProperties) {
-      // first round? All received METARs are outdated
-      if( firstIteration ) p->resetTimeToLive();
-      p->update(dt);
-    }
+{
+    if (_enabled) {
+        bool firstIteration = !_wasEnabled;
+        // clock tick for every METAR in stock
+        for (auto p : _metarProperties) {
+            // first round? All received METARs are outdated
+            if (firstIteration) p->resetTimeToLive();
+            p->update(dt);
+        }
 
-    _wasEnabled = true;
-  } else {
-    _wasEnabled = false;
-  }
+        _wasEnabled = true;
+    } else {
+        _wasEnabled = false;
+    }
 }
 
 void BasicRealWxController::addMetarAtPath(const std::string& propPath, const std::string& icao)
@@ -359,7 +356,7 @@ BasicRealWxController::MetarPropertiesList::iterator BasicRealWxController::find
 
   return it;
 }
-  
+
 void BasicRealWxController::checkNearbyMetar()
 {
     try {
@@ -374,15 +371,13 @@ void BasicRealWxController::checkNearbyMetar()
           return;
       }
 
-      SG_LOG(SG_ENVIRONMENT, SG_DEBUG, 
-          "NoaaMetarRealWxController::update(): nearest airport with METAR is: " << nearestAirport->ident() );
+      SG_LOG(SG_ENVIRONMENT, SG_DEBUG,
+             "NoaaMetarRealWxController::update(): nearest airport with METAR is: " << nearestAirport->ident());
 
       // if it has changed, invalidate the associated METAR
       if( _metarProperties[0]->getStationId() != nearestAirport->ident() ) {
-          SG_LOG(SG_ENVIRONMENT, SG_INFO, 
-              "NoaaMetarRealWxController::update(): nearest airport with METAR has changed. Old: '" << 
-              _metarProperties[0]->getStationId() <<
-              "', new: '" << nearestAirport->ident() << "'" );
+          SG_LOG(SG_ENVIRONMENT, SG_INFO,
+                 "NoaaMetarRealWxController::update(): nearest airport with METAR has changed. Old: '" << _metarProperties[0]->getStationId() << "', new: '" << nearestAirport->ident() << "'");
           _metarProperties[0]->setStationId( nearestAirport->ident() );
           _metarProperties[0]->resetTimeToLive();
       }
@@ -436,16 +431,15 @@ void NoaaMetarRealWxController::requestMetar
     public simgear::HTTP::MemoryRequest
   {
     public:
-      NoaaMetarGetRequest( LiveMetarProperties_ptr metarDataHandler,
-                           const std::string& stationId, 
-                           const std::string &base_url):
-        MemoryRequest( simgear::strutils::replace(base_url, "[station]",stationId) ),
-        _metarDataHandler(metarDataHandler)
-      {
-        std::ostringstream buf;
-        buf <<  globals->get_time_params()->get_cur_time();
-        requestHeader("X-TIME") = buf.str();
-      }
+        NoaaMetarGetRequest(LiveMetarProperties_ptr metarDataHandler,
+                            const std::string& stationId,
+                            const std::string& base_url) : MemoryRequest(simgear::strutils::replace(base_url, "[station]", stationId)),
+                                                           _metarDataHandler(metarDataHandler)
+        {
+            std::ostringstream buf;
+            buf << globals->get_time_params()->get_cur_time();
+            requestHeader("X-TIME") = buf.str();
+        }
 
       virtual void onDone()
       {
@@ -503,12 +497,12 @@ SGSubsystemMgr::Registrant<NoaaMetarRealWxController> registrantNoaaMetarRealWxC
 
 
 /* -------------------------------------------------------------------------------- */
-    
+
 RealWxController * RealWxController::createInstance( SGPropertyNode_ptr rootNode )
 {
   return new NoaaMetarRealWxController( rootNode );
 }
-    
+
 RealWxController::~RealWxController()
 {
 }

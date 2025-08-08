@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2002 David Megginson <david@megginson.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include <simgear/math/SGMath.hxx>
 #include <simgear/debug/logstream.hxx>
 
@@ -48,13 +51,14 @@ double P_layer(const double height, const double href,
 // $hh in meters, pressures in Pa.
 // As always, $lambda is positive in the troposphere,
 // and zero in the first part of the stratosphere.
-double T_layer (
-          const double hh, 
-          const double hb, 
-          const double Pb, 
-          const double Tb, 
-          const double lambda) {
-  return Tb - lambda*(hh - hb);
+double T_layer(
+    const double hh,
+    const double hb,
+    const double Pb,
+    const double Tb,
+    const double lambda)
+{
+    return Tb - lambda * (hh - hb);
 }
 
 // Pressure and temperature as a function of height, Psl, and Tsl.
@@ -62,53 +66,52 @@ double T_layer (
 // Daisy chain version.
 // We need "seed" values for sea-level pressure and temperature.
 // In addition, for every layer, we need three things
-//  from the table: the reference height in that layer, 
-//  the lapse in that layer, and the cap (if any) for that layer 
+//  from the table: the reference height in that layer,
+//  the lapse in that layer, and the cap (if any) for that layer
 // (which we take from the /next/ row of the table, if any).
-pair<double,double> PT_vs_hpt(
-      const double hh, 
-      const double _p0,
-      const double _t0
-) {
-  
-  const double d0(0);
-  double hgt = ISA_def[0].height;
-  double p0 =  _p0;
-  double t0 =  _t0;
+pair<double, double> PT_vs_hpt(
+    const double hh,
+    const double _p0,
+    const double _t0)
+{
+    const double d0(0);
+    double hgt = ISA_def[0].height;
+    double p0 = _p0;
+    double t0 = _t0;
 #if 0
     cout << "PT_vs_hpt: " << hh << "   " << p0 << "   " << t0 << endl;
-#endif 
-
-  int ii = 0;
-  for (const ISA_layer* pp = ISA_def; pp->lapse != -1; pp++, ii++) {
-#if 0
-    cout << "PT_vs_hpt: " << ii
-        << "  height: " << pp->height
-        << "  temp: "   << pp->temp
-        << "  lapse: "  << pp->lapse 
-        << endl;
 #endif
-    double xhgt(9e99);
-    double lapse = pp->lapse;
-// Stratosphere starts at a definite temperature,
-// not a definite height:
-    if (ii == 0) {
-      xhgt = hgt + (t0 - (pp+1)->temp) / lapse;
-    } else if ((pp+1)->lapse != -1) {
-      xhgt = (pp+1)->height;      
+
+    int ii = 0;
+    for (const ISA_layer* pp = ISA_def; pp->lapse != -1; pp++, ii++) {
+#if 0
+        cout << "PT_vs_hpt: " << ii
+            << "  height: " << pp->height
+            << "  temp: "   << pp->temp
+            << "  lapse: "  << pp->lapse
+            << endl;
+#endif
+        double xhgt(9e99);
+        double lapse = pp->lapse;
+        // Stratosphere starts at a definite temperature,
+        // not a definite height:
+        if (ii == 0) {
+            xhgt = hgt + (t0 - (pp + 1)->temp) / lapse;
+        } else if ((pp + 1)->lapse != -1) {
+            xhgt = (pp + 1)->height;
+        }
+        if (hh <= xhgt) {
+            return make_pair(P_layer(hh, hgt, p0, t0, lapse),
+                             T_layer(hh, hgt, p0, t0, lapse));
+        }
+        p0 = P_layer(xhgt, hgt, p0, t0, lapse);
+        t0 = t0 - lapse * (xhgt - hgt);
+        hgt = xhgt;
     }
-    if (hh <= xhgt) {
-      return make_pair(P_layer(hh, hgt, p0, t0, lapse),
-                 T_layer(hh, hgt, p0, t0, lapse));
-    }
-    p0 = P_layer(xhgt, hgt, p0, t0, lapse);
-    t0 = t0 - lapse * (xhgt - hgt);
-    hgt = xhgt;
-  }
-  
-// Should never get here.
-  SG_LOG(SG_ENVIRONMENT, SG_ALERT, "PT_vs_hpt: ran out of layers for h=" << hh );
-  return make_pair(d0, d0);
+
+    // Should never get here.
+    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "PT_vs_hpt: ran out of layers for h=" << hh);
+    return make_pair(d0, d0);
 }
 
 
@@ -129,8 +132,9 @@ FGAtmoCache::~FGAtmoCache() {
 // the fact that we don't have an "environment" object for
 // the airport (only for the airplane).
 // degrees C, height in feet
-double FGAtmo::fake_T_vs_a_us(const double h_ft, 
-                const double Tsl) const {
+double FGAtmo::fake_T_vs_a_us(const double h_ft,
+                              const double Tsl) const
+{
     using namespace atmodel;
     return Tsl - ISA::lam0 * h_ft * foot;
 }
@@ -274,7 +278,7 @@ double FGAltimeter::reading_ft(const double p_inHg, const double set_inHg) {
     return (press_alt - kollsman_shift);
 }
 
-// Altimeter setting _in pascals_ 
+// Altimeter setting _in pascals_
 //  ... caller gets to convert to inHg or millibars
 // Field elevation in m
 // Field pressure in pascals
@@ -302,7 +306,7 @@ double FGAtmo::QNH(const double field_elev, const double field_press) {
 
 // Invert the QNH calculation to get the field pressure from a metar
 // report.
-// field pressure _in pascals_ 
+// field pressure _in pascals_
 //  ... caller gets to convert to inHg or millibars
 // Field elevation in m
 // Altimeter setting (QNH) in pascals

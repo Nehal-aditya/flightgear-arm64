@@ -1,14 +1,12 @@
 /*
  * SPDX-FileName: metarproperties.cxx
  * SPDX-FileComment: Parse a METAR and write properties
- * SPDX-FileCopyrightText: Copyright (C) 2002  David Megginson - david@megginson.com
+ * SPDX-FileCopyrightText: 2002 David Megginson <david@megginson.com>
  * SPDX-FileContributor: Rewritten by Torsten Dreyer, August 2010
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <cstring> // for strlen
 
@@ -33,7 +31,7 @@ static std::vector<string> coverage_string;
 
 /**
  * @brief Helper class to wrap SGMagVar functionality and cache the variation and dip for
- *        a certain position. 
+ *        a certain position.
  */
 class MagneticVariation : public SGMagVar {
 public:
@@ -171,9 +169,9 @@ MetarProperties::MetarProperties( SGPropertyNode_ptr rootNode ) :
   _tiedProperties.Tie("decoded", this, &MetarProperties::get_decoded );
   _tiedProperties.Tie("cavok", &_cavok );
   _tiedProperties.Tie("description", this, &MetarProperties::get_description );
-    
-    // mark proeprties as listener-safe, we invoke valueChanged explicitly
-    _tiedProperties.setAttribute(SGPropertyNode::LISTENER_SAFE, true);
+
+  // mark properties as listener-safe, we invoke valueChanged explicitly
+  _tiedProperties.setAttribute(SGPropertyNode::LISTENER_SAFE, true);
 }
 
 MetarProperties::~MetarProperties()
@@ -195,7 +193,7 @@ const char* MetarProperties::get_metar() const
         return "";
     return _metarData.c_str();
 }
-    
+
 void MetarProperties::set_metar( const char * metarString )
 {
     SGSharedPtr<FGMetar> m;
@@ -203,7 +201,7 @@ void MetarProperties::set_metar( const char * metarString )
         setMetar(m);
         return;
     }
-    
+
     std::string trimmedMetar = simgear::strutils::strip(std::string{metarString});
     if (trimmedMetar.empty()) {
         setMetar(m);
@@ -218,10 +216,10 @@ void MetarProperties::set_metar( const char * metarString )
         _metarValidNode->setBoolValue(false);
         return;
     }
-    
+
     setMetar(m);
 }
-    
+
 void MetarProperties::setMetar( SGSharedPtr<FGMetar> m )
 {
     _metar = m;
@@ -230,10 +228,10 @@ void MetarProperties::setMetar( SGSharedPtr<FGMetar> m )
         _metarData.clear();
         return;
     }
-    
-    // copy the string so we have guranteed storage for get_metar tied property API
+
+    // copy the string so we have guaranteed storage for get_metar tied property API
     _metarData = _metar->getDataString();
-    
+
     const std::vector<string> weather = m->getWeather();
     for( std::vector<string>::const_iterator it = weather.begin(); it != weather.end(); ++it ) {
         if( !_decoded.empty() ) _decoded.append(", ");
@@ -316,16 +314,15 @@ void MetarProperties::setMetar( SGSharedPtr<FGMetar> m )
             std::vector<struct SGMetar::Weather> weather = m->getWeather2();
             struct SGMetar::Weather * w = i < weather.size() ? &weather[i] : NULL;
             n->getNode("intensity",true)->setIntValue( w != NULL ? w->intensity : 0 );
-            n->getNode("vincinity",true)->setBoolValue( w != NULL ? w->vincinity : false );
-            for( unsigned j = 0; j < 3; j++ ) { 
-
+            n->getNode("vincinity", true)->setBoolValue(w != NULL ? w->vincinity : false); // codespell:ignore vincinity
+            for (unsigned j = 0; j < 3; j++) {
                 const string & phenomenon = w != NULL && j < w->phenomena.size() ? w->phenomena[j].c_str() : "";
                 n->getChild( "phenomenon", j, true )->setStringValue( phenomenon );
 
                 const string & description = w != NULL && j < w->descriptions.size() ? w->descriptions[j].c_str() : "";
                 n->getChild( "description", j, true )->setStringValue( description );
 
-                // need to know later, 
+                // need to know later,
                 // if its fog(FG) (might be shallow(MI) or patches(BC)) or haze (HZ) or mist(BR)
                 if( phenomenon == "FG" ) isFG = true;
                 if( phenomenon == "HZ" ) isHZ = true;
@@ -364,14 +361,10 @@ void MetarProperties::setMetar( SGSharedPtr<FGMetar> m )
             double alpha = 1.0;
 
             if( isFG ) { // fog
-                coverage = SGMetarCloud::getCoverage( isBC ? 
-                    fgGetString( "/environment/params/fog-mist-haze-layer/fog-bc-2dlayer-coverage", SGMetarCloud::COVERAGE_SCATTERED_STRING ) :
-                    fgGetString( "/environment/params/fog-mist-haze-layer/fog-2dlayer-coverage", SGMetarCloud::COVERAGE_BROKEN_STRING )
-                );
+                coverage = SGMetarCloud::getCoverage(isBC ? fgGetString("/environment/params/fog-mist-haze-layer/fog-bc-2dlayer-coverage", SGMetarCloud::COVERAGE_SCATTERED_STRING) : fgGetString("/environment/params/fog-mist-haze-layer/fog-2dlayer-coverage", SGMetarCloud::COVERAGE_BROKEN_STRING));
 
-                thickness = isMI ? 
-                   fgGetDouble("/environment/params/fog-mist-haze-layer/fog-shallow-thickness-ft",30) - LAYER_BOTTOM_STATION_OFFSET : // shallow fog, 10m/30ft
-                   fgGetDouble("/environment/params/fog-mist-haze-layer/fog-thickness-ft",500) - LAYER_BOTTOM_STATION_OFFSET; // fog, 150m/500ft
+                thickness = isMI ? fgGetDouble("/environment/params/fog-mist-haze-layer/fog-shallow-thickness-ft", 30) - LAYER_BOTTOM_STATION_OFFSET : // shallow fog, 10m/30ft
+                                fgGetDouble("/environment/params/fog-mist-haze-layer/fog-thickness-ft", 500) - LAYER_BOTTOM_STATION_OFFSET;            // fog, 150m/500ft
                 alpha =  fgGetDouble("/environment/params/fog-mist-haze-layer/fog-2dlayer-alpha", 1.0);
             } else if( isBR ) { // mist
                 coverage = SGMetarCloud::getCoverage(fgGetString("/environment/params/fog-mist-haze-layer/mist-2dlayer-coverage", SGMetarCloud::COVERAGE_OVERCAST_STRING));
@@ -399,10 +392,10 @@ void MetarProperties::setMetar( SGSharedPtr<FGMetar> m )
                 _min_visibility = _max_visibility =
                   fgGetDouble("/environment/params/fog-mist-haze-layer/visibility-above-layer-m",20000.0); // assume good visibility above the fog
                 layerOffset = 1;  // shudder
-                
+
                 coverageBelow = coverage;
             }
-        } 
+        }
 
         for( unsigned i = 0; i < 5-layerOffset; i++ ) {
             SGPropertyNode_ptr layerNode = cloudsNode->getChild(LAYER, i+layerOffset, true );
@@ -412,16 +405,14 @@ void MetarProperties::setMetar( SGSharedPtr<FGMetar> m )
             } else {
                 coverageBelow = coverage; // valid coverage, save for future layers
             }
-            
+
             if (coverage == SGMetarCloud::COVERAGE_NIL) {
                 SG_LOG(SG_ENVIRONMENT, SG_WARN, "METAR: skipping cloud layer " << i << " because no coverage is set");
                 continue;
             }
-            
-            double elevation = 
-                i >= metarClouds.size() || coverage == SGMetarCloud::COVERAGE_CLEAR ? 
-                -9999.0 : 
-                metarClouds[i].getAltitude_ft() + _station_elevation;
+
+            double elevation =
+                i >= metarClouds.size() || coverage == SGMetarCloud::COVERAGE_CLEAR ? -9999.0 : metarClouds[i].getAltitude_ft() + _station_elevation;
 
             layerNode->setDoubleValue( "alpha", 1.0 );
             layerNode->setStringValue( "coverage", coverage_string[coverage] );
@@ -447,11 +438,11 @@ void MetarProperties::setMetar( SGSharedPtr<FGMetar> m )
 }
 
 void MetarProperties::setStationId( const std::string & value )
-{ 
+{
     set_station_id(simgear::strutils::strip(value).c_str());
 }
 
-double MetarProperties::get_magnetic_variation_deg() const 
+double MetarProperties::get_magnetic_variation_deg() const
 {
   return _magneticVariation->get_variation_deg( _station_longitude, _station_latitude, _station_elevation );
 }
@@ -464,8 +455,8 @@ double MetarProperties::get_magnetic_dip_deg() const
 static inline void calc_wind_hs( double north_fps, double east_fps, int & heading_deg, double & speed_kt )
 {
     speed_kt = sqrt((north_fps)*(north_fps)+(east_fps)*(east_fps)) * 3600.0 / (SG_NM_TO_METER * SG_METER_TO_FEET);
-    heading_deg = SGMiscd::roundToInt( 
-        SGMiscd::normalizeAngle2( atan2( east_fps, north_fps ) ) * SGD_RADIANS_TO_DEGREES );
+    heading_deg = SGMiscd::roundToInt(
+        SGMiscd::normalizeAngle2(atan2(east_fps, north_fps)) * SGD_RADIANS_TO_DEGREES);
 }
 
 void MetarProperties::set_wind_from_north_fps( double value )

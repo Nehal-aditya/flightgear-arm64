@@ -3,25 +3,10 @@
 // Written by David Megginson, started May 2002.
 // Rewritten by Torsten Dreyer, August 2010
 //
-// Copyright (C) 2002  David Megginson - david@megginson.com
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+// SPDX-FileCopyrightText: 2002 David Megginson <david@megginson.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifndef __METARPROPERTIES_HXX
-#define __METARPROPERTIES_HXX
+#pragma once
 
 #include <Airports/airport.hxx>
 #include <simgear/props/props.hxx>
@@ -49,7 +34,7 @@ public:
 private:
     const char * get_metar() const;
     void set_metar( const char * metar );
-    
+
     const char * get_station_id() const { return _station_id.c_str(); }
     void set_station_id( const char * value );
     const char * get_decoded() const { return _decoded.c_str(); }
@@ -68,9 +53,9 @@ private:
     SGSharedPtr<FGMetar> _metar;
     SGPropertyNode_ptr _rootNode;
     SGPropertyNode_ptr _metarValidNode;
-    
+
     std::string _metarData;
-    
+
     std::string _station_id;
     double _station_elevation;
     double _station_latitude;
@@ -107,9 +92,8 @@ protected:
 };
 
 inline void MetarProperties::set_station_id( const char * value )
-{ 
-    _station_id = value; 
+{
+    _station_id = value;
 }
 
-} // namespace
-#endif // __METARPROPERTIES_HXX
+} // namespace Environment
