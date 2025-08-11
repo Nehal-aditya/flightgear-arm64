@@ -1,10 +1,9 @@
 // model-mgr.hxx - manage user-specified 3D models.
 // Written by David Megginson, started 2002.
-//
-// This file is in the Public Domain, and comes with no warranty.
+// SPDX-FileCopyrightText: (C) David Megginson, 2002
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifndef __MODELMGR_HXX
-#define __MODELMGR_HXX 1
+#pragma once
 
 #include <vector>
 #include <memory>
@@ -41,8 +40,9 @@ public:
      */
     struct Instance
     {
-        virtual ~Instance ();
-        SGModelPlacement * model = nullptr;
+        ~Instance();
+
+        std::unique_ptr<SGModelPlacement> model;
         SGPropertyNode_ptr node;
         SGPropertyNode_ptr lon_deg_node;
         SGPropertyNode_ptr lat_deg_node;
@@ -51,7 +51,6 @@ public:
         SGPropertyNode_ptr pitch_deg_node;
         SGPropertyNode_ptr heading_deg_node;
         SGPropertyNode_ptr loaded_node;
-        bool shadow = false;
 
         bool checkLoaded() const;
     };
@@ -65,11 +64,20 @@ public:
     void shutdown() override;
     void unbind() override;
     void update(double dt) override;
+    void reinit() override;
 
     // Subsystem identification.
     static const char* staticSubsystemClassId() { return "model-manager"; }
 
-    virtual void add_model (SGPropertyNode * node);
+    void add_model(SGPropertyNode* node);
+
+    /**
+     * @brief remove a model based on its path, eg `/models/model[42]
+     *
+     * @param nodePath absolute path to the model node, eg /models/model[9]
+     * @return true if removing worked, or false if the model was not found
+     */
+    bool removeModelByNodePath(const std::string& nodePath);
 
     /**
      * Add an instance of a dynamic model to the manager.
@@ -81,7 +89,7 @@ public:
      * location and orientation of the model based on the current
      * values of the properties.
      */
-    virtual void add_instance (Instance * instance);
+    void add_instance(Instance* instance);
 
 
     /**
@@ -89,10 +97,10 @@ public:
      *
      * NOTE: the manager will delete the instance as well.
      */
-    virtual void remove_instance (Instance * instance);
+    void remove_instance(Instance* instance);
 
 
-     /**
+    /**
      * Finds an instance in the model manager from a given node path in the property tree.
      * A possible path could be "models/model[0]"
      *
@@ -120,5 +128,3 @@ private:
 
     std::vector<Instance *> _instances;
 };
-
-#endif // __MODELMGR_HXX

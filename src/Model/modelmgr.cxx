@@ -2,16 +2,15 @@
  * SPDX-FileName: modelmgr.cxx
  * SPDX-FileComment: manage a collection of 3D models
  * SPDX-FileCopyrightText: Written by David Megginson, started 2002.
- * SPDX-License-Identifier: This file is in the Public Domain, and comes with no warranty.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
+#include "Main/globals.hxx"
 #ifdef _MSC_VER
 #  pragma warning( disable: 4355 )
 #endif
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <simgear/compiler.h>
 
@@ -43,7 +42,7 @@ public:
     CheckInstanceModelLoadedVisitor() :
         osg::NodeVisitor(osg::NodeVisitor::NODE_VISITOR, osg::NodeVisitor::TRAVERSE_ALL_CHILDREN)
     {}
-    
+
     ~CheckInstanceModelLoadedVisitor() = default;
 
     void apply(osg::Node& node) override
@@ -52,7 +51,7 @@ public:
             return;
         traverse(node);
     }
-    
+
     void apply(osg::ProxyNode& node) override
     {
         if (!_loaded)
@@ -61,7 +60,7 @@ public:
         for (unsigned i = 0; i < node.getNumFileNames(); ++i) {
             if (node.getFileName(i).empty())
                 continue;
-            
+
             // Check if this is already loaded.
             if (i < node.getNumChildren() && node.getChild(i))
                 continue;
@@ -83,38 +82,34 @@ private:
 
 } // of anonymous namespace
 
-FGModelMgr::FGModelMgr ()
-{
-}
+FGModelMgr::FGModelMgr() = default;
 
-FGModelMgr::~FGModelMgr ()
-{
-}
+
+FGModelMgr::~FGModelMgr() = default;
 
 void
 FGModelMgr::init ()
 {
-    std::vector<SGPropertyNode_ptr> model_nodes = _models->getChildren("model");
+    auto model_nodes = _models->getChildren("model");
 
-  for (unsigned int i = 0; i < model_nodes.size(); i++)
-      add_model(model_nodes[i]);
+    for (auto m : model_nodes) {
+        add_model(m);
+    }
+}
+
+void FGModelMgr::reinit()
+{
+    shutdown();
+    init();
 }
 
 void FGModelMgr::shutdown()
 {
-    osg::Group *scene_graph = NULL;
-    if (globals->get_scenery()) {
-        scene_graph = globals->get_scenery()->get_scene_graph();
+    for (auto ins : _instances) {
+        delete ins;
     }
 
-    // always delete instances, even if the scene-graph is gone
-    for (unsigned int i = 0; i < _instances.size(); i++) {
-        if (scene_graph) {
-            scene_graph->removeChild(_instances[i]->model->getSceneGraph());
-        }
-
-        delete _instances[i];
-    }
+    _instances.clear();
 }
 
 void
@@ -127,13 +122,13 @@ FGModelMgr::add_model (SGPropertyNode * node)
     }
 
     const std::string internal_model{node->getStringValue("internal-model", "external")};
- 
+
   osg::Node *object;
 
   Instance * instance = new Instance;
   instance->loaded_node = node->addChild("loaded");
   instance->loaded_node->setBoolValue(false);
-    
+
   if (internal_model == "marker") {
     std::string label{node->getStringValue("marker/text", "MARKER")};
     float r = node->getFloatValue("marker/color[0]", 1.0f);
@@ -167,8 +162,8 @@ FGModelMgr::add_model (SGPropertyNode * node)
   const std::string modelName{node->getStringValue("name", model_path.c_str())};
   SG_LOG(SG_AIRCRAFT, SG_INFO, "Adding model " << modelName);
 
-  SGModelPlacement *model = new SGModelPlacement;
-  instance->model = model;
+  instance->model.reset(new SGModelPlacement);
+  SGModelPlacement* model = instance->model.get();
   instance->node = node;
 
   model->init( object );
@@ -264,11 +259,11 @@ double testNan(double val)
 void FGModelMgr::update(double dt)
 {
     std::for_each(_instances.begin(), _instances.end(), [](FGModelMgr::Instance* instance) {
-        SGModelPlacement* model = instance->model;
+        auto model = instance->model.get();
         double roll, pitch, heading;
         roll = pitch = heading = 0.0;
         SGGeod pos = model->getPosition();
-        
+
         try {
             // Optionally set position from properties
             if (instance->lon_deg_node != 0)
@@ -277,7 +272,7 @@ void FGModelMgr::update(double dt)
                 pos.setLatitudeDeg(testNan(instance->lat_deg_node->getDoubleValue()));
             if (instance->elev_ft_node != 0)
                 pos.setElevationFt(testNan(instance->elev_ft_node->getDoubleValue()));
-            
+
             // Optionally set orientation from properties
             if (instance->roll_deg_node != 0)
                 roll = testNan(instance->roll_deg_node->getDoubleValue());
@@ -315,14 +310,22 @@ FGModelMgr::add_instance (Instance * instance)
 void
 FGModelMgr::remove_instance (Instance * instance)
 {
-    std::vector<Instance *>::iterator it;
-    for (it = _instances.begin(); it != _instances.end(); it++) {
-        if (*it == instance) {
-            _instances.erase(it);
-            delete instance;
-            return;
-        }
+    auto it = std::find(_instances.begin(), _instances.end(), instance);
+    if (it != _instances.end()) {
+        _instances.erase(it);
+        delete instance;
     }
+}
+
+bool FGModelMgr::removeModelByNodePath(const std::string& nodePath)
+{
+    auto ins = findInstanceByNodePath(nodePath);
+    if (!ins) {
+        return false;
+    }
+
+    remove_instance(ins);
+    return true;
 }
 
 FGModelMgr::Instance*
@@ -334,15 +337,15 @@ FGModelMgr::findInstanceByNodePath(const std::string& node_path) const
     SGPropertyNode* node = fgGetNode(node_path, false);
     if (!node)
         return nullptr;
-    
+
     auto it = std::find_if(_instances.begin(), _instances.end(),
                            [node](const Instance* instance)
     { return instance->node == node; });
-    
+
     if (it == _instances.end()) {
         return nullptr;
     }
-    
+
     return *it;
 }
 
@@ -352,22 +355,26 @@ FGModelMgr::findInstanceByNodePath(const std::string& node_path) const
 
 FGModelMgr::Instance::~Instance ()
 {
-    delete model;
+    auto modelSubgraph = model->getSceneGraph();
+    auto scenerySubgraph = globals->get_scenery() ? globals->get_scenery()->get_scene_graph() : nullptr;
+    if (modelSubgraph && scenerySubgraph) {
+        scenerySubgraph->removeChild(modelSubgraph);
+    }
 }
 
 bool FGModelMgr::Instance::checkLoaded() const
 {
     if (!model)
         return false;
-    
+
     if (loaded_node->getBoolValue()) {
         return true;
     }
-    
+
     CheckInstanceModelLoadedVisitor cilv;
     model->getSceneGraph()->accept(cilv);
     const bool loadedNow = cilv.isLoaded();
-    
+
     if (loadedNow) {
         loaded_node->setBoolValue(true);
     }
@@ -393,28 +400,7 @@ FGModelMgr::Listener::childRemoved(SGPropertyNode * parent, SGPropertyNode * chi
   if (parent->getNameString() != "models" || child->getNameString() != "model")
     return;
 
-  // search instance by node and remove it from scenegraph
-  std::vector<Instance *>::iterator it = _mgr->_instances.begin();
-  std::vector<Instance *>::iterator end = _mgr->_instances.end();
-
-  for (; it != end; ++it) {
-    Instance *instance = *it;
-    if (instance->node != child)
-      continue;
-
-    _mgr->_instances.erase(it);
-    osg::Node *branch = instance->model->getSceneGraph();
-    // OSGFIXME
-//     if (shadows && instance->shadow)
-//         shadows->deleteOccluder(branch);
-
-      if (globals->get_scenery() && globals->get_scenery()->get_scene_graph()) {
-          globals->get_scenery()->get_scene_graph()->removeChild(branch);
-      }
-
-    delete instance;
-    break;
-  }
+  _mgr->removeModelByNodePath(child->getPath());
 }
 
 
