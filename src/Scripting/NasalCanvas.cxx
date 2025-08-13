@@ -7,6 +7,7 @@
 
 
 #include "config.h"
+#include "simgear/canvas/elements/CanvasImage.hxx"
 
 #include "NasalCanvas.hxx"
 #include <Canvas/canvas_mgr.hxx>
@@ -29,6 +30,7 @@
 #include <simgear/canvas/events/MouseEvent.hxx>
 #include <simgear/canvas/layout/BoxLayout.hxx>
 #include <simgear/canvas/layout/GridLayout.hxx>
+#include <simgear/canvas/layout/ImageLayoutItem.hxx>
 #include <simgear/canvas/layout/NasalWidget.hxx>
 #include <simgear/canvas/layout/SpacerItem.hxx>
 
@@ -70,6 +72,7 @@ typedef nasal::Ghost<sc::LayoutRef> NasalLayout;
 typedef nasal::Ghost<sc::BoxLayoutRef> NasalBoxLayout;
 typedef nasal::Ghost<sc::GridLayoutRef> NasalGridLayout;
 using NasalSpacerItem = nasal::Ghost<sc::SpacerItemRef>;
+using NasalImageLayoutItem = nasal::Ghost<sc::ImageLayoutItemRef>;
 
 typedef nasal::Ghost<sc::WindowPtr> NasalWindow;
 
@@ -444,6 +447,15 @@ static naRef f_imageSetPixel(sc::Image& img, const nasal::CallContext& ctx)
     return naNil();
 }
 
+static naRef f_setSourceCanvas(sc::Image& img, const nasal::CallContext& ctx)
+{
+    const auto c = ctx.requireArg<sc::CanvasPtr>(0);
+
+    img.setSrcCanvas(c);
+
+    return naNil();
+}
+
 static naRef f_canvasImageSize(sc::Image& img, const nasal::CallContext& ctx)
 {
     auto osgImage = img.getImage();
@@ -481,6 +493,13 @@ static naRef f_newGridLayout(const nasal::CallContext& ctx)
 static naRef f_newSpacerItem(const nasal::CallContext& ctx)
 {
     return ctx.to_nasal(new sc::SpacerItem);
+}
+
+static naRef f_newImageLayoutItem(const nasal::CallContext& ctx)
+{
+    using ImageRef = SGSharedPtr<sc::Image>;
+    auto img = ctx.requireArg<ImageRef>(0);
+    return ctx.to_nasal(new sc::ImageLayoutItem{img});
 }
 
 static naRef f_keyBindingAddBinding(sc::KeyBinding& keyBinding, const nasal::CallContext& ctx)
@@ -623,7 +642,8 @@ naRef initNasalCanvas(naRef globals, naContext c)
       .method("fillRect", &f_imageFillRect)
       .method("setPixel", &f_imageSetPixel)
       .method("dirtyPixels", &sc::Image::dirtyPixels)
-      .method("imageSize", &f_canvasImageSize);
+      .method("imageSize", &f_canvasImageSize)
+      .method("setSourceCanvas", &f_setSourceCanvas);
 
   //----------------------------------------------------------------------------
   // Layouting
@@ -695,6 +715,13 @@ naRef initNasalCanvas(naRef globals, naContext c)
     NasalSpacerItem::init("canvas.SpacerItem")
         .bases<NasalLayoutItem>();
 
+    NasalImageLayoutItem::init("canvas.ImageLayoutItem")
+        .bases<NasalLayoutItem>()
+        .member("resizeCanvas", &sc::ImageLayoutItem::setResizeCanvas)
+        .method("setSizeHint", &sc::ImageLayoutItem::setSizeHint)
+        .method("setMinimumSize", &sc::ImageLayoutItem::setMinimumSize)
+        .method("setMaximumSize", &sc::ImageLayoutItem::setMaximumSize);
+
     canvas_module.createHash("HBoxLayout")
                  .set("new", &f_newAsBase<sc::HBoxLayout, sc::BoxLayout>);
     canvas_module.createHash("VBoxLayout")
@@ -703,6 +730,8 @@ naRef initNasalCanvas(naRef globals, naContext c)
                  .set("new", &f_newGridLayout);
     canvas_module.createHash("Spacer")
                  .set("new", &f_newSpacerItem);
+    canvas_module.createHash("ImageLayoutItem")
+        .set("new", &f_newImageLayoutItem);
 
     canvas_module.set("MAX_SIZE", sc::LayoutItem::MAX_SIZE.x());
 

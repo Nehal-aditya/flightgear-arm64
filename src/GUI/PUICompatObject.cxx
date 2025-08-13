@@ -1,8 +1,9 @@
 // PUICompatObject.cxx - XML dialog object without using PUI
-// Copyright (C) 2022 James Turner
+// SPDX-FileCopyrightText: 2022 James Turner
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
+#include "simgear/debug/debug_types.h"
 
 #include "PUICompatObject.hxx"
 
@@ -48,7 +49,7 @@ PUICompatObject::~PUICompatObject()
 
 naRef f_makeCompatObjectPeer(const nasal::CallContext& ctx)
 {
-    return ctx.to_nasal(SGSharedPtr<PUICompatObject>(
+    return ctx.to_nasal(PUICompatObjectRef(
         new PUICompatObject(ctx.requireArg<naRef>(0), ctx.requireArg<std::string>(1))));
 }
 
@@ -98,7 +99,7 @@ static naRef f_translateWithMaybePlural(const PUICompatObject& widget,
 
 void PUICompatObject::setupGhost(nasal::Hash& compatModule)
 {
-    using NasalGUIObject = nasal::Ghost<SGSharedPtr<PUICompatObject>>;
+    using NasalGUIObject = nasal::Ghost<PUICompatObjectRef>;
     NasalGUIObject::init("gui.xml.CompatObject")
         .bases<nasal::ObjectRef>()
         .member("config", &PUICompatObject::config)
@@ -201,7 +202,7 @@ void PUICompatObject::init()
         }
     }
 
-    // parse version 2 featrues
+    // parse version 2 features
     if (uiVersion >= 2) {
         if (_type == "radio") {
             auto g = _config->getStringValue("radio-group");
@@ -235,6 +236,7 @@ void PUICompatObject::init()
         }
     }
 
+
     // children
     int nChildren = _config->nChildren();
     for (int i = 0; i < nChildren; i++) {
@@ -261,6 +263,7 @@ void PUICompatObject::init()
     callMethod<void>("postinit");
 }
 
+
 std::string PUICompatObject::radioGroupIdent() const
 {
     const auto uiVersion = dialog()->uiVersion();
@@ -284,7 +287,7 @@ bool PUICompatObject::isNodeAChildObject(const std::string& nm, int uiVersion)
         "text", "input", "radio",
         "combo", "textbox", "select",
         "hrule", "vrule", "group", "frame",
-        "checkbox"};
+        "checkbox", "canvas"};
 
     if (uiVersion >= 2) {
         typeNames.push_back("standard-button");
@@ -321,7 +324,7 @@ void PUICompatObject::update()
 
     if (_value) {
         if (_live == LiveValueMode::Polled) {
-            // this is a bit heavy, especailly for double-valued numerical
+            // this is a bit heavy, especially for double-valued numerical
             // properties. Lets's see how it goes.
             const auto nv = _value->getStringValue();
             if (nv != _oldPolledValue) {
@@ -354,7 +357,7 @@ void PUICompatObject::updateValue()
         _oldPolledValue = nv;
     }
 
-    // we don't call update here(), it will hapen next cycle.
+    // we don't call update here(), it will happen next cycle.
 }
 
 void PUICompatObject::apply()
@@ -369,7 +372,7 @@ naRef PUICompatObject::property() const
 {
     if (!_value)
         return naNil();
-    
+
     auto nas = globals->get_subsystem<FGNasalSys>();
     return nas->wrappedPropsNode(_value.get());
 }
@@ -390,11 +393,11 @@ naRef PUICompatObject::nasalGetConfigValue(const nasal::CallContext ctx) const
 {
     auto name = ctx.requireArg<std::string>(0);
     naRef defaultVal = ctx.getArg(1, naNil());
-    SGPropertyNode_ptr nd = _config->getChild(name);
-    if (!nd || !nd->hasValue())
+    SGPropertyNode_ptr n = _config->getChild(name);
+    if (!n || !n->hasValue())
         return defaultVal;
-    
-    return FGNasalSys::getPropertyValue(ctx.c_ctx(), nd.get());
+
+    return FGNasalSys::getPropertyValue(ctx.c_ctx(), n.get());
 }
 
 void PUICompatObject::valueChanged(SGPropertyNode* node)
@@ -510,7 +513,7 @@ const std::string& PUICompatObject::type() const
 void PUICompatObject::setVisible(bool v)
 {
     if (_visibleCondition) {
-        SG_LOG(SG_GUI, SG_DEV_ALERT, "Trying to set visiblity on widget with visible condition already defined");
+        SG_LOG(SG_GUI, SG_DEV_ALERT, "Trying to set visibility on widget with visible condition already defined");
         return;
     }
 

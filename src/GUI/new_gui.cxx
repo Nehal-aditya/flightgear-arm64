@@ -1,6 +1,7 @@
 /*
  * SPDX-FileName: new_gui.cxx
  * SPDX-FileComment: implementation of XML-configurable GUI support.
+ * SPDX-FileCopyrightText: 2002 David Megginson
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -37,6 +38,7 @@
 #include "FGWindowsMenuBar.hxx"
 #endif
 
+#include "CanvasWidget.hxx"
 #include "FGNasalMenuBar.hxx"
 #include "FGPUICompatDialog.hxx"
 #include "PUICompatObject.hxx"
@@ -118,14 +120,14 @@ NewGUI::init ()
     createMenuBarImplementation();
     fgTie("/sim/menubar/visibility", this,
           &NewGUI::getMenuBarVisible, &NewGUI::setMenuBarVisible);
-    
+
     fgTie("/sim/menubar/overlap-hide", this,
           &NewGUI::getMenuBarOverlapHide, &NewGUI::setMenuBarOverlapHide);
 
     setStyle();
     SGPath p(globals->get_fg_root(), "gui/dialogs");
     readDir(p, "core");
-    
+
     if (fgGetBool("/sim/gui/startup") == false) {
         SGPath aircraftDialogDir(fgGetString("/sim/aircraft-dir"), "gui/dialogs");
         if (aircraftDialogDir.exists()) {
@@ -261,6 +263,7 @@ void NewGUI::postinit()
 
     FGPUICompatDialog::setupGhost(compatModule);
     PUICompatObject::setupGhost(compatModule);
+    CanvasWidget::setupGhost(compatModule);
     FGNasalMenuBar::setupGhosts(compatModule);
 
     if (_menubar) {
@@ -531,16 +534,16 @@ NewGUI::readDir (const SGPath& path, const std::string& translationDomain)
           std::vector<std::string> property_paths;
           findAllLeafValues(props, "property", property_paths);
           for (auto property_path: property_paths) {
-            // We could maybe hoist this test for hightlight to avoid reaching
-            // here if it is null, but that's difficult to test, so we do it
-            // here instead.
-            if (highlight) {
-              highlight->addPropertyDialog(property_path, name);
-            }
+              // We could maybe hoist this test for highlight to avoid reaching
+              // here if it is null, but that's difficult to test, so we do it
+              // here instead.
+              if (highlight) {
+                  highlight->addPropertyDialog(property_path, name);
+              }
           }
         }
       }
-        
+
       if (!cache->isCachedFileModified(xmlPath)) {
         // cached, easy
         string name = cache->readStringProperty(xmlPath.utf8Str());
@@ -594,7 +597,7 @@ NewGUI::setStyle (void)
 
     //puSetDefaultStyle();
 
-    
+
     if (0) {
         // Re-read gui/style/*.xml files so that one can edit them and see the
         // results without restarting flightgear.
@@ -610,13 +613,13 @@ NewGUI::setStyle (void)
             i += 1;
         }
     }
-    
+
     int which = fgGetInt("/sim/gui/current-style", 0);
     SGPropertyNode *sim = globals->get_props()->getNode("sim/gui", true);
     SGPropertyNode *n = sim->getChild("style", which);
     if (!n)
         n = sim->getChild("style", 0, true);
-    
+
     SGPropertyNode *selected_style = globals->get_props()->getNode("sim/gui/selected-style", true);
 
     // n->copy() doesn't delete existing nodes, so need to clear them all

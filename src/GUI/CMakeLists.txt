@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2010 James Turner <james@flightgear.org>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 include(FlightGearComponent)
 
 set(SOURCES
@@ -13,6 +16,7 @@ set(SOURCES
     FGPUICompatDialog.cxx
     PUICompatObject.cxx
     FGNasalMenuBar.cxx
+    CanvasWidget.cxx
 )
 
 set(HEADERS
@@ -28,6 +32,7 @@ set(HEADERS
     FGPUICompatDialog.hxx
     PUICompatObject.hxx
     FGNasalMenuBar.hxx
+    CanvasWidget.hxx
 )
 
 if(WIN32)
@@ -54,7 +59,7 @@ endif()
 if (HAVE_QT)
     if (QT_VERSION_MAJOR EQUAL "5")
       message(STATUS "Using Qt5 version of the macros")
-      # Qt < 5.15 
+      # Qt < 5.15
       qt5_wrap_ui(uic_sources SetupRootDialog.ui
         InstallSceneryDialog.ui
         )
@@ -143,22 +148,22 @@ if (HAVE_QT)
                             ${qml_sources})
 
     set_property(TARGET fglauncher PROPERTY AUTOMOC ON)
-    target_include_directories(fglauncher PRIVATE ${PROJECT_BINARY_DIR}/src/GUI 
+    target_include_directories(fglauncher PRIVATE ${PROJECT_BINARY_DIR}/src/GUI
       ${CMAKE_CURRENT_SOURCE_DIR})
 
     # we include WindowBuilder.h which needs this
     target_include_directories(fglauncher PRIVATE ${OPENSCENEGRAPH_INCLUDE_DIRS})
 
-    target_link_libraries(fglauncher 
-        Qt${QT_VERSION_MAJOR}::Core 
-        Qt${QT_VERSION_MAJOR}::Widgets 
-        Qt${QT_VERSION_MAJOR}::Network 
-        Qt${QT_VERSION_MAJOR}::Qml 
-        Qt${QT_VERSION_MAJOR}::Quick 
-        Qt${QT_VERSION_MAJOR}::Svg 
+    target_link_libraries(fglauncher
+        Qt${QT_VERSION_MAJOR}::Core
+        Qt${QT_VERSION_MAJOR}::Widgets
+        Qt${QT_VERSION_MAJOR}::Network
+        Qt${QT_VERSION_MAJOR}::Qml
+        Qt${QT_VERSION_MAJOR}::Quick
+        Qt${QT_VERSION_MAJOR}::Svg
         SimGearCore)
 
-    add_library(fgqmlui 
+    add_library(fgqmlui
                         PropertyItemModel.cxx
                         PropertyItemModel.hxx
                         FGQmlInstance.cxx
@@ -218,16 +223,16 @@ if (HAVE_QT)
                         )
 
     set_property(TARGET fgqmlui PROPERTY AUTOMOC ON)
-    target_link_libraries(fgqmlui 
-        Qt${QT_VERSION_MAJOR}::Widgets 
-        Qt${QT_VERSION_MAJOR}::Network 
-        Qt${QT_VERSION_MAJOR}::Qml 
-        Qt${QT_VERSION_MAJOR}::Quick 
-        Qt${QT_VERSION_MAJOR}::Svg 
+    target_link_libraries(fgqmlui
+        Qt${QT_VERSION_MAJOR}::Widgets
+        Qt${QT_VERSION_MAJOR}::Network
+        Qt${QT_VERSION_MAJOR}::Qml
+        Qt${QT_VERSION_MAJOR}::Quick
+        Qt${QT_VERSION_MAJOR}::Svg
         SimGearCore)
 
     target_include_directories(fgqmlui PRIVATE ${PROJECT_BINARY_DIR}/src/GUI ${OPENSCENEGRAPH_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
-    
+
     if (TARGET fgfs_qm_files)
       add_dependencies(fglauncher fgfs_qm_files)
       add_dependencies(fgqmlui fgfs_qm_files)
@@ -240,13 +245,13 @@ flightgear_component(GUI "${SOURCES}" "${HEADERS}")
 
 if (APPLE)
     # PCH doesn't work for Objective-C++
-    set_property(SOURCE 
-          ${CMAKE_CURRENT_SOURCE_DIR}/FGCocoaMenuBar.mm 
-          ${CMAKE_CURRENT_SOURCE_DIR}/CocoaFileDialog.mm 
-          ${CMAKE_CURRENT_SOURCE_DIR}/CocoaMouseCursor.mm 
+    set_property(SOURCE
+          ${CMAKE_CURRENT_SOURCE_DIR}/FGCocoaMenuBar.mm
+          ${CMAKE_CURRENT_SOURCE_DIR}/CocoaFileDialog.mm
+          ${CMAKE_CURRENT_SOURCE_DIR}/CocoaMouseCursor.mm
           ${CMAKE_CURRENT_SOURCE_DIR}/CocoaHelpers.mm
         TARGET_DIRECTORY fgfsObjects
-        PROPERTY 
+        PROPERTY
           SKIP_PRECOMPILE_HEADERS ON)
 
 endif()

@@ -1,9 +1,10 @@
 // PUICompatDialog.hxx - XML dialog object without using PUI
-// Copyright (C) 2022 James Turner
+// SPDX-FileCopyrightText: 2022 James Turner
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
 
+#include "simgear/structure/SGSharedPtr.hxx"
 #include <simgear/math/SGMath.hxx>
 #include <simgear/nasal/cppbind/NasalHash.hxx>
 #include <simgear/nasal/cppbind/NasalObject.hxx>
@@ -39,10 +40,10 @@ public:
     virtual void updateValue();
 
     naRef config() const;
-    
+
     /// return the wrapped props,Node corresponding to our property
     naRef property() const;
-    
+
     /// return the actual Nasal value of our property: this avoids the need to
     /// create a the property ghost and props.Node wrapper in common cases
     naRef propertyValue(naContext ctx) const;
@@ -79,10 +80,10 @@ public:
     void setEnabled(bool e);
 
     /**
-     * @brief find an object (which might be us, or a descendant) with the 
+     * @brief find an object (which might be us, or a descendant) with the
      * corresponding name, or nullptr.
-     * 
-     * @param name 
+     *
+     * @param name
      */
     PUICompatObjectRef widgetByName(const std::string& name) const;
 
@@ -102,18 +103,18 @@ public:
             return node ? node->getValue<T>() : T();
         }
 
-    /**
+        /**
      * @brief return the radio group ID associated with this widget
      (which is presumably a radio-button)
-     * 
+     *
      * @return std::string the radio-group ID, or an empty string
      */
-    std::string radioGroupIdent() const;
+        std::string radioGroupIdent() const;
 
-    bool isLive() const
-    {
-        return _live != LiveValueMode::OnApply;
-    }
+        bool isLive() const
+        {
+            return _live != LiveValueMode::OnApply;
+        }
 
     bool hasBindings() const;
 
@@ -127,7 +128,7 @@ public:
     /**
      * @brief Translate a string which may or may not have plural forms
      *
-     * @param cardinalNumber  an integer correponding to a number of
+     * @param cardinalNumber  an integer corresponding to a number of
      *                        “things” (concrete or abstract)
      * @param key             basic ID of the translatable string (it is
      *                        subject to strutils::strip())
@@ -155,9 +156,11 @@ protected:
 
     void valueChanged(SGPropertyNode* node) override;
 
-    // emporary solution to decide which SGPropertyNode children of an
+    // temporary solution to decide which SGPropertyNode children of an
     // object, are children
     static bool isNodeAChildObject(const std::string& nm, int uiVersion);
+
+    SGPropertyNode_ptr _config;
 
 private:
     enum class LiveValueMode {
@@ -180,7 +183,7 @@ private:
     void recursiveOnDelete();
 
     void doActivate();
-    
+
     nasal::Hash gridLocation(const nasal::CallContext& ctx) const;
 
     SGWeakPtr<PUICompatObject> _parent;
@@ -188,7 +191,6 @@ private:
 
     PUICompatObjectVec _children; // owning references to children
 
-    SGPropertyNode_ptr _config;
 
     std::string _type;
     std::string _label;
