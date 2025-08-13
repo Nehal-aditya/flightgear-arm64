@@ -2,25 +2,10 @@
 //
 // Written by Adrian Musceac YO8RZZ, started August 2011.
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2011 Adrian Musceac YO8RZZ
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once
-
-#ifndef __cplusplus
-# error This library requires C++
-#endif
 
 #include <simgear/compiler.h>
 #include <simgear/structure/subsystem_mgr.hxx>
@@ -32,58 +17,57 @@
 #include "antenna.hxx"
 
 
-class FGRadioTransmission 
+class FGRadioTransmission
 {
 private:
-	
-	double _receiver_sensitivity;
-	double _transmitter_power;
-	double _tx_antenna_height;
-	double _rx_antenna_height;
-	double _rx_antenna_gain;
-	double _tx_antenna_gain;
-	double _rx_line_losses;
-	double _tx_line_losses;
-	
-	double _terrain_sampling_distance;
-	int _polarization;
-	std::map<std::string, double[2]> _mat_database;
-	SGPropertyNode *_root_node;
-	int _propagation_model; /// 0 none, 1 round Earth, 2 ITM
-	double polarization_loss();
-	
-	
-/***  Implement radio attenuation		
+    double _receiver_sensitivity;
+    double _transmitter_power;
+    double _tx_antenna_height;
+    double _rx_antenna_height;
+    double _rx_antenna_gain;
+    double _tx_antenna_gain;
+    double _rx_line_losses;
+    double _tx_line_losses;
+
+    double _terrain_sampling_distance;
+    int _polarization;
+    std::map<std::string, double[2]> _mat_database;
+    SGPropertyNode* _root_node;
+    int _propagation_model; /// 0 none, 1 round Earth, 2 ITM
+    double polarization_loss();
+
+
+    /***  Implement radio attenuation
 *	  based on the Longley-Rice propagation model
 *	ground_to_air: 0 for air to ground 1 for ground to air, 2 for air to air, 3 for pilot to ground, 4 for pilot to air
 *	@param: transmitter position, frequency, flag to indicate if the transmission is from a ground station
-*	@return: signal level above receiver treshhold sensitivity
+*	@return: signal level above receiver threshold sensitivity
 ***/
-	double ITM_calculate_attenuation(SGGeod tx_pos, double freq, int ground_to_air);
-	
-/*** a simple alternative LOS propagation model (WIP)
+    double ITM_calculate_attenuation(SGGeod tx_pos, double freq, int ground_to_air);
+
+    /*** a simple alternative LOS propagation model (WIP)
 *	@param: transmitter position, frequency, flag to indicate if the transmission is from a ground station
-*	@return: signal level above receiver treshhold sensitivity
+*	@return: signal level above receiver threshold sensitivity
 ***/
-	double LOS_calculate_attenuation(SGGeod tx_pos, double freq, int ground_to_air);
-	
-/*** Calculate losses due to vegetation and urban clutter (WIP)
-*	 We are only worried about clutter loss, terrain influence 
+    double LOS_calculate_attenuation(SGGeod tx_pos, double freq, int ground_to_air);
+
+    /*** Calculate losses due to vegetation and urban clutter (WIP)
+*	 We are only worried about clutter loss, terrain influence
 *	 on the first Fresnel zone is calculated in the ITM functions
 *	@param: frequency, elevation data, terrain type, horizon distances, calculated loss
 *	@return: none
 ***/
-	void calculate_clutter_loss(double freq, double itm_elev[], std::deque<std::string*> &materials,
-			double transmitter_height, double receiver_height, int p_mode,
-			double horizons[], double &clutter_loss);
-	
-/*** 	Temporary material properties database
+    void calculate_clutter_loss(double freq, double itm_elev[], std::deque<std::string*>& materials,
+                                double transmitter_height, double receiver_height, int p_mode,
+                                double horizons[], double& clutter_loss);
+
+    /*** 	Temporary material properties database
 *		@param: terrain type, median clutter height, radiowave attenuation factor
 *		@return: none
 ***/
-	void get_material_properties(std::string* mat_name, double &height, double &density);
-	
-	
+    void get_material_properties(std::string* mat_name, double& height, double& density);
+
+
 public:
 
     FGRadioTransmission();
@@ -104,37 +88,37 @@ public:
     inline void setRxLineLosses(double rx_line_losses) { _rx_line_losses = rx_line_losses; };
     inline void setPropagationModel(int model) { _propagation_model = model; };
     inline void setPolarization(int polarization) { _polarization = polarization; };
-    
+
     /// static convenience functions for unit conversions
     static double watt_to_dbm(double power_watt);
     static double dbm_to_watt(double dbm);
     static double dbm_to_microvolt(double dbm);
-    
-    
+
+
 /*** Receive ATC radio communication as text
 *	transmission_type: 0 for air to ground 1 for ground to air, 2 for air to air, 3 for pilot to ground, 4 for pilot to air
 *	@param: transmitter position, frequency, ATC text, flag to indicate whether the transmission comes from an ATC groundstation
 *	@return: none
 ***/
     void receiveATC(SGGeod tx_pos, double freq, std::string text, int transmission_type);
-    
+
 /*** TODO: receive multiplayer chat message and voice
 *	@param: transmitter position, frequency, ATC text, flag to indicate whether the transmission comes from an ATC groundstation
 *	@return: none
 ***/
     void receiveChat(SGGeod tx_pos, double freq, std::string text, int transmission_type);
-    
-/*** TODO: receive navaid 
-*	@param: transmitter position, frequency, flag 
-*	@return: signal level above receiver treshhold sensitivity
+
+    /*** TODO: receive navaid
+*	@param: transmitter position, frequency, flag
+*	@return: signal level above receiver threshold sensitivity
 ***/
     double receiveNav(SGGeod tx_pos, double freq, int transmission_type);
-    
-/*** Call this function to receive an arbitrary signal
+
+    /*** Call this function to receive an arbitrary signal
 *	for instance via the Nasal radioTransmission() function
-*	returns the signal value above receiver sensitivity treshhold
-*	@param: transmitter position, object heading in degrees (for antenna), object pitch angle in degrees 
-*	@return: signal level above receiver treshhold sensitivity
+*	returns the signal value above receiver sensitivity threshold
+*	@param: transmitter position, object heading in degrees (for antenna), object pitch angle in degrees
+*	@return: signal level above receiver threshold sensitivity
 ***/
     double receiveBeacon(SGGeod &tx_pos, double heading, double pitch);
 };
