@@ -3,31 +3,14 @@
 // Started by David Megginson, October 2001
 // (Reuses some code from main.cxx, probably by Curtis Olson)
 //
-// Copyright (C) 2001  Curtis L. Olson - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2001 David Megginson
 
 #ifdef _MSC_VER
 #pragma warning (disable: 4786)
 #endif
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include "fg_fx.hxx"
 
@@ -76,7 +59,7 @@ FGFX::FGFX ( const std::string &refname, SGPropertyNode *props ) :
       return;
     }
     _active = _smgr->is_active();
-  
+
     _refname = refname;
     _smgr->add(this, refname);
 
@@ -84,7 +67,7 @@ FGFX::FGFX ( const std::string &refname, SGPropertyNode *props ) :
     {
         _avionics = _smgr->find("avionics", true);
         _avionics->tie_to_listener();
-        
+
         _atc = _smgr->find("atc", true);
         _atc->tie_to_listener();
     }
@@ -113,7 +96,7 @@ FGFX::init()
     if (!_smgr) {
         return;
     }
-  
+
     SGPropertyNode *node = _props->getNode("sim/sound", true);
 
     std::string path_str = node->getStringValue("path");
@@ -121,7 +104,7 @@ FGFX::init()
         SG_LOG(SG_SOUND, SG_ALERT, "No path in sim/sound/path");
         return;
     }
-    
+
     SGPath path = globals->resolve_aircraft_path(path_str);
     if (path.isNull())
     {
@@ -147,7 +130,7 @@ FGFX::init()
     if(node) {
         for (int i = 0; i < node->nChildren(); ++i) {
             std::unique_ptr<SGXmlSound> soundfx{new SGXmlSound};
-  
+
             try {
                 bool ok = soundfx->init( _props, node->getChild(i), this, _avionics,
                                path.dir() );
@@ -191,7 +174,7 @@ FGFX::update (double dt)
         }
     }
 
-      
+
     if ( _enabled->getBoolValue() ) {
         if ( _avionics)
         {
@@ -204,7 +187,7 @@ FGFX::update (double dt)
             else
                 _avionics->suspend();
         }
-        
+
         if ( _atc)
         {
             const bool e = _atc_enabled->getBoolValue();

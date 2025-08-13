@@ -1,31 +1,11 @@
-// soundgenerator.hxx -- simple sound generation 
+// soundgenerator.hxx -- simple sound generation
 //
 // Written by Curtis Olson, started March 2001.
 //
-// Copyright (C) 2001  Curtis L. Olson - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2001 Curtis L. Olson
 
-
-#ifndef _FGSOUNDGENERATOR_HXX
-#define _FGSOUNDGENERATOR_HXX
-
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#pragma once
 
 class FGSoundGenerator {
 
@@ -54,14 +34,10 @@ protected:
     *        with silence.
     * @param trans_len length of ramp up and ramp down to avoid audio "pop"
     */
-    static void make_tone( unsigned char *buf, int freq, 
-        int len, int total_len, int trans_len );
+    static void make_tone(unsigned char* buf, int freq,
+                          int len, int total_len, int trans_len);
 
 public:
 
     virtual ~FGSoundGenerator();
 };
-
-
-
-#endif // _FGSOUNDGENERATOR_HXX

@@ -2,31 +2,14 @@
 //
 // Written by Jean-Yves Lefort, started September 2005.
 //
-// Copyright (C) 2005, 2006  Jean-Yves Lefort - jylefort@FreeBSD.org
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-///////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2005 Jean-Yves Lefort <jylefort@FreeBSD.org>
 
 #ifdef _MSC_VER
 #  pragma warning( disable: 4355 )
 #endif
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include "voiceplayer.hxx"
 
@@ -250,7 +233,7 @@ FGVoicePlayer::get_sample (const char *name)
     {
         string filename = dir_prefix + string(name) + ".wav";
         sample = new SGSoundSample(filename.c_str(), SGPath());
-        
+
         _sgr->add(sample, refname);
         samples[refname] = sample;
     }
@@ -345,4 +328,3 @@ FGVoicePlayer::append (Voice *voice, const char *sample_name)
 {
   voice->append(new Voice::SampleElement(get_sample(sample_name)));
 }
-

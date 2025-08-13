@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: soundmanager.cxx
  * SPDX-FileComment: Wraps the SimGear OpenAl sound manager class
- * SPDX-FileCopyrightText: Copyright (C) 2001  Curtis L. Olson - http://www.flightgear.org/~curt
+ * SPDX-FileCopyrightText: 2001 Curtis L. Olson
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 

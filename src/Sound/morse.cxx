@@ -2,22 +2,8 @@
 //
 // Written by Curtis Olson, started March 2001.
 //
-// Copyright (C) 2001  Curtis L. Olson - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2001 Curtis L. Olson
 
 
 #include <simgear/constants.h>
@@ -37,32 +23,32 @@ static const char DAH = '2';
 static const char END = '0';
 
 static const char alphabet[26][4] = {
-    { DI, DAH, END, END },	/* A */ 
-    { DA, DI, DI, DIT },	/* B */ 
-    { DA, DI, DA, DIT },	/* C */ 
-    { DA, DI, DIT, END },	/* D */ 
-    { DIT, END, END, END },	/* E */ 
-    { DI, DI, DA, DIT },	/* F */ 
-    { DA, DA, DIT, END },	/* G */ 
-    { DI, DI, DI, DIT },	/* H */ 
-    { DI, DIT, END, END },	/* I */ 
-    { DI, DA, DA, DAH },	/* J */ 
-    { DA, DI, DAH, END },	/* K */ 
-    { DI, DA, DI, DIT },	/* L */ 
-    { DA, DAH, END, END },	/* M */ 
-    { DA, DIT, END, END },	/* N */ 
-    { DA, DA, DAH, END },	/* O */ 
-    { DI, DA, DA, DIT },	/* P */ 
-    { DA, DA, DI, DAH },	/* Q */ 
-    { DI, DA, DIT, END },	/* R */ 
-    { DI, DI, DIT, END },	/* S */ 
-    { DAH, END, END, END },	/* T */ 
-    { DI, DI, DAH, END },	/* U */ 
-    { DI, DI, DI, DAH },	/* V */ 
-    { DI, DA, DAH, END },	/* W */ 
-    { DA, DI, DI, DAH },	/* X */ 
-    { DA, DI, DA, DAH },	/* Y */ 
-    { DA, DA, DI, DIT }		/* Z */ 
+    {DI, DAH, END, END},  /* A */
+    {DA, DI, DI, DIT},    /* B */
+    {DA, DI, DA, DIT},    /* C */
+    {DA, DI, DIT, END},   /* D */
+    {DIT, END, END, END}, /* E */
+    {DI, DI, DA, DIT},    /* F */
+    {DA, DA, DIT, END},   /* G */
+    {DI, DI, DI, DIT},    /* H */
+    {DI, DIT, END, END},  /* I */
+    {DI, DA, DA, DAH},    /* J */
+    {DA, DI, DAH, END},   /* K */
+    {DI, DA, DI, DIT},    /* L */
+    {DA, DAH, END, END},  /* M */
+    {DA, DIT, END, END},  /* N */
+    {DA, DA, DAH, END},   /* O */
+    {DI, DA, DA, DIT},    /* P */
+    {DA, DA, DI, DAH},    /* Q */
+    {DI, DA, DIT, END},   /* R */
+    {DI, DI, DIT, END},   /* S */
+    {DAH, END, END, END}, /* T */
+    {DI, DI, DAH, END},   /* U */
+    {DI, DI, DI, DAH},    /* V */
+    {DI, DA, DAH, END},   /* W */
+    {DA, DI, DI, DAH},    /* X */
+    {DA, DI, DA, DAH},    /* Y */
+    {DA, DA, DI, DIT}     /* Z */
 };
 
 static const char numerals[10][5] = {

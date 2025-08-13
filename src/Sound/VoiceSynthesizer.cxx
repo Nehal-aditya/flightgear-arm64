@@ -1,20 +1,7 @@
 /*
  * VoiceSynthesizer.cxx - wraps flite+hts_engine
- * Copyright (C) 2014  Torsten Dreyer - torsten (at) t3r (dot) de
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: 2014 Torsten Dreyer
  */
 
 #include <utility>
@@ -121,7 +108,7 @@ SGSoundSample * FLITEVoiceSynthesizer::synthesize(const std::string & text, doub
   HTS_Engine_set_speed( &_engine->engine, 0.8 + 0.4 * speed );
   HTS_Engine_add_half_tone(&_engine->engine, -4.0 + 8.0 * pitch );
 
-    
+
   void* data;
   int rate, count;
   if ( FALSE == Flite_HTS_Engine_synthesize_samples_mono16(_engine, text.c_str(), &data, &count, &rate)) return NULL;
@@ -135,4 +122,3 @@ SGSoundSample * FLITEVoiceSynthesizer::synthesize(const std::string & text, doub
                            rate,
                            SG_SAMPLE_MONO16);
 }
-

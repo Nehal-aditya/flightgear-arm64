@@ -2,25 +2,10 @@
 //
 // Written by Jean-Yves Lefort, started September 2005.
 //
-// Copyright (C) 2005, 2006  Jean-Yves Lefort - jylefort@FreeBSD.org
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2005 Jean-Yves Lefort <jylefort@FreeBSD.org>
 
-
-#ifndef __SOUND_VOICEPLAYER_HXX
-#define __SOUND_VOICEPLAYER_HXX
+#pragma once
 
 #include <assert.h>
 
@@ -80,7 +65,7 @@ public:
         else
       return false;
       }
-      virtual SGRawValue<VT> *clone () const 
+      virtual SGRawValue<VT>* clone() const
       {
         return new RawValueMethodsData<C,VT,DT>(_obj, _data, _getter, _setter);
       }
@@ -91,7 +76,7 @@ public:
       getter_t    _getter;
       setter_t    _setter;
     };
-    
+
     class PropertiesHandler : public simgear::TiedPropertyList
     {
     public:
@@ -150,7 +135,7 @@ public:
 
     public:
         SampleElement (SGSharedPtr<SGSoundSample> sample, float volume = 1.0);
-      
+
         virtual void play (float volume);
         virtual void stop ();
         virtual bool is_playing ();
@@ -222,7 +207,7 @@ public:
   std::string dir_prefix;
 
   FGVoicePlayer (PropertiesHandler* properties_handler, std::string _dev_name);
-  
+
   virtual ~FGVoicePlayer ();
 
   void init ();
@@ -324,5 +309,3 @@ protected:
   template <class T1, class T2, class T3, class T4>
   inline void make_voice (Voice **voice, T1 e1, T2 e2, T3 e3, T4 e4) { make_voice(voice, e1, e2, e3); append(*voice, e4); }
 };
-
-#endif // __SOUND_VOICEPLAYER_HXX

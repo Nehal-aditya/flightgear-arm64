@@ -4,25 +4,10 @@
 
 // Written by Curtis Olson, started March 2001.
 //
-// Copyright (C) 2001  Curtis L. Olson - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2001 Curtis L. Olson
 
-#ifndef _BEACON_HXX
-#define _BEACON_HXX
+#pragma once
 
 #include <array>
 
@@ -35,33 +20,33 @@
 
 // Quoting from http://www.smartregs.com/data/sa326.htm
 // Smart REGS Glossary - marker beacon
-// 
+//
 // An electronic navigation facility transmitting a 75 MHz vertical fan
 // or boneshaped radiation pattern.  Marker beacons are identified by
 // their modulation frequency and keying code, and when received by
 // compatible airborne equipment, indicate to the pilot, both aurally
 // and visually, that he is passing over the facility.
 // (See outer marker middle marker inner marker.)
-// 
+//
 // Smart REGS Glossary - outer marker
-// 
+//
 // A marker beacon at or near the glideslope intercept altitude of an
 // ILS approach.  It is keyed to transmit two dashes per second on a
 // 400 Hz tone, which is received aurally and visually by compatible
 // airborne equipment.  The OM is normally located four to seven miles from
 // the runway threshold on the extended centerline of the runway.
-// 
+//
 // Smart REGS Glossary - middle marker
-// 
+//
 // A marker beacon that defines a point along the glideslope of an
 // ILS normally located at or near the point of decision height
 // (ILS Category I).  It is keyed to transmit alternate dots and dashes,
 // with the alternate dots and dashes keyed at the rate of 95 dot/dash
 // combinations per minute on a 1300 Hz tone, which is received
 // aurally and visually by compatible airborne equipment.
-// 
+//
 // Smart REGS Glossary - inner marker
-// 
+//
 // A marker beacon used with an ILS (CAT II) precision approach located
 // between the middle marker and the end of the ILS runway,
 // transmitting a radiation pattern keyed at six dots per second and
@@ -115,9 +100,3 @@ public:
     BeaconTiming getTimingForMiddle() const;
     BeaconTiming getTimingForOuter() const;
 };
-
-
-
-#endif // _BEACON_HXX
-
-

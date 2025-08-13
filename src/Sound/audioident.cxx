@@ -2,22 +2,10 @@
 //
 // Written by Torsten Dreyer, September 2011
 //
-// Copyright (C) 2001  Curtis L. Olson - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2011 Torsten Dreyer
+
+#include <config.h>
 
 #include "audioident.hxx"
 #include <simgear/sg_inlines.h>
@@ -40,7 +28,7 @@ void AudioIdent::init()
     auto soundManager = globals->get_subsystem<SGSoundMgr>();
     if (!soundManager)
         return; // sound disabled
-    
+
     _timer = 0.0;
     _ident = "";
     _running = false;
@@ -59,7 +47,7 @@ void AudioIdent::start()
 {
     if (!_sgr)
         return;
-    
+
     _timer = _interval;
     _sgr->play_once(_fx_name);
     _running = true;
@@ -69,7 +57,7 @@ void AudioIdent::setVolumeNorm( double volumeNorm )
 {
     if (!_sgr)
         return;
-    
+
     SG_CLAMP_RANGE(volumeNorm, 0.0, 1.0);
     SGSoundSample *sound = _sgr->find( _fx_name );
     if ( sound != NULL ) {
@@ -81,7 +69,7 @@ void AudioIdent::setIdent( const std::string & ident, double volumeNorm )
 {
     if (!_sgr)
         return;
-    
+
     // Signal may flicker very frequently (due to our realistic newnavradio...).
     // Avoid recreating identical sound samples all the time, instead turn off
     // volume when signal is lost, and save the most recent sample.
@@ -89,8 +77,7 @@ void AudioIdent::setIdent( const std::string & ident, double volumeNorm )
         volumeNorm = 0;
 
     // don't bother with sounds when volume is OFF anyway...
-    if ((_ident == ident ) || (volumeNorm == 0)) 
-    {
+    if ((_ident == ident) || (volumeNorm == 0)) {
         if (!_ident.empty())
             setVolumeNorm(volumeNorm);
         return;
@@ -124,7 +111,7 @@ void AudioIdent::setIdent( const std::string & ident, double volumeNorm )
 void AudioIdent::update( double dt )
 {
     // single-shot
-    if( !_running || _interval < SGLimitsd::min() ) 
+    if (!_running || _interval < SGLimitsd::min())
         return;
 
     _timer -= dt;

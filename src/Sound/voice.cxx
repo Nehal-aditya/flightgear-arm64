@@ -1,13 +1,11 @@
 /*
  * SPDX-FileName: voice.cxx
  * SPDX-FileComment: speech synthesis interface subsystem
- * SPDX-FileCopyrightText: Copyright (C) 2006  Melchior FRANZ - mfranz@aon.at
+ * SPDX-FileCopyrightText: 2006  Melchior FRANZ
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
 #include <Main/globals.hxx>
 #include <sstream>
