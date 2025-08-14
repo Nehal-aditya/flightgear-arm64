@@ -20,6 +20,13 @@
 
 #include "CocoaFileDialog.hxx"
 
+// Apple
+#include <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+
+#include "GUI/FileDialog.hxx"
+#include "simgear/debug/debug_types.h"
+#include "simgear/math/sg_types.hxx"
+
 #include <AppKit/NSSavePanel.h>
 #include <AppKit/NSOpenPanel.h>
 
@@ -42,18 +49,29 @@ static SGPath completion_sgpath;
 class CocoaFileDialog::CocoaFileDialogPrivate
 {
 public:
-    CocoaFileDialogPrivate() :
-        panel(nil)
-    {
+  CocoaFileDialogPrivate() = default;
 
+  ~CocoaFileDialogPrivate() { [panel release]; }
+
+  NSSavePanel *panel = nil;
+
+  NSArray<UTType *> *buildContentTypes(const string_list &patterns) {
+    // important that we return an empty array (and not `nil`) if
+    // patterns is empty, since that corresponds to 'all types allowed'
+    auto *types = [[NSMutableArray<UTType *> new] autorelease];
+    for (auto p : patterns) {
+      if (!simgear::strutils::starts_with(p, "*.")) {
+        SG_LOG(SG_GUI, SG_ALERT, "can't use pattern on Cocoa:" << p);
+        continue;
+      }
+
+      auto cocoaFileExtension = stdStringToCocoa(p.substr(2));
+      auto *utType = [UTType typeWithFilenameExtension:cocoaFileExtension];
+      [types addObject:utType];
     }
 
-    ~CocoaFileDialogPrivate()
-    {
-        [panel release];
-    }
-
-    NSSavePanel* panel;
+    return types;
+  }
 };
 
 CocoaFileDialog::CocoaFileDialog(FGFileDialog::Usage use) :
@@ -105,37 +123,27 @@ void CocoaFileDialog::exec()
         [d->panel setNameFieldStringValue:stdStringToCocoa(_placeholder)];
     }
 
-    if (_filterPatterns.empty()) {
-        [d->panel setAllowedFileTypes:nil];
-    } else {
-        NSMutableArray* extensions = [NSMutableArray arrayWithCapacity:0];
-        for (const auto& ext : _filterPatterns) {
-            if (!simgear::strutils::starts_with(ext, "*.")) {
-                SG_LOG(SG_GENERAL, SG_INFO, "can't use pattern on Cococa:" << ext);
-                continue;
-            }
-            [extensions addObject:stdStringToCocoa(ext.substr(2))];
-        }
-
-        [d->panel setAllowedFileTypes:extensions];
-    }
-
+    // if _filterPatterns is empty, we want an empty content types array to
+    // indicate 'any file type' as per the NSSavePanel docs
+    [d->panel setAllowedContentTypes:d->buildContentTypes(_filterPatterns)];
     [d->panel setTitle:stdStringToCocoa(_title)];
+
     if (_showHidden) {
         [d->panel setShowsHiddenFiles:YES];
     }
 
     [d->panel setDirectoryURL: pathToNSURL(_initialPath)];
 
-    [d->panel beginSheetModalForWindow:cocoaWindow completionHandler:^(NSInteger result)
-    {
-        if (result == NSFileHandlingPanelOKButton) {
-            completion_path = [[d->panel URL] path];
-            //NSLog(@"the URL is: %@", d->panel URL]);
-            completion_sgpath = SGPath::fromUtf8([completion_path UTF8String]);
-            _callback->onFileDialogDone(this, completion_sgpath);
-        }
-    }];
+    [d->panel beginSheetModalForWindow:cocoaWindow
+                     completionHandler:^(NSInteger result) {
+                       if (result == NSModalResponseOK) {
+                         completion_path = [[d->panel URL] path];
+                         // NSLog(@"the URL is: %@", d->panel URL]);
+                         completion_sgpath =
+                             SGPath::fromUtf8([completion_path UTF8String]);
+                         _callback->onFileDialogDone(this, completion_sgpath);
+                       }
+                     }];
 }
 
 void CocoaFileDialog::close()
