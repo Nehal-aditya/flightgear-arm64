@@ -29,7 +29,7 @@ function(_check_candidate_msvc_path pathToCheck)
         NO_DEFAULT_PATH
     )
 
-    find_path(_zlibDll bin/zlib.dll
+    find_path(_zlibDll bin/zlib1.dll
         PATHS 
             ${pathToCheck}
         PATH_SUFFIXES
