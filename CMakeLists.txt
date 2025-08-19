@@ -12,13 +12,6 @@ include (CheckIncludeFileCXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# OpenGL VND policy : we need to use NEW, so we will set
-# OpenGL_GL_PREFERENCE to LEGACY
-if(POLICY CMP0072)
-    cmake_policy(SET CMP0072 NEW)
-    set(OpenGL_GL_PREFERENCE "LEGACY") # using libGL.so
-endif()
-
 if(POLICY CMP0145)
   cmake_policy(SET CMP0145 NEW)
 endif()
