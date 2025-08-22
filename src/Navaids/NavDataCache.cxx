@@ -728,7 +728,7 @@ public:
   {
     sqlite3_bind_int64(loadAirportStmt, 1, rowId);
     execSelect1(loadAirportStmt);
-    SGPath sceneryPath{(char *) sqlite3_column_text(loadAirportStmt, 0)};
+    SGPath sceneryPath = SGPath::fromUtf8((char*)sqlite3_column_text(loadAirportStmt, 0));
     bool hasMetar = (sqlite3_column_int(loadAirportStmt, 1) > 0);
     reset(loadAirportStmt);
 

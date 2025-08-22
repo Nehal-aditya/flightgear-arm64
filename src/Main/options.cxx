@@ -1423,7 +1423,7 @@ fgOptLivery( const char *arg )
 static int
 fgOptScenario( const char *arg )
 {
-    SGPath path(arg);
+    SGPath path = SGPath::fromLocal8Bit(arg);
     std::string name(arg);
     if (path.exists()) {
         if (path.isRelative()) {

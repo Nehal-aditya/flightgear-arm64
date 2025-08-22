@@ -282,7 +282,7 @@ static string fgScanForOption( const string& option ) {
     // Next check home directory for .fgfsrc.hostname file
     if ( arg.empty() ) {
         if ( homedir != NULL ) {
-            SGPath config( homedir );
+            SGPath config(std::string{homedir});
             config.append( ".fgfsrc" );
             config.concat( "." );
             config.concat( hostname );
@@ -294,7 +294,7 @@ static string fgScanForOption( const string& option ) {
     // Next check home directory for .fgfsrc file
     if ( arg.empty() ) {
         if ( homedir != NULL ) {
-            SGPath config( homedir );
+            SGPath config = SGPath::fromEnv(homedir);
             config.append( ".fgfsrc" );
             arg = fgScanForOption( option, config );
         }

@@ -1115,7 +1115,7 @@ static naRef f_createFlightplan(naContext c, naRef me, int argc, naRef* args)
     flightgear::FlightPlanRef fp(asRoute ? FlightPlan::createRoute() : FlightPlan::create());
 
     if ((argc > 0) && naIsString(args[0])) {
-        SGPath path(naStr_data(args[0]));
+        SGPath path = SGPath::fromUtf8(naStr_data(args[0]));
         if (!path.exists()) {
             std::string pdata = path.utf8Str();
             naRuntimeError(c, "createFlightplan, no file at path %s", pdata.c_str());
@@ -1347,7 +1347,6 @@ static WayptRef wayptFromArg(naRef arg)
     if (!pos) {
         // let's check if the arg is hash, could extract a geod and hence build
         // a simple waypoint
-
         return WayptRef();
     }
 
@@ -1927,7 +1926,7 @@ static naRef f_flightplan_save(naContext c, naRef me, int argc, naRef* args)
         naRuntimeError(c, "flightplan.save, no file path argument");
     }
 
-    const SGPath raw_path(naStr_data(args[0]));
+    const SGPath raw_path = SGPath::fromUtf8(naStr_data(args[0]));
     const SGPath validated_path = SGPath(raw_path).validate(true);
     if (validated_path.isNull()) {
         naRuntimeError(c, "flightplan.save, writing to path is not permitted");

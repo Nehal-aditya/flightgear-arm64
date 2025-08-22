@@ -95,7 +95,7 @@ flightgear::filterExponential(double current, double target, double timeratio)
  */
 void fgInitAllowedPaths()
 {
-    if(SGPath("ygjmyfvhhnvdoesnotexist").realpath().utf8Str() == "ygjmyfvhhnvdoesnotexist"){
+    if (SGPath::fromUtf8("ygjmyfvhhnvdoesnotexist").realpath().utf8Str() == "ygjmyfvhhnvdoesnotexist") {
         // Abort in case this is used with older versions of realpath()
         // that don't normalize non-existent files, as that would be a security
         // hole.

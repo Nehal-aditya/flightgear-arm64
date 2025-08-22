@@ -2,31 +2,13 @@
 //
 // Written by Curtis Olson, started January 2002.
 //
-// Copyright (C) 2002  Curtis L. Olson - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-FileCopyrightText: (C) 2002  Curtis L. Olson - http://www.flightgear.org/~curt
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 
-#ifndef _FG_ATC_MAIN_HXX
-#define _FG_ATC_MAIN_HXX
+#pragma once
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <simgear/misc/sg_path.hxx>
 
@@ -54,16 +36,10 @@ class FGATCMain : public FGProtocol {
     int lock1_fd;
 
 public:
-
-    FGATCMain() :
-        input0(NULL),
-        input1(NULL),
-        output0(NULL),
-        output1(NULL),
-        input0_path(""),
-        input1_path(""),
-        output0_path(""),
-        output1_path("")
+    FGATCMain() : input0(nullptr),
+                  input1(nullptr),
+                  output0(nullptr),
+                  output1(nullptr)
     { }
 
     ~FGATCMain() {
@@ -91,6 +67,3 @@ public:
         output1_path = out1;
     }
 };
-
-
-#endif // _FG_ATC_MAIN_HXX

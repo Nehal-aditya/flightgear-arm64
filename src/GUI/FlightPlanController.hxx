@@ -1,5 +1,7 @@
-#ifndef FLIGHTPLANCONTROLLER_HXX
-#define FLIGHTPLANCONTROLLER_HXX
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2018 James Turner <james@flightgear.org>
+
+#pragma once
 
 #include <memory>
 
@@ -50,7 +52,7 @@ class FlightPlanController : public QObject
     Q_PROPERTY(LegsModel* legs READ legs CONSTANT)
 
     Q_PROPERTY(QString icaoRoute READ icaoRoute NOTIFY waypointsChanged)
-    
+
     Q_ENUMS(FlightRules)
     Q_ENUMS(FlightType)
 
@@ -136,7 +138,7 @@ public:
 signals:
     void infoChanged();
     void waypointsChanged();
-    
+
     void enabledChanged(bool enabled);
     void descriptionChanged(QString description);
 
@@ -156,7 +158,7 @@ public slots:
     void setCruiseSpeed(QuantityValue cruiseSpeed);
 
     void setEstimatedDurationMinutes(int mins);
-    
+
     void computeDuration();
 
     void clearPlan();
@@ -165,7 +167,7 @@ private slots:
     void onCollectConfig();
     void onSave();
     void onRestore();
-    
+
 private:
     friend class FPDelegate;
 
@@ -175,5 +177,3 @@ private:
     LaunchConfig* _config = nullptr;
     bool _enabled = false;
 };
-
-#endif // FLIGHTPLANCONTROLLER_HXX

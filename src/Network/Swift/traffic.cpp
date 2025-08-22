@@ -85,7 +85,7 @@ DBusHandlerResult CTraffic::dbusMessageHandler(const CDBusMessage& message_)
         }
     } else if (message.getInterfaceName() == k_fgswiftbus_traffic_interfacename) {
         if (message.getMethodName() == "acquireMultiplayerPlanes") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 std::string owner;
                 bool acquired = true;
                 CDBusMessage reply = CDBusMessage::createReply(sender, serial);
@@ -98,7 +98,7 @@ DBusHandlerResult CTraffic::dbusMessageHandler(const CDBusMessage& message_)
             sendDBusReply(sender, serial, initialize());
         } else if (message.getMethodName() == "cleanup") {
             maybeSendEmptyDBusReply(wantsReply, sender, serial);
-            queueDBusCall([=]() {
+            queueDBusCall([this]() {
                 cleanup();
             });
         } else if (message.getMethodName() == "addPlane") {
@@ -115,7 +115,7 @@ DBusHandlerResult CTraffic::dbusMessageHandler(const CDBusMessage& message_)
             message.getArgument(airlineIcao);
             message.getArgument(livery);
 
-            queueDBusCall([=]() {
+            queueDBusCall([this, callsign, modelName]() {
                 if (acm->addPlane(callsign, modelName)) {
                     emitPlaneAdded(callsign);
                 }
@@ -125,12 +125,12 @@ DBusHandlerResult CTraffic::dbusMessageHandler(const CDBusMessage& message_)
             std::string callsign;
             message.beginArgumentRead();
             message.getArgument(callsign);
-            queueDBusCall([=]() {
+            queueDBusCall([this, callsign]() {
                 acm->removePlane(callsign);
             });
         } else if (message.getMethodName() == "removeAllPlanes") {
             maybeSendEmptyDBusReply(wantsReply, sender, serial);
-            queueDBusCall([=]() {
+            queueDBusCall([this]() {
                 acm->removeAllPlanes();
             });
         } else if (message.getMethodName() == "setPlanesPositions") {
@@ -154,7 +154,7 @@ DBusHandlerResult CTraffic::dbusMessageHandler(const CDBusMessage& message_)
             message.getArgument(headings);
             message.getArgument(groundspeeds);
             message.getArgument(onGrounds);
-            queueDBusCall([=]() {
+            queueDBusCall([=, this]() {
                 std::vector<SwiftPlaneUpdate> updates;
                 for (long unsigned int i = 0; i < latitudes.size(); i++) {
                     SGGeod pos;
@@ -170,7 +170,7 @@ DBusHandlerResult CTraffic::dbusMessageHandler(const CDBusMessage& message_)
             std::vector<std::string> requestedcallsigns;
             message.beginArgumentRead();
             message.getArgument(requestedcallsigns);
-            queueDBusCall([=]() {
+            queueDBusCall([this, requestedcallsigns, sender, serial]() {
                 std::vector<std::string> callsigns = requestedcallsigns;
                 std::vector<double> latitudesDeg;
                 std::vector<double> longitudesDeg;
@@ -196,11 +196,12 @@ DBusHandlerResult CTraffic::dbusMessageHandler(const CDBusMessage& message_)
             message.getArgument(latitudeDeg);
             message.getArgument(longitudeDeg);
             message.getArgument(altitudeMeters);
-            queueDBusCall([=]() {
-                SGGeod pos;
-                pos.setLatitudeDeg(latitudeDeg);
-                pos.setLongitudeDeg(longitudeDeg);
-                pos.setElevationM(altitudeMeters);
+
+            SGGeod pos;
+            pos.setLatitudeDeg(latitudeDeg);
+            pos.setLongitudeDeg(longitudeDeg);
+            pos.setElevationM(altitudeMeters);
+            queueDBusCall([this, pos, callsign, sender, serial]() {
                 double elevation = acm->getElevationAtPosition(callsign, pos);
                 CDBusMessage reply = CDBusMessage::createReply(sender, serial);
                 reply.beginArgumentWrite();
@@ -224,7 +225,7 @@ DBusHandlerResult CTraffic::dbusMessageHandler(const CDBusMessage& message_)
             for (long unsigned int i = 0; i < callsigns.size(); i++) {
                 transponders.emplace_back(callsigns.at(i), codes.at(i), modeCs.at(i), idents.at(i));
             }
-            queueDBusCall([=]() {
+            queueDBusCall([this, transponders]() {
                 acm->setPlanesTransponders(transponders);
             });
         } else if (message.getMethodName() == "setPlanesSurfaces") {
@@ -271,7 +272,7 @@ DBusHandlerResult CTraffic::dbusMessageHandler(const CDBusMessage& message_)
                                       wingSweeps.at(i), thrusts.at(i), elevators.at(i), rudders.at(i), ailerons.at(i),
                                       landLights.at(i), taxiLights.at(i), beaconLights.at(i), strobeLights.at(i), navLights.at(i), lightPatterns.at(i));
             }
-            queueDBusCall([=]() {
+            queueDBusCall([this, surfaces]() {
                 acm->setPlanesSurfaces(surfaces);
             });
         } else {

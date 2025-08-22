@@ -3,7 +3,7 @@
  * SPDX-FileComment: built-in commands for FlightGear.
  * SPDX-FileCopyrightText: 1997 Curtis L. Olson
  * SPDX-License-Identifier: GPL-2.0-or-later
- */
+*/
 
 #include <config.h>
 
@@ -297,7 +297,7 @@ do_pause (const SGPropertyNode * arg, SGPropertyNode * root)
 static bool
 do_load (const SGPropertyNode * arg, SGPropertyNode * root)
 {
-    SGPath file(arg->getStringValue("file", "fgfs.sav").c_str());
+    SGPath file = SGPath::fromUtf8(arg->getStringValue("file", "fgfs.sav"));
 
     if (file.extension() != "sav")
         file.concat(".sav");
@@ -330,7 +330,7 @@ do_load (const SGPropertyNode * arg, SGPropertyNode * root)
 static bool
 do_save (const SGPropertyNode * arg, SGPropertyNode * root)
 {
-    SGPath file(arg->getStringValue("file", "fgfs.sav").c_str());
+    SGPath file = SGPath::fromUtf8(arg->getStringValue("file", "fgfs.sav"));
 
     if (file.extension() != "sav")
         file.concat(".sav");

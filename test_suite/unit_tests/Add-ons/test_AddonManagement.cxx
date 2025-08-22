@@ -2,21 +2,8 @@
 //
 // test_AddonManagement.cxx --- Automated tests for FlightGear classes dealing
 //                              with add-ons
-// Copyright (C) 2017  Florent Rougon
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License along
-// with this program; if not, write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+// SPDX-FileCopyrightText: Copyright (C) 2017  Florent Rougon
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "test_AddonManagement.hxx"
 
@@ -214,13 +201,13 @@ void AddonManagementTests::testAddon()
   std::string addonId = "org.FlightGear.addons.MyGreatAddon";
   Addon addon{addonId};
   addon.setVersion(AddonVersion("2017.2.5rc3"));
-  addon.setBasePath(SGPath("/path/to/MyGreatAddon"));
+  addon.setBasePath(SGPath::fromUtf8("/path/to/MyGreatAddon"));
   addon.setMinFGVersionRequired("2017.4.1");
   addon.setMaxFGVersionRequired("none");
 
   CPPUNIT_ASSERT_EQUAL(addon.getId(), addonId);
   CPPUNIT_ASSERT_EQUAL(*addon.getVersion(), AddonVersion("2017.2.5rc3"));
-  CPPUNIT_ASSERT_EQUAL(addon.getBasePath(), SGPath("/path/to/MyGreatAddon"));
+  CPPUNIT_ASSERT_EQUAL(addon.getBasePath(), SGPath::fromUtf8("/path/to/MyGreatAddon"));
   CPPUNIT_ASSERT(addon.getMinFGVersionRequired() == "2017.4.1");
 
   const string refText = "addon '" + addonId + "' (version = 2017.2.5rc3, "

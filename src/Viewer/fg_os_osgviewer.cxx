@@ -1,22 +1,8 @@
 // fg_os_osgviewer.cxx -- common functions for fg_os interface
 // implemented as an osgViewer
 //
-// Copyright (C) 2007  Tim Moore timoore@redhat.com
-// Copyright (C) 2007 Mathias Froehlich
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2007 Tim Moore <timoore@redhat.com>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifdef __linux__
 #include <sched.h>
@@ -202,8 +188,8 @@ void fgOSExit(int code)
     status = code;
 
     // otherwise we crash if OSG does logging during static destruction, eg
-    // GraphicsWindowX11, since OSG statics may have been created before the
-    // sglog static, despite our best efforts in boostrap.cxx
+    // GraphicsWindowX11, since OSG static variables may have been created before the
+    // sglog static, despite our best efforts in bootstrap.cxx
     osg::setNotifyHandler(new osg::StandardNotifyHandler);
 }
 SGTimeStamp _lastUpdate;
@@ -256,7 +242,7 @@ struct AffinityControl : SGPropertyChangeListener {
         } else if (s == "clear") {
             char buffer[64];
             snprintf(buffer, sizeof(buffer), "/proc/%i/task", getpid());
-            SGPath path(buffer);
+            SGPath path(std::string{buffer});
             simgear::Dir dir(path);
             m_thread_masks.clear();
             simgear::PathList pids = dir.children(

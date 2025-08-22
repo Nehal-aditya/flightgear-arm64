@@ -2,21 +2,8 @@
 //
 // Written by James Turner, started April 2012.
 //
-// Copyright (C) 2012  James Turner
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: Copyright (C) 2012  James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
 
@@ -108,15 +95,15 @@ void FGHTTPClient::init()
     }
 
   _http.reset(new simgear::HTTP::Client);
-  
+
   std::string proxyHost(fgGetString("/sim/presets/proxy/host"));
   int proxyPort(fgGetInt("/sim/presets/proxy/port"));
   std::string proxyAuth(fgGetString("/sim/presets/proxy/auth"));
-  
+
   if (!proxyHost.empty()) {
     _http->setProxy(proxyHost, proxyPort, proxyAuth);
   }
-  
+
   pkg::Root* packageRoot = globals->packageRoot();
   if (packageRoot) {
     // package system needs access to the HTTP engine too
@@ -287,23 +274,23 @@ void FGHTTPClient::postinit()
   .method("existingInstall", &f_package_existingInstall)
   .method("lprop", &pkg::Package::getLocalisedProp)
   .member("fileSize", &pkg::Package::fileSizeBytes);
-  
+
   typedef pkg::Install* (pkg::Install::*InstallCallback)
                         (const pkg::Install::Callback&);
   typedef pkg::Install* (pkg::Install::*ProgressCallback)
                         (const pkg::Install::ProgressCallback&);
   NasalInstall::init("Install")
-  .member("revision", &pkg::Install::revsion)
-  .member("pkg", &pkg::Install::package)
-  .member("path", &pkg::Install::path)
-  .member("hasUpdate", &pkg::Install::hasUpdate)
-  .method("startUpdate", &pkg::Install::startUpdate)
-  .method("uninstall", &pkg::Install::uninstall)
-  .method("done", static_cast<InstallCallback>(&pkg::Install::done))
-  .method("fail", static_cast<InstallCallback>(&pkg::Install::fail))
-  .method("always", static_cast<InstallCallback>(&pkg::Install::always))
-  .method("progress", static_cast<ProgressCallback>(&pkg::Install::progress));
-  
+      .member("revision", &pkg::Install::revision)
+      .member("pkg", &pkg::Install::package)
+      .member("path", &pkg::Install::path)
+      .member("hasUpdate", &pkg::Install::hasUpdate)
+      .method("startUpdate", &pkg::Install::startUpdate)
+      .method("uninstall", &pkg::Install::uninstall)
+      .method("done", static_cast<InstallCallback>(&pkg::Install::done))
+      .method("fail", static_cast<InstallCallback>(&pkg::Install::fail))
+      .method("always", static_cast<InstallCallback>(&pkg::Install::always))
+      .method("progress", static_cast<ProgressCallback>(&pkg::Install::progress));
+
   pkg::Root* packageRoot = globals->packageRoot();
   if (packageRoot) {
     auto nasalSys = globals->get_subsystem<FGNasalSys>();

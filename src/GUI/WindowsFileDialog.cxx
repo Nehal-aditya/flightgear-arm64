@@ -1,4 +1,5 @@
-
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2013 James Turner <james@flightgear.org>
 
 #include "WindowsFileDialog.hxx"
 
@@ -66,46 +67,49 @@ WindowsFileDialog::~WindowsFileDialog()
 
 void WindowsFileDialog::exec()
 {
-    char Filestring[MAX_PATH] = "\0";
-    OPENFILENAMEA opf = {0};
+    const std::wstring wtitle = simgear::strutils::convertUtf8ToWString(_title);
+    wchar_t Filestring[MAX_PATH];
+    Filestring[0] = 0;
+
+    OPENFILENAMEW opf = {0};
     opf.lStructSize = sizeof(OPENFILENAME);
     opf.lpstrFile = Filestring;
-    opf.lpstrTitle = const_cast<char *>(_title.c_str());
+    opf.lpstrTitle = wtitle.c_str();
     opf.nMaxFile = MAX_PATH;
 
-    std::string extensions;
-    size_t extensionsLen=0;
+    std::wstring wideExtensions;
+
     if (!_filterPatterns.empty()) {
+        std::string extensions;
         for (const auto& ext : _filterPatterns) {
             if (!simgear::strutils::starts_with(ext, "*.")) {
                 SG_LOG(SG_GENERAL, SG_ALERT, "WindowsFileDialog: can't use pattern on Windows:" << ext);
                 continue;
             }
-            extensions += "("+ext+")\0"+ext+"\0";
-            extensionsLen += ext.size()*2+4;
+            extensions += "(" + ext + ")\0" + ext + "\0";
         }
-        opf.lpstrFilter = (LPCSTR) malloc(extensionsLen);
-        memcpy((void*)opf.lpstrFilter, (void*)extensions.data(), extensionsLen);
+        wideExtensions = simgear::strutils::convertUtf8ToWString(extensions);
+        opf.lpstrFilter = wideExtensions.c_str();
     }
 
-	std::string s = _initialPath.local8BitStr();
-    opf.lpstrInitialDir =  const_cast<char *>(s.c_str());
+    std::wstring w = _initialPath.wstr();
+    opf.lpstrInitialDir = w.c_str();
 
     if (_showHidden) {
         opf.Flags = OFN_PATHMUSTEXIST;
     }
 
     if (_usage == USE_SAVE_FILE) {
-        if (GetSaveFileNameA(&opf)) {
-            std::string stringPath(opf.lpstrFile);
-            handleSelectedPath(SGPath::fromUtf8(stringPath));
+        if (GetSaveFileNameW(&opf)) {
+            std::wstring stringPath(opf.lpstrFile);
+            handleSelectedPath(SGPath(stringPath));
         }
     } else if (_usage == USE_CHOOSE_DIR) {
         chooseDir();
     } else {
-        if (GetOpenFileNameA(&opf)) {
-            std::string stringPath(opf.lpstrFile);
-            handleSelectedPath(SGPath::fromUtf8(stringPath));
+        if (GetOpenFileNameW(&opf)) {
+            std::wstring stringPath(opf.lpstrFile);
+            handleSelectedPath(SGPath(stringPath));
         }
     }
 }
@@ -120,26 +124,28 @@ void WindowsFileDialog::chooseDir()
 	// MSDN says this needs to be called first
 	OleInitialize(NULL);
 
-	char pathBuf[MAX_PATH] = "\0";
+    wchar_t pathBuf[MAX_PATH];
+    pathBuf[0] = 0;
 
-    BROWSEINFOA binfo;
-    memset(&binfo, 0, sizeof(BROWSEINFOA));
+    const std::wstring wtitle = simgear::strutils::convertUtf8ToWString(_title);
+    BROWSEINFOW binfo;
+    memset(&binfo, 0, sizeof(BROWSEINFOW));
     binfo.hwndOwner = getMainViewerHWND();
 	binfo.ulFlags = BIF_USENEWUI | BIF_RETURNONLYFSDIRS | BIF_EDITBOX;
 
 	binfo.pidlRoot = NULL; // can browse anywhere
-	binfo.lpszTitle = const_cast<char *>(_title.c_str());
-	binfo.lpfn = BrowseFolderCallback;
-	binfo.lParam = reinterpret_cast<LPARAM>(this);
+    binfo.lpszTitle = wtitle.c_str();
+    binfo.lpfn = BrowseFolderCallback;
+    binfo.lParam = reinterpret_cast<LPARAM>(this);
 
-    PIDLIST_ABSOLUTE results = SHBrowseForFolderA(&binfo);
+    PIDLIST_ABSOLUTE results = SHBrowseForFolderW(&binfo);
     if (results == NULL) {
 		// user cancelled
 		return;
 	}
 
-    SHGetPathFromIDListA(results, pathBuf);
+    SHGetPathFromIDListW(results, pathBuf);
     CoTaskMemFree(results);
 
-    handleSelectedPath(SGPath(pathBuf));
+    handleSelectedPath(SGPath(std::wstring(pathBuf)));
 }

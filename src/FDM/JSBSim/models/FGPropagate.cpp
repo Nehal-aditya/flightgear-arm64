@@ -72,6 +72,7 @@ INCLUDES
 #include "FGInertial.h"
 
 using namespace std;
+using namespace std::string_literals;
 
 namespace JSBSim {
 
@@ -690,7 +691,7 @@ void FGPropagate::WriteStateFile(int num)
 
   SGPath path = FDMExec->GetOutputPath();
 
-  if (path.isNull()) path = SGPath("initfile.");
+  if (path.isNull()) path = SGPath("initfile."s);
   else               path.append("initfile.");
 
   // Append sim time to the filename since there may be more than one created during a simulation run

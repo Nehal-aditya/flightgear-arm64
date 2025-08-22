@@ -375,11 +375,11 @@ DBusHandlerResult CService::dbusMessageHandler(const CDBusMessage& message_)
             message.beginArgumentRead();
             message.getArgument(text);
 
-            queueDBusCall([=]() {
+            queueDBusCall([this, text]() {
                 addTextMessage(text);
             });
         } else if (message.getMethodName() == "getOwnAircraftSituationData") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 double lat = getLatitude();
                 double lon = getLongitude();
                 double alt = getAltitudeMSL();
@@ -401,7 +401,7 @@ DBusHandlerResult CService::dbusMessageHandler(const CDBusMessage& message_)
                 sendDBusMessage(reply);
             });
         } else if (message.getMethodName() == "getOwnAircraftVelocityData") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 double velocityX = getVelocityX();
                 double velocityY = getVelocityY();
                 double velocityZ = getVelocityZ();
@@ -419,127 +419,127 @@ DBusHandlerResult CService::dbusMessageHandler(const CDBusMessage& message_)
                 sendDBusMessage(reply);
             });
         } else if (message.getMethodName() == "getVersionNumber") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getVersionNumber());
             });
         } else if (message.getMethodName() == "getAircraftModelPath") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getAircraftModelPath());
             });
         } else if (message.getMethodName() == "getAircraftModelFilename") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getAircraftModelFilename());
             });
         } else if (message.getMethodName() == "getAircraftModelString") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getAircraftModelString());
             });
         } else if (message.getMethodName() == "getAircraftName") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getAircraftName());
             });
         } else if (message.getMethodName() == "getAircraftLivery") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getAircraftLivery());
             });
         } else if (message.getMethodName() == "getAircraftIcaoCode") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getAircraftIcaoCode());
             });
         } else if (message.getMethodName() == "getAircraftDescription") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getAircraftDescription());
             });
         } else if (message.getMethodName() == "isPaused") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, isPaused());
             });
         } else if (message.getMethodName() == "getLatitudeDeg") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getLatitude());
             });
         } else if (message.getMethodName() == "getLongitudeDeg") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getLongitude());
             });
         } else if (message.getMethodName() == "getAltitudeMslFt") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getAltitudeMSL());
             });
         } else if (message.getMethodName() == "getHeightAglFt") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getHeightAGL());
             });
         } else if (message.getMethodName() == "getGroundSpeedKts") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getGroundSpeed());
             });
         } else if (message.getMethodName() == "getPitchDeg") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getPitch());
             });
         } else if (message.getMethodName() == "getRollDeg") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getRoll());
             });
         } else if (message.getMethodName() == "getAllWheelsOnGround") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getAllWheelsOnGround());
             });
         } else if (message.getMethodName() == "getCom1ActiveKhz") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getCom1Active());
             });
         } else if (message.getMethodName() == "getCom1StandbyKhz") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getCom1Standby());
             });
         } else if (message.getMethodName() == "getCom2ActiveKhz") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getCom2Active());
             });
         } else if (message.getMethodName() == "getCom2StandbyKhz") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getCom2Standby());
             });
         } else if (message.getMethodName() == "getTransponderCode") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getTransponderCode());
             });
         } else if (message.getMethodName() == "getTransponderMode") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getTransponderMode());
             });
         } else if (message.getMethodName() == "getTransponderIdent") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getTransponderIdent());
             });
         } else if (message.getMethodName() == "getBeaconLightsOn") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getBeaconLightsOn());
             });
         } else if (message.getMethodName() == "getLandingLightsOn") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getLandingLightsOn());
             });
         } else if (message.getMethodName() == "getNavLightsOn") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getNavLightsOn());
             });
         } else if (message.getMethodName() == "getStrobeLightsOn") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getStrobeLightsOn());
             });
         } else if (message.getMethodName() == "getTaxiLightsOn") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getTaxiLightsOn());
             });
         } else if (message.getMethodName() == "getPressAlt") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getPressAlt());
             });
         } else if (message.getMethodName() == "getGroundElevation") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getGroundElevation());
             });
         } else if (message.getMethodName() == "setCom1ActiveKhz") {
@@ -547,7 +547,7 @@ DBusHandlerResult CService::dbusMessageHandler(const CDBusMessage& message_)
             int frequency = 0;
             message.beginArgumentRead();
             message.getArgument(frequency);
-            queueDBusCall([=]() {
+            queueDBusCall([this, frequency]() {
                 setCom1Active(frequency);
             });
         } else if (message.getMethodName() == "setCom1StandbyKhz") {
@@ -555,7 +555,7 @@ DBusHandlerResult CService::dbusMessageHandler(const CDBusMessage& message_)
             int frequency = 0;
             message.beginArgumentRead();
             message.getArgument(frequency);
-            queueDBusCall([=]() {
+            queueDBusCall([this, frequency]() {
                 setCom1Standby(frequency);
             });
         } else if (message.getMethodName() == "setCom2ActiveKhz") {
@@ -563,7 +563,7 @@ DBusHandlerResult CService::dbusMessageHandler(const CDBusMessage& message_)
             int frequency = 0;
             message.beginArgumentRead();
             message.getArgument(frequency);
-            queueDBusCall([=]() {
+            queueDBusCall([this, frequency]() {
                 setCom2Active(frequency);
             });
         } else if (message.getMethodName() == "setCom2StandbyKhz") {
@@ -571,7 +571,7 @@ DBusHandlerResult CService::dbusMessageHandler(const CDBusMessage& message_)
             int frequency = 0;
             message.beginArgumentRead();
             message.getArgument(frequency);
-            queueDBusCall([=]() {
+            queueDBusCall([this, frequency]() {
                 setCom2Standby(frequency);
             });
         } else if (message.getMethodName() == "setTransponderCode") {
@@ -579,7 +579,7 @@ DBusHandlerResult CService::dbusMessageHandler(const CDBusMessage& message_)
             int code = 0;
             message.beginArgumentRead();
             message.getArgument(code);
-            queueDBusCall([=]() {
+            queueDBusCall([this, code]() {
                 setTransponderCode(code);
             });
         } else if (message.getMethodName() == "setTransponderMode") {
@@ -587,32 +587,32 @@ DBusHandlerResult CService::dbusMessageHandler(const CDBusMessage& message_)
             int mode = 0;
             message.beginArgumentRead();
             message.getArgument(mode);
-            queueDBusCall([=]() {
+            queueDBusCall([this, mode]() {
                 setTransponderMode(mode);
             });
         } else if (message.getMethodName() == "getFlapsDeployRatio") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getFlapsDeployRatio());
             });
         } else if (message.getMethodName() == "getGearDeployRatio") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getGearDeployRatio());
             });
         } else if (message.getMethodName() == "getEngineN1Percentage") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 std::vector<double> array = getEngineN1Percentage();
                 sendDBusReply(sender, serial, array);
             });
         } else if (message.getMethodName() == "getSpeedBrakeRatio") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getSpeedBrakeRatio());
             });
         } else if (message.getMethodName() == "getCom1Volume") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getCom1Volume());
             });
         } else if (message.getMethodName() == "getCom2Volume") {
-            queueDBusCall([=]() {
+            queueDBusCall([this, sender, serial]() {
                 sendDBusReply(sender, serial, getCom2Volume());
             });
         } else {

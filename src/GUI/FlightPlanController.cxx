@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2018 James Turner <james@flightgear.org>
+
 #include "FlightPlanController.hxx"
 
 #include <Main/options.hxx>
@@ -106,7 +109,7 @@ QVariant LegsModel::data(const QModelIndex& index, int role) const
         if (leg->waypoint()->source()) {
             return QString::fromStdString(leg->waypoint()->source()->name());
         }
-        return QString{}; // avoud undefined-value QML error if we return a null variant
+        return QString{}; // avoid undefined-value QML error if we return a null variant
     }
 
     case LegTerminatorTypeRole:
@@ -194,7 +197,7 @@ FlightPlanController::FlightPlanController(QObject *parent, LaunchConfig* config
     connect(_config, &LaunchConfig::collect, this, &FlightPlanController::onCollectConfig);
     connect(_config, &LaunchConfig::save, this, &FlightPlanController::onSave);
     connect(_config, &LaunchConfig::restore, this, &FlightPlanController::onRestore);
-    
+
     _delegate.reset(new FPDelegate);
     _delegate->p = this; // link back to us
 
@@ -229,7 +232,7 @@ void FlightPlanController::clearPlan()
 bool FlightPlanController::loadFromPath(QString path)
 {
     auto fp = flightgear::FlightPlan::createRoute();
-    bool ok = fp->load(SGPath(path.toUtf8().data()));
+    bool ok = fp->load(SGPath(path.toStdWString()));
     if (!ok) {
         qWarning() << "Failed to load flightplan " << path;
         return false;
@@ -250,7 +253,7 @@ bool FlightPlanController::loadFromPath(QString path)
 
 bool FlightPlanController::saveToPath(QString path) const
 {
-    SGPath p(path.toUtf8().data());
+    SGPath p(path.toStdWString());
     return _fp->save(p);
 }
 
@@ -261,7 +264,7 @@ void FlightPlanController::onCollectConfig()
 
     SGPath p = globals->get_fg_home() / "launcher.fgfp";
     _fp->save(p);
-    
+
     _config->setArg("flight-plan", p.utf8Str());
 }
 
@@ -429,7 +432,7 @@ void FlightPlanController::setCallsign(QString s)
     const auto stdS = s.toStdString();
     if (_fp->callsign() == stdS)
         return;
-    
+
     _fp->setCallsign(stdS);
     emit infoChanged();
 }

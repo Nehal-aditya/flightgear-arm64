@@ -1,7 +1,8 @@
 // WindowsFileDialog.hxx - file dialog implemented using Windows
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2013 James Turner <james@flightgear.org>
 
-#ifndef FG_WINDOWS_FILE_DIALOG_HXX
-#define FG_WINDOWS_FILE_DIALOG_HXX 1
+#pragma once
 
 #include <GUI/FileDialog.hxx>
 
@@ -9,14 +10,11 @@ class WindowsFileDialog : public FGFileDialog
 {
 public:
     WindowsFileDialog(FGFileDialog::Usage use);
-    
+
     virtual ~WindowsFileDialog();
-    
+
     virtual void exec();
     virtual void close();
 private:
-	void chooseDir();
-
+    void chooseDir();
 };
-
-#endif // FG_WINDOWS_FILE_DIALOG_HXX

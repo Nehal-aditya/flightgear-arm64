@@ -52,6 +52,7 @@ INCLUDES
 #include "math/FGFunctionValue.h"
 
 using namespace std;
+using namespace std::string_literals;
 
 namespace JSBSim {
 
@@ -201,7 +202,7 @@ bool FGScript::LoadScript(const SGPath& script, double default_dT,
   element = document->FindElement("output");
   SGPath scriptDir = SGPath(script.dir());
   if (scriptDir.isNull())
-    scriptDir = SGPath(".");
+    scriptDir = SGPath("."s);
 
   while (element) {
     if (!FDMExec->GetOutput()->Load(element, scriptDir))

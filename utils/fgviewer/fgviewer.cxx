@@ -1,24 +1,9 @@
 // fgviewer.cxx -- alternative flightgear viewer application
 //
-// Copyright (C) 2009 - 2012  Mathias Froehlich
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: Copyright (C) 2009 - 2012  Mathias Froehlich
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifdef HAVE_CONFIG_H
 #include <config.h>
-#endif
 
 #include <osg/Version>
 #include <osgDB/ReadFile>
@@ -65,7 +50,7 @@ main(int argc, char** argv)
     } else if (std::getenv("FG_ROOT")) {
         fg_root = SGPath::fromEnv("FG_ROOT");
     } else {
-        fg_root = SGPath(PKGLIBDIR);
+        fg_root = SGPath::fromLocal8Bit(PKGLIBDIR);
     }
 
     SGPath fg_scenery;
@@ -125,9 +110,9 @@ main(int argc, char** argv)
     fgviewer::Viewer viewer(arguments);
 
     if (renderer.empty()) {
-        // Currently just the defautl renderer. More to come.
+        // Currently just the default renderer. More to come.
         viewer.setRenderer(new fgviewer::Renderer);
-        
+
     } else {
         SG_LOG(SG_GENERAL, SG_ALERT, "Unknown renderer configuration \"" << renderer
                << "\" given on the command line.");
@@ -157,7 +142,7 @@ main(int argc, char** argv)
 
     viewer.setCameraManipulator(keyswitchManipulator);
 
-    // Usefull stats
+    // Useful stats
     viewer.addEventHandler(new osgGA::StateSetManipulator(viewer.getSceneDataGroup()->getOrCreateStateSet()));
     viewer.addEventHandler(new osgViewer::HelpHandler);
     viewer.addEventHandler(new osgViewer::StatsHandler);
@@ -217,7 +202,7 @@ main(int argc, char** argv)
     if (props->getNode("hla/federate/federation")) {
 #if FG_HAVE_HLA
         const SGPropertyNode* federateNode = props->getNode("hla/federate");
-        
+
         SGSharedPtr<fgviewer::HLAViewerFederate> viewerFederate;
         viewerFederate = new fgviewer::HLAViewerFederate;
         viewerFederate->setVersion(federateNode->getStringValue("version", "RTI13"));
@@ -233,7 +218,7 @@ main(int argc, char** argv)
             objectModel = path.str();
         }
         viewerFederate->setFederationObjectModel(objectModel);
-        
+
         if (!viewerFederate->init()) {
             SG_LOG(SG_NETWORK, SG_ALERT, "Got error from federate init!");
         } else {

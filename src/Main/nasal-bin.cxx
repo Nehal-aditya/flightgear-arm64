@@ -76,7 +76,7 @@ int main(int argc, char** argv)
     initAllowedPaths();         // for SGPath::validate()
 
     // MMap the contents of the file.
-    SGPath script(argv[1]);
+    SGPath script = SGPath::fromLocal8Bit(argv[1]);
     SGMMapFile f(script);
     f.open(SG_IO_IN);
     buf = (char*)f.get();

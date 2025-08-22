@@ -1,21 +1,6 @@
 // CocoaHelpers.mm - C++ implementation of Cocoa/AppKit helpers
-
-// Copyright (C) 2013 James Turner <zakalawe@mac.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+// SPDX-FileCopyrightText: (C) 2013 James Turner <james@flightgear.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <config.h>
 
@@ -70,8 +55,8 @@ SGPath URLToPath(NSURL* url)
     if (!url) {
         return SGPath();
     }
-    
-    return SGPath([[url path] UTF8String]);
+
+    return SGPath::fromUtf8([[url path] UTF8String]);
 }
 
 flightgear::MessageBoxResult cocoaMessageBox(const std::string& msg,
@@ -125,7 +110,7 @@ SGPath platformDefaultDataPath()
 {
     CocoaAutoreleasePool ap;
     NSFileManager* fm = [NSFileManager defaultManager];
-    
+
     NSURL* appSupportUrl = [fm URLForDirectory:NSApplicationSupportDirectory
                                      inDomain:NSUserDomainMask
                              appropriateForURL:Nil
@@ -134,7 +119,7 @@ SGPath platformDefaultDataPath()
     if (!appSupportUrl) {
         return SGPath();
     }
-    
+
     SGPath appData(URLToPath(appSupportUrl));
     appData.append("FlightGear");
     return appData;
@@ -142,28 +127,28 @@ SGPath platformDefaultDataPath()
 
 namespace flightgear
 {
-    
+
 SGPath Options::platformDefaultRoot() const
 {
     CocoaAutoreleasePool ap;
-    
+
     NSURL* url = [[NSBundle mainBundle] resourceURL];
     SGPath dataDir(URLToPath(url));
     dataDir.append("data");
     return dataDir;
 }
-    
+
 } // of namespace flightgear
 
 string_list FGLocale::getUserLanguages() const
 {
     CocoaAutoreleasePool ap;
     string_list result;
-    
+
     for (NSString* lang in [NSLocale preferredLanguages]) {
         result.push_back(stdStringFromCocoa(lang));
     }
-    
+
     return result;
 }
 
@@ -172,7 +157,6 @@ void transformToForegroundApp()
     ProcessSerialNumber sn = { 0, kCurrentProcess };
     TransformProcessType(&sn,kProcessTransformToForegroundApplication);
 
-    
     [[NSApplication sharedApplication] activateIgnoringOtherApps: YES];
 }
 
@@ -187,19 +171,19 @@ void transformToForegroundApp()
 // management
 #if 0
 - (NSApplicationTerminateReply) applicationShouldTerminate:(NSApplication *)sender
-{    
+{
     SGCommandMgr* mgr = SGCommandMgr::instance();
     SGPropertyNode_ptr propArgs(new SGPropertyNode);
     propArgs->setStringValue("dialog-name", "exit");
     mgr->execute("dialog-show", propArgs, globals->get_props());
-    
+
     return NSTerminateCancel;
 }
 #endif
 
 - (void) applicationWillTerminate:(NSNotification *)notification
 {
-    SG_LOG(SG_GENERAL, SG_INFO, "macOS quit occuring");
+  SG_LOG(SG_GENERAL, SG_INFO, "macOS quit occurring");
 #if defined(HAVE_QT)
     flightgear::shutdownQtApp();
 #endif
@@ -210,7 +194,7 @@ void transformToForegroundApp()
 void cocoaRegisterTerminateHandler()
 {
     FlightGearNSAppDelegate* delegate = [[FlightGearNSAppDelegate alloc] init];
-    
+
     auto *app = [NSApplication sharedApplication];
     [[NSNotificationCenter defaultCenter]
      addObserver:delegate
