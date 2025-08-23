@@ -51,7 +51,7 @@ typedef nasal::Ghost<pkg::InstallRef> NasalInstall;
 static const char* OFFICIAL_CATALOG_ID = "org.flightgear.fgaddon.stable_2024";
 
 // fallback URL is used when looking up a version-specific catalog fails
-static const char* FALLBACK_CATALOG_URL = "http://mirrors.ibiblio.org/flightgear/ftp/Aircraft-2024/catalog.xml";
+static const char* FALLBACK_CATALOG_URL = "https://mirrors.ibiblio.org/flightgear/ftp/Aircraft-2024/catalog.xml";
 
 namespace {
 
@@ -72,7 +72,7 @@ namespace {
     std::string _getDefaultCatalogUrl()
     {
         return fgGetString("/sim/package-system/default-catalog/url",
-                           "http://mirrors.ibiblio.org/flightgear/ftp/" FLIGHTGEAR_MAJOR_MINOR_VERSION "/catalog.xml");
+                           "https://mirrors.ibiblio.org/flightgear/ftp/Aircraft-2024/catalog.xml");
     }
 } // of anonymous namespace
 
