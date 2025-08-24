@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# SPDX-FileCopyrightText: James Turner <james@flightgear.org>
+
 # ConfigureMsvc3rdParty.cmake - Configure 3rd Party Library Paths on Windows
 
 # we want to handle various cases here:
@@ -20,7 +23,7 @@ function(_check_candidate_msvc_path pathToCheck)
     unset (_boostHeaders CACHE )
 
     find_path(_freeTypeHeader include/ft2build.h
-        PATHS 
+        PATHS
             ${pathToCheck}
         PATH_SUFFIXES
             ${ARCH_SUBDIR_NAME}
@@ -29,8 +32,8 @@ function(_check_candidate_msvc_path pathToCheck)
         NO_DEFAULT_PATH
     )
 
-    find_path(_zlibDll bin/zlib.dll
-        PATHS 
+    find_path(_zlibDll bin/zlib1.dll
+        PATHS
             ${pathToCheck}
         PATH_SUFFIXES
             ${ARCH_SUBDIR_NAME}
@@ -40,15 +43,15 @@ function(_check_candidate_msvc_path pathToCheck)
     )
 
     find_path(_boostHeaders boost/atomic.hpp
-        PATHS 
+        PATHS
             ${pathToCheck}
         NO_DEFAULT_PATH
     )
-    
+
     if (_freeTypeHeader AND _zlibDll)
         set(_FOUND_3RDPARTY_DIR "${_freeTypeHeader}" PARENT_SCOPE)
 
-        if (_boostHeaders) 
+        if (_boostHeaders)
             set(_FOUND_BOOST_INCLUDE_DIR "${_boostHeaders}" PARENT_SCOPE)
         endif()
     endif()
@@ -77,7 +80,7 @@ if (MSVC)
         SET(ARCH_SUBDIR_NAME "3rdParty")
     endif (CMAKE_CL_64)
 
-    
+
     # try the explicitly specified value first
     if (EXISTS ${MSVC_3RDPARTY_ROOT})
         _check_candidate_msvc_path("${MSVC_3RDPARTY_ROOT}")
@@ -99,7 +102,7 @@ if (MSVC)
         _check_candidate_msvc_path("${PARENT_BINARY_DIR}/windows-3rd-party")
     endif()
 
-    # try the Jenkins setup, whre the arch dir is copied into the WORKSPACE
+    # try the Jenkins setup, where the arch dir is copied into the WORKSPACE
     if (NOT _FOUND_3RDPARTY_DIR AND EXISTS "${PARENT_BINARY_DIR}/${ARCH_SUBDIR_NAME}")
         message(STATUS "Trying arch subdir ${PARENT_BINARY_DIR}/${ARCH_SUBDIR_NAME}")
         _check_candidate_msvc_path("${PARENT_BINARY_DIR}/${ARCH_SUBDIR_NAME}")
