@@ -1,11 +1,6 @@
-/*
- * SPDX-License-Identifier: CC0-1.0
- * 
- * instrument_mgr.hxx - manage aircraft instruments.
- * Written by David Megginson, started 2002.
- * 
- * This file is in the Public Domain and comes with no warranty.
-*/
+// instrument_mgr.hxx - manage aircraft instruments.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2002 David Megginson (public domain)
 
 #pragma once
 

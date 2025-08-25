@@ -1,11 +1,8 @@
 // adf.cxx - distance-measuring equipment.
-// Written by David Megginson, started 2003.
-//
-// This file is in the Public Domain and comes with no warranty.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2003 David Megginson (public domain)
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <simgear/compiler.h>
 #include <simgear/math/sg_geodesy.hxx>
@@ -87,7 +84,7 @@ ADF::init ()
     SGPropertyNode *node = fgGetNode(branch, true );
 
     initServicePowerProperties(node);
-    
+
     // instrument properties
     _error_node         = node->getChild("error-deg", 0, true);
     _mode_node          = node->getChild("mode", 0, true);
@@ -96,7 +93,7 @@ ADF::init ()
     _bearing_node       = node->getChild("indicated-bearing-deg", 0, true);
     _ident_node         = node->getChild("ident", 0, true);
     _ident_audible_node = node->getChild("ident-audible", 0, true);
-  
+
     // frequency properties
     SGPropertyNode *fnode = node->getChild("frequencies", 0, true);
     _frequency_node       = fnode->getChild("selected-khz", 0, true);
@@ -139,7 +136,7 @@ ADF::update (double delta_time_sec)
     }
 
     SGGeod acPos(globals->get_aircraft_position());
-  
+
                                 // On timeout, scan again
     _time_before_search_sec -= delta_time_sec;
     if (_time_before_search_sec < 0)
@@ -153,7 +150,7 @@ ADF::update (double delta_time_sec)
 
                                 // Calculate the bearing to the transmitter
   SGVec3d location = globals->get_aircraft_position_cart();
-    
+
     double distance_nm = dist(_transmitter_cart, location) * SG_METER_TO_NM;
     double range_nm = adjust_range(_transmitter_pos.getElevationFt(),
                                    acPos.getElevationFt(),

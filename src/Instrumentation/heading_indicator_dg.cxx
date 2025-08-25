@@ -2,6 +2,7 @@
  * SPDX-FileName: heading_indicator_dg.cxx
  * SPDX-FileComment: a Directional Gyro (DG) compass.
  * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: 2005 Vivian Meazza
  * SPDX-FileContributor: Written by Vivian Meazza, started 2005.
  * SPDX-FileContributor: Enhanced by Benedikt Hallinger, 2023
  */
@@ -181,7 +182,7 @@ HeadingIndicatorDG::update (double dt)
     // calculate time-based precession:
     // 0° at equator, ~15°/hr (360°/day) at poles (+/- 90°Lat)
     // (northern hemisphere causes under-read ie. clockwise rotation)
-    // Drift can be corrected by a litude nut setting (wich is a screwed weight on the gimbal)
+    // Drift can be corrected by a latitude nut setting (which is a screwed weight on the gimbal)
     double latPos = globals->get_aircraft_position().getLatitudeRad();
     double drift_per_hour = -15 * sin(latPos);
     double lat_nut_setting = _lat_nut_node->getDoubleValue();
@@ -191,7 +192,7 @@ HeadingIndicatorDG::update (double dt)
     double drift_per_frame = (drift_per_hour / 60 / 60) * dt; // convert hrs->frame(1/s)
     offset += drift_per_frame;                                // apply drift
 
-    // Caluclate transport wander
+    // Calculate transport wander
     // this is: Degrees-of-longitude-travelled * 1/60tan(lat)
     // Travelling East->West gives overreading(+) in norhtern hemisphere, underreading(-) south.
     // Example: flying west at 100 kts at +45° north gives: (100 x Tan 45)/60 = +1.66 degrees per hour.
@@ -296,7 +297,7 @@ HeadingIndicatorDG::update (double dt)
 
     heading = flightgear::lowPassPeriodicDegreesSigned(_last_indicated_heading_dg, heading, dt * 100 * factor);
     _last_indicated_heading_dg = heading;
-    
+
     heading += offset + align + error;
     heading = SGMiscd::normalizePeriodic(0.0,360.0,heading);
 

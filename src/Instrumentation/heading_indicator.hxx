@@ -2,6 +2,7 @@
  * SPDX-FileName: heading_indicator.hxx
  * SPDX-License-Identifier: GPL-2.0-or-later
  * SPDX-FileContributor:  Written by David Megginson, started 2002.
+ * SPDX-FileCopyrightText: 2002 David Megginson
  */
 
 #pragma once

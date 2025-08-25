@@ -1,5 +1,8 @@
 // gyro.cxx - simple implementation of a spinning gyro model.
 
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2002 David Megginson
+
 // Todo: this should be really modelled physically correctly and initialize its own properties etc.
 //       this way, instruments using a gyro can just refer to it and read the data from the gyro.
 
@@ -91,4 +94,3 @@ void Gyro::set_spin_down(double spin_down)
 
 
 // end of gyro.cxx
-

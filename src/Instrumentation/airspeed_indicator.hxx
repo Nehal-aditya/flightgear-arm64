@@ -1,18 +1,7 @@
-/*
- * SPDX-License-Identifier: CC0-1.0
- * 
- * airspeed_indicator.hxx - a regular ASI tied to the static port.
- * Written by David Megginson, started 2002.
- * Last modified by Eric van den Berg, 24 Nov 2012
- * 
- * This file is in the Public Domain and comes with no warranty.
-*/
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2002 David Megginson (public domain)
 
 #pragma once
-
-#ifndef __cplusplus
-# error This library requires C++
-#endif
 
 #include <simgear/props/props.hxx>
 #include <simgear/structure/subsystem_mgr.hxx>

@@ -1,11 +1,5 @@
-/*
- * SPDX-License-Identifier: CC0-1.0
- * 
- * gps.hxx - distance-measuring equipment.
- * Written by David Megginson, started 2003.
- * 
- * This file is in the Public Domain and comes with no warranty.
-*/
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2003 David Megginson (public domain)
 
 #pragma once
 
@@ -161,7 +155,7 @@ private:
          */
         bool followLegTrackToFix() const      { return _followLegTrackToFix; }
 
-        
+
         bool delegateDoesSequencing() const    { return _delegateSequencing; }
 
         double maxFlyByTurnAngleDeg() const { return _maxFlyByTurnAngle; }
@@ -203,9 +197,9 @@ private:
 
         // do we fly direct to fixes, or follow the leg track closely?
         bool _followLegTrackToFix;
-        
+
         // do we handle waypoint sequencing ourselves, or let the delegate do it?
-        // default is we do it, for backwards compatability
+        // default is we do it, for backwards compatibility
         bool _delegateSequencing = false;
 
         double _maxFlyByTurnAngle = 90.0;
@@ -228,7 +222,7 @@ private:
     void updateTrackingBug();
     void updateRouteData();
     void driveAutopilot();
-  
+
     /** Update one-shot things when WP1 / leg data change */
     void wp1Changed();
 
@@ -262,7 +256,7 @@ private:
     void insertWaypointAtIndex(int aIndex);
     void removeWaypointAtIndex(int aIndex);
     void commandExitHold();
-    
+
     // tied-property getter/setters
     double getScratchDistance() const;
     double getScratchMagBearing() const;
@@ -332,18 +326,18 @@ private:
     void tieSGGeod(SGPropertyNode* aNode, SGGeod& aRef,
                    const char* lonStr, const char* latStr, const char* altStr);
 
-    /** helper, tie a SGGeod to proeprties, but read-only */
+    /** helper, tie a SGGeod to properties, but read-only */
     void tieSGGeodReadOnly(SGPropertyNode* aNode, SGGeod& aRef,
                            const char* lonStr, const char* latStr, const char* altStr);
 
     void updateCurrentWpNode(const SGGeod& p);
-    
+
 // FlightPlan::Delegate
     void currentWaypointChanged() override;
     void waypointsChanged() override;
     void cleared() override;
     void endOfFlightPlan() override;
-    
+
     void doSequence();
     void routeManagerFlightPlanChanged(SGPropertyNode*);
     void routeActivated(SGPropertyNode*);
@@ -353,7 +347,7 @@ private:
     SGPropertyNode_ptr _currentWayptNode;
     SGPropertyNode_ptr _currentWpLatNode,
         _currentWpLonNode, _currentWpAltNode;
-    
+
     SGPropertyNode_ptr _magvar_node;
     SGPropertyNode_ptr _serviceable_node;
     SGPropertyNode_ptr _electrical_node;

@@ -1,7 +1,6 @@
-// instrument_mgr.cxx - manage aircraft instruments.
-// Written by David Megginson, started 2002.
-//
-// This file is in the Public Domain and comes with no warranty.
+// instrument_mgr.hxx - manage aircraft instruments.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2002 David Megginson (public domain)
 
 #include <config.h>
 
@@ -50,7 +49,7 @@
 
 FGInstrumentMgr::FGInstrumentMgr () :
   _explicitGps(false)
-{    
+{
 }
 
 FGInstrumentMgr::~FGInstrumentMgr ()
@@ -99,11 +98,11 @@ void FGInstrumentMgr::init()
 
   if (!_explicitGps) {
     SG_LOG(SG_INSTR, SG_INFO, "creating default GPS instrument");
-    SGPropertyNode_ptr nd(new SGPropertyNode);
-    nd->setStringValue("name", "gps");
-    nd->setIntValue("number", 0);
+    SGPropertyNode_ptr node(new SGPropertyNode);
+    node->setStringValue("name", "gps");
+    node->setIntValue("number", 0);
     _instruments.push_back("gps[0]");
-    set_subsystem("gps[0]", new GPS(nd, true /* default GPS mode */));
+    set_subsystem("gps[0]", new GPS(node, true /* default GPS mode */));
   }
 
   SGSubsystemGroup::init();
@@ -122,7 +121,7 @@ bool FGInstrumentMgr::build (SGPropertyNode* config_props, const SGPath& path)
         if (index > 0)
             subsystemname << '['<< index << ']';
         std::string id = subsystemname.str();
-      
+
         if ( name == "adf" ) {
             set_subsystem( id, new ADF( node ), 0.15 );
 
@@ -225,15 +224,15 @@ bool FGInstrumentMgr::build (SGPropertyNode* config_props, const SGPath& path)
 
         } else if ( name == "tcas" ) {
             set_subsystem( id, new TCAS( node ), 0.2);
-            
+
         } else {
             simgear::reportFailure(simgear::LoadFailure::Misconfigured, simgear::ErrorCode::AircraftSystems,
                                    "Unknown top level section in instrumentation:" + name,
                                    path);
             continue;
         }
-      
-      // only push to our array if we actually built an insturment
+
+        // only push to our array if we actually built an instrument
         _instruments.push_back(id);
     } // of instruments iteration
     return true;

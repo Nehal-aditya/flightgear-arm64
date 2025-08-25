@@ -1,11 +1,8 @@
 // dme.cxx - distance-measuring equipment.
-// Written by David Megginson, started 2003.
-//
-// This file is in the Public Domain and comes with no warranty.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2003 David Megginson (public domain)
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <simgear/compiler.h>
 #include <simgear/sg_inlines.h>
@@ -45,7 +42,7 @@ adjust_range (double transmitter_elevation_ft, double aircraft_altitude_ft,
 }
 
 namespace {
-  
+
   class DMEFilter : public FGNavList::TypeFilter
   {
   public:
@@ -57,7 +54,7 @@ namespace {
         _mintype = FGPositioned::ILS;
       }
     }
-    
+
     virtual bool pass(FGPositioned* pos) const
     {
       switch (pos->type()) {
@@ -67,11 +64,11 @@ namespace {
       default: return false;
       }
     }
-    
+
   private:
     const bool _locEnabled;
   };
-  
+
 } // of anonymous namespace
 
 
@@ -96,7 +93,7 @@ DME::init ()
     std::string branch = nodePath();
     SGPropertyNode *node = fgGetNode(branch, true );
     initServicePowerProperties(node);
-    
+
     SGPropertyNode *fnode = node->getChild("frequencies", 0, true);
     _source_node = fnode->getChild("source", 0, true);
     _frequency_node = fnode->getChild("selected-mhz", 0, true);
@@ -124,7 +121,7 @@ DME::init ()
 
     std::ostringstream temp;
     temp << name() << "-ident-" << number();
-    if( NULL == _audioIdent ) 
+    if (NULL == _audioIdent)
         _audioIdent = new DMEAudioIdent(temp.str());
     _audioIdent->init();
 
@@ -144,7 +141,7 @@ DME::update (double delta_time_sec)
     if( delta_time_sec < SGLimitsd::min() )
         return;  //paused
     char tmp[16];
-    
+
     // Figure out the source
     std::string source = _source_node->getStringValue();
     if (source.empty()) {
@@ -178,7 +175,7 @@ DME::update (double delta_time_sec)
         clear();
         return;
     }
-    
+
     // If it's on, but invalid source,don't bother.
 	if (nullptr == _navrecord) {
 		clear();
@@ -232,7 +229,7 @@ DME::update (double delta_time_sec)
             snprintf ( tmp,16,"%2.0f",tm);
             _time_string->setStringValue(tmp);
         }
-        
+
     } else {
 		clear();
     }

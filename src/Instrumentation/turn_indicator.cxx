@@ -2,6 +2,7 @@
  * SPDX-FileName: turn_indicator.cxx
  * SPDX-FileComment: an electric-powered turn indicator.
  * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: 2002 David Megginson
  * SPDX-FileContributor:  Written by David Megginson, started 2002.
  * SPDX-FileContributor: Enhanced by Benedikt Hallinger, 2023
  */
@@ -100,7 +101,7 @@ TurnIndicator::update (double dt)
     rate = -2.5 + (factor * (rate + 2.5));
     rate = fgGetLowPass(_last_rate, rate, dt*RESPONSIVENESS);
     _last_rate = rate;
-    
+
                                 // Publish the indicated rate
     _rate_out_node->setDoubleValue(rate);
 }

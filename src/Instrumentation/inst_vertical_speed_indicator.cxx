@@ -1,28 +1,9 @@
 // inst_vertical_speed_indicator.cxx
 // -- Instantaneous VSI (emulation calibrated to standard atmosphere).
-//
-// Started September 2004.
-//
-// Copyright (C) 2004
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2004 Erik Hofman
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
 #include <limits>
 #include <simgear/math/interpolater.hxx>
@@ -205,36 +186,35 @@ void InstVerticalSpeedIndicator::update (double dt)
 	    double sea_inhg = _sea_node->getDoubleValue();
 
 	    // limit effect of external environment
-	    double rate_sea_inhg_per_s = ( sea_inhg - _internal_sea_inhg ) / dt;
-	    
-	    if( rate_sea_inhg_per_s > - MAX_INHG_PER_S && rate_sea_inhg_per_s < MAX_INHG_PER_S )
-	    {
-	       double rate_inhg_per_s = ( pressure_inhg - _internal_pressure_inhg ) / dt;
+        double rate_sea_inhg_per_s = (sea_inhg - _internal_sea_inhg) / dt;
 
-	       // IVSI determines alone the current altitude, without altimeter setting.
-	       // Altimeter setting is 29.92 above 10000 or 18000 ft.
-	       // Below this level, the slope is slightly wrong.
-	       double altitude_ft = _altitude_table->interpolate( SEA_LEVEL_INHG - pressure_inhg );
-	       double slope_inhg = _pressure_table->interpolate( altitude_ft );
+        if (rate_sea_inhg_per_s > -MAX_INHG_PER_S && rate_sea_inhg_per_s < MAX_INHG_PER_S) {
+            double rate_inhg_per_s = (pressure_inhg - _internal_pressure_inhg) / dt;
+
+            // IVSI determines alone the current altitude, without altimeter setting.
+            // Altimeter setting is 29.92 above 10000 or 18000 ft.
+            // Below this level, the slope is slightly wrong.
+            double altitude_ft = _altitude_table->interpolate(SEA_LEVEL_INHG - pressure_inhg);
+            double slope_inhg = _pressure_table->interpolate(altitude_ft);
 
 
-	       double last_speed_ft_per_s = _speed_ft_per_s;
+            double last_speed_ft_per_s = _speed_ft_per_s;
 
-	       // slope at 900 m
-	       _speed_ft_per_s = - rate_inhg_per_s * 2952.75591 / slope_inhg;
+            // slope at 900 m
+            _speed_ft_per_s = -rate_inhg_per_s * 2952.75591 / slope_inhg;
 
-	       // filter noise
-	       _speed_ft_per_s = fgGetLowPass( last_speed_ft_per_s, _speed_ft_per_s,
-		  			       dt * RESPONSIVENESS );
-            }
-	    
-	    _speed_node->setDoubleValue( _speed_ft_per_s );
-	    _speed_min_node->setDoubleValue( _speed_ft_per_s * 60.0 );
+            // filter noise
+            _speed_ft_per_s = fgGetLowPass(last_speed_ft_per_s, _speed_ft_per_s,
+                                           dt * RESPONSIVENESS);
+        }
 
-	    // backup
-	    _internal_pressure_inhg = pressure_inhg;
-	    _internal_sea_inhg = sea_inhg;
-	}
+        _speed_node->setDoubleValue(_speed_ft_per_s);
+        _speed_min_node->setDoubleValue(_speed_ft_per_s * 60.0);
+
+        // backup
+        _internal_pressure_inhg = pressure_inhg;
+        _internal_sea_inhg = sea_inhg;
+        }
     }
 }
 

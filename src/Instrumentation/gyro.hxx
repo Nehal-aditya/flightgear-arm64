@@ -1,4 +1,5 @@
-// gyro.hxx - simple model of a spinning gyro.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2002 David Megginson
 
 #pragma once
 

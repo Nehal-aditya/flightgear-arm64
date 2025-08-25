@@ -2,26 +2,10 @@
 //
 // Written by Curtis Olson, started April 2000.
 //
-// Copyright (C) 2000 - 2002  Curtis L. Olson - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2000 Curtis L. Olson
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <sstream>
 #include <cstring>
@@ -61,9 +45,9 @@ static double sawtooth(double xx)
 }
 
 // Calculate a Cartesian unit vector in the
-// local horizontal plane, i.e. tangent to the 
+// local horizontal plane, i.e. tangent to the
 // surface of the earth at the local ground zero.
-// The tangent vector passes through the given  <midpoint> 
+// The tangent vector passes through the given  <midpoint>
 // and points forward along the given <heading>.
 // The <heading> is given in degrees.
 static SGVec3d tangentVector(const SGGeod& midpoint, const double heading)
@@ -86,16 +70,16 @@ static SGVec3d tangentVector(const SGGeod& midpoint, const double heading)
 }
 
 // Create a "serviceable" node with a default value of "true"
-SGPropertyNode_ptr createServiceableProp(SGPropertyNode* aParent, 
-        const char* aName)
+SGPropertyNode_ptr createServiceableProp(SGPropertyNode* parent,
+                                         const char* aName)
 {
-  SGPropertyNode_ptr n = 
-     aParent->getChild(aName, 0, true)->getChild("serviceable", 0, true);
-  simgear::props::Type typ = n->getType();
-  if ((typ == simgear::props::NONE) || (typ == simgear::props::UNSPECIFIED)) {
-    n->setBoolValue(true);
-  }
-  return n;  
+    SGPropertyNode_ptr n =
+        parent->getChild(aName, 0, true)->getChild("serviceable", 0, true);
+    simgear::props::Type typ = n->getType();
+    if ((typ == simgear::props::NONE) || (typ == simgear::props::UNSPECIFIED)) {
+        n->setBoolValue(true);
+    }
+    return n;
 }
 
 static std::unique_ptr<SGInterpTable> static_terminalRangeInterp,
@@ -127,42 +111,42 @@ FGNavRadio::FGNavRadio(SGPropertyNode *node) :
     _gsNeedleDeflectionNorm(0.0),
     _audioIdent(NULL)
 {
-  // bug: for legacy compatability, all nav-radios should use the nav[0] power output
-  // https://sourceforge.net/p/flightgear/codetickets/2811/
-  setDefaultPowerSupplyPath("/systems/electrical/outputs/nav[0]");
-  readConfig(node, "nav");
+    // bug: for legacy compatibility, all nav-radios should use the nav[0] power output
+    // https://sourceforge.net/p/flightgear/codetickets/2811/
+    setDefaultPowerSupplyPath("/systems/electrical/outputs/nav[0]");
+    readConfig(node, "nav");
 
-  if (!static_terminalRangeInterp.get()) {
-    // one-time interpolator init
-      SGPath path( globals->get_fg_root() );
-      SGPath term = path;
-      term.append( "Navaids/range.term" );
-      SGPath low = path;
-      low.append( "Navaids/range.low" );
-      SGPath high = path;
-      high.append( "Navaids/range.high" );
-      
-      static_terminalRangeInterp.reset(new SGInterpTable(term));
-      static_lowRangeInterp.reset(new SGInterpTable(low));
-      static_highRangeInterp.reset(new SGInterpTable(high));
+    if (!static_terminalRangeInterp.get()) {
+        // one-time interpolator init
+        SGPath path(globals->get_fg_root());
+        SGPath term = path;
+        term.append("Navaids/range.term");
+        SGPath low = path;
+        low.append("Navaids/range.low");
+        SGPath high = path;
+        high.append("Navaids/range.high");
+
+        static_terminalRangeInterp.reset(new SGInterpTable(term));
+        static_lowRangeInterp.reset(new SGInterpTable(low));
+        static_highRangeInterp.reset(new SGInterpTable(high));
     }
-  
+
     string branch = nodePath();
     _radio_node = fgGetNode(branch, true);
 }
 
 
 // Destructor
-FGNavRadio::~FGNavRadio() 
+FGNavRadio::~FGNavRadio()
 {
     if (gps_course_node) {
       gps_course_node->removeChangeListener(this);
     }
-    
+
     if (nav_slaved_to_gps_node) {
       nav_slaved_to_gps_node->removeChangeListener(this);
     }
-    
+
     delete _audioIdent;
 }
 
@@ -171,9 +155,9 @@ void
 FGNavRadio::init ()
 {
     SGPropertyNode* node = _radio_node.get();
- 
+
     initServicePowerProperties(node);
-    
+
     // inputs
     is_valid_node = node->getChild("data-is-valid", 0, true);
     vol_btn_node = node->getChild("volume", 0, true);
@@ -183,18 +167,18 @@ FGNavRadio::init ()
     audio_btn_node->setBoolValue( true );
     backcourse_node = node->getChild("back-course-btn", 0, true);
     backcourse_node->setBoolValue( false );
-    
+
     nav_serviceable_node = node->getChild("serviceable", 0, true);
     cdi_serviceable_node = createServiceableProp(node, "cdi");
     gs_serviceable_node = createServiceableProp(node, "gs");
     tofrom_serviceable_node = createServiceableProp(node, "to-from");
-    
-    falseCoursesEnabledNode = 
-      fgGetNode("/sim/realism/false-radio-courses-enabled");
+
+    falseCoursesEnabledNode =
+        fgGetNode("/sim/realism/false-radio-courses-enabled");
     if (!falseCoursesEnabledNode) {
-      falseCoursesEnabledNode = 
-        fgGetNode("/sim/realism/false-radio-courses-enabled", true);
-      falseCoursesEnabledNode->setBoolValue(true);
+        falseCoursesEnabledNode =
+            fgGetNode("/sim/realism/false-radio-courses-enabled", true);
+        falseCoursesEnabledNode->setBoolValue(true);
     }
 
     // frequencies
@@ -207,7 +191,7 @@ FGNavRadio::init ()
     fmt_freq_node = subnode->getChild("selected-mhz-fmt", 0, true);
     fmt_alt_freq_node = subnode->getChild("standby-mhz-fmt", 0, true);
     is_loc_freq_node = subnode->getChild("is-localizer-frequency", 0, true );
-    
+
     // radials
     subnode = node->getChild("radials", 0, true);
     sel_radial_node = subnode->getChild("selected-deg", 0, true);
@@ -239,7 +223,7 @@ FGNavRadio::init ()
     gs_rate_of_climb_fpm_node = node->getChild("gs-rate-of-climb-fpm", 0, true);
     gs_dist_node = node->getChild("gs-distance", 0, true);
     gs_inrange_node = node->getChild("gs-in-range", 0, true);
-    
+
     nav_id_node = node->getChild("nav-id", 0, true);
     id_c1_node = node->getChild("nav-id_asc1", 0, true);
     id_c2_node = node->getChild("nav-id_asc2", 0, true);
@@ -249,20 +233,20 @@ FGNavRadio::init ()
     // gps slaving support
     nav_slaved_to_gps_node = node->getChild("slaved-to-gps", 0, true);
     nav_slaved_to_gps_node->addChangeListener(this);
-    
+
     gps_cdi_deflection_node = fgGetNode("/instrumentation/gps/cdi-deflection", true);
     gps_to_flag_node = fgGetNode("/instrumentation/gps/to-flag", true);
     gps_from_flag_node = fgGetNode("/instrumentation/gps/from-flag", true);
     gps_has_gs_node = fgGetNode("/instrumentation/gps/has-gs", true);
     gps_course_node = fgGetNode("/instrumentation/gps/desired-course-deg", true);
     gps_course_node->addChangeListener(this);
-    
+
     gps_xtrack_error_nm_node = fgGetNode("/instrumentation/gps/wp/wp[1]/course-error-nm", true);
     _magvarNode = fgGetNode("/environment/magnetic-variation-deg", true);
-    
+
     std::ostringstream temp;
     temp << name() << "-ident-" << number();
-    if( NULL == _audioIdent ) 
+    if (NULL == _audioIdent)
         _audioIdent = new VORAudioIdent( temp.str() );
     _audioIdent->init();
 
@@ -285,7 +269,7 @@ double FGNavRadio::adjustNavRange( double stationElev, double aircraftElev,
     if (nominalRange <= 0.0) {
       nominalRange = FG_NAV_DEFAULT_RANGE;
     }
-    
+
     // extend out actual usable range to be 1.3x the published safe range
     const double usability_factor = 1.3;
 
@@ -358,13 +342,12 @@ static inline bool IsLocalizerFrequency( double f )
 //////////////////////////////////////////////////////////////////////////
 // Update the various nav values based on position and valid tuned in navs
 //////////////////////////////////////////////////////////////////////////
-void 
-FGNavRadio::update(double dt) 
+void FGNavRadio::update(double dt)
 {
   if (dt <= 0.0) {
     return; // paused
   }
-    
+
   if (isServiceableAndPowered())
   {
     updateReceiver(dt);
@@ -372,7 +355,7 @@ FGNavRadio::update(double dt)
   } else {
     clearOutputs();
   }
-  
+
   updateAudio( dt );
 }
 
@@ -405,12 +388,12 @@ void FGNavRadio::clearOutputs()
   gs_inrange_node->setBoolValue( false );
   loc_node->setBoolValue( false );
   has_gs_node->setBoolValue(false);
-  
+
   to_flag_node->setBoolValue( false );
   from_flag_node->setBoolValue( false );
   is_valid_node->setBoolValue(false);
   nav_id_node->setStringValue("");
-  
+
   _navaid = NULL;
 }
 
@@ -458,7 +441,7 @@ void FGNavRadio::updateReceiver(double dt)
 
   bool is_loc = loc_node->getBoolValue();
   double signal_quality_norm = signal_quality_norm_node->getDoubleValue();
-  
+
   double az2, s;
   //////////////////////////////////////////////////////////
 	// compute forward and reverse wgs84 headings to localizer
@@ -471,14 +454,14 @@ void FGNavRadio::updateReceiver(double dt)
   SG_NORMALIZE_RANGE(recip, 0.0, 360.0);
   radial_node->setDoubleValue( radial );
   recip_radial_node->setDoubleValue( recip );
-  
+
   //////////////////////////////////////////////////////////
   // compute the target/selected radial in "true" heading
   //////////////////////////////////////////////////////////
   if (!is_loc) {
     target_radial = sel_radial_node->getDoubleValue();
   }
-  
+
   // VORs need twist (mag-var) added; ILS/LOCs don't but we set twist to 0.0
   double trtrue = target_radial + twist;
   SG_NORMALIZE_RANGE(trtrue, 0.0, 360.0);
@@ -497,14 +480,14 @@ void FGNavRadio::updateReceiver(double dt)
 	    effective_range
                 = adjustNavRange( nav_elev, globals->get_aircraft_position().getElevationM(), _navaid->get_range() );
 	}
-  
+
   double effective_range_m = effective_range * SG_NM_TO_METER;
 
   //////////////////////////////////////////////////////////
   // compute signal quality
   // 100% within effective_range
   // decreases 1/x^2 further out
-  //////////////////////////////////////////////////////////  
+  //////////////////////////////////////////////////////////
   double last_signal_quality_norm = signal_quality_norm;
 
   if ( loc_dist < effective_range_m ) {
@@ -523,7 +506,7 @@ void FGNavRadio::updateReceiver(double dt)
   signal_quality_norm_node->setDoubleValue( signal_quality_norm );
   bool inrange = signal_quality_norm > 0.2;
   inrange_node->setBoolValue( inrange );
-  
+
   //////////////////////////////////////////////////////////
   // compute to/from flag status
   //////////////////////////////////////////////////////////
@@ -538,17 +521,17 @@ void FGNavRadio::updateReceiver(double dt)
   } else {
     _toFlag = _fromFlag = false;
   }
-  
+
   // CDI deflection
   double r = target_radial - radial;
   SG_NORMALIZE_RANGE(r, -180.0, 180.0);
-  
+
   if ( is_loc ) {
     if (falseCoursesEnabledNode->getBoolValue()) {
-      // The factor of 30.0 gives a period of 120 which gives us 3 cycles and six 
-      // zeros i.e. six courses: one front course, one back course, and four 
-      // false courses. Three of the six are reverse sensing.
-      _cdiDeflection = 30.0 * sawtooth(r / 30.0);
+        // The factor of 30.0 gives a period of 120 which gives us 3 cycles and six
+        // zeros i.e. six courses: one front course, one back course, and four
+        // false courses. Three of the six are reverse sensing.
+        _cdiDeflection = 30.0 * sawtooth(r / 30.0);
     } else {
       // no false courses, but we do need to create a back course
       if (fabs(r) > 90.0) { // front course
@@ -556,13 +539,13 @@ void FGNavRadio::updateReceiver(double dt)
       } else {
         _cdiDeflection = r; // back course
       }
-      
+
       _cdiDeflection = -_cdiDeflection; // reverse for outbound radial
     } // of false courses disabled
-    
+
     const double VOR_FULL_ARC = 20.0; // VOR is -10 .. 10 degree swing
     _cdiDeflection *= VOR_FULL_ARC / _localizerWidth; // increased localizer sensitivity
-    
+
     if (backcourse_node->getBoolValue()) {
       _cdiDeflection = -_cdiDeflection;
     }
@@ -573,13 +556,13 @@ void FGNavRadio::updateReceiver(double dt)
     }
     _cdiDeflection = r;
   } // of non-localizer case
-  
+
   SG_CLAMP_RANGE(_cdiDeflection, -10.0, 10.0 );
   _cdiDeflection *= signal_quality_norm;
-  
+
   // cross-track error (in meters)
   _cdiCrossTrackErrorM = loc_dist * sin(r * SGD_DEGREES_TO_RADIANS);
-  
+
   updateGlideSlope(dt, aircraft, signal_quality_norm);
 }
 
@@ -603,7 +586,7 @@ void FGNavRadio::updateGlideSlope(double dt, const SGVec3d& aircraft, double sig
     _gsNeedleDeflectionNorm = 0.0;
     return;
   }
-  
+
   SGVec3d pos = aircraft - _gsCart; // relative vector from gs antenna to aircraft
   // The positive GS axis points along the runway in the landing direction,
   // toward the far end, not toward the approach area, so we need a - sign here:
@@ -618,32 +601,32 @@ void FGNavRadio::updateGlideSlope(double dt, const SGVec3d& aircraft, double sig
 // At this point, if the aircraft is centered on the glide slope,
 // _gsDirect will be a small positive number, e.g. 3.0 degrees
 
-// Aim the branch cut straight down 
-// into the ground below the GS transmitter:
+  // Aim the branch cut straight down
+  // into the ground below the GS transmitter:
   if (_gsDirect < -90.0) _gsDirect += 360.0;
 
   double deflectionAngle = target_gs - _gsDirect;
-  
+
   if (falseCoursesEnabledNode->getBoolValue()) {
-    // Construct false glideslopes.  The scale factor of 1.5 
-    // in the sawtooth gives a period of 6 degrees.
-    // There will be zeros at 3, 6r, 9, 12r et cetera
-    // where "r" indicates reverse sensing.
-    // This is is consistent with conventional pilot lore
-    // e.g. http://www.allstar.fiu.edu/aerojava/ILS.htm
-    // but inconsistent with
-    // http://www.freepatentsonline.com/3757338.html
-    //
-    // It may be that some of each exist.
-    if (deflectionAngle < 0) {
-      deflectionAngle = 1.5 * sawtooth(deflectionAngle / 1.5);
-    } else {
-      // no false GS below the true GS
-    }
+      // Construct false glideslopes.  The scale factor of 1.5
+      // in the sawtooth gives a period of 6 degrees.
+      // There will be zeros at 3, 6r, 9, 12r et cetera
+      // where "r" indicates reverse sensing.
+      // This is is consistent with conventional pilot lore
+      // e.g. http://www.allstar.fiu.edu/aerojava/ILS.htm
+      // but inconsistent with
+      // http://www.freepatentsonline.com/3757338.html
+      //
+      // It may be that some of each exist.
+      if (deflectionAngle < 0) {
+          deflectionAngle = 1.5 * sawtooth(deflectionAngle / 1.5);
+      } else {
+          // no false GS below the true GS
+      }
   }
-  
-// GS is documented to be 1.4 degrees thick, 
-// i.e. plus or minus 0.7 degrees from the midline:
+
+  // GS is documented to be 1.4 degrees thick,
+  // i.e. plus or minus 0.7 degrees from the midline:
   SG_CLAMP_RANGE(deflectionAngle, -0.7, 0.7);
 
 // Many older instrument xml frontends depend on
@@ -652,9 +635,9 @@ void FGNavRadio::updateGlideSlope(double dt, const SGVec3d& aircraft, double sig
 // for a full-scale deflection:
   _gsNeedleDeflection = deflectionAngle * 5.0;
   _gsNeedleDeflection *= signal_quality_norm;
-  
+
   _gsNeedleDeflectionNorm = (deflectionAngle / 0.7) * signal_quality_norm;
-  
+
   //////////////////////////////////////////////////////////
   // Calculate desired rate of climb for intercepting the GS
   //////////////////////////////////////////////////////////
@@ -667,7 +650,7 @@ void FGNavRadio::updateGlideSlope(double dt, const SGVec3d& aircraft, double sig
   // estimate horizontal speed towards ILS in meters per minute
   double elapsedDistance = last_x - gsDist;
   last_x = gsDist;
-      
+
   double new_vel = ( elapsedDistance / dt );
   horiz_vel = 0.99 * horiz_vel + 0.01 * new_vel;
   /* printf("vel=%.1f (dist=%.1f dt=%.2f)\n", horiz_vel, elapsedDistance, dt);*/
@@ -685,7 +668,7 @@ void FGNavRadio::valueChanged (SGPropertyNode* prop)
     if (!nav_slaved_to_gps_node->getBoolValue()) {
       return;
     }
-  
+
     // GPS desired course has changed, sync up our selected-course
     double v = prop->getDoubleValue();
     if (v != sel_radial_node->getDoubleValue()) {
@@ -713,7 +696,7 @@ void FGNavRadio::valueChanged (SGPropertyNode* prop)
 void FGNavRadio::updateGPSSlaved()
 {
   has_gs_node->setBoolValue(gps_has_gs_node->getBoolValue());
- 
+
   _toFlag = gps_to_flag_node->getBoolValue();
   _fromFlag = gps_from_flag_node->getBoolValue();
 
@@ -727,18 +710,18 @@ void FGNavRadio::updateGPSSlaved()
     _gsNeedleDeflectionNorm = 0.0;
     return;
   }
-  
+
   // this is unfortunate, but panel instruments use this value to decide
   // if the navradio output is valid.
   signal_quality_norm_node->setDoubleValue(1.0);
-  
+
   _cdiDeflection =  gps_cdi_deflection_node->getDoubleValue();
   // clmap to some range (+/- 10 degrees) as the regular deflection
   SG_CLAMP_RANGE(_cdiDeflection, -10.0, 10.0 );
-  
+
   _cdiCrossTrackErrorM = gps_xtrack_error_nm_node->getDoubleValue() * SG_NM_TO_METER;
   _gsNeedleDeflection = 0.0; // FIXME, supply this
-  
+
   double trtrue = gps_course_node->getDoubleValue() + _magvarNode->getDoubleValue();
   SG_NORMALIZE_RANGE(trtrue, 0.0, 360.0);
   target_radial_true_node->setDoubleValue( trtrue );
@@ -748,7 +731,7 @@ void FGNavRadio::updateCDI(double dt)
 {
   bool cdi_serviceable = cdi_serviceable_node->getBoolValue();
   bool inrange = inrange_node->getBoolValue();
-                               
+
   if (tofrom_serviceable_node->getBoolValue()) {
     to_flag_node->setBoolValue(_toFlag);
     from_flag_node->setBoolValue(_fromFlag);
@@ -756,12 +739,12 @@ void FGNavRadio::updateCDI(double dt)
     to_flag_node->setBoolValue(false);
     from_flag_node->setBoolValue(false);
   }
-  
+
   if (!cdi_serviceable) {
     _cdiDeflection = 0.0;
     _cdiCrossTrackErrorM = 0.0;
   }
-  
+
   cdi_deflection_node->setDoubleValue(_cdiDeflection);
   cdi_deflection_norm_node->setDoubleValue(_cdiDeflection * 0.1);
   cdi_xtrack_error_node->setDoubleValue(_cdiCrossTrackErrorM);
@@ -841,7 +824,7 @@ void FGNavRadio::updateCDI(double dt)
   gs_deflection_deg_node->setDoubleValue(_gsNeedleDeflectionNorm * 0.7);
   gs_deflection_norm_node->setDoubleValue(_gsNeedleDeflectionNorm);
   gs_direct_node->setDoubleValue(_gsDirect);
-  
+
   last_xtrack_error = _cdiCrossTrackErrorM;
 }
 
@@ -851,9 +834,9 @@ void FGNavRadio::updateAudio( double dt )
     _audioIdent->setIdent("", 0.0 );
     return;
   }
-  
-	// play station ident via audio system if on + ident,
-	// otherwise turn it off
+
+  // play station ident via audio system if on + ident,
+  // otherwise turn it off
   if (!isServiceableAndPowered()
       || !ident_btn_node->getBoolValue()
       || !audio_btn_node->getBoolValue() ) {
@@ -872,7 +855,7 @@ FGNavRecord* FGNavRadio::findPrimaryNavaid(const SGGeod& aPos, double aFreqMHz)
 }
 
 // Update current nav/adf radio stations based on current position
-void FGNavRadio::search() 
+void FGNavRadio::search()
 {
   // set delay for next search
   _time_before_search_sec = 1.0;
@@ -926,7 +909,7 @@ void FGNavRadio::updateNav()
   if (nav) {
     nav_id_node->setStringValue(nav->get_ident());
     identBuffer =  simgear::strutils::rpad( nav->ident(), 4, ' ' );
-    
+
     effective_range = adjustNavRange(nav->get_elev_ft(), globals->get_aircraft_position().getElevationM(), nav->get_range());
     loc_node->setBoolValue(nav->type() != FGPositioned::VOR);
     twist = nav->get_multiuse();
@@ -938,7 +921,7 @@ void FGNavRadio::updateNav()
       _localizerWidth = nav->localizerWidth();
       twist = 0.0;
       effective_range = nav->get_range();
-      
+
       target_radial = nav->get_multiuse();
       SG_NORMALIZE_RANGE(target_radial, 0.0, 360.0);
 
@@ -948,8 +931,8 @@ void FGNavRadio::updateNav()
         double gs_radial = fmod(_gs->get_multiuse(), 1000.0);
         SG_NORMALIZE_RANGE(gs_radial, 0.0, 360.0);
         _gsCart = _gs->cart();
-                
-        // GS axis unit tangent vector 
+
+        // GS axis unit tangent vector
         // (along the runway):
         _gsAxis = tangentVector(_gs->geod(), gs_radial);
 
@@ -959,7 +942,7 @@ void FGNavRadio::updateNav()
         _gsVertical = cross(_gsBaseline, _gsAxis);
       } // of have glideslope
     } // of found LOC or ILS
-    
+
   } else { // found nothing
     _gs = NULL;
     nav_id_node->setStringValue("");

@@ -1,21 +1,7 @@
 // rnav_waypt_controller.cxx - Waypoint-specific behaviours for RNAV systems
-// Written by James Turner, started 2009.
 //
-// Copyright (C) 2009  Curtis L. Olson
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2009 James Turner
 
 #include "rnav_waypt_controller.hxx"
 
@@ -66,16 +52,15 @@ double greatCircleCrossTrackError(double distanceOriginToPosition,double courseD
 
 SGGeod computeTurnCenter(double turnRadiusM, const SGGeod& basePos, double inboundTrack, double turnAngle)
 {
-   
-   // this is the heading half way through the turn. Perpendicular to
-   // this is our turn center
-   const auto halfTurnHeading = inboundTrack + (turnAngle * 0.5);
-   double p = copysign(90.0, turnAngle);
-   double h = halfTurnHeading + p;
-   SG_NORMALIZE_RANGE(h, 0.0, 360.0);
-     
-   const double tcOffset = turnRadiusM / cos(turnAngle * 0.5 * SG_DEGREES_TO_RADIANS);
-   return SGGeodesy::direct(basePos, h, tcOffset);
+    // this is the heading half way through the turn. Perpendicular to
+    // this is our turn center
+    const auto halfTurnHeading = inboundTrack + (turnAngle * 0.5);
+    double p = copysign(90.0, turnAngle);
+    double h = halfTurnHeading + p;
+    SG_NORMALIZE_RANGE(h, 0.0, 360.0);
+
+    const double tcOffset = turnRadiusM / cos(turnAngle * 0.5 * SG_DEGREES_TO_RADIANS);
+    return SGGeodesy::direct(basePos, h, tcOffset);
 }
 
 ////////////////////////////////////////////////////////////////////////////s
@@ -88,13 +73,13 @@ bool WayptController::init()
 {
     return true;
 }
-  
+
 bool WayptController::isDone() const
 {
   if (_subController) {
     return _subController->isDone();
   }
-  
+
   return _isDone;
 }
 
@@ -103,7 +88,7 @@ void WayptController::setDone()
   if (_isDone) {
     SG_LOG(SG_AUTOPILOT, SG_DEV_WARN, "already done @ WayptController::setDone");
   }
-  
+
   _isDone = true;
 }
 
@@ -113,7 +98,7 @@ double WayptController::timeToWaypt() const
   if (gs < 1.0) {
     return -1.0; // stationary
   }
-  
+
     gs*= SG_KT_TO_MPS;
   return (distanceToWayptM() / gs);
 }
@@ -137,23 +122,23 @@ double WayptController::trueBearingDeg() const
 {
   if (_subController)
     return _subController->trueBearingDeg();
-  
+
   return _targetTrack;
 }
-  
+
 double WayptController::targetTrackDeg() const
 {
   if (_subController)
     return _subController->targetTrackDeg();
-  
+
   return _targetTrack;
 }
-  
+
 double WayptController::xtrackErrorNm() const
 {
   if (_subController)
     return _subController->xtrackErrorNm();
-  
+
   return 0.0;
 }
 
@@ -161,10 +146,10 @@ double WayptController::courseDeviationDeg() const
 {
   if (_subController)
     return _subController->courseDeviationDeg();
-  
+
   return 0.0;
 }
-  
+
 //////////////
 
 class BasicWayptCtl : public WayptController
@@ -195,38 +180,38 @@ public:
 
     _courseDev = bearingAircraftToTarget - _targetTrack;
     SG_NORMALIZE_RANGE(_courseDev, -180.0, 180.0);
-    
+
     if ((fabs(_courseDev) > _rnav->overflightArmAngleDeg()) && (_distanceAircraftTargetMeter < _rnav->overflightArmDistanceM())) {
       setDone();
     }
-  } 
+  }
 
   virtual double distanceToWayptM() const
   {
     return _distanceAircraftTargetMeter;
   }
-  
+
   virtual double xtrackErrorNm() const
   {
     double x = sin(courseDeviationDeg() * SG_DEGREES_TO_RADIANS) * _distanceAircraftTargetMeter;
     return x * SG_METER_TO_NM;
   }
-  
+
   virtual bool toFlag() const
   {
     return (fabs(_courseDev) < _rnav->overflightArmAngleDeg());
   }
-  
+
   virtual double courseDeviationDeg() const
   {
     return _courseDev;
   }
-  
+
   virtual double trueBearingDeg() const
   {
     return SGGeodesy::courseDeg(_rnav->position(), _waypt->position());
   }
-  
+
   virtual SGGeod position() const
   {
     return _waypt->position();
@@ -271,14 +256,14 @@ public:
       // capture current position
       _waypointOrigin = _rnav->position();
     }
-    
+
     _courseAircraftToTarget			= SGGeodesy::courseDeg(_rnav->position(),_waypt->position());
     _distanceAircraftTargetMetre 	= SGGeodesy::distanceM(_rnav->position(),_waypt->position());
-    
-    
+
+
     // check reach the leg in 45Deg or going direct
     bool canReachLeg = (fabs(_initialLegCourse -_courseAircraftToTarget) < 45.0);
-    
+
     if (previousLeg && canReachLeg) {
       _targetTrack = _initialLegCourse;
     } else {
@@ -288,12 +273,12 @@ public:
       _initialLegCourse = _courseAircraftToTarget;
       _waypointOrigin = _rnav->position();
     }
-      
+
   // turn angle depends on final leg course, not initial
   // do this here so we have a chance of doing a fly-by at the end of the leg
   _finalLegCourse = SGGeodesy::courseDeg(_waypt->position(), _waypointOrigin) + 180;
   SG_NORMALIZE_RANGE(_finalLegCourse, 0.0, 360.0);
-    
+
     // turn-in logic
     if (previousLeg.has_value() && previousLeg.value().didFlyBy) {
       _flyByTurnCenter = previousLeg.value().flyByTurnCenter;
@@ -305,24 +290,24 @@ public:
 
     return true;
   }
-  
+
   void computeTurnAnticipation()
   {
     _didComputeTurn = true;
-    
+
     if (_waypt->flag(WPT_OVERFLIGHT)) {
       return; // can't fly-by
     }
-    
+
     if (!_rnav->canFlyBy())
       return;
-    
+
     auto nextLegTrack = _rnav->nextLegTrack();
-    
+
     if (!nextLegTrack.has_value()) {
       return;
     }
-    
+
     _flyByTurnAngle = nextLegTrack.value() - _finalLegCourse;
     SG_NORMALIZE_RANGE(_flyByTurnAngle, -180.0, 180.0);
 
@@ -335,12 +320,12 @@ public:
       _flyByTurnCenter = computeTurnCenter(_flyByTurnRadius, _waypt->position(), _finalLegCourse, _flyByTurnAngle);
     _doFlyBy = true;
   }
-  
+
   bool updateInTurn()
   {
     // find bearing to turn center
     // when it hits 90 off our track
-    
+
     auto bearingToTurnCenter = SGGeodesy::courseDeg(_rnav->position(), _flyByTurnCenter);
     auto distToTurnCenter = SGGeodesy::distanceM(_rnav->position(), _flyByTurnCenter);
 
@@ -351,38 +336,38 @@ public:
         if (fabs(a) < 90.0) {
         return false; // keep flying normal leg
       }
-      
+
       _flyByStarted = true;
     }
-    
+
     // check for us passing the half-way point; that's when we should
     // sequence to the next WP
     const auto halfPointAngle = (_finalLegCourse + (_flyByTurnAngle * 0.5));
     auto b = bearingToTurnCenter - halfPointAngle;
     SG_NORMALIZE_RANGE(b, -180.0, 180.0);
-            
+
     if (fabs(b) >= 90.0) {
       _toFlag = false;
       setDone();
     }
-    
+
     // in the actual turn, our desired track is always pependicular to the
     // bearing to the turn center we computed
     _targetTrack = bearingToTurnCenter - copysign(90, _flyByTurnAngle);
-      
+
     SG_NORMALIZE_RANGE(_targetTrack, 0.0, 360.0);
 
     _crossTrackError = (distToTurnCenter - _flyByTurnRadius) * SG_METER_TO_NM;
     _courseDev = _crossTrackError * 10.0; // arbitrary guess for now
-    
+
     return true;
   }
-  
+
   void updateInEntryTurn()
   {
     auto bearingToTurnCenter = SGGeodesy::courseDeg(_rnav->position(), _flyByTurnCenter);
     auto distToTurnCenter = SGGeodesy::distanceM(_rnav->position(), _flyByTurnCenter);
-  
+
     auto b = bearingToTurnCenter - _initialLegCourse;
 
       SG_NORMALIZE_RANGE(b, -180.0, 180.0);
@@ -390,7 +375,7 @@ public:
       _entryFlyByActive = false;
       return; // we're done with the entry turn
     }
-    
+
     _targetTrack = bearingToTurnCenter - copysign(90, _flyByTurnAngle);
 
     SG_NORMALIZE_RANGE(_targetTrack, 0.0, 360.0);
@@ -410,27 +395,27 @@ public:
       updateInEntryTurn();
       return;
     }
-    
+
     if (!_didComputeTurn && (_distanceAircraftTargetMetre < turnComputeDist)) {
       computeTurnAnticipation();
     }
-        
+
     if (_didComputeTurn && _doFlyBy) {
       bool ok = updateInTurn();
       if (ok) {
         return;
       }
-      
+
       // otherwise we fall through
     }
-    
+
     // from the Aviation Formulary
 #if 0
     Suppose you are proceeding on a great circle route from A to B (course =crs_AB) and end up at D,
-    perhaps off course. (We presume that A is ot a pole!) You can calculate the course from A to D
+    perhaps off course. (We presume that A is not a pole!) You can calculate the course from A to D
     (crs_AD) and the distance from A to D (dist_AD) using the formulae above. In terms of these the
     cross track error, XTD, (distance off course) is given by
-    
+
     XTD =asin(sin(dist_AD)*sin(crs_AD-crs_AB))
     (positive XTD means right of course, negative means left)
     (If the point A is the N. or S. Pole replace crs_AD-crs_AB with
@@ -438,16 +423,16 @@ public:
 #endif
     // however, just for fun, our convention for polarity of the cross-track
     // sign is opposite, so we add a -ve to the computation below.
-    
+
     double distOriginAircraftRad = _distanceOriginAircraftMetre * SG_METER_TO_NM * SG_NM_TO_RAD;
     double xtkRad = asin(sin(distOriginAircraftRad) * sin((_courseOriginToAircraft - _initialLegCourse) * SG_DEGREES_TO_RADIANS));
-    
+
     // convert to NM and flip sign for consistency with existing code.
     // since we derive the abeam point and course-deviation from this, and
     // thus the GPS cdi-deflection, if we don't fix this here, the sign of
     // all of those comes out backwards.
     _crossTrackError = -(xtkRad * SG_RAD_TO_NM);
-    
+
     /*
      The "along track distance", ATD, the distance from A along the course towards B
      to the point abeam D is given by:
@@ -482,15 +467,15 @@ public:
       double desiredCourse = SGGeodesy::courseDeg(abeamPoint, _waypt->position());
       _targetTrack = desiredCourse;
     }
-    
+
     _courseDev = _courseAircraftToTarget - _targetTrack;
     SG_NORMALIZE_RANGE(_courseDev, -180.0, 180.0);
 
-    
+
     bool isMinimumOverFlightDistanceReached = _distanceAircraftTargetMetre < _rnav->overflightDistanceM();
     bool isOverFlightConeArmed 				= _distanceAircraftTargetMetre < ( _rnav->overflightArmDistanceM() + _rnav->overflightDistanceM() );
     bool leavingOverFlightCone 				= (fabs(_courseDev) > _rnav->overflightArmAngleDeg());
-    
+
     if ( isMinimumOverFlightDistanceReached ){
       _toFlag = false;
       setDone();
@@ -511,17 +496,17 @@ public:
     RNAV::LegData r;
     r.position = _waypt->position();
     if (_doFlyBy) {
-      // copy all the fly by paramters, so the next controller can
-      // smoothly link up
-      r.didFlyBy = true;
-      r.flyByRadius = _flyByTurnRadius;
-      r.flyByTurnCenter = _flyByTurnCenter;
-      r.turnAngle = _flyByTurnAngle;
+        // copy all the fly-by parameters, so the next controller can
+        // smoothly link up
+        r.didFlyBy = true;
+        r.flyByRadius = _flyByTurnRadius;
+        r.flyByTurnCenter = _flyByTurnCenter;
+        r.turnAngle = _flyByTurnAngle;
     }
-    
+
     return r;
   }
-  
+
   virtual double distanceToWayptM() const
   {
     return _distanceAircraftTargetMetre;
@@ -568,7 +553,7 @@ private:
   double _courseDev;
   bool _toFlag;
   double _crossTrackError;
-  
+
   bool _didComputeTurn = false;
   bool _doFlyBy = false;
   SGGeod _flyByTurnCenter;
@@ -607,27 +592,27 @@ public:
   virtual void update(double)
   {
     double bearingAircraftRunwayEnd;
-    // use the far end of the runway for course deviation calculations. 
-    // this should do the correct thing both for takeoffs (including entering 
+    // use the far end of the runway for course deviation calculations.
+    // this should do the correct thing both for takeoffs (including entering
     // the runway at a taxiway after the threshold) and also landings.
-    // seperately compute the distance to the threshold for timeToWaypt calc
+    // separately compute the distance to the threshold for timeToWaypt calc
 
     bearingAircraftRunwayEnd	= SGGeodesy::courseDeg(_rnav->position(), _runway->end());
     _distanceAircraftRunwayEnd	= SGGeodesy::distanceM(_rnav->position(), _runway->end());
 
     _courseDev = bearingAircraftRunwayEnd - _targetTrack;
     SG_NORMALIZE_RANGE(_courseDev, -180.0, 180.0);
-    
+
     if ((fabs(_courseDev) > _rnav->overflightArmAngleDeg()) && (_distanceAircraftRunwayEnd < _rnav->overflightArmDistanceM())) {
       setDone();
     }
-  } 
-  
+  }
+
   virtual double distanceToWayptM() const
   {
     return SGGeodesy::distanceM(_rnav->position(), _runway->threshold());
   }
-  
+
   virtual double xtrackErrorNm() const
   {
     double x = sin(_courseDev * SG_DEGREES_TO_RADIANS) * _distanceAircraftRunwayEnd;
@@ -645,7 +630,7 @@ public:
     // sensible whether taking off or landing.
     return SGGeodesy::courseDeg(_rnav->position(), _runway->end());
   }
-  
+
   virtual SGGeod position() const
   {
     return _runway->threshold();
@@ -661,12 +646,12 @@ class ConstHdgToAltCtl : public WayptController
 public:
   ConstHdgToAltCtl(RNAV* aRNAV, const WayptRef& aWpt) :
     WayptController(aRNAV, aWpt)
-    
+
   {
     if (_waypt->type() != "hdgToAlt") {
       throw sg_exception("invalid waypoint type", "ConstHdgToAltCtl ctor");
     }
-    
+
     if (_waypt->altitudeRestriction() == RESTRICT_NONE) {
       throw sg_exception("invalid waypoint alt restriction", "ConstHdgToAltCtl ctor");
     }
@@ -679,7 +664,7 @@ public:
       _filteredFPM = _lastFPM = _rnav->vspeedFPM();
       return true;
   }
-  
+
   virtual void update(double dt)
   {
     double curAlt = _rnav->position().getElevationFt();
@@ -691,41 +676,40 @@ public:
       _lastFPM = _rnav->vspeedFPM();
 
     switch (_waypt->altitudeRestriction()) {
-    case RESTRICT_AT: 
-    case RESTRICT_COMPUTED:  
-    {
-      double d = curAlt - _waypt->altitudeFt();
-      if (fabs(d) < 50.0) {
-        SG_LOG(SG_INSTR, SG_INFO, "ConstHdgToAltCtl, reached target altitude " << _waypt->altitudeFt());
-        setDone();
-      }
+    case RESTRICT_AT:
+    case RESTRICT_COMPUTED: {
+        double d = curAlt - _waypt->altitudeFt();
+        if (fabs(d) < 50.0) {
+            SG_LOG(SG_INSTR, SG_INFO, "ConstHdgToAltCtl, reached target altitude " << _waypt->altitudeFt());
+            setDone();
+        }
     } break;
-      
+
     case RESTRICT_ABOVE:
       if (curAlt >= _waypt->altitudeFt()) {
         SG_LOG(SG_INSTR, SG_INFO, "ConstHdgToAltCtl, above target altitude " << _waypt->altitudeFt());
         setDone();
       }
       break;
-      
+
     case RESTRICT_BELOW:
       if (curAlt <= _waypt->altitudeFt()) {
         SG_LOG(SG_INSTR, SG_INFO, "ConstHdgToAltCtl, below target altitude " << _waypt->altitudeFt());
         setDone();
       }
       break;
-    
+
     default:
       break;
     }
   }
-  
+
   virtual double timeToWaypt() const
   {
     double d = fabs(_rnav->position().getElevationFt() - _waypt->altitudeFt());
     return (d / _filteredFPM) * 60.0;
   }
-  
+
   virtual double distanceToWayptM() const
   {
       // we could filter ground speed here, but it's likely stable enough,
@@ -733,7 +717,7 @@ public:
     double gsMsec = _rnav->groundSpeedKts() * SG_KT_TO_MPS;
     return timeToWaypt() * gsMsec;
   }
-  
+
   virtual SGGeod position() const
   {
     SGGeod p;
@@ -763,12 +747,12 @@ public:
     RadialIntercept* w = (RadialIntercept*) _waypt.get();
       _trueRadial = w->radialDegMagnetic() + _rnav->magvarDeg();
     _targetTrack = w->courseDegMagnetic() + _rnav->magvarDeg();
-      
+
       _canFlyBy = !_waypt->flag(WPT_OVERFLIGHT) && _rnav->canFlyBy();
 
       return true;
   }
-  
+
    void update(double) override
   {
       SGGeoc c,
@@ -796,12 +780,12 @@ public:
       if (!_didComputeTurn && (_distanceToProjectedInterceptM < turnComputeDist)) {
           computeTurn();
       }
-      
+
       if (_doFlyBy) {
           updateFlyByTurn();
       }
-      
-      
+
+
     // note we want the outbound radial from the waypt, hence the ordering
     // of arguments to courseDeg
     double r = SGGeodesy::courseDeg(_waypt->position(), _rnav->position());
@@ -811,12 +795,12 @@ public:
       setDone();
     }
   }
-          
+
     bool updateFlyByTurn()
     {
         // find bearing to turn center
         // when it hits 90 off our track
-        
+
         auto bearingToTurnCenter = SGGeodesy::courseDeg(_rnav->position(), _flyByTurnCenter);
         auto distToTurnCenter = SGGeodesy::distanceM(_rnav->position(), _flyByTurnCenter);
 
@@ -827,41 +811,41 @@ public:
             if (fabs(a) < 90.0) {
                 return false;
           }
-          
+
           _flyByStarted = true;
         }
-        
-        
+
+
         // in the actual turn, our desired track is always pependicular to the
         // bearing to the turn center we computed
         _targetTrack = bearingToTurnCenter - copysign(90, _flyByTurnAngle);
-          
+
         SG_NORMALIZE_RANGE(_targetTrack, 0.0, 360.0);
         _crossTrackError = (distToTurnCenter - _flyByTurnRadius) * SG_METER_TO_NM;
         return true;
     }
-    
+
     void computeTurn()
     {
         _didComputeTurn = true;
         if (!_canFlyBy)
             return;
-        
+
         double inverseRadial = _trueRadial + 180.0;
         SG_NORMALIZE_RANGE(inverseRadial, 0.0, 360.0);
         _flyByTurnAngle = inverseRadial - _targetTrack;
         SG_NORMALIZE_RANGE(_flyByTurnAngle, -180.0, 180.0);
-        
+
         if (fabs(_flyByTurnAngle) > _rnav->maxFlyByTurnAngleDeg()) {
           // too sharp, no fly-by
           return;
         }
-        
+
         _flyByTurnRadius =  _rnav->turnRadiusNm() * SG_NM_TO_METER;
         _flyByTurnCenter = computeTurnCenter(_flyByTurnRadius, _projectedPosition, _targetTrack, _flyByTurnAngle);
         _doFlyBy = true;
     }
-  
+
 double distanceToWayptM() const override
   {
       return _distanceToProjectedInterceptM;
@@ -871,7 +855,7 @@ double distanceToWayptM() const override
     {
         return _projectedPosition;
     }
-    
+
      double xtrackErrorNm() const override
      {
          if (!_flyByStarted)
@@ -917,7 +901,7 @@ public:
     _targetTrack = _dme->courseDegMagnetic() + _rnav->magvarDeg();
     return true;
   }
-  
+
   virtual void update(double)
   {
     _distanceNm = SGGeodesy::distanceNm(_rnav->position(), _dme->position());
@@ -926,12 +910,12 @@ public:
       setDone();
     }
   }
-  
+
   virtual double distanceToWayptM() const
   {
     return fabs(_distanceNm - _dme->dmeDistanceNm()) * SG_NM_TO_METER;
   }
-  
+
     virtual SGGeod position() const
     {
         SGGeoc geocPos = SGGeoc::fromGeod(_rnav->position());
@@ -957,7 +941,7 @@ private:
 
 HoldCtl::HoldCtl(RNAV* aRNAV, const WayptRef& aWpt) :
   WayptController(aRNAV, aWpt)
-  
+
 {
   // find published hold for aWpt
   // do we have this?!
@@ -976,19 +960,19 @@ bool HoldCtl::init()
 {
   _segmentEnd = _waypt->position();
   _state = LEG_TO_HOLD;
-  
+
   // use leg controller to fly us to the hold point - this also gives
   // the normal legl behaviour if the hold is not enabled
   setSubController(new LegWayptCtl(_rnav, _waypt));
 
   return true;
 }
-  
+
 void HoldCtl::computeEntry()
 {
   const double entryCourse = SGGeodesy::courseDeg(_rnav->position(), _waypt->position());
   const double diff = SGMiscd::normalizePeriodic( -180.0, 180.0, _holdCourse - entryCourse);
-  
+
   if (_leftHandTurns) {
     if ((diff > -70) && (diff < 120.0)) {
       _state = ENTRY_DIRECT;
@@ -1008,19 +992,19 @@ void HoldCtl::computeEntry()
     }
   }
 }
-    
+
 void HoldCtl::update(double dt)
 {
   const auto rnavPos = _rnav->position();
   const double dEnd = SGGeodesy::distanceNm(rnavPos, _segmentEnd);
-  
+
   // fly inbound / outbound sides, or execute the turn
   switch (_state) {
     case LEG_TO_HOLD:
       // update the leg controller
       _subController->update(dt);
       break;
-      
+
     case HOLD_EXITING:
       // in the common case of a hold in a procedure, we often just fly
       // the hold waypoint as leg. Keep running the Leg sub-controller until
@@ -1034,7 +1018,7 @@ void HoldCtl::update(double dt)
     default:
       break;
   }
-  
+
   if (_inTurn) {
     const double turnOffset = inLeftTurn() ? 90 : -90;
     const double bearingTurnCenter = SGGeodesy::courseDeg(rnavPos, _turnCenter);
@@ -1068,12 +1052,12 @@ void HoldCtl::update(double dt)
     }
   }
 }
-  
+
 void HoldCtl::setHoldCount(int count)
 {
   _holdCount = count;
 }
-    
+
 void HoldCtl::exitHold()
 {
   _holdCount = 0;
@@ -1086,16 +1070,16 @@ bool HoldCtl::checkOverHold()
   if (d > 0.2) {
       return false;
   }
-  
+
   if (_holdCount == 0) {
     setDone();
     return true;
   }
-    
+
     startOutboundTurn();
   return true;
 }
-    
+
 void HoldCtl::checkInitialEntry(double dNm)
 {
   _turnRadius = _rnav->turnRadiusNm();
@@ -1103,22 +1087,22 @@ void HoldCtl::checkInitialEntry(double dNm)
     // keep going;
     return;
   }
-  
+
   if (_holdCount == 0) {
     // we're done, but we want to keep the leg controller going until
     // we're right on top
     setDone();
-    
+
     // ensure we keep running the Leg cub-controller until it's done,
     // which happens a bit later
     _state = HOLD_EXITING;
     return;
   }
-  
+
   // clear the leg controller we were using to fly us to the hold
   setSubController(nullptr);
   computeEntry();
-  
+
   if (_state == ENTRY_DIRECT) {
     startOutboundTurn();
   } else if (_state == ENTRY_TEARDROP) {
@@ -1155,7 +1139,7 @@ void HoldCtl::startOutboundTurn()
   _turnEndAngle = _holdCourse + 180.0;
   SG_NORMALIZE_RANGE(_turnEndAngle, 0.0, 360.0);
 }
-  
+
 void HoldCtl::startParallelEntryTurn()
 {
   _state = ENTRY_PARALLEL_INBOUND;
@@ -1165,7 +1149,7 @@ void HoldCtl::startParallelEntryTurn()
   _turnEndAngle = _holdCourse + (_leftHandTurns ? 45.0 : -45.0);
   SG_NORMALIZE_RANGE(_turnEndAngle, 0.0, 360.0);
 }
-  
+
 void HoldCtl::exitTurn()
 {
   _inTurn = false;
@@ -1174,7 +1158,7 @@ void HoldCtl::exitTurn()
       _targetTrack = _holdCourse;
       _segmentEnd = _waypt->position();
       break;
-      
+
   case ENTRY_PARALLEL_INBOUND:
       // possible improvement : fly the current track until the bearing tp
       // the hold point matches the hold radial. This would cause us to fly
@@ -1183,19 +1167,19 @@ void HoldCtl::exitTurn()
        _targetTrack = SGGeodesy::courseDeg(_rnav->position(), _waypt->position());
       _segmentEnd = _waypt->position();
       break;
-          
+
   case HOLD_OUTBOUND:
       _targetTrack = _holdCourse + 180.0;
       SG_NORMALIZE_RANGE(_targetTrack, 0.0, 360.0);
       // start a timer for timed holds?
       _segmentEnd = outboundEndPoint();
       break;
-      
+
   default:
       SG_LOG(SG_INSTR, SG_DEV_WARN, "HoldCOntroller: bad state at exitTurn:" << _state);
   }
 }
-  
+
 SGGeod HoldCtl::outboundEndPoint()
 {
   // FIXME flip for left hand-turns
@@ -1211,7 +1195,7 @@ SGGeod HoldCtl::outboundTurnCenter()
   const double turnOffset = _leftHandTurns ? -90 : 90;
   return SGGeodesy::direct(_waypt->position(), _holdCourse + turnOffset, _rnav->turnRadiusNm() * SG_NM_TO_METER);
 }
-  
+
 SGGeod HoldCtl::inboundTurnCenter()
 {
   const double legLengthM = holdLegLengthNm() * SG_NM_TO_METER;
@@ -1219,7 +1203,7 @@ SGGeod HoldCtl::inboundTurnCenter()
   const double turnOffset = _leftHandTurns ? -90 : 90;
   return SGGeodesy::direct(p1, _holdCourse + turnOffset, _rnav->turnRadiusNm() * SG_NM_TO_METER);
 }
-        
+
 double HoldCtl::distanceToWayptM() const
 {
   return -1.0;
@@ -1229,7 +1213,7 @@ SGGeod HoldCtl::position() const
 {
   return _waypt->position();
 }
-  
+
 bool HoldCtl::inLeftTurn() const
 {
     return (_state == ENTRY_PARALLEL_INBOUND) ? !_leftHandTurns : _leftHandTurns;
@@ -1241,16 +1225,16 @@ double HoldCtl::holdLegLengthNm() const
   if (_holdLegTime > 0.0) {
     return _holdLegTime * gs / 3600.0;
   }
-  
+
   return _holdLegDistance;
 }
-  
+
 double HoldCtl::xtrackErrorNm() const
 {
   if (_subController) {
     return _subController->xtrackErrorNm();
   }
-  
+
   if (_inTurn) {
     const double dR = SGGeodesy::distanceNm(_turnCenter, _rnav->position());
     const double xtk = dR - _turnRadius;
@@ -1262,19 +1246,19 @@ double HoldCtl::xtrackErrorNm() const
       return greatCircleCrossTrackError(d, courseDev);
   }
 }
-      
+
 double HoldCtl::courseDeviationDeg() const
 {
   if (_subController) {
     return _subController->courseDeviationDeg();
   }
-  
+
   // convert XTK to 'dots' deviation
   // assuming 10-degree peg to peg, this means 0.1nm of course is
   // one degree of error, feels about right for a hold
   return xtrackErrorNm() * 10.0;
 }
-    
+
   std::string HoldCtl::status() const
   {
     switch (_state) {
@@ -1287,7 +1271,7 @@ double HoldCtl::courseDeviationDeg() const
         return "entry-parallel";
       case ENTRY_TEARDROP:
         return "entry-teardrop";
-        
+
       case HOLD_OUTBOUND:   return "hold-outbound";
       case HOLD_INBOUND:    return "hold-inbound";
       case HOLD_EXITING:    return "hold-exiting";
@@ -1297,13 +1281,13 @@ double HoldCtl::courseDeviationDeg() const
   }
 
 ///////////////////////////////////////////////////////////////////////////////////
-  
+
 class VectorsCtl : public WayptController
 {
 public:
   VectorsCtl(RNAV* aRNAV, const WayptRef& aWpt) :
     WayptController(aRNAV, aWpt)
-    
+
   {
   }
 
@@ -1311,17 +1295,17 @@ public:
   {
       return true;
   }
-  
+
   virtual void update(double)
   {
     setDone();
   }
-  
+
   virtual double distanceToWayptM() const
   {
     return -1.0;
   }
-  
+
   virtual SGGeod position() const
   {
     return _waypt->position();
@@ -1362,7 +1346,7 @@ void DirectToController::update(double)
     // course deviation comes out as zero
     courseOriginToAircraft = _targetTrack;
   }
-    
+
   _courseAircraftToTarget		= SGGeodesy::courseDeg(_rnav->position(),_waypt->position());
   _distanceAircraftTargetMeter	= SGGeodesy::distanceM(_rnav->position(),_waypt->position());
 
@@ -1423,7 +1407,7 @@ bool OBSController::init()
       SG_LOG(SG_AUTOPILOT, SG_WARN, "can't use a dynamic waypoint for OBS mode" << _waypt->ident());
       return false;
   }
-  
+
   _targetTrack = _rnav->selectedMagCourse() + _rnav->magvarDeg();
   return true;
 }
@@ -1462,7 +1446,7 @@ double OBSController::courseDeviationDeg() const
  //   SG_NORMALIZE_RANGE(d, -90.0, 90.0);
   //  return d;
   //}
-  
+
   return _courseDev;
 }
 
@@ -1483,34 +1467,33 @@ WayptController* WayptController::createForWaypt(RNAV* aRNAV, const WayptRef& aW
   if (!aWpt) {
     throw sg_exception("Passed null waypt", "WayptController::createForWaypt");
   }
-  
+
   const std::string& wty(aWpt->type());
   if (wty == "runway") {
     return new RunwayCtl(aRNAV, aWpt);
   }
-  
+
   if (wty == "radialIntercept") {
     return new InterceptCtl(aRNAV, aWpt);
   }
-  
+
   if (wty == "dmeIntercept") {
     return new DMEInterceptCtl(aRNAV, aWpt);
   }
-  
+
   if (wty == "hdgToAlt") {
     return new ConstHdgToAltCtl(aRNAV, aWpt);
   }
-  
+
   if (wty == "vectors") {
     return new VectorsCtl(aRNAV, aWpt);
   }
-  
+
   if (wty == "hold") {
     return new HoldCtl(aRNAV, aWpt);
   }
-  
+
   return new LegWayptCtl(aRNAV, aWpt);
 }
 
-} // of namespace flightgear
-
+} // namespace flightgear

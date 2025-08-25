@@ -1,6 +1,6 @@
 /*
  * SPDX-FileComment: class to manage a comm radio instance
- * SPDX-FileCopyrightText: Copyright (C) 2014 Torsten Dreyer
+ * SPDX-FileCopyrightText: 2014 Torsten Dreyer
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -103,7 +103,7 @@ void AtisSpeaker::valueChanged(SGPropertyNode * node)
 
     _synthesizeRequest.speed = (hash % 16) / 16.0 * fgGetDouble("/sim/atis/speed", 1);
     _synthesizeRequest.pitch = (hash % 16) / 16.0 * fgGetDouble("/sim/atis/pitch", 1);
-    
+
     if( starts_with( _stationId, "K" ) || starts_with( _stationId, "C" ) ||
             starts_with( _stationId, "P" ) ) {
         voice = FLITEVoiceSynthesizer::getVoicePath("cmu_us_arctic_slt");
@@ -419,17 +419,18 @@ private:
 			int channelNum = (base25-118000)/25*4 + subChannel+1;
 			if( channelNum != _channelNum ) _channelNum = channelNum;
 
-			// set to correct channel on bogous input
-			double sanitizedChannel = (base25 + 5*(subChannel+1))/1000.0;
-			if( sanitizedChannel != channel ) {
-				_channel = sanitizedChannel; // triggers recursion
-			}
-		}
-	}
+            // set to correct channel on bogus input
+            double sanitizedChannel = (base25 + 5 * (subChannel + 1)) / 1000.0;
+            if (sanitizedChannel != channel) {
+                _channel = sanitizedChannel; // triggers recursion
+            }
+        }
+    }
 
-	double getFrequency() const {
-		return _channel;
-	}
+    double getFrequency() const
+    {
+        return _channel;
+    }
 
 
     PropertyObject<double> _channel;
@@ -564,9 +565,9 @@ void CommRadioImpl::bind()
 void CommRadioImpl::unbind()
 {
   _atis.node()->removeChangeListener(&_atisSpeaker);
-  
+
   stopAudio();
-  
+
   _metarBridge->unbind();
   AbstractInstrument::unbind();
 }
@@ -583,7 +584,7 @@ void CommRadioImpl::init()
   // initialize add-noize to true if unset
   s = _addNoise.node()->getStringValue();
   if (s.empty()) _addNoise = true;
-  
+
   auto soundManager = globals->get_subsystem<SGSoundMgr>();
   if (soundManager) {
     _sampleGroup = soundManager->find("atc", true);
@@ -637,7 +638,7 @@ void CommRadioImpl::update(double dt)
     _receivingFlag = false;
     return;
   }
-  
+
   _slantDistance_m = dist(_commStationForFrequency->cart(), SGVec3d::fromGeod(position));
 
   SGGeodesy::inverse(position, _commStationForFrequency->geod(), _trueBearingTo_deg, _trueBearingFrom_deg, _trackDistance_m);
@@ -671,7 +672,7 @@ void CommRadioImpl::update(double dt)
       _receivingFlag = false;
       break;
   }
-  
+
   updateAudio();
 }
 
@@ -679,12 +680,12 @@ void CommRadioImpl::updateAudio()
 {
   if (!_sampleGroup)
     return;
-  
+
   const string noiseRef = _soundPrefix + "_noise";
   const string atisRef = _soundPrefix + "_atis";
 
   SGSoundSample* noiseSample = _sampleGroup->find(noiseRef);
-  
+
   // create noise sample if necessary, and play forever
   if (_addNoise && !noiseSample) {
     SGSharedPtr<SGSoundSample> noise = new SGSoundSample("Sounds/radionoise.wav", globals->get_fg_root());
@@ -692,12 +693,12 @@ void CommRadioImpl::updateAudio()
     _sampleGroup->play_looped(noiseRef);
     noiseSample = noise;
   }
-  
+
   bool atis_enabled = _atis_enabled_node->getBoolValue();
   int atis_delta = 0;
   if (atis_enabled && !_atis_enabled_prev) atis_delta = 1;
   if (!atis_enabled && _atis_enabled_prev) atis_delta = -1;
-  
+
   if (_atisSpeaker.hasSpokenAtis()) {
     // the speaker has created a new atis sample
     // remove previous atis sample
@@ -725,7 +726,7 @@ void CommRadioImpl::updateAudio()
     _sampleGroup->remove(atisRef);
   }
   _atis_enabled_prev = atis_enabled;
-  
+
   // adjust volumes
   const auto targetVolume = (_pushToTalk && !_fullDuplex) ? 0.0 : _volume_norm;
   const bool doSquelch = (_signalQuality_norm < _cutoffSignalQuality);
@@ -741,13 +742,13 @@ void CommRadioImpl::updateAudio()
     atisVolume = _signalQuality_norm * targetVolume;
     noiseSample->set_volume(doSquelch ? 0.0: noiseVol);
   }
-  
+
   SGSoundSample* s = _sampleGroup->find(atisRef);
   if (s) {
     s->set_volume(atisVolume);
   }
 }
-  
+
 void CommRadioImpl::stopAudio()
 {
   if (_sampleGroup) {
@@ -770,4 +771,3 @@ SGSubsystemMgr::InstancedRegistrant<CommRadio> registrantCommRadio(
 #endif
 
 } // namespace Instrumentation
-

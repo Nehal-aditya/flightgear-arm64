@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2015 Torsten Dreyer
+
 #pragma once
 
 /* ------------- A NAV/COMM Frequency formatter ---------------------- */
@@ -31,9 +34,9 @@ public:
   {
     // format as fixed decimal "nnn.nn"
     std::ostringstream buf;
-    buf << std::fixed 
-        << std::setw(5) 
-        << std::setfill('0') 
+    buf << std::fixed
+        << std::setw(5)
+        << std::setfill('0')
         << std::setprecision(2)
         << getFrequency();
     _fmtFreqNode->setStringValue( buf.str() );

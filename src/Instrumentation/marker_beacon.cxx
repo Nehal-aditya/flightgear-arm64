@@ -1,24 +1,10 @@
-// marker_beacon.cxx -- class to manage the marker beacons
-//
-// Written by Curtis Olson, started April 2000.
-//
-// Copyright (C) 2000  Curtis L. Olson - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+/*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: 2000 Curtis Olson
+ *
+ * marker_beacon.cxx -- class to manage the marker beacons
+ * Written by Curtis Olson, started April 2000.
+*/
 
 
 #include <config.h>
@@ -94,7 +80,7 @@ FGMarkerBeacon::init ()
 {
     SGPropertyNode *node = fgGetNode(nodePath(), true );
     initServicePowerProperties(node);
-    
+
     // Inputs
     sound_working = fgGetNode("/sim/sound/working", true);
     audio_btn = node->getChild("audio-btn", 0, true);
@@ -211,7 +197,7 @@ void FGMarkerBeacon::updateOutputProperties(bool on)
     // map our beacon nodes to indices which correspond to the fgMkrBeacType enum
     // this allows to use '_lastBeacon' to select whhich index should be on
     // we set all other ones to off to ensure consistency in weird cases, eg
-    // going from one beaon type to another in a single update.
+    // going from one beacon type to another in a single update.
     SGPropertyNode* beacons[4] = {nullptr, _innerBlinkNode.get(), _middleBlinkNode.get(), _outerBlinkNode.get()};
     for (int b = INNER; b <= OUTER; b++) {
         const bool bOn = on && (_lastBeacon == b);
@@ -290,7 +276,7 @@ public:
     }
 };
 
-// Update current nav/adf radio stations based on current postition
+// Update current nav/adf radio stations based on current position
 void FGMarkerBeacon::search()
 {
     // reset search time
@@ -356,7 +342,7 @@ void FGMarkerBeacon::changeBeaconType(fgMkrBeacType newType)
             break;
         }
     } else if (_blinkMode == BlinkMode::BackwardsCompatible) {
-        // older FG versions used same timing for alll beacon types :(
+        // older FG versions used same timing for all beacon types :(
         _beaconTiming = FGBeacon::BeaconTiming{};
         _beaconTiming.durationUSec = 500000;
         _beaconTiming.periodsUSec[0] = 400000;

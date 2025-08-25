@@ -1,13 +1,8 @@
 // clock.cxx - an electric-powered turn indicator.
-// Written by Melchior FRANZ, started 2003.
-//
-// This file is in the Public Domain and comes with no warranty.
-//
-// $Id$
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2003 Melchior Franz (public domain)
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <cstdio>
 

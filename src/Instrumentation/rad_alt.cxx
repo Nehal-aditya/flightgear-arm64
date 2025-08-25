@@ -2,28 +2,10 @@
 //
 // Written by Vivian MEAZZA, started Feb 2008.
 //
-//
-// Copyright (C) 2008  Vivian Meazza
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-//
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2008 Vivian Meazza
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
 #include "rad_alt.hxx"
 
@@ -114,7 +96,7 @@ RadarAltimeter::updateSetHeight()
         _rad_alt_warning_node->setIntValue(9999);
         return;
     }
-    
+
     double radarAltFt = _min_radalt * SG_METER_TO_FEET;
     if (radarAltFt < set_ht_ft * (100 - set_excur)/100)
         _rad_alt_warning_node->setIntValue(-1);
@@ -147,7 +129,7 @@ RadarAltimeter::update_altitude()
             globals->get_scenery()->get_cart_ground_intersection(cartantennapos, userVec, nearestHit);
             double measuredDistance = dist(cartantennapos, nearestHit);
 
-            if (measuredDistance >= min_range && measuredDistance <= max_range) {                
+            if (measuredDistance >= min_range && measuredDistance <= max_range) {
                 if (measuredDistance < _min_radalt) {
                     _min_radalt = measuredDistance;
                     haveHit = true;
@@ -155,7 +137,7 @@ RadarAltimeter::update_altitude()
             } // of hit within permissible range
         } // of elevation step
     } // of azimuth step
-    
+
     _Instrument->setDoubleValue("radar-altitude-ft", _min_radalt * SG_METER_TO_FEET);
     if (!haveHit) {
         _rad_alt_warning_node->setIntValue(9999);
@@ -167,23 +149,23 @@ RadarAltimeter::getCartAntennaPos() const
 {
     double yaw, pitch, roll;
     globals->get_aircraft_orientation(yaw, pitch, roll);
-    
+
     // Transform to the right coordinate frame, configuration is done in
     // the x-forward, y-right, z-up coordinates (feet), computation
     // in the simulation usual body x-forward, y-right, z-down coordinates
     // (meters) )
-    
+
     // Transform the user position to the horizontal local coordinate system.
     SGQuatd hlTrans = SGQuatd::fromLonLat(globals->get_aircraft_position());
-    
+
     // and postrotate the orientation of the user model wrt the horizontal
     // local frame
     hlTrans *= SGQuatd::fromYawPitchRollDeg(yaw,pitch,roll);
-    
+
     // The offset converted to the usual body fixed coordinate system
     // rotated to the earth-fixed coordinates axis
     SGVec3d ecfOffset = hlTrans.backTransform(_antennaOffset);
-    
+
     // Add the position offset of the user model to get the geocentered position
     return globals->get_aircraft_position_cart() + ecfOffset;
 }
@@ -192,28 +174,27 @@ SGVec3d RadarAltimeter::rayVector(double az, double el) const
 {
     double yaw, pitch, roll;
     globals->get_aircraft_orientation(yaw, pitch, roll);
-    
+
     double tilt = _Instrument->getDoubleValue("tilt");
     bool roll_stab = false,
         pitch_stab = false;
-    
+
     SGQuatd offset = SGQuatd::fromYawPitchRollDeg(az, el + tilt, 0);
-    
+
     // Transform the antenna position to the horizontal local coordinate system.
     SGQuatd hlTrans = SGQuatd::fromLonLat(globals->get_aircraft_position());
-    
+
     // and postrotate the orientation of the radar wrt the horizontal
     // local frame
     hlTrans *= SGQuatd::fromYawPitchRollDeg(yaw,
                                             pitch_stab ? 0 :pitch,
                                             roll_stab ? 0 : roll);
     hlTrans *= offset;
-    
+
     // now rotate the rotation vector back into the
     // earth centered frames coordinates
     SGVec3d angleaxis(1,0,0);
     return hlTrans.backTransform(angleaxis);
-    
 }
 
 

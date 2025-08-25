@@ -1,10 +1,8 @@
 // altimeter.cxx - an altimeter tied to the static port.
-// Written by David Megginson, started 2002.
-// Modified by John Denker in 2007 to use a two layer atmosphere
-// model in src/Environment/atmosphere.?xx
-// Last modified by Eric van den Berg, 25 Nov 2012
-//
-// This file is in the Public Domain and comes with no warranty.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2002 David Megginson (public domain)
+// Updated by John Denker to match changes in altimeter.cxx in 2007
+
 
 // Example invocation, in the instrumentation.xml file:
 //      <altimeter>
@@ -16,9 +14,7 @@
 //      </altimeter>
 // Note non-default name, quantum, and tau values.
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <simgear/constants.h>
 #include <simgear/math/interpolater.hxx>
@@ -42,7 +38,7 @@ Altimeter::Altimeter ( SGPropertyNode *node, const std::string& aDefaultName, do
     // altimiter as an encoder are converted to request this explicitly
     _encodeModeC = node->getBoolValue("encode-mode-c", true);
     _encodeModeS = node->getBoolValue("encode-mode-s", false);
-    
+
     _tiedProperties.setRoot( _rootNode );
 }
 
@@ -83,11 +79,11 @@ Altimeter::init ()
     if (_encodeModeC) {
         _mode_c_node = _rootNode->getChild("mode-c-alt-ft", 0, true);
     }
-    
+
     if (_encodeModeS) {
         _mode_s_node = _rootNode->getChild("mode-s-alt-ft", 0, true);
     }
-    
+
     _altitude_node     = _rootNode->getChild("indicated-altitude-ft", 0, true);
 
     reinit();
@@ -105,7 +101,7 @@ Altimeter::bind()
 {
     _rootNode = fgGetNode("/instrumentation/" + _name, _num, true );
     _tiedProperties.setRoot(_rootNode);
-    
+
     _tiedProperties.Tie("setting-inhg", this, &Altimeter::getSettingInHg, &Altimeter::setSettingInHg );
     _tiedProperties.Tie("setting-hpa", this, &Altimeter::getSettingHPa, &Altimeter::setSettingHPa );
 }
@@ -125,11 +121,11 @@ Altimeter::update (double dt)
         double press_alt = _press_alt_node->getDoubleValue();
         // The mechanism settles slowly toward new pressure altitude:
         _raw_PA = fgGetLowPass(_raw_PA, _altimeter.press_alt_ft(pressure), trat);
-        
+
         if (_encodeModeC) {
             _mode_c_node->setDoubleValue(100 * SGMiscd::round(_raw_PA/100));
         }
-        
+
         if (_encodeModeS) {
             _mode_s_node->setDoubleValue(10 * SGMiscd::round(_raw_PA/10));
         }

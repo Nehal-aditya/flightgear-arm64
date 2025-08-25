@@ -1,23 +1,13 @@
-// transponder.cxx -- class to implement a transponder
-//
-// Written by Roy Vegard Ovesen, started September 2004.
-//
-// Copyright (C) 2004  Roy Vegard Ovesen - rvovesen@tiscali.no
-// Copyright (C) 2013  Clement de l'Hamaide - clemaez@hotmail.fr
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+/*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: 2004 Roy Vegard Ovesen <rvovesen@tiscali.no>
+ * SPDX-FileCopyrightText: 2013 Clement de l'Hamaide <clemaez@hotmail.fr>
+ *
+ * transponder.xxx -- class to implement a transponder
+ * Written by Roy Vegard Ovesen, started September 2004.
+ *
+*/
+
 //
 // Example invocation, in the instrumentation.xml file:
 //      <transponder>
@@ -77,7 +67,7 @@ Transponder::Transponder(SGPropertyNode *node) :
         SG_LOG(SG_INSTR, SG_DEV_WARN, "Transponder: use new supply-volatge prop: 'minimum-supply-volts' instead of 'bus-volts'");
         setMinimumSupplyVolts(node->getDoubleValue("bus-volts", 8.0));
     }
-    
+
     _altitudeSourcePath = node->getStringValue("encoder-path", "/instrumentation/altimeter");
     _autoGroundPath = node->getStringValue("auto-ground");
     _airspeedSourcePath = node->getStringValue("airspeed-path", "/instrumentation/airspeed-indicator/indicated-speed-kt");
@@ -107,7 +97,7 @@ void Transponder::init()
         _digit_node[i] = in_node->getChild("digit", i, true);
         _digit_node[i]->addChangeListener(this);
     }
-   
+
     _knob_node = in_node->getChild("knob-mode", 0, true);
     if (!_knob_node->hasValue()) {
         _knob = KNOB_ON;
@@ -117,24 +107,24 @@ void Transponder::init()
     } else {
         _knob = static_cast<KnobPosition>(_knob_node->getIntValue());
     }
-    
+
     _knob_node->addChangeListener(this);
-    
+
     _mode_node = in_node->getChild("mode", 0, true);
     _mode_node->setIntValue(_mode);
     _mode_node->addChangeListener(this);
-    
+
     _identBtn_node = in_node->getChild("ident-btn", 0, true);
     _identBtn_node->setBoolValue(false);
     _identBtn_node->addChangeListener(this);
-    
+
     _idCode_node = node->getChild("id-code", 0, true);
     _idCode_node->addChangeListener(this);
     // set default, but don't overwrite value from defaults.xml or -set.xml
-    if (!_idCode_node->hasValue()) { 
+    if (!_idCode_node->hasValue()) {
         _idCode_node->setIntValue(1200);
     }
-    
+
     // Outputs
     _altitude_node = node->getChild("altitude", 0, true);
     _altitudeValid_node = node->getChild("altitude-valid", 0, true);
@@ -143,7 +133,7 @@ void Transponder::init()
     _ground_node = node->getChild("ground-bit", 0, true);
     _airspeed_node = node->getChild("airspeed-kt", 0, true);
     _mach_node = node->getChild("mach-number", 0, true);
-    
+
     if (_kt70Compat) {
         // alias the properties through
         SGPropertyNode_ptr output = node->getChild("outputs", 0, true);
@@ -158,7 +148,7 @@ void Transponder::bind()
     if (_kt70Compat) {
         SGPropertyNode *node = fgGetNode(nodePath(), true );
         _tiedProperties.setRoot(node);
-        
+
         _tiedProperties.Tie("annunciators/fl", this,
                             &Transponder::getFLAnnunciator );
         _tiedProperties.Tie("annunciators/alt", this,
@@ -187,7 +177,7 @@ void Transponder::update(double dt)
         // Mode C & S send also altitude
         Mode effectiveMode = (_knob == KNOB_ALT || _knob == KNOB_GROUND) ? _mode : MODE_A;
         SGPropertyNode* altitudeSource = NULL;
-        
+
         switch (effectiveMode) {
         case MODE_C:
             altitudeSource = _pressureAltitude_node->getChild("mode-c-alt-ft");
@@ -198,7 +188,7 @@ void Transponder::update(double dt)
         default:
             break;
         }
-        
+
         int alt = INVALID_ALTITUDE;
         if (effectiveMode != MODE_A) {
             if (altitudeSource) {
@@ -208,7 +198,7 @@ void Transponder::update(double dt)
                 SG_LOG(SG_INSTR, SG_INFO, "transponder altitude input for mode " << _mode << " is missing");
             }
         }
-        
+
         _altitude_node->setIntValue(alt);
         _altitudeValid_node->setBoolValue(alt != INVALID_ALTITUDE);
 
@@ -220,7 +210,7 @@ void Transponder::update(double dt)
                 _identMode = false;
             }
         }
-        
+
         if (_knob >= KNOB_GROUND) {
             _transmittedId_node->setIntValue(_idCode_node->getIntValue());
         } else {
@@ -291,17 +281,17 @@ void Transponder::valueChanged(SGPropertyNode *prop)
         }
         return;
     }
-    
+
     if (prop == _mode_node) {
         _mode = static_cast<Mode>(prop->getIntValue());
         return;
     }
-    
+
     if (prop == _knob_node) {
         _knob = static_cast<KnobPosition>(prop->getIntValue());
         return;
     }
-    
+
     if (_listener_active)
         return;
 
@@ -320,7 +310,7 @@ void Transponder::valueChanged(SGPropertyNode *prop)
         _idCode_node->setIntValue(modifyCodeDigit(_idCode_node->getIntValue(), index, digitValue));
         prop->setIntValue(digitValue);
     }
-    
+
     _listener_active--;
 }
 

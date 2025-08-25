@@ -1,11 +1,6 @@
-/*
- * SPDX-License-Identifier: CC0-1.0
- * 
- * mrg.hxx - an electrically-powered master reference gyro
- * Written by David Megginson, started 2002.
- * 
- * This file is in the Public Domain and comes with no warranty.
-*/
+// mrg.hxx - an electrically-powered master reference gyro
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2002 David Megginson (public domain)
 
 #pragma once
 

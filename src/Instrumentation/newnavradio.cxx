@@ -3,26 +3,11 @@
 // Written by Curtis Olson, started April 2000.
 // Rewritten by Torsten Dreyer, August 2011
 //
-// Copyright (C) 2000 - 2011  Curtis L. Olson - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2000 Curtis L. Olson
+// SPDX-FileCopyrightText: 2011 Torsten Dreyer
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include "newnavradio.hxx"
 
@@ -104,7 +89,7 @@ public:
   {
       _toFlag = on;
   }
-      
+
   void setSelectedCourse( double course )
   {
       _course = course;
@@ -250,11 +235,11 @@ NavRadioComponent::~NavRadioComponent()
 }
 
 double NavRadioComponent::getRange_nm( const SGGeod & aircraftPosition )
-{ 
-  if( _navRecord == NULL ) return 0.0; // no station: no range
-  double d = _navRecord->get_range();
-  if( d <= SGLimitsd::min() ) return 25.0; // no configured range: arbitrary number
-  return d; // configured range
+{
+    if (_navRecord == NULL) return 0.0; // no station: no range
+    double d = _navRecord->get_range();
+    if (d <= SGLimitsd::min()) return 25.0; // no configured range: arbitrary number
+    return d;                               // configured range
 }
 
 void NavRadioComponent::search( double frequency, const SGGeod & aircraftPosition )
@@ -278,7 +263,7 @@ double NavRadioComponent::computeSignalQuality_norm( const SGGeod & aircraftPosi
   double distance_nm = _slantDistance_m * SG_METER_TO_NM;
   double range_nm = _range_nm;
 
-  // assume signal quality is 100% up to the published range and 
+  // assume signal quality is 100% up to the published range and
   // decay with the distance squared further out
   if ( distance_nm <= range_nm ) return 1.0;
   return range_nm*range_nm/(distance_nm*distance_nm);
@@ -293,7 +278,7 @@ void NavRadioComponent::update( double dt, const SGGeod & aircraftPosition )
       _trackDistance_m = 0.0;
       _slantDistance_m = 0.0;
       return;
-    } 
+    }
 
     _slantDistance_m = dist(_navRecord->cart(), SGVec3d::fromGeod(aircraftPosition));
 
@@ -354,7 +339,7 @@ double VOR::ServiceVolume::adjustRange( double height_ft, double nominalRange_nm
 {
     if (nominalRange_nm < SGLimitsd::min() )
       nominalRange_nm = FG_NAV_DEFAULT_RANGE;
-    
+
     // extend out actual usable range to be 1.3x the published safe range
     const double usability_factor = 1.3;
 
@@ -412,10 +397,9 @@ double VOR::computeSignalQuality_norm( const SGGeod & aircraftPosition )
   // function to make signal-quality=100% 0.5NM@6000ft from the center and zero overhead
   double cone_of_confusion_width = 0.5 * _heightAboveStation_ft / 6000.0 * SG_NM_TO_METER;
   if( _trackDistance_m < cone_of_confusion_width ) {
-    double d = cone_of_confusion_width <= SGLimitsd::min() ? 1 : 
-              (1 - _trackDistance_m/cone_of_confusion_width);
-    return 1-d*d;
-  } 
+      double d = cone_of_confusion_width <= SGLimitsd::min() ? 1 : (1 - _trackDistance_m / cone_of_confusion_width);
+      return 1 - d * d;
+  }
 
   // use default decay function outside the cone of confusion
   return NavRadioComponentWithIdent::computeSignalQuality_norm( aircraftPosition );
@@ -523,8 +507,8 @@ LOC::ServiceVolume::ServiceVolume()
 
 double LOC::ServiceVolume::adjustRange( double azimuthAngle_deg, double elevationAngle_deg )
 {
-    return _azimuthTable.interpolate( fabs(azimuthAngle_deg) ) * 
-        _elevationTable.interpolate( fabs(elevationAngle_deg) );
+    return _azimuthTable.interpolate(fabs(azimuthAngle_deg)) *
+           _elevationTable.interpolate(fabs(elevationAngle_deg));
 }
 
 LOC::LOC( SGPropertyNode_ptr rootNode) :
@@ -554,12 +538,12 @@ void LOC::search( double frequency, const SGGeod & aircraftPosition )
       return;
   }
 
-  // cache slightly expensive value, 
+  // cache slightly expensive value,
   // sanitized in FGNavRecord::localizerWidth() to  never become zero
   _localizerWidth_deg = _navRecord->localizerWidth();
 }
 
-/* Localizer coverage (ICAO Annex 10 Volume I 3.1.3.3 
+/* Localizer coverage (ICAO Annex 10 Volume I 3.1.3.3
   25NM within +/-10 deg from the front course line
   17NM between 10 and 35deg from the front course line
   10NM outside of +/- 35deg  if coverage is provided
@@ -598,27 +582,27 @@ void LOC::update( double dt, const SGGeod & aircraftPosition )
   // cross-track error (in meters)
   _localizerOffset_m = _trackDistance_m * sin(offsetDeg * SGD_DEGREES_TO_RADIANS);
 
-  // The factor of 30.0 gives a period of 120 which gives us 3 cycles and six 
-  // zeros i.e. six courses: one front course, one back course, and four 
+  // The factor of 30.0 gives a period of 120 which gives us 3 cycles and six
+  // zeros i.e. six courses: one front course, one back course, and four
   // false courses. Three of the six are reverse sensing.
   offsetDeg = 30.0 * sawtooth(offsetDeg / 30.0);
 
   // normalize offsetDeg to the localizer width, scale and clip to [-1..1]
   offsetDeg = SGMiscd::clip( 2.0 * offsetDeg / _localizerWidth_deg, -1.0, 1.0 );
-  
+
   _localizerOffset_norm = offsetDeg;
 }
 
 void LOC::display( NavIndicator & navIndicator )
 {
-  if( !valid() ) 
-    return;
+    if (!valid())
+        return;
 
-  navIndicator.showTo( true );
-  navIndicator.showFrom( false );
+    navIndicator.showTo(true);
+    navIndicator.showFrom(false);
 
-  navIndicator.setCDI( _localizerOffset_norm * _signalQuality_norm );
-  navIndicator.setSignalQuality( _signalQuality_norm );
+    navIndicator.setCDI(_localizerOffset_norm * _signalQuality_norm);
+    navIndicator.setSignalQuality(_signalQuality_norm);
 }
 
 class GS : public NavRadioComponent {
@@ -682,8 +666,8 @@ GS::ServiceVolume::ServiceVolume()
 
 double GS::ServiceVolume::adjustRange( double azimuthAngle_deg, double elevationAngle_deg )
 {
-    return _azimuthTable.interpolate( fabs(azimuthAngle_deg) ) * 
-        _elevationTable.interpolate( fabs(elevationAngle_deg) );
+    return _azimuthTable.interpolate(fabs(azimuthAngle_deg)) *
+           _elevationTable.interpolate(fabs(elevationAngle_deg));
 }
 
 GS::GS( SGPropertyNode_ptr rootNode) :
@@ -713,9 +697,9 @@ double GS::getRange_nm(const SGGeod & aircraftPosition)
 }
 
 // Calculate a Cartesian unit vector in the
-// local horizontal plane, i.e. tangent to the 
+// local horizontal plane, i.e. tangent to the
 // surface of the earth at the local ground zero.
-// The tangent vector passes through the given  <midpoint> 
+// The tangent vector passes through the given  <midpoint>
 // and points forward along the given <heading>.
 // The <heading> is given in degrees.
 SGVec3d GS::tangentVector(const SGGeod& midpoint, const double heading)
@@ -744,7 +728,7 @@ void GS::search( double frequency, const SGGeod & aircraftPosition )
       _targetGlideslope_deg = 3.0;
       return;
   }
-  
+
   double gs_radial = SGMiscd::normalizePeriodic(0.0, 360.0, fmod(_navRecord->get_multiuse(), 1000.0) );
 
   _gsAxis = tangentVector(_navRecord->geod(), gs_radial);
@@ -763,7 +747,7 @@ void GS::update( double dt, const SGGeod & aircraftPosition )
       _glideslopeOffset_norm = 0.0;
       return;
   }
-  
+
   SGVec3d pos = SGVec3d::fromGeod(aircraftPosition) - _navRecord->cart(); // relative vector from gs antenna to aircraft
   // The positive GS axis points along the runway in the landing direction,
   // toward the far end, not toward the approach area, so we need a - sign here:
@@ -778,16 +762,16 @@ void GS::update( double dt, const SGGeod & aircraftPosition )
 // At this point, if the aircraft is centered on the glide slope,
 // _gsDirect will be a small positive number, e.g. 3.0 degrees
 
-// Aim the branch cut straight down 
-// into the ground below the GS transmitter:
+  // Aim the branch cut straight down
+  // into the ground below the GS transmitter:
   if (gsDirect < -90.0) gsDirect += 360.0;
 
   double offset = _targetGlideslope_deg - gsDirect;
   if( offset < 0.0 )
     offset = _targetGlideslope_deg/2 * sawtooth(2.0*offset/_targetGlideslope_deg);
   assert( !SGMisc<double>::isNaN(offset) );
-// GS is documented to be 1.4 degrees thick, 
-// i.e. plus or minus 0.7 degrees from the midline:
+  // GS is documented to be 1.4 degrees thick,
+  // i.e. plus or minus 0.7 degrees from the midline:
   _glideslopeOffset_norm = SGMiscd::clip(offset/0.7, -1.0, 1.0);
 }
 
@@ -946,9 +930,8 @@ void NavRadioImpl::Legacy::init()
 
 void NavRadioImpl::Legacy::update( double dt )
 {
-    is_valid_node->setBoolValue( 
-        _navRadioImpl->_components[VOR_COMPONENT]->valid() || _navRadioImpl->_components[LOC_COMPONENT]->valid()  
-        );
+    is_valid_node->setBoolValue(
+        _navRadioImpl->_components[VOR_COMPONENT]->valid() || _navRadioImpl->_components[LOC_COMPONENT]->valid());
 
     std::string ident = _navRadioImpl->_components[VOR_COMPONENT]->getIdent();
     if( ident.empty() )
@@ -982,4 +965,3 @@ SGSubsystemMgr::InstancedRegistrant<NavRadio> registrantNavRadio(
 #endif
 
 } // namespace Instrumentation
-

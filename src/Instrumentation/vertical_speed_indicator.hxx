@@ -1,21 +1,8 @@
-/*
- * SPDX-License-Identifier: CC0-1.0
- * 
- * vertical_speed_indicator.hxx - a regular VSI tied to the static port.
- * Written by David Megginson, started 2002.
- * 
- * Last change by E. van den Berg, 17.02.1013
- * 
- * This file is in the Public Domain and comes with no warranty.
- * 
-*/
-
+// vertical_speed_indicator.hxx - a regular VSI.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2002 David Megginson (public domain)
 
 #pragma once
-
-#ifndef __cplusplus
-# error This library requires C++
-#endif
 
 #include <simgear/props/props.hxx>
 #include <simgear/structure/subsystem_mgr.hxx>

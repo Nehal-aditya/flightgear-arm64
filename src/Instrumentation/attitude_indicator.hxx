@@ -2,6 +2,7 @@
  * SPDX-FileName: attitude_indicator.hxx
  * SPDX-FileComment: a vacuum-powered attitude indicator.
  * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: 2002 David Megginson
  * SPDX-FileContributor:  Written by David Megginson, started 2002.
  */
 
@@ -23,7 +24,7 @@
  *   limits/spin-thresh
  *   limits/max-roll-error-deg
  *   limits/max-pitch-error-deg
- * 
+ *
  * Input properties:
  *
  * /instrumentation/"name"/config/tumble-flag

@@ -2,6 +2,7 @@
  * SPDX-FileName: heading_indicator_dg.hxx
  * SPDX-FileComment: a Directional Gyro (DG) compass.
  * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: 2005 Vivian Meazza
  * SPDX-FileContributor: Written by Vivian Meazza, started 2005.
  * SPDX-FileContributor: Enhanced by Benedikt Hallinger, 2023
  */
@@ -33,13 +34,13 @@
  * /instrumentation/"name"/indicated-heading-deg
  * /instrumentation/"name"/drift-per-hour-deg
  * /instrumentation/"name"/transport-wander-per-hour-deg
- * 
- * 
+ *
+ *
  * Configuration:
- * 
+ *
  *   name
  *   number
- *   new-default-power-path: use /systems/electrical/outputs/"name"[ number ] instead of 
+ *   new-default-power-path: use /systems/electrical/outputs/"name"[ number ] instead of
  *                           /systems/electrical/outputs/DG as the default power
  *                           supply path (not used when power-supply is set)
  *   heading-source          If given, heading is taken from this node (default: "/orientation/heading-deg")
@@ -56,7 +57,7 @@
  *   limits/yaw-error-factor        Default 0.033  (set to 0 to disable yaw-error influence)
  *   limits/yaw-limit-rate          Default 5.0
  *   limits/g-node                  Path to g-node; default "/accelerations/pilot-g"
- *   limits/g-filter-time           Default 10.0 (set to 0 to disable); time for g low-pass filter (to filter out spikes due to caluclation artifacts)
+ *   limits/g-filter-time           Default 10.0 (set to 0 to disable); time for g low-pass filter (to filter out spikes due to calculation artifacts)
  *   limits/g-error-factor          Default 0.033  (set to 0 to disable g-error influence)
  *   limits/g-limit-lower           Default -0.5
  *   limits/g-limit-upper           Default  1.5

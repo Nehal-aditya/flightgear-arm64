@@ -1,13 +1,5 @@
-/*
- * SPDX-License-Identifier: CC0-1.0
- * 
- * clock.hxx.
- * Written by Melchior FRANZ, started 2003.
- * 
- * This file is in the Public Domain and comes with no warranty.
- * 
- * $Id$
-*/
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2003 Melchior Franz (public domain)
 
 #pragma once
 

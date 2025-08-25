@@ -1,19 +1,8 @@
-/*
- * SPDX-License-Identifier: CC0-1.0
- * 
- * 
- * Written by David Megginson, started 2002.
- * 
- * Last Edited by Benedikt Wolf 2023 - ported to electrically-powered
- * 
- * This file is in the Public Domain and comes with no warranty.
-*/
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2002 David Megginson (public domain)
+// SPDX-FileCopyrightText: 2023 Benedikt Wolf
 
 #pragma once
-
-#ifndef __cplusplus
-# error This library requires C++
-#endif
 
 #include <Instrumentation/AbstractInstrument.hxx>
 
@@ -26,7 +15,7 @@
  * Config:
  *   gyro/spin-up-sec     If given, seconds to spin up until power-norm (from 0->100%)
  *   gyro/spin-down-sec   If given, seconds the gyro will loose spin without power (from 100%->0)
- * 
+ *
  * Input properties:
  *
  * /instrumentation/"name"/config/tumble-flag

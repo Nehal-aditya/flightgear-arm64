@@ -1,11 +1,8 @@
 // tacan.cxx - Tactical Navigation Beacon.
-// Written by Vivian Meazaa, started 2005.
-//
-// This file is in the Public Domain and comes with no warranty.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2005 Vivian Meazza (public domain)
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <algorithm>
 #include <vector>

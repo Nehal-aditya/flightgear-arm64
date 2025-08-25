@@ -1,6 +1,6 @@
 /*
  * SPDX-FileComment: class to manage a comm radio instance
- * SPDX-FileCopyrightText: Copyright (C) 2014 Torsten Dreyer
+ * SPDX-FileCopyrightText: 2014 Torsten Dreyer
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -29,5 +29,4 @@ public:
     static SGSubsystem * createInstance( SGPropertyNode_ptr rootNode );
 };
 
-}
-
+} // namespace Instrumentation

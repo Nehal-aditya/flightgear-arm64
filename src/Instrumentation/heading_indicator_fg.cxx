@@ -3,11 +3,10 @@
 //
 // Written by Vivian Meazza, started 2005.
 //
-// This file is in the Public Domain and comes with no warranty.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2005 Vivian Meazza (public domain)
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
 #include <simgear/compiler.h>
 #include <iostream>
@@ -42,7 +41,7 @@ void
 HeadingIndicatorFG::init ()
 {
     string branch = nodePath();
-    
+
     _heading_in_node = fgGetNode("/orientation/heading-deg", true);
 
     SGPropertyNode *node = fgGetNode(branch, true );
@@ -88,7 +87,7 @@ HeadingIndicatorFG::update (double dt)
                                 // No time-based precession	for a flux gate compass
 	                            // We just use offset to get the magvar
 	double offset = _offset_node->getDoubleValue();
-	   
+
                                 // TODO: movement-induced error
 
                                 // Next, calculate the indicated heading,
@@ -126,20 +125,17 @@ HeadingIndicatorFG::update (double dt)
 		if ( diff < -180.0 ) { diff += 360.0; }
 		if ( diff > 180.0 ) { diff -= 360.0; }
 		_error_node->setDoubleValue( diff );
-	}   
-	                             // calculate the difference between the indicated heading
-	                             // and the selected nav1 radial for use with an autopilot
-	SGPropertyNode *nnode
-        = fgGetNode( "/instrumentation/nav/radials/selected-deg", true );
-	double ndiff = 0;
-	if ( nnode ){
-		ndiff = nnode->getDoubleValue() - heading;
-		if ( ndiff < -180.0 ) { ndiff += 360.0; }
-		if ( ndiff > 180.0 ) { ndiff -= 360.0; }
-		_nav1_error_node->setDoubleValue( ndiff );
-	}   
-
-
+    }
+    // calculate the difference between the indicated heading
+    // and the selected nav1 radial for use with an autopilot
+    SGPropertyNode* nnode = fgGetNode("/instrumentation/nav/radials/selected-deg", true);
+    double ndiff = 0;
+    if (nnode) {
+        ndiff = nnode->getDoubleValue() - heading;
+        if (ndiff < -180.0) { ndiff += 360.0; }
+        if (ndiff > 180.0) { ndiff -= 360.0; }
+        _nav1_error_node->setDoubleValue(ndiff);
+    }
 }
 
 

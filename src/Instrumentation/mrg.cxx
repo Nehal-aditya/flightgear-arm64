@@ -1,14 +1,12 @@
-// MRG.cxx - an electrically powered master reference gyro.
-// Written by Vivian Meazza based on work by David Megginson, started 2006.
-//
-// This file is in the Public Domain and comes with no warranty.
+// mrg.cxx - an electrically-powered master reference gyro
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2002 David Megginson (public domain)
+// SPDX-FileCopyrightText: 2006 Vivian Meazza
 
 // TODO:
 // - better spin-up
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
 #include <simgear/compiler.h>
 #include <simgear/sg_inlines.h>
@@ -211,15 +209,14 @@ MasterReferenceGyro::update (double dt)
 
         _g_error -= (max_g_error/(erect_time * 0.33)) * dt * erect_time_factor;
     } else {
-        _g_error += (max_g_error /(erect_time * 0.33)) * dt * 2; 
+        _g_error += (max_g_error / (erect_time * 0.33)) * dt * 2;
 
         //SG_LOG(SG_INSTR, SG_ALERT,_num <<
         //    " g input " << _g_in_node->getDoubleValue() * gravity
-        //    <<" _erect_time " << _erect_time 
+        //    <<" _erect_time " << _erect_time
         //    << " yaw " <<   yaw_rate
         //    << " pitch " << _pitch_rate_node->getDoubleValue()
         //    << " roll " << _roll_rate_node->getDoubleValue());
-
     }
 
     //cout << "_g_error "<< _g_error << endl;
@@ -242,7 +239,7 @@ MasterReferenceGyro::update (double dt)
         if ( diff > 180.0 ) { diff -= 360.0; }
         _error_out_node->setDoubleValue( diff );
         //SG_LOG(SG_INSTR, SG_ALERT,
-        //"autopilot input " << bnode->getDoubleValue() 
+        //"autopilot input " << bnode->getDoubleValue()
         //<< " output " << _error_out_node->getDoubleValue()<<);
     }
 

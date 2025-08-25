@@ -2,6 +2,7 @@
  * SPDX-FileName: attitude_indicator.cxx
  * SPDX-FileComment: a vacuum-powered attitude indicator.
  * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: 2002 David Megginson
  * SPDX-FileContributor:  Written by David Megginson, started 2002.
  * SPDX-FileContributor: Enhanced by Benedikt Hallinger, 2023
  */
@@ -56,7 +57,7 @@ AttitudeIndicator::init ()
 
     SGPropertyNode *node = fgGetNode(branch, _num, true );
     SGPropertyNode *n;
-    
+
     _pitch_in_node = fgGetNode("/orientation/pitch-deg", true);
     _roll_in_node = fgGetNode("/orientation/roll-deg", true);
     _suction_node = fgGetNode(_suction, true);

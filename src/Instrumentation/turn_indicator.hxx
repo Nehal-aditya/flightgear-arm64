@@ -2,9 +2,9 @@
  * SPDX-FileName: turn_indicator.hxx
  * SPDX-FileComment: an electric-powered turn indicator.
  * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: 2002 David Megginson
  * SPDX-FileContributor:  Written by David Megginson, started 2002.
  */
-
 
 #pragma once
 
@@ -14,7 +14,7 @@
 
 
 /**
- * Model 
+ * Model
  *
  * This class does not model the slip/skid ball; that is properly
  * a separate instrument.
@@ -30,22 +30,22 @@
  * Output properties:
  *
  * /instrumentation/"name"/indicated-turn-rate
- * 
+ *
  * Configuration:
- * 
+ *
  *   name
  *   number
- *   new-default-power-path: use /systems/electrical/outputs/turn-indicator[ number ] instead of 
+ *   new-default-power-path: use /systems/electrical/outputs/turn-indicator[ number ] instead of
  *                           /systems/electrical/outputs/turn-coordinator as the default power
  *                           supply path (not used when power-supply is set)
  *   power-supply
  *   minimum-supply-volts
  *   gyro-spin-up-sec        If given, seconds to spin up until power-norm (from 0->100%)
  *   gyro-spin-down-sec      If given, seconds the gyro will loose spin without power (from 100%->0)
- * 
+ *
  * Notes on the power supply path:
- *   
- *   For backwards compatibility reasons, the default power path is 
+ *
+ *   For backwards compatibility reasons, the default power path is
  *   /systems/electrical/outputs/turn-coordinator, unless new-default-power-path is set to 1,
  *   in which case the new default path /systems/electrical/outputs/turn-indicator[ number ]
  *   is used. As the new path is more logical and consistent with instrument naming, newly
@@ -53,7 +53,7 @@
  *   to /systems/electrical/outputs/turn-indicator[ number ] and set new-default-power-path.
  *   The legacy default path will eventually be phased out.
  *   The power path can always be set manually by using the power-supply config tag.
- * 
+ *
  */
 class TurnIndicator : public AbstractInstrument
 {

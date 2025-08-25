@@ -2,6 +2,7 @@
  * SPDX-FileName: heading_indicator.cxx
  * SPDX-FileComment: a vacuum-powered heading indicator.
  * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: 2002 David Megginson
  * SPDX-FileContributor:  Written by David Megginson, started 2002.
  */
 
@@ -47,7 +48,7 @@ HeadingIndicator::init ()
     _heading_out_node = node->getChild("indicated-heading-deg", 0, true);
     _heading_bug_error_node = node->getChild("heading-bug-error-deg", 0, true);
     _heading_bug_node = node->getChild("heading-bug-deg", 0, true);
-  
+
     reinit();
 }
 

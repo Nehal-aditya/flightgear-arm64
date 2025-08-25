@@ -1,14 +1,10 @@
-// mag_compass.cxx - a magnetic compass.
-// Written by David Megginson, started 2003.
-//
-// This file is in the Public Domain and comes with no warranty.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2003 David Megginson (public domain)
 
 // This implementation is derived from an earlier one by Alex Perry,
 // which appeared in src/Cockpit/steam.cxx
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <simgear/sg_inlines.h>
 #include <simgear/math/SGMath.hxx>
@@ -90,14 +86,14 @@ MagCompass::update (double delta_time_sec)
 
     /*
      * Calculate roll/pitch-filter-factor based on fluid viscosity
-     * 
+     *
      * Note: This is currently very naive/simple. I lack the physics to do a good
      *       formula here; it is guesstimeated on Kerosene (viscosity about 8) and
      *       visual damping on a standard compass.
      */
     double fluid_damping = 5.0/8.0 * _fluid_viscosity->getDoubleValue() * 10;
 
-    
+
     /*
      * Vassilii: commented out because this way, even when parked,
      * w/o any accelerations and level, the compass is jammed.
@@ -147,7 +143,7 @@ MagCompass::update (double delta_time_sec)
 
     /*
       Tilt adjustments for accelerations.
-      
+
       The magnitudes of these are totally made up, but in real life,
       they would depend on the fluid level, the amount of friction,
       etc. anyway.  Basically, the compass float tilts forward for
@@ -163,24 +159,24 @@ MagCompass::update (double delta_time_sec)
 
     theta -= 0.07 * x_accel_g;
     phi -= 0.07 * y_accel_g;
-    
+
     // Expose pitch and roll of the disc
     double d = -_z_accel_node->getDoubleValue();
     if (d < 1.0) d = 1.0;
     double x_factor_norm = _x_accel_node->getDoubleValue() / d * 10.0;
     double y_factor_norm = _y_accel_node->getDoubleValue() / d * 10.0;
-    
+
     double roll = phi * SGD_RADIANS_TO_DEGREES * abs(y_factor_norm);
     roll = flightgear::filterExponential(_last_roll, roll, fluid_damping);
     _roll_out_node->setDoubleValue(roll);
     _last_roll = roll;
-    
+
     double pitch = -theta * SGD_RADIANS_TO_DEGREES * abs(x_factor_norm);
     pitch = flightgear::filterExponential(_last_pitch, pitch, fluid_damping);
     _pitch_out_node->setDoubleValue(pitch);
     _last_pitch = pitch;
-    
-    
+
+
     ////////////////////////////////////////////////////////////////////
     // calculate target compass heading degrees
     ////////////////////////////////////////////////////////////////////
@@ -206,8 +202,8 @@ MagCompass::update (double delta_time_sec)
 
     if( _deviation_node ) {
       target_deg -= _deviation_node->getDoubleValue();
-    } else if( _deviation_table ) { 
-       target_deg -= _deviation_table->interpolate( SGMiscd::normalizePeriodic( 0.0, 360.0, target_deg ) );  
+    } else if (_deviation_table) {
+        target_deg -= _deviation_table->interpolate(SGMiscd::normalizePeriodic(0.0, 360.0, target_deg));
     }
 
     double old_deg = _out_node->getDoubleValue();

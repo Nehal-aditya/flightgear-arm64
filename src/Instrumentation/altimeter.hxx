@@ -1,12 +1,7 @@
-/*
- * SPDX-License-Identifier: CC0-1.0
- * 
- * altimeter.hxx - an altimeter tied to the static port.
- * Written by David Megginson, started 2002.
- * Updated by John Denker to match changes in altimeter.cxx in 2007
- * 
- * This file is in the Public Domain and comes with no warranty.
-*/
+// altimeter.hxx - an altimeter tied to the static port.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2002 David Megginson (public domain)
+// Updated by John Denker to match changes in altimeter.cxx in 2007
 
 #pragma once
 

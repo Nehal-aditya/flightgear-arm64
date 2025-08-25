@@ -1,11 +1,8 @@
-// slip_skid_ball.cxx - an electric-powered turn indicator.
-// Written by David Megginson, started 2003.
-//
-// This file is in the Public Domain and comes with no warranty.
+// slip_skid_ball.cxx - an slip-skid ball.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2003 David Megginson (public domain)
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
 #include "slip_skid_ball.hxx"
 #include <Main/fg_props.hxx>

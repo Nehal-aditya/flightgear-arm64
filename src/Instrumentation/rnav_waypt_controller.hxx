@@ -1,26 +1,6 @@
-/*
- * SPDX-License-Identifier: GPL-2.0+
- * SPDX-FileCopyrightText: 2009 (C) Curtis L. Olson
- * 
- * rnav_waypt_controller.hxx - Waypoint-specific behaviours for RNAV systems
- * Written by James Turner, started 2009.
- * 
- * Copyright (C) 2009  Curtis L. Olson
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-*/
+// rnav_waypt_controller.hxx - Waypoint-specific behaviours for RNAV systems
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2009 James Turner
 
 #pragma once
 
@@ -39,32 +19,32 @@ class RNAV
 {
 public:
   virtual SGGeod position() = 0;
-  
+
   /**
    * True track in degrees
    */
   virtual double trackDeg() = 0;
-  
+
   /**
    * Ground speed (along the track) in knots
    */
   virtual double groundSpeedKts() = 0;
-  
+
   /**
    * Vertical speed in ft/minute
    */
   virtual double vspeedFPM()= 0;
-  
+
   /**
    * Magnetic variation at current position
    */
   virtual double magvarDeg() = 0;
-  
+
   /**
    * device selected course (eg, from autopilot / MCP / OBS) in degrees
    */
   virtual double selectedMagCourse() = 0;
-    
+
     virtual bool canFlyBy() const
     {
         return false;
@@ -85,7 +65,7 @@ public:
    */
   virtual double overflightDistanceM() = 0;
   /**
-   * minimum distance to a waypoint for overflight sequencing. 
+   * minimum distance to a waypoint for overflight sequencing.
    */
   virtual double overflightArmDistanceM() = 0;
   /**
@@ -100,7 +80,7 @@ public:
         double flyByRadius = 0.0;
         double turnAngle = 0.0;
     };
-    
+
   /**
    * device leg previous waypoint position(eg, from route manager)
    */
@@ -113,16 +93,16 @@ public:
     {
         return std::optional<double>{};
     }
-     
+
   /**
    * @brief compute turn radius based on current ground-speed
    */
-    
+
   double turnRadiusNm()
   {
     return turnRadiusNm(groundSpeedKts());
   }
-  
+
   /**
    * @brief compute the turn radius (based on standard rate turn) for
    * a given ground speed in knots.
@@ -158,9 +138,9 @@ public:
   virtual double targetTrackDeg() const;
 
   virtual double xtrackErrorNm() const;
-  
+
   virtual double courseDeviationDeg() const;
-  
+
   /**
    * Position associated with the waypt. For static waypoints, this is
    * simply the waypoint position itself; for dynamic points, it's the
@@ -180,7 +160,7 @@ public:
    */
   virtual bool toFlag() const
     { return true; }
-  
+
   /**
    * Allow waypoints to indicate a status value as a string.
    * Useful for more complex controllers, which may have capture / exit
@@ -196,16 +176,16 @@ public:
 
       return std::optional<RNAV::LegData>();
     }
-    
+
   /**
    * Static factory method, given a waypoint, return a controller bound
    * to it, of the appropriate type
    */
   static WayptController* createForWaypt(RNAV* rnav, const WayptRef& aWpt);
-    
+
     WayptRef waypoint() const
     { return _waypt; }
-    
+
 protected:
   WayptController(RNAV* aRNAV, const WayptRef& aWpt) :
     _waypt(aWpt),
@@ -213,18 +193,18 @@ protected:
     _rnav(aRNAV),
     _isDone(false)
   { }
-  
+
   WayptRef _waypt;
   double _targetTrack;
   RNAV* _rnav;
-  
+
   void setDone();
-  
+
   // take asubcontroller ref (will be destroyed automatically)
-  // pass nullptr to clear any activ esubcontroller
+  // pass nullptr to clear any active subcontroller
   // the subcontroller will be initialised
   void setSubController(WayptController* sub);
-  
+
   // if a subcontroller exists, we can delegate to it automatically
   std::unique_ptr<WayptController> _subController;
 private:
@@ -245,9 +225,9 @@ public:
 
   bool init() override;
   virtual void update(double dt);
-  virtual double distanceToWayptM() const;  
-  virtual double xtrackErrorNm() const;  
-  virtual double courseDeviationDeg() const;  
+  virtual double distanceToWayptM() const;
+  virtual double xtrackErrorNm() const;
+  virtual double courseDeviationDeg() const;
   virtual double trueBearingDeg() const;
   virtual SGGeod position() const;
 private:
@@ -267,9 +247,9 @@ public:
 
   bool init() override;
   virtual void update(double dt);
-  virtual double distanceToWayptM() const;  
-  virtual double xtrackErrorNm() const;  
-  virtual double courseDeviationDeg() const;  
+  virtual double distanceToWayptM() const;
+  virtual double xtrackErrorNm() const;
+  virtual double courseDeviationDeg() const;
   virtual double trueBearingDeg() const;
   virtual bool toFlag() const;
   virtual SGGeod position() const;
@@ -293,55 +273,55 @@ class HoldCtl : public WayptController
     HOLD_INBOUND,
     HOLD_EXITING, // we are going to exit the hold
   };
-  
+
   HoldState _state = HOLD_INIT;
   double _holdCourse = 0.0;
   double _holdLegTime = 60.0;
   double _holdLegDistance = 0.0;
   double _holdCount = 0;
   bool _leftHandTurns = false;
-    
+
   bool _inTurn = false;
   SGGeod _turnCenter;
   double _turnEndAngle, _turnRadius;
   SGGeod _segmentEnd;
-  
+
   bool checkOverHold();
   void checkInitialEntry(double dNm);
-    
+
   void startInboundTurn();
   void startOutboundTurn();
   void startParallelEntryTurn();
   void exitTurn();
-  
+
   SGGeod outboundEndPoint();
   SGGeod outboundTurnCenter();
   SGGeod inboundTurnCenter();
-  
+
   double holdLegLengthNm() const;
-  
+
     /**
      * are we turning left? This is basically the )leftHandTurns member,
      * but if we're in the inbound turn of a parallel entry, it's flipped
      */
     bool inLeftTurn() const;
-  
+
   void computeEntry();
 public:
   HoldCtl(RNAV* aRNAV, const WayptRef& aWpt);
-  
+
   void setHoldCount(int count);
   void exitHold();
 
   bool init() override;
   void update(double) override;
-  
+
   double distanceToWayptM() const override;
   SGGeod position() const override;
   double xtrackErrorNm() const override;
   double courseDeviationDeg() const override;
-    
+
   std::string status() const override;
 };
-    
+
 } // of namespace flightgear

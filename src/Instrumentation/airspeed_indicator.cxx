@@ -1,12 +1,8 @@
 // airspeed_indicator.cxx - a regular pitot-static airspeed indicator.
-// Written by David Megginson, started 2002.
-// Last modified by Eric van den Berg, 09 Dec 2012
-//
-// This file is in the Public Domain and comes with no warranty.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2003 David Megginson (public domain)
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
 #include <algorithm>
 
@@ -58,13 +54,13 @@ AirspeedIndicator::init ()
     _speed_node = node->getChild("indicated-speed-kt", 0, true);
     _tas_node = node->getChild("true-speed-kt", 0, true);
     _mach_node = node->getChild("indicated-mach", 0, true);
-    
+
   // overspeed-indicator properties
     if (_has_overspeed) {
         _ias_limit_node = node->getNode("ias-limit",0, true);
         _mach_limit_node = node->getNode("mach-limit",0, true);
         _alt_threshold_node = node->getNode("alt-threshold",0, true);
-        
+
         if (!_ias_limit_node->hasValue()) {
           _ias_limit_node->setDoubleValue(_ias_limit);
         }
@@ -80,7 +76,7 @@ AirspeedIndicator::init ()
         _airspeed_limit = node->getChild("airspeed-limit-kt", 0, true);
         _pressure_alt = fgGetNode(_pressure_alt_source, true);
     }
-    
+
     _environmentManager = globals->get_subsystem<FGEnvironmentMgr>();
 }
 
@@ -96,7 +92,7 @@ AirspeedIndicator::update (double dt)
     if (!_serviceable_node->getBoolValue()) {
         return;
     }
-    
+
     double pt = _total_pressure_node->getDoubleValue() ;
     double p = _static_pressure_node->getDoubleValue() ;
     double qc = ( pt - p ) * SG_INHG_TO_PA ;  // Impact pressure in Pa, _not_ to be confused with dynamic pressure!!!
@@ -120,13 +116,13 @@ AirspeedIndicator::update (double dt)
     if (!_has_overspeed) {
         return;
     }
-    
+
     double lmt = _ias_limit_node->getDoubleValue();
     if (_pressure_alt->getDoubleValue() > _alt_threshold_node->getDoubleValue()) {
         double mmo = _mach_limit_node->getDoubleValue();
         lmt = (filtered_speed/_mach_node->getDoubleValue())* mmo;
     }
-    
+
     _airspeed_limit->setDoubleValue(lmt);
 }
 
@@ -136,9 +132,9 @@ AirspeedIndicator::computeMach()
   if (!_environmentManager) {
     return;
   }
-  
+
     const auto env = _environmentManager->getAircraftEnvironment();
-  
+
   double oatK = env->get_temperature_degc() + SG_T0_K - 15.0 ;         // OAT in Kelvin
   oatK = std::max( oatK , 0.001 );                                // should never happen, but just in case someone flies into space...
   double c = sqrt(SG_gamma * SG_R_m2_p_s2_p_K * oatK);                 // speed-of-sound in m/s at aircraft position
@@ -147,13 +143,13 @@ AirspeedIndicator::computeMach()
   p = std::max( p , 0.001 );                                           // should never happen, but just in case someone flies into space...
   double rho = _density_node->getDoubleValue() * SG_SLUGFT3_TO_KGPM3;  // air density in kg/m3
   rho = std::max( rho , 0.001 );                                      // should never happen, but just in case someone flies into space...
-  
+
   // true airspeed in m/s
   pt = std::max( pt , p );
   double V_true = sqrt( 7 * p/rho * (pow( 1 + (pt-p)/p , 1/3.5 ) -1 ) );
   // Mach number; _see notes in systems/pitot.cxx_
   double mach = V_true / c;
-  
+
   // publish Mach and TAS
   _mach_node->setDoubleValue(mach);
   _tas_node->setDoubleValue(V_true * SG_MPS_TO_KT );

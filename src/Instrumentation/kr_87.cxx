@@ -1,28 +1,11 @@
-// kr-87.cxx -- class to impliment the King KR 87 Digital ADF
+// kr-87.cxx -- class to implement the King KR 87 Digital ADF
 //
-// Written by Curtis Olson, started April 2002.
-//
-// Copyright (C) 2002  Curtis L. Olson - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
+/*
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: 2002 Curtis L. Olson
+ */
 
-
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <stdio.h>	// snprintf
 
@@ -273,13 +256,13 @@ void FGKR_87::update( double dt_sec ) {
                 timer_mode = 1;
                 count_mode = 2;
                 elapsed_timer = 0.0;
-            }    
+            }
         }
         if ( set_rst_btn == 0 && set_rst_btn != last_set_rst_btn ) {
             // button released
             if ( tmp_timer > 2.0 ) {
                 // button held depressed for 2 seconds, don't adjust
-                // mode, just exit                
+                // mode, just exit
             } else if ( count_mode == 2 ) {
                 count_mode = 1;
             } else {
@@ -341,9 +324,9 @@ void FGKR_87::update( double dt_sec ) {
             if ( dist < effective_range * SG_NM_TO_METER ) {
                 inrange = true;
             } else if ( dist < 2 * effective_range * SG_NM_TO_METER ) {
-                inrange = sg_random() < 
-                    ( 2 * effective_range * SG_NM_TO_METER - dist ) /
-                    (effective_range * SG_NM_TO_METER);
+                inrange = sg_random() <
+                          (2 * effective_range * SG_NM_TO_METER - dist) /
+                              (effective_range * SG_NM_TO_METER);
             } else {
                 inrange = false;
             }
@@ -422,7 +405,7 @@ void FGKR_87::update( double dt_sec ) {
 
     // cout << "goal = " << goal_needle_deg << " actual = " << needle_deg
     //      << endl;
-    // cout << "flt = " << flight_timer << " et = " << elapsed_timer 
+    // cout << "flt = " << flight_timer << " et = " << elapsed_timer
     //      << " needle = " << needle_deg << endl;
 
     if ( valid && inrange && serviceable->getBoolValue() ) {
@@ -459,11 +442,11 @@ void FGKR_87::update( double dt_sec ) {
 }
 
 
-// Update current nav/adf radio stations based on current postition
+// Update current nav/adf radio stations based on current position
 void FGKR_87::search() {
-  SGGeod pos = globals->get_aircraft_position();
-  
-				// FIXME: the panel should handle this
+    SGGeod pos = globals->get_aircraft_position();
+
+    // FIXME: the panel should handle this
     static string last_ident = "";
 
     // reset search time
@@ -473,9 +456,9 @@ void FGKR_87::search() {
     // ADF.
     ////////////////////////////////////////////////////////////////////////
 
-  
-  FGNavList::TypeFilter filter(FGPositioned::NDB);
-  FGNavRecord *adf = FGNavList::findByFreq( freq, pos, &filter);
+
+    FGNavList::TypeFilter filter(FGPositioned::NDB);
+    FGNavRecord* adf = FGNavList::findByFreq(freq, pos, &filter);
     if ( adf != NULL ) {
 	char sfreq[128];
 	snprintf( sfreq, 10, "%d", freq );

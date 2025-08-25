@@ -1,14 +1,6 @@
-/*
- * SPDX-License-Identifier: CC0-1.0
- * 
- * tacan.hxx - Models a TACAN (Tactical Air Navigation) Radio
- * Written by David Megginson, started 2003.
- * 
- * This file is in the Public Domain and comes with no warranty.
- * 
-*/
-
-
+// tacan.hxx - Models a TACAN (Tactical Air Navigation) Radio
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2003 David Megginson (public domain)
 
 #pragma once
 

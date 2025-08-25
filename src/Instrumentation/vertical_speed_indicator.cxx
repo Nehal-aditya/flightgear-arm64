@@ -1,13 +1,8 @@
 // vertical_speed_indicator.cxx - a regular VSI.
-// Written by David Megginson, started 2002.
-//
-// Last change by E. van den Berg, 17.02.1013
-//
-// This file is in the Public Domain and comes with no warranty.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2002 David Megginson (public domain)
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
 #include <simgear/constants.h>
 #include <simgear/math/interpolater.hxx>
@@ -20,7 +15,7 @@
 //** these values calibrate the VSI at SL. */
 #define Vol_casing 1.25e-4          //m3
 #define A_orifice 7.853982e-9       //m2
-#define Factor_cal 189.145628       //- 
+#define Factor_cal 189.145628       //-
 
 using std::string;
 
@@ -91,19 +86,19 @@ VerticalSpeedIndicator::update (double dt)
 
 // This is a thermodynamically correct model of a mechanical vertical speed indicator:
 // It represents an aneroid in a closed (constant volume) casing with the aneroid internal pressure = static pressure
-// The casing has an orifice to static pressure 
-// the mass flow through the orifice is calculated using compressible aerodynamics (but adiabatic and of course a perfect gas)
-// using the pressure in the casing and static pressure
-//
-// sadly at very low flows (small VS) in conjunction with the fact discrete timesteps (dt) are used, a numerical instability is formed.
-// this is counteracted by setting the massflow 0 at very small pressure differentials
-// this causes a small funny jump of your VSI when passing through 0...cannot be helped!
-//
-// also note the calibration is only valid for 0ft, so at higher altitudes, the vertical speed is not correct, but would indicate as a real mechanical VSI.
-// Only use for conventional mechanical VSI-s. Dont use in an Air Data Computer.
-//
-// (...and it is supposed to lag!)
-    
+        // The casing has an orifice to static pressure
+        // the mass flow through the orifice is calculated using compressible aerodynamics (but adiabatic and of course a perfect gas)
+        // using the pressure in the casing and static pressure
+        //
+        // sadly at very low flows (small VS) in conjunction with the fact discrete timesteps (dt) are used, a numerical instability is formed.
+        // this is counteracted by setting the massflow 0 at very small pressure differentials
+        // this causes a small funny jump of your VSI when passing through 0...cannot be helped!
+        //
+        // also note the calibration is only valid for 0ft, so at higher altitudes, the vertical speed is not correct, but would indicate as a real mechanical VSI.
+        // Only use for conventional mechanical VSI-s. Dont use in an Air Data Computer.
+        //
+        // (...and it is supposed to lag!)
+
         _casing_airmass_kg = _casing_airmass_kg - _orifice_massflow_kgps * dt;
         double new_density_kgpm3 = _casing_airmass_kg / Vol_casing;
         _casing_pressure_Pa = _casing_pressure_Pa * pow(new_density_kgpm3 / _casing_density_kgpm3 , SG_gamma);
@@ -116,8 +111,8 @@ VerticalSpeedIndicator::update (double dt)
         }
 
         if( fabs(_casing_pressure_Pa - pressure_Pa) < 0.01 ) {
-            orifice_mach = 0.0;   
-        } else { 
+            orifice_mach = 0.0;
+        } else {
             orifice_mach = sqrt(fabs (2.0*SG_cp_m2_p_s2_p_K / (SG_gamma * SG_R_m2_p_s2_p_K) * ( pow(pressure_Pa / _casing_pressure_Pa ,(SG_gamma-1)/SG_gamma ) -1 ) ) );
         }
 

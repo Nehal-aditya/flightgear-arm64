@@ -1,27 +1,10 @@
 /*
- * SPDX-License-Identifier: GPL-2.0+
- * SPDX-FileCopyrightText: 2000 - 2002 (C) Curtis L. Olson - http://www.flightgear.org/~curt
- * 
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ * SPDX-FileCopyrightText: 2000 Curtis L. Olson - http://www.flightgear.org/~curt
+ *
  * navradio.hxx -- class to manage a nav radio instance
  * Written by Curtis Olson, started April 2000.
- * 
- * Copyright (C) 2000 - 2002  Curtis L. Olson - http://www.flightgear.org/~curt
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- * 
- * $Id$
+ *
 */
 
 #pragma once
@@ -58,8 +41,8 @@ class FGNavRadio : public AbstractInstrument,
     SGPropertyNode_ptr tofrom_serviceable_node;
 
     // property outputs
-    SGPropertyNode_ptr fmt_freq_node;     // formated frequency
-    SGPropertyNode_ptr fmt_alt_freq_node; // formated alternate frequency
+    SGPropertyNode_ptr fmt_freq_node;     // formatted frequency
+    SGPropertyNode_ptr fmt_alt_freq_node; // formatted alternate frequency
     SGPropertyNode_ptr heading_node;      // true heading to nav station
     SGPropertyNode_ptr radial_node;       // current radial we are on (taking
                                        // into consideration the vor station
@@ -187,7 +170,7 @@ public:
     // Subsystem identification.
     static const char* staticSubsystemClassId() { return "old-navradio"; }
 
-    // Update nav/adf radios based on current postition
+    // Update nav/adf radios based on current position
     void search ();
     void updateNav();
 };
