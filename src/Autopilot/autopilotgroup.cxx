@@ -25,6 +25,8 @@
 #include <Main/sentryIntegration.hxx>
 
 using std::vector;
+using namespace std::string_literals;
+
 using simgear::PropertyList;
 using FGXMLAutopilot::Autopilot;
 
@@ -94,7 +96,7 @@ void FGXMLAutopilotGroupImplementation::reinit()
 {
   SGSubsystemGroup::unbind();
   clearSubsystems();
-  
+
   // ensure we bind again, so the SGSubsystemGroup state is correct before
   // we call init. Since there's no actual group members at this point (we
   // cleared them just above) this is purely to ensure SGSubsystemGroup::_state
@@ -106,8 +108,9 @@ void FGXMLAutopilotGroupImplementation::reinit()
 //------------------------------------------------------------------------------
 SGSubsystem::InitStatus FGXMLAutopilotGroupImplementation::incrementalInit()
 {
-  init();
-  return INIT_DONE;
+    simgear::ErrorReportContext ec("primary-aircraft"s, "yes"s);
+    init();
+    return INIT_DONE;
 }
 
 //------------------------------------------------------------------------------
