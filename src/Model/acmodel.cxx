@@ -1,11 +1,8 @@
 // acmodel.cxx - manage a 3D aircraft model.
-// Written by David Megginson, started 2002.
-//
-// This file is in the Public Domain, and comes with no warranty.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2002 David Megginson (public domain)
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <cstring>		// for strcmp()
 

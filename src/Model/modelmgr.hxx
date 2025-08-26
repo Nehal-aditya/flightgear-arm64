@@ -1,6 +1,6 @@
 // model-mgr.hxx - manage user-specified 3D models.
 // Written by David Megginson, started 2002.
-// SPDX-FileCopyrightText: (C) David Megginson, 2002
+// SPDX-FileCopyrightText: 2002 David Megginson
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #pragma once

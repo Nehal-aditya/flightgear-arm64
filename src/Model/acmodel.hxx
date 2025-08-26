@@ -1,10 +1,8 @@
 // acmodel.hxx - manage a 3D aircraft model.
-// Written by David Megginson, started 2002.
-//
-// This file is in the Public Domain, and comes with no warranty.
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2002 David Megginson (public domain)
 
-#ifndef __ACMODEL_HXX
-#define __ACMODEL_HXX 1
+#pragma once
 
 #include <osg/ref_ptr>
 #include <osg/Group>
@@ -52,5 +50,3 @@ private:
     SGPropertyNode_ptr _speed_e;
     SGPropertyNode_ptr _speed_d;
 };
-
-#endif // __ACMODEL_HXX

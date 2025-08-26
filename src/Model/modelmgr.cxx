@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: modelmgr.cxx
  * SPDX-FileComment: manage a collection of 3D models
- * SPDX-FileCopyrightText: Written by David Megginson, started 2002.
+ * SPDX-FileCopyrightText: 2002 David Megginson
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
