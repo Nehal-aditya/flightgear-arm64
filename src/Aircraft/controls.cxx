@@ -1130,12 +1130,13 @@ void FGControls::set_to_tank(int tank, int dest_tank)
 
 void FGControls::set_boost_pump(int index, bool val)
 {
+    const int totalMaxBoostPumps = static_cast<int>(MAX_TANKS) * static_cast<int>(MAX_BOOSTPUMPS);
     if (index == -1) {
-        for (int i = 0; i < (MAX_TANKS * MAX_BOOSTPUMPS); i++) {
+        for (int i = 0; i < totalMaxBoostPumps; i++) {
             boost_pump[i] = val;
         }
     } else {
-        if ((index >= 0) && (index < (MAX_TANKS * MAX_BOOSTPUMPS))) {
+        if ((index >= 0) && (index < totalMaxBoostPumps)) {
             boost_pump[index] = val;
         }
     }

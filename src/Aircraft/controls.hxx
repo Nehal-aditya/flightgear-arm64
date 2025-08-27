@@ -127,7 +127,7 @@ private:
     int to_tank[MAX_TANKS];
 
     // controls/fuel/tank[n]/pump[p]/
-    bool boost_pump[MAX_TANKS * MAX_BOOSTPUMPS];
+    bool boost_pump[static_cast<int>(MAX_TANKS) * static_cast<int>(MAX_BOOSTPUMPS)];
 
     // controls/gear/
     double brake_left;
