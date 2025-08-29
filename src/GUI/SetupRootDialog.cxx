@@ -29,6 +29,7 @@
 #include <QDebug>
 #include <QDesktopServices>
 #include <QDir>
+#include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
@@ -59,6 +60,7 @@
 using namespace std::chrono_literals;
 
 const quint32 static_basePackagePatchLevel = 2;
+const qint64 fourMB = 4 * 1024 * 1024;
 
 namespace {
     /**
@@ -108,6 +110,10 @@ public:
             ed.remove(true);
         }
 
+        const auto resumeDataPath = rp.dirPath() / std::string{"_fgdata_downloading.temp"};
+        // FIXME: convert via std::filesystem::path
+        m_resumeData.setFileName(QString::fromStdString(resumeDataPath.utf8Str()));
+
         // +1 to include the leading /
         m_pathPrefixLength = m_downloadPath.utf8Str().length() + 1;
 
@@ -124,11 +130,87 @@ public:
         m_dns->makeDNSRequest();
     }
 
+    bool willResume() const
+    {
+        // if the resume data exists and is large enough, we will attempt to resume
+        return static_cast<qint64>(m_resumeData.size()) >= fourMB;
+    }
+
+    /**
+     * @brief setup the QNetworkRequest to do a resume download, by specifying
+     * a byte-range in the HTTP request.
+     * 
+     * @param req : the request to modify
+     * @return qint64 : the number of bytes of overlap we will read
+     */
+    qint64 resumeDownload(QNetworkRequest& req)
+    {
+        std::unique_lock g(m_mutex);
+        qint64 resumeBytes = m_resumeData.size();
+        m_resumedBytesSize = 0;
+        m_readResumeFile = false;
+
+        if (resumeBytes < fourMB) {
+            m_resumeData.remove();
+            return 0;
+        }
+
+        if (!m_resumeData.open(QIODevice::ReadOnly)) {
+            return 0;
+        }
+
+        // allow a 4MB overlap, to verify the tail end of the
+        // resume file matches what we download. This will catch weird
+        // cases like the file on the server side changed, or an out-of-sync mirror
+        resumeBytes -= fourMB;
+        m_resumedBytesSize = resumeBytes;
+
+        // seek to read out our overlap data into m_buffer
+        m_resumeData.seek(resumeBytes);
+        qInfo() << "Will resume at byte offset:" << resumeBytes;
+        m_buffer = m_resumeData.read(fourMB);
+        m_resumeData.close();
+
+        if (static_cast<qint64>(m_buffer.size()) != fourMB) {
+            qWarning() << "Failed to load existing downloaded data into the buffer";
+            m_buffer.clear();
+            m_resumeData.remove();
+            return 0;
+        }
+
+        req.setRawHeader("Range", QString("bytes=%1-").arg(resumeBytes).toUtf8());
+        m_readResumeFile = true;
+        return fourMB;
+    }
+
     void startRequest()
     {
+        // must do this before we start any resume
+        {
+            std::unique_lock g(m_mutex);
+            m_haveFirstMByte = false;
+            m_buffer.clear();
+        }
+
+        // reset the archive
+        m_archive.reset(new simgear::ArchiveExtractor(m_downloadPath));
+        m_archive->setRemoveTopmostDirectory(true);
+        m_archive->setCreateDirHashEntries(true);
+
+        // SF doesn't support resuming, hard-code this for now. To be more generic we would
+        // encode this in the server data somehow.
+        if (willResume()) {
+            if (m_servers.front().contains("sourceforge")) {
+                // rotate front entry to the back; if the *only* entry is SF, we still
+                // want to use it (and forget about resuming)
+                auto s = m_servers.takeFirst();
+                m_servers.append(s);
+            }
+        }
+
         QString templateUrl = m_servers.front() + QStringLiteral("/release-%1/FlightGear-%2.%3-data.txz");
-        // deal with SF download syntax
         if (templateUrl.startsWith("https://sourceforge.net/")) {
+            // deal with different SF syntax
             templateUrl += QStringLiteral("/download");
         }
 
@@ -136,14 +218,24 @@ public:
         m_downloadUrl = QUrl(templateUrl.arg(majorMinorVersion).arg(majorMinorVersion).arg(static_basePackagePatchLevel));
 
         qInfo() << "Download URI:" << m_downloadUrl;
+        m_resumeData.close();
 
         QNetworkRequest req{m_downloadUrl};
         req.setMaximumRedirectsAllowed(5);
-        // important to get correct behaviour form SourceForge
-        req.setRawHeader("user-agent", "flighgtear-installer");
+        // important to get correct behaviour from SourceForge, default UA causes it not to
+        // re-direct to the actual mirror correctly.
+        req.setRawHeader("user-agent", "flightgear-installer");
+
+        // check if we can resume an existing download, returns the
+        // number of overlap bytes or zero for no resume.
+        m_resumeOverlapBytes = resumeDownload(req);
 
         m_download = m_networkManager->get(req);
         m_download->setReadBufferSize(64 * 1024 * 1024);
+
+        if (!m_resumeData.open(QIODevice::ReadWrite)) {
+            qWarning() << "Failed to open download resume file";
+        }
 
         connect(m_download, &QNetworkReply::downloadProgress, this, &InstallFGDataThread::onDownloadProgress);
 
@@ -152,25 +244,20 @@ public:
         // download
         connect(m_download, &QNetworkReply::readyRead, this, &InstallFGDataThread::processBytes);
         connect(m_download, &QNetworkReply::finished, this, &InstallFGDataThread::onReplyFinished);
+        connect(m_download, &QNetworkReply::metaDataChanged, this, &InstallFGDataThread::onMetaDataChanged);
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
         connect(m_download, &QNetworkReply::errorOccurred, this, &InstallFGDataThread::onNetworkError);
 #endif
-        {
-            std::unique_lock g(m_mutex);
-            m_haveFirstMByte = false;
-            m_buffer.clear();
-        }
-
-        // reset the archive too
-        m_archive.reset(new simgear::ArchiveExtractor(m_downloadPath));
-        m_archive->setRemoveTopmostDirectory(true);
-        m_archive->setCreateDirHashEntries(true);
     }
 
     ~InstallFGDataThread()
     {
         if (!m_done) {
+            m_resumeData.close();
+            if (m_download) {
+                m_download->abort();
+            }
             m_error = true;
         }
 
@@ -187,10 +274,36 @@ public:
         }
     }
 
+    void updateProgress()
+    {
+        std::unique_lock g(m_mutex);
+        const int percent = calculateProgressPercentage(m_extractedBytes, m_totalSize);
+        auto fullPathStr = m_archive->mostRecentExtractedPath().utf8Str();
+        fullPathStr.erase(0, m_pathPrefixLength);
+        emit installProgress(QString::fromStdString(fullPathStr), percent);
+    }
 
     void run() override
     {
         while (!m_error & !m_done) {
+            // do the resume read first, as fast as the disk IO will allow
+            if (m_readResumeFile) {
+                QByteArray resumeBytes;
+                {
+                    std::unique_lock g(m_mutex);
+                    const auto bytesToRead = std::min(static_cast<qint64>(m_resumedBytesSize - m_resumeData.pos()), static_cast<qint64>(16 * 0x100000));
+                    resumeBytes = m_resumeData.read(bytesToRead);
+                }
+                m_archive->extractBytes((const uint8_t*)resumeBytes.constData(), resumeBytes.size());
+                m_extractedBytes += resumeBytes.size();
+                if (m_resumeData.pos() >= m_resumedBytesSize) {
+                    qInfo() << "done reading resume file bytes";
+                    m_readResumeFile = false;
+                }
+                updateProgress();
+                continue;
+            }
+
             QByteArray localBytes;
             {
                 std::unique_lock g(m_mutex);
@@ -198,8 +311,14 @@ public:
                     m_bufferWait.wait_for(g, 100ms);
                 }
 
+                // don't start pulling bytes out of the buffer while we
+                // are checking the resume overlap
+                if (m_resumeOverlapBytes > 0) {
+                    continue;
+                }
+
                 // don't start passing bytes to the archive extractor, until we have 1MB
-                // this is necssary to avoid passing redirect/404 page bytes in, and breaking
+                // this is necessary to avoid passing redirect/404 page bytes in, and breaking
                 // the extractor.
                 if (!m_haveFirstMByte && (m_buffer.size() < 0x100000)) {
                     continue;
@@ -210,6 +329,7 @@ public:
                 // take at most 1MB
                 localBytes = m_buffer.left(0x100000);
                 m_buffer.remove(0, localBytes.length());
+                m_resumeData.write(localBytes);
             }
 
             if (!localBytes.isEmpty()) {
@@ -217,16 +337,14 @@ public:
                 m_extractedBytes += localBytes.size();
             }
 
-            const int percent = calculateProgressPercentage(m_extractedBytes, m_totalSize);
-
-            auto fullPathStr = m_archive->mostRecentExtractedPath().utf8Str();
-            fullPathStr.erase(0, m_pathPrefixLength);
-
-            emit installProgress(QString::fromStdString(fullPathStr), percent);
+            updateProgress();
 
             if (m_archive->hasError()) {
                 m_error = true;
-                qWarning() << "Archive error";
+                // remove any resume file, since we probably have corrupted data somehow
+                m_resumeData.close();
+                m_resumeData.remove();
+                qWarning() << "Archive error, installation will terminate";
             }
 
             if (m_archive->isAtEndOfArchive()) {
@@ -235,7 +353,11 @@ public:
             }
         }
 
-        if (!m_error) {
+        if (m_error) {
+            // ensure the archive is cleaned up, including any files,
+            // since we will likely attempt to remove it.
+            m_archive.reset();
+        } else {
             // create marker file for future updates
             {
                 SGPath setupInfoPath = m_downloadPath / ".setup-info";
@@ -249,36 +371,92 @@ public:
             if (!renamedOk) {
                 m_error = true;
             }
+
+            // remove the resume-data file from disk, now we succeeded.
+            m_resumeData.remove();
         }
     }
 
     void onNetworkError(QNetworkReply::NetworkError code)
     {
+        if (code == QNetworkReply::OperationCanceledError) {
+            // abort() is handled differently,
+            // eg when a resume fails
+            return;
+        }
+
         SG_LOG(SG_IO, SG_WARN, "FGdata download failed, will re-try next mirror:" << code << " (" << m_download->errorString().toStdString() << ")");
 
         // don't need to delete, onReplyFinished will also fire
-
         m_servers.pop_front();
         if (m_servers.empty()) {
             m_error = true;
             emit failed(m_download->errorString());
         } else {
             startRequest();
-            // will try a new request!
+            // will try a new request
+        }
+    }
+
+    void onMetaDataChanged()
+    {
+        const int status = m_download->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        if (m_resumeOverlapBytes > 0) {
+            if (status == 206) {
+                // we wil get the range request, excellent
+            } else if (status == 200) {
+                // full content, abandon resume
+                m_resumeOverlapBytes = 0;
+                m_buffer.clear();
+                m_resumeData.close();
+                m_resumeData.open(QIODevice::WriteOnly | QIODevice::Truncate);
+                qWarning() << "Server can't resume, reverting to full download";
+            }
         }
     }
 
     void onDownloadProgress(quint64 got, quint64 total)
     {
         emit downloadProgress(got, total);
-        m_totalSize = total;
+        m_totalSize = total + m_resumedBytesSize;
     }
 
     void processBytes()
     {
         QByteArray bytes = m_download->readAll();
         {
-            std::lock_guard g(m_mutex);
+            std::unique_lock g(m_mutex);
+            if (m_resumeOverlapBytes > 0) {
+                const auto bytesToCompare = std::min(m_resumeOverlapBytes, static_cast<qint64>(bytes.size()));
+                auto checkBytes = m_buffer.mid(m_buffer.size() - m_resumeOverlapBytes, bytesToCompare);
+                if (checkBytes == bytes.left(bytesToCompare)) {
+                    // all good, remove from the bytes downloaded,
+                    // since they are already in m_buffer
+                    bytes.remove(0, bytesToCompare);
+                    m_resumeOverlapBytes -= bytesToCompare;
+                } else {
+                    g.unlock();
+                    // remove the resume file, but don't adjust m_servers since we
+                    // can re-use the same one
+                    qWarning() << "Resume overlap bytes mismatch, will abandon resume and re-try";
+                    m_resumeData.close();
+                    m_resumeData.remove();
+                    m_download->abort();
+                    QTimer::singleShot(0, this, &InstallFGDataThread::startRequest);
+                    return;
+                }
+
+                if (m_resumeOverlapBytes == 0) {
+                    qInfo() << "resumed download correctly";
+                }
+
+                // if all available bytes were consumed,
+                // don't bother waking up the thread
+                if (bytes.isEmpty()) {
+                    return;
+                }
+            }
+
             m_buffer.append(bytes);
             m_bufferWait.notify_one();
         }
@@ -315,8 +493,17 @@ private:
     QByteArray m_buffer;
     quint64 m_totalSize = 0;
     quint64 m_extractedBytes = 0;
+    quint64 m_resumedBytesSize = 0;
+
+    bool m_readResumeFile = false;
     bool m_haveFirstMByte = false;
+
+    /// remaining bytes of overalp in m_buffer, that we need to receive
+    /// before we are adding fresh bytes
+    qint64 m_resumeOverlapBytes = 0;
+
     QUrl m_downloadUrl;
+    QFile m_resumeData; // on-disk cache of downloaded TXZ, for resuming downloads
 
     bool m_done = false;
     QPointer<QNetworkReply> m_download;
@@ -473,28 +660,7 @@ void SetupRootDialog::askRootOnNextLaunch()
 
 bool SetupRootDialog::validatePath(QString path)
 {
-    // check assorted files exist in the root location, to avoid any chance of
-    // selecting an incomplete base package. This is probably overkill but does
-    // no harm
-    QStringList files = QStringList()
-        << "version"
-        << "defaults.xml"
-        << "Materials/base/materials-base.xml"
-        << "gui/menubar.xml"
-        << "Timezone/zone.tab";
-
-    QDir d(path);
-    if (!d.exists()) {
-        return false;
-    }
-
-    Q_FOREACH(QString s, files) {
-        if (!d.exists(s)) {
-            return false;
-        }
-    }
-
-    return true;
+    return flightgear::Options::isFGData(SGPath::fromUtf8(path.toStdString()));
 }
 
 /**

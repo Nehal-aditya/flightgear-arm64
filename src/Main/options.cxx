@@ -97,6 +97,7 @@ using std::vector;
 using std::cin;
 
 using namespace flightgear;
+using namespace std::string_literals;
 
 #define NEW_DEFAULT_MODEL_HZ 120
 
@@ -3528,6 +3529,32 @@ string_list Options::extractOptions() const
     return result;
 }
 
+bool Options::isFGData(const SGPath& p)
+{
+    // check assorted files exist in the root location, to avoid any chance of
+    // selecting an incomplete base package. This is probably overkill but does
+    // no harm
+    const string_list files{
+        "version"s,
+        "defaults.xml"s,
+        "Materials/base/materials-base.xml"s,
+        "gui/menubar.xml"s,
+        "Timezone/zone.tab"s};
+
+    if (!p.exists()) {
+        return false;
+    }
+
+    for (const auto& f : files) {
+        const auto path = p / f;
+        if (!path.exists()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 OptionResult Options::setupRoot(int argc, char** argv)
 {
     SGPath root(globals->get_fg_root());
@@ -3560,7 +3587,7 @@ OptionResult Options::setupRoot(int argc, char** argv)
         if (root.isNull()) {
             usingDefaultRoot = true;
             root = platformDefaultRoot();
-            if (!root.exists()) {
+            if (!isFGData(root)) {
                 root = downloadedDataRoot();
             }
             SG_LOG(SG_GENERAL, SG_INFO, "platform default fg_root = " << root );
@@ -3571,7 +3598,7 @@ OptionResult Options::setupRoot(int argc, char** argv)
   }
 
   globals->set_fg_root(root);
-    string base_version = fgBasePackageVersion(root);
+  string base_version = fgBasePackageVersion(root);
 
 
 #if defined(HAVE_QT)

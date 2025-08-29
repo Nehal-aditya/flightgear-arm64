@@ -76,35 +76,42 @@ public:
      */
     static void reset();
 
-  ~Options();
-  
-  /**
+    /**
+     * @brief check if a path 'looks like' it contains FGData by checking for
+     * the presence of various standard files. Note this does not do any version
+     * checking.
+     */
+    static bool isFGData(const SGPath& p);
+
+    ~Options();
+
+    /**
    * pass command line arguments, read default config files
    */
-  OptionResult init(int argc, char* argv[], const SGPath& appDataPath);
+    OptionResult init(int argc, char* argv[], const SGPath& appDataPath);
 
-  /**
+    /**
     * parse a config file (eg, .fgfsrc) 
     */
-  void readConfig(const SGPath& path);
-  
-  /**
+    void readConfig(const SGPath& path);
+
+    /**
     * read the value for an option, if it has been set
     */
-  std::string valueForOption(const std::string& key, const std::string& defValue = std::string()) const;
-  
-  /**
+    std::string valueForOption(const std::string& key, const std::string& defValue = std::string()) const;
+
+    /**
     * return all values for a multi-valued option
     */
-  string_list valuesForOption(const std::string& key) const;
-  
-  /**
+    string_list valuesForOption(const std::string& key) const;
+
+    /**
     * Check if a particular option has been set (so far).
     * For boolean option please use isBoolOptionEnable or isBoolOptionDisable.
     */
-  bool isOptionSet(const std::string& key) const;
-  
-  /**
+    bool isOptionSet(const std::string& key) const;
+
+    /**
    * Check if the user has specified a given boolean option.
    * We need to return 3 states:
    * *  1 - the user has explicitly enabled the option,
@@ -123,41 +130,41 @@ public:
    * --fullscreen no       =>  checkBoolOptionSet("fullscreen")  =>  false
    * {none of the above}   =>  checkBoolOptionSet("fullscreen")  =>  no value
    */
-  simgear::optional<bool> checkBoolOptionSet(const std::string& key) const;
+    simgear::optional<bool> checkBoolOptionSet(const std::string& key) const;
 
-  /**
+    /**
    * An overlay on checkBoolOptionSet, except that when the user has not used
    * the option at all then false is returned.
    * For non-boolean option please use isOptionSet.
    */
-  bool isBoolOptionEnable(const std::string &key) const;
+    bool isBoolOptionEnable(const std::string& key) const;
 
-  /**
+    /**
    * An overlay on checkBoolOptionSet, to check whether user used the option
    * with explicitly disable it.
    * For non-boolean option please use isOptionSet.
    */
-  bool isBoolOptionDisable(const std::string &key) const;
+    bool isBoolOptionDisable(const std::string& key) const;
 
-  /**
+    /**
     * set an option value, assuming it is not already set (or multiple values
     * are permitted)
     * This can be used to inject option values, eg based upon environment variables
     */
-  int addOption(const std::string& key, const std::string& value);
+    int addOption(const std::string& key, const std::string& value);
 
-  /**
+    /**
    * set an option, overwriting any existing value which might be set
    */
-  int setOption(const std::string& key, const std::string& value);
+    int setOption(const std::string& key, const std::string& value);
 
-  void clearOption(const std::string& key);
+    void clearOption(const std::string& key);
 
-  /**
+    /**
    * apply option values to the simulation state
    * (set properties, etc). 
    */
-  OptionResult processOptions();
+    OptionResult processOptions();
 
     /**
      * process command line options relating to scenery / aircraft / data paths

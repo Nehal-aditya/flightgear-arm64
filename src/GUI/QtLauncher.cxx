@@ -431,8 +431,10 @@ void initApp(int& argc, char** argv, bool doInitQSettings)
 		// leave things unset here, so users can use env var
 		// QT_AUTO_SCREEN_SCALE_FACTOR=1 to enable it at runtime
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #if !defined (SG_WINDOWS)
         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
 #endif
         static_qApp.reset(new QApplication(s_argc, argv));
         static_qApp->setOrganizationName("FlightGear");
