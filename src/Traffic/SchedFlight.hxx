@@ -1,23 +1,9 @@
-/* -*- Mode: C++ -*- *****************************************************
- * SchedFlight.hxx
- * Written by Durk Talsma. Started May 5, 2004
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- *
- **************************************************************************/
+// SchedFlight.hxx
+//
+// Written by Durk Talsma, started May 5, 2004.
+//
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2004 Durk Talsma
 
 /**************************************************************************
  * ScheduledFlight is a class that is used by FlightGear's Traffic Manager
@@ -45,79 +31,78 @@ class FGAirport;
 class FGScheduledFlight
 {
 private:
-  static std::map<std::string, std::string> missingAirports;
+    static std::map<std::string, std::string> missingAirports;
 
-  std::string callsign;
-  std::string fltRules;
+    std::string callsign;
+    std::string fltRules;
 
-  FGAirport *departurePort;
-  FGAirport *arrivalPort;
+    FGAirport* departurePort;
+    FGAirport* arrivalPort;
 
-  std::string depId;
-  std::string arrId;
-  std::string requiredAircraft;
+    std::string depId;
+    std::string arrId;
+    std::string requiredAircraft;
 
-  time_t departureTime;
-  time_t arrivalTime;
-  time_t repeatPeriod;
+    time_t departureTime;
+    time_t arrivalTime;
+    time_t repeatPeriod;
 
-  int cruiseAltitude;
-  bool initialized;
-  bool available;
+    int cruiseAltitude;
+    bool initialized;
+    bool available;
 
 public:
-  FGScheduledFlight();
-  FGScheduledFlight(const FGScheduledFlight &other);
-  //  FGScheduledFlight(const std::string);
-  FGScheduledFlight(const std::string& cs,
-                    const std::string& fr,
-                    const std::string& depPrt,
-                    const std::string& arrPrt,
-                    int cruiseAlt,
-                    const std::string& deptime,
-                    const std::string& arrtime,
-                    const std::string& rep,
-                    const std::string& reqAC
-  );
-  ~FGScheduledFlight();
+    FGScheduledFlight();
+    FGScheduledFlight(const FGScheduledFlight& other);
+    //  FGScheduledFlight(const std::string);
+    FGScheduledFlight(const std::string& cs,
+                      const std::string& fr,
+                      const std::string& depPrt,
+                      const std::string& arrPrt,
+                      int cruiseAlt,
+                      const std::string& deptime,
+                      const std::string& arrtime,
+                      const std::string& rep,
+                      const std::string& reqAC);
+    ~FGScheduledFlight();
 
-  void update();
-  bool initializeAirports();
+    void update();
+    bool initializeAirports();
 
-  void adjustTime(time_t now);
+    void adjustTime(time_t now);
 
-  time_t getDepartureTime() { return departureTime; };
-  time_t getArrivalTime  () { return arrivalTime;   };
+    time_t getDepartureTime() { return departureTime; };
+    time_t getArrivalTime() { return arrivalTime; };
 
-  void setDepartureAirport(const std::string& port) { depId = port; };
-  void setArrivalAirport  (const std::string& port) { arrId = port; };
-  FGAirport *getDepartureAirport();
-  FGAirport *getArrivalAirport  ();
+    void setDepartureAirport(const std::string& port) { depId = port; };
+    void setArrivalAirport(const std::string& port) { arrId = port; };
+    FGAirport* getDepartureAirport();
+    FGAirport* getArrivalAirport();
 
-  int getCruiseAlt() { return cruiseAltitude; };
+    int getCruiseAlt() { return cruiseAltitude; };
 
-  bool operator<(const FGScheduledFlight &other) const
-  {
-    return (departureTime < other.departureTime);
-  };
-  const std::string& getFlightRules() { return fltRules; };
+    bool operator<(const FGScheduledFlight& other) const
+    {
+        return (departureTime < other.departureTime);
+    };
+    const std::string& getFlightRules() { return fltRules; };
 
-  time_t processTimeString(const std::string& time);
-  const std::string& getCallSign() {return callsign; };
-  const std::string& getRequirement() { return requiredAircraft; }
+    time_t processTimeString(const std::string& time);
+    const std::string& getCallSign() { return callsign; };
+    const std::string& getRequirement() { return requiredAircraft; }
 
-  void lock()    { available = false; };
-  void release() { available = true;  };
+    void lock() { available = false; };
+    void release() { available = true; };
 
-  bool isAvailable() { return available; };
+    bool isAvailable() { return available; };
 
-  void setCallSign(const std::string& val)    { callsign = val; };
-  void setFlightRules(const std::string& val) { fltRules = val; };
+    void setCallSign(const std::string& val) { callsign = val; };
+    void setFlightRules(const std::string& val) { fltRules = val; };
 
-  static bool compareScheduledFlights(const FGScheduledFlight *a, const FGScheduledFlight *b);
+    static bool compareScheduledFlights(const FGScheduledFlight* a, const FGScheduledFlight* b);
 };
 
-typedef std::vector<FGScheduledFlight*>           FGScheduledFlightVec;
+typedef std::vector<FGScheduledFlight*> FGScheduledFlightVec;
 typedef std::vector<FGScheduledFlight*>::iterator FGScheduledFlightVecIterator;
 
-typedef std::map < std::string, FGScheduledFlightVec > FGScheduledFlightMap;
+typedef std::map<std::string, FGScheduledFlightVec> FGScheduledFlightMap;

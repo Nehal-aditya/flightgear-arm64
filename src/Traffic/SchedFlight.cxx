@@ -1,25 +1,12 @@
-/******************************************************************************
- * SchedFlight.cxx
- * Written by Durk Talsma, started May 5, 2004.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- *
- **************************************************************************/
+// SchedFlight.cxx
+//
+// Written by Durk Talsma, started May 5, 2004.
+//
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2004 Durk Talsma
 
-/* This a prototype version of a top-level flight plan manager for Flightgear.
+/**
+ * This a prototype version of a top-level flight plan manager for Flightgear.
  * It parses the fgtraffic.txt file and determine for a specific time/date,
  * where each aircraft listed in this file is at the current time.
  *
@@ -36,15 +23,13 @@
  *
  *****************************************************************************/
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#endif
+#include "config.h"
 
-#include <stdlib.h>
-#include <time.h>
-#include <iostream>
 #include <fstream>
+#include <iostream>
+#include <stdlib.h>
 #include <string>
+#include <time.h>
 #include <vector>
 
 #include <simgear/compiler.h>
@@ -81,7 +66,7 @@ FGScheduledFlight::FGScheduledFlight() : departurePort{nullptr},
     available = true;
 }
 
-FGScheduledFlight::FGScheduledFlight(const FGScheduledFlight &other) : callsign{other.callsign},
+FGScheduledFlight::FGScheduledFlight(const FGScheduledFlight& other) : callsign{other.callsign},
                                                                        fltRules{other.fltRules},
                                                                        departurePort{other.departurePort},
                                                                        arrivalPort{other.arrivalPort},
@@ -92,9 +77,9 @@ FGScheduledFlight::FGScheduledFlight(const FGScheduledFlight &other) : callsign{
                                                                        arrivalTime{other.arrivalTime},
                                                                        repeatPeriod{other.repeatPeriod}
 {
-  cruiseAltitude    = other.cruiseAltitude;
-  initialized       = other.initialized;
-  available         = other.available;
+    cruiseAltitude = other.cruiseAltitude;
+    initialized = other.initialized;
+    available = other.available;
 }
 
 /**
@@ -105,14 +90,14 @@ FGScheduledFlight::FGScheduledFlight(const FGScheduledFlight &other) : callsign{
  */
 
 FGScheduledFlight::FGScheduledFlight(const string& cs,
-		                             const string& fr,
-		                             const string& depPrt,
-		                             const string& arrPrt,
-		                             int cruiseAlt,
-		                             const string& deptime,
-		                             const string& arrtime,
-		                             const string& rep,
-		                             const string& reqAC) : callsign{cs},
+                                     const string& fr,
+                                     const string& depPrt,
+                                     const string& arrPrt,
+                                     int cruiseAlt,
+                                     const string& deptime,
+                                     const string& arrtime,
+                                     const string& rep,
+                                     const string& reqAC) : callsign{cs},
                                                             fltRules{fr},
                                                             departurePort{nullptr},
                                                             arrivalPort{nullptr},
@@ -120,52 +105,48 @@ FGScheduledFlight::FGScheduledFlight(const string& cs,
                                                             arrId{arrPrt},
                                                             requiredAircraft{reqAC}
 {
-  //departurePort.setId(depPrt);
-  //arrivalPort.setId(arrPrt);
+    //departurePort.setId(depPrt);
+    //arrivalPort.setId(arrPrt);
 
-  //cerr << "Constructor: departure " << depId << ". arrival " << arrId << endl;
-  //departureTime     = processTimeString(deptime);
-  //arrivalTime       = processTimeString(arrtime);
-  cruiseAltitude    = cruiseAlt;
+    //cerr << "Constructor: departure " << depId << ". arrival " << arrId << endl;
+    //departureTime     = processTimeString(deptime);
+    //arrivalTime       = processTimeString(arrtime);
+    cruiseAltitude = cruiseAlt;
 
-  // Process the repeat period string
-  if (rep.find("WEEK",0) != string::npos)
-    {
-      repeatPeriod = 7*24*60*60; // in seconds
+    // Process the repeat period string
+    if (rep.find("WEEK", 0) != string::npos) {
+        repeatPeriod = 7 * 24 * 60 * 60; // in seconds
+    } else if (rep.find("Hr", 0) != string::npos) {
+        repeatPeriod = 60 * 60 * atoi(rep.substr(0, 2).c_str());
+    } else {
+        repeatPeriod = 365 * 24 * 60 * 60;
+        SG_LOG(SG_AI, SG_ALERT, "Unknown repeat period in flight plan "
+                                "of flight '"
+                                    << cs << "': " << rep);
     }
-  else if (rep.find("Hr", 0) != string::npos)
-    {
-      repeatPeriod = 60*60*atoi(rep.substr(0,2).c_str());
+    if (!repeatPeriod) {
+        SG_LOG(SG_AI, SG_ALERT, "Zero repeat period in flight plan "
+                                "of flight '"
+                                    << cs << "': " << rep);
+        available = false;
+        return;
     }
-  else
-    {
-      repeatPeriod = 365*24*60*60;
-      SG_LOG( SG_AI, SG_ALERT, "Unknown repeat period in flight plan "
-                                    "of flight '" << cs << "': " << rep );
-    }
-  if (!repeatPeriod) {
-      SG_LOG( SG_AI, SG_ALERT, "Zero repeat period in flight plan "
-                                    "of flight '" << cs << "': " << rep );
-      available = false;
-      return;
-  }
 
 
-  // What we still need to do is preprocess the departure and
-  // arrival times.
-  departureTime = processTimeString(deptime);
-  arrivalTime   = processTimeString(arrtime);
-  //departureTime += rand() % 300; // Make sure departure times are not limited to 5 minute increments.
-  if (departureTime > arrivalTime)
-    {
-      departureTime -= repeatPeriod;
+    // What we still need to do is preprocess the departure and
+    // arrival times.
+    departureTime = processTimeString(deptime);
+    arrivalTime = processTimeString(arrtime);
+    //departureTime += rand() % 300; // Make sure departure times are not limited to 5 minute increments.
+    if (departureTime > arrivalTime) {
+        departureTime -= repeatPeriod;
     }
-  initialized = false;
-  available   = true;
+    initialized = false;
+    available = true;
 }
 
 
-FGScheduledFlight:: ~FGScheduledFlight()
+FGScheduledFlight::~FGScheduledFlight()
 {
 }
 
@@ -214,18 +195,18 @@ time_t FGScheduledFlight::processTimeString(const string& theTime)
     if (processedTime < currTimeDate->get_cur_time()) {
         processedTime += repeatPeriod;
     }
-  //tm *temp = currTimeDate->getGmt();
-  //char buffer[512];
-  //sgTimeFormatTime(&targetTimeDate, buffer);
-  //cout << "Scheduled Time " << buffer << endl;
-  //cout << "Time :" << time(NULL) << " SGTime : " << sgTimeGetGMT(temp) << endl;
-  return processedTime;
+    //tm *temp = currTimeDate->getGmt();
+    //char buffer[512];
+    //sgTimeFormatTime(&targetTimeDate, buffer);
+    //cout << "Scheduled Time " << buffer << endl;
+    //cout << "Time :" << time(NULL) << " SGTime : " << sgTimeGetGMT(temp) << endl;
+    return processedTime;
 }
 
 void FGScheduledFlight::update()
 {
-  departureTime += repeatPeriod;
-  arrivalTime  += repeatPeriod;
+    departureTime += repeatPeriod;
+    arrivalTime += repeatPeriod;
 }
 
 /**
@@ -252,28 +233,26 @@ void FGScheduledFlight::adjustTime(time_t now)
 }
 
 
-FGAirport *FGScheduledFlight::getDepartureAirport()
+FGAirport* FGScheduledFlight::getDepartureAirport()
 {
-  if (!(initialized))
-    {
-      initializeAirports();
+    if (!(initialized)) {
+        initializeAirports();
     }
-  if (initialized)
-    return departurePort;
-  else
-    return 0;
+    if (initialized)
+        return departurePort;
+    else
+        return 0;
 }
 
-FGAirport * FGScheduledFlight::getArrivalAirport  ()
+FGAirport* FGScheduledFlight::getArrivalAirport()
 {
-   if (!(initialized))
-    {
-      initializeAirports();
+    if (!(initialized)) {
+        initializeAirports();
     }
-   if (initialized)
-     return arrivalPort;
-   else
-     return 0;
+    if (initialized)
+        return arrivalPort;
+    else
+        return 0;
 }
 
 // Upon the first time of requesting airport information
@@ -285,33 +264,31 @@ FGAirport * FGScheduledFlight::getArrivalAirport  ()
 // of the airports cannot be found.
 bool FGScheduledFlight::initializeAirports()
 {
-  //cerr << "Initializing using : " << depId << " " << arrId << endl;
-  departurePort = FGAirport::findByIdent(depId);
-  if(departurePort == nullptr)
-    {
-      if (!FGScheduledFlight::missingAirports.count(depId)) {
-        FGScheduledFlight::missingAirports.insert(std::pair<std::string,std::string>(depId, depId));
-        SG_LOG( SG_AI, SG_DEBUG, "Traffic manager could not find airport : " << depId);
-      }
-      return false;
+    //cerr << "Initializing using : " << depId << " " << arrId << endl;
+    departurePort = FGAirport::findByIdent(depId);
+    if (departurePort == nullptr) {
+        if (!FGScheduledFlight::missingAirports.count(depId)) {
+            FGScheduledFlight::missingAirports.insert(std::pair<std::string, std::string>(depId, depId));
+            SG_LOG(SG_AI, SG_DEBUG, "Traffic manager could not find airport : " << depId);
+        }
+        return false;
     }
-  arrivalPort = FGAirport::findByIdent(arrId);
-  if(arrivalPort == nullptr)
-    {
-      if (!FGScheduledFlight::missingAirports.count(arrId)) {
-        FGScheduledFlight::missingAirports.insert(std::pair<std::string,std::string>(arrId, arrId));
-        SG_LOG( SG_AI, SG_DEBUG, "Traffic manager could not find airport : " << arrId);
-      }
-      return false;
+    arrivalPort = FGAirport::findByIdent(arrId);
+    if (arrivalPort == nullptr) {
+        if (!FGScheduledFlight::missingAirports.count(arrId)) {
+            FGScheduledFlight::missingAirports.insert(std::pair<std::string, std::string>(arrId, arrId));
+            SG_LOG(SG_AI, SG_DEBUG, "Traffic manager could not find airport : " << arrId);
+        }
+        return false;
     }
 
-  //cerr << "Found : " << departurePort->getId() << endl;
-  //cerr << "Found : " << arrivalPort->getId() << endl;
-  initialized = true;
-  return true;
+    //cerr << "Found : " << departurePort->getId() << endl;
+    //cerr << "Found : " << arrivalPort->getId() << endl;
+    initialized = true;
+    return true;
 }
 
-bool FGScheduledFlight::compareScheduledFlights(const FGScheduledFlight *a, const FGScheduledFlight *b)
+bool FGScheduledFlight::compareScheduledFlights(const FGScheduledFlight* a, const FGScheduledFlight* b)
 {
-  return (*a) < (*b);
+    return (*a) < (*b);
 };

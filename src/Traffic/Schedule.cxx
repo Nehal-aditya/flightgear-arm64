@@ -1,29 +1,11 @@
-/******************************************************************************
- * Schedule.cxx
- * Written by Durk Talsma, started May 5, 2004.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- *
- *
- ****************************************************************************
- *
- *****************************************************************************/
+// Schedule.cxx
+//
+// Written by Durk Talsma, started May 5, 2004.
+//
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2004 Durk Talsma
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <algorithm>
 #include <fstream>
@@ -208,7 +190,7 @@ bool FGAISchedule::update(time_t now, const SGVec3d& userCart)
 
     if (flights.empty()) { // No flights available for this aircraft
         valid = false;
-        return true;       // processing complete
+        return true; // processing complete
     }
 
 
@@ -463,12 +445,7 @@ bool FGAISchedule::scheduleFlights(time_t now)
         string arrT = asctime(gmtime(&arr));
         depT.resize(24);
         arrT.resize(24);
-        SG_LOG(SG_AI, SG_BULK, "  Flight " << flight->getCallSign() << ":"
-                                           << "  " << flight->getDepartureAirport()->getId() << ":"
-                                           << "  " << depT << ":"
-                                           << " \"" << flight->getArrivalAirport()->getId() << "\""
-                                           << ":"
-                                           << "  " << arrT << ":");
+        SG_LOG(SG_AI, SG_BULK, "  Flight " << flight->getCallSign() << ":" << "  " << flight->getDepartureAirport()->getId() << ":" << "  " << depT << ":" << " \"" << flight->getArrivalAirport()->getId() << "\"" << ":" << "  " << arrT << ":");
 
         flights.push_back(flight);
 
