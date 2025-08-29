@@ -1,5 +1,7 @@
-#ifndef FG_GUI_LAUNCHCONFIG_HXX
-#define FG_GUI_LAUNCHCONFIG_HXX
+// SPDX-FileCopyrightText: 2016 James Turner <james@flightgear.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#pragma once
 
 #include <set>
 #include <QObject>
@@ -80,11 +82,11 @@ public:
 
 signals:
     void collect();
-    
+
     void save();
 
     void restore();
-    
+
     void postRestore();
 private:
 	std::set<std::string> extraArgNames() const;
@@ -93,5 +95,3 @@ private:
     QString m_defaultDownloadDir;
     mutable QScopedPointer<QSettings> m_loadSaveSettings;
 };
-
-#endif

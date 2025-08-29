@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 James Turner <james@flightgear.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "LauncherArgumentTokenizer.hxx"
 
 #include <algorithm>
@@ -6,10 +9,7 @@
 #include <QVariantMap>
 #include <QJSEngine>
 
-LauncherArgumentTokenizer::LauncherArgumentTokenizer()
-{
-
-}
+LauncherArgumentTokenizer::LauncherArgumentTokenizer() = default;
 
 void LauncherArgumentTokenizer::tokenize(QString in)
 {
@@ -17,7 +17,7 @@ void LauncherArgumentTokenizer::tokenize(QString in)
     m_valid = false;
 
     int index = 0;
-    const int len = in.count();
+    const int len = in.size();
     QChar c, nc;
     State state = Start;
     QString key, value;

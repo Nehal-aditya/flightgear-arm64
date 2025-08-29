@@ -1,5 +1,7 @@
-#ifndef MODELDATAEXTRACTOR_HXX
-#define MODELDATAEXTRACTOR_HXX
+// SPDX-FileCopyrightText: 2016 James Turner <james@flightgear.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#pragma once
 
 #include <QObject>
 #include <QJSValue>
@@ -62,5 +64,3 @@ private:
     int m_index = 0;
     QString m_role;
 };
-
-#endif // MODELDATAEXTRACTOR_HXX

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 James Turner <james@flightgear.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "ModelDataExtractor.hxx"
 
 #include <QAbstractItemModel>
@@ -91,7 +94,11 @@ void ModelDataExtractor::setModel(QJSValue raw)
         // works. Hence the 'raw.isObject' above
 
         const auto var = raw.toVariant();
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         if (var.type() == QVariant::StringList) {
+#else
+        if (var.metaType() == QMetaType::fromType<QStringList>()) {
+#endif
             m_stringsModel = var.toStringList();
         } else {
             qWarning() << Q_FUNC_INFO << "variant but not a QStringList" << var;

@@ -1,5 +1,7 @@
-#ifndef LAUNCHERARGUMENTTOKENIZER_HXX
-#define LAUNCHERARGUMENTTOKENIZER_HXX
+// SPDX-FileCopyrightText: 2016 James Turner <james@flightgear.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#pragma once
 
 #include <set>
 
@@ -69,5 +71,3 @@ private:
     QString m_argString;
     bool m_valid = false;
 };
-
-#endif // LAUNCHERARGUMENTTOKENIZER_HXX

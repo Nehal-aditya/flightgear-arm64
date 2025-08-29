@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2016 James Turner <james@flightgear.org>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "LaunchConfig.hxx"
 
 #include <set>
@@ -262,7 +265,7 @@ bool LaunchConfig::loadConfigFromFile(QString path)
 QVariant LaunchConfig::getValueForKey(QString group, QString key, QVariant defaultValue) const
 {
     if (!m_loadSaveSettings) {
-        // becuase we load settings on component completion, we need
+        // because we load settings on component completion, we need
         // to create the default implementation (using the INI file)
         // on demand
         m_loadSaveSettings.reset(new QSettings);
@@ -270,7 +273,11 @@ QVariant LaunchConfig::getValueForKey(QString group, QString key, QVariant defau
 
     m_loadSaveSettings->beginGroup(group);
     auto v = m_loadSaveSettings->value(key, defaultValue);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     bool convertedOk = v.convert(static_cast<int>(defaultValue.type()));
+#else
+    bool convertedOk = v.convert(defaultValue.metaType());
+#endif
     if (!convertedOk) {
         qWarning() << "type forcing on loaded value failed:" << key << v << v.typeName() << defaultValue;
     }
