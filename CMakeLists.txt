@@ -217,6 +217,8 @@ option(ENABLE_HID_INPUT  "Set to ON to build HID-based input code" ${EVENT_INPUT
 option(ENABLE_PLIB_JOYSTICK  "Set to ON to enable legacy joystick code (default)" ON)
 option(ENABLE_SWIFT      "Set to ON to build the swift module" ON)
 option(ENABLE_SENTRY     "Set to ON to build the Sentry.io crash reporting" ON)
+option(ENABLE_ASAN       "Set to ON to build FlightGear with LLVM AddressSanitizer (ASan) support.  Incompatile with ENABLE_TSAN." OFF)
+option(ENABLE_TSAN       "Set to ON to build FlightGear with LLVM ThreadSanitizer (TSan) support. Incompatile with ENABLE_ASAN." OFF)
 
 option(CHECK_FOR_QT5        "Set to ON to attempt to look for Qt5" ON)
 option(CHECK_FOR_QT6        "Set to ON to attempt to look for Qt6" ON)
