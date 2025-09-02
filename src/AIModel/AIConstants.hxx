@@ -10,24 +10,16 @@
 namespace AILeg {
 enum Type {
     UNKNOWN,
-    STARTUP_PUSHBACK = 1,
-    RUNWAY_TAXI = 2,
-    TAKEOFF = 3,
-    CLIMB = 4,
-    CRUISE = 5,
-    APPROACH = 6,
-    HOLD_PATTERN = 7,
-    LANDING = 8,
-    PARKING_TAXI = 9,
-    PARKING = 10
-};
-}
-
-// 1 = joined departure queue; 2 = Passed DepartureHold waypoint; handover control to tower; 0 = any other state.
-namespace AITakeOffStatus {
-enum Type {
-    NONE,
-    QUEUED,             // joined departure queue
-    CLEARED_FOR_TAKEOFF // Passed DepartureHold waypoint; handover control to tower;
+    STARTUP_PUSHBACK,
+    RUNWAY_TAXI,
+    ALIGN_RUNWAY,
+    TAKEOFF,
+    CLIMB,
+    CRUISE,
+    APPROACH,
+    HOLD_PATTERN,
+    LANDING,
+    PARKING_TAXI,
+    PARKING
 };
 }

@@ -199,7 +199,9 @@ void FGGroundNetwork::init()
     for (auto segment : segments) {
         //TODO Add Scanning for possible hold points
         // Calculate the intersection with runways and add a penalty
+        SG_LOG(SG_AI, SG_BULK, "Scanning Segment " << segment->getIndex() << " " << segment->getStart()->geod() << " " << segment->getEnd()->geod() << " Size " << segments.size());
         for (FGRunwayRef rwy : rwys) {
+            SG_LOG(SG_AI, SG_BULK, "Scanning Runway " << parent->ident() << "/" << rwy->ident());
             SGRectd pavement = rwy->getRect();
             double lateralOffset = rwy->widthM() / 2;
 
@@ -258,6 +260,7 @@ void FGGroundNetwork::init()
         m_segmentsEndingAtNodeMap.insert(NodeFromSegmentMap::value_type{segment->getEnd(), segment});
     }
 
+    SG_LOG(SG_AI, SG_BULK, "Loaded " << parent->ident());
     networkInitialized = true;
 }
 

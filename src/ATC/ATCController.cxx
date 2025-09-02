@@ -150,9 +150,8 @@ void FGATCController::transmit(FGTrafficRecord* rec, FGAirportDynamics* parent, 
 
     SG_LOG(SG_ATC, SG_BULK, "transmitting for: " << sender << " at Leg " << rec->getLeg());
 
-    //FIXME move departure and arrival to rec
-    auto depApt = rec->getAircraft()->getTrafficRef()->getDepartureAirport();
-    auto arrApt = rec->getAircraft()->getTrafficRef()->getArrivalAirport();
+    auto depApt = rec->getDeparture();
+    auto arrApt = rec->getArrival();
 
     if (!depApt) {
         SG_LOG(SG_ATC, SG_DEV_ALERT, "TrafficRec has empty departure airport, can't transmit");
@@ -316,6 +315,14 @@ void FGATCController::transmit(FGTrafficRecord* rec, FGAirportDynamics* parent, 
     case MSG_ACKNOWLEDGE_REPORT_RUNWAY_HOLD_SHORT:
         activeRunway = rec->getAircraft()->GetFlightPlan()->getRunway();
         text = receiver + " Roger. Holding short runway " + activeRunway + ". " + sender + ".";
+        break;
+    case MSG_LINE_UP_RWY:
+        activeRunway = rec->getAircraft()->GetFlightPlan()->getRunway();
+        text = receiver + ". Line up runway " + activeRunway + " and wait." + sender + ".";
+        break;
+    case MSG_ACKNOWLEDGE_LINE_UP_RWY:
+        activeRunway = rec->getAircraft()->GetFlightPlan()->getRunway();
+        text = receiver + ". Line up runway " + activeRunway + " and wait." + sender + ".";
         break;
     case MSG_CLEARED_FOR_TAKEOFF:
         activeRunway = rec->getAircraft()->GetFlightPlan()->getRunway();
@@ -481,7 +488,6 @@ void FGATCController::signOff(int id)
         SG_LOG(SG_ATC, SG_DEBUG, (*i)->getCallsign() << " (" << (*i)->getId() << ") signing off from " << getName() << "(" << getFrequency() << ") Leg " << (*i)->getLeg() << " at " << (*i)->getPos());
     }
 
-    int oldSize = activeTraffic.size();
     activeTraffic.erase(i);
 }
 
@@ -550,19 +556,13 @@ string FGATCController::genTransponderCode(const string& fltRules)
 
 void FGATCController::eraseDeadTraffic()
 {
-    auto it = std::remove_if(activeTraffic.begin(), activeTraffic.end(), [](const FGTrafficRecord* traffic) {
-        if (traffic->isDead()) {
-            SG_LOG(SG_ATC, SG_DEBUG, "Remove dead " << traffic->getCallsign() << "(" << traffic->getId() << ") " << traffic->isDead());
-        }
-        return traffic->isDead();
+    // Find the dead ones
+    auto it = std::stable_partition(activeTraffic.begin(), activeTraffic.end(), [](const FGTrafficRecord* traffic) {
+        return !traffic->isDead();
     });
-    if (it != activeTraffic.end()) {
-        if (*it) {
-            bool result = airportGroundRadar->remove(*it);
-            if (!result) {
-                SG_LOG(SG_ATC, SG_DEBUG, "Couldn't remove from index " << (*it));
-            }
-        }
+    TrafficVector deadTraffic(std::make_move_iterator(it), std::make_move_iterator(activeTraffic.end()));
+    for (auto r : deadTraffic) {
+        airportGroundRadar->remove(r);
     }
     activeTraffic.erase(it, activeTraffic.end());
 }

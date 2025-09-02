@@ -94,7 +94,7 @@ public:
                                        [equalFkt, value](auto rhs) { return equalFkt(value, rhs); });
                 if (it == std::end(data)) {
                     data.push_back(value);
-                    SG_LOG(SG_ATC, SG_DEBUG, "Added       " << value << " to level " << depth << " Size : " << data.size());
+                    SG_LOG(SG_ATC, SG_BULK, "Added       " << value << " to level " << depth << " Size : " << data.size());
                     return true;
                 } else {
                     int sizeBefore = data.size();
@@ -102,7 +102,7 @@ public:
                     int sizeBefore2 = data.size();
                     data.push_back(value);
                     int sizeAfter = data.size();
-                    SG_LOG(SG_ATC, SG_DEBUG, "Not re-added " << value << " to level " << depth << " " << sizeBefore << " " << sizeBefore2 << " " << sizeAfter);
+                    SG_LOG(SG_ATC, SG_BULK, "Not re-added " << value << " to level " << depth << " " << sizeBefore << " " << sizeBefore2 << " " << sizeAfter);
                     return true;
                 }
             } else {
@@ -310,7 +310,7 @@ public:
     {
         auto nbValues = size();
         for (const auto& child : children) {
-            SG_LOG(SG_ATC, SG_DEBUG, "Leaf " << child.get()->isLeaf());
+            SG_LOG(SG_ATC, SG_BULK, "Leaf " << child.get()->isLeaf());
             /*
             if (!child.get()->isLeaf())
               return true;

@@ -191,7 +191,7 @@ void FGAIFlightPlan::createWaypoints(FGAIAircraft* ac,
     if ((timeDiff > 60) && (timeDiff < 500))
         leg = AILeg::RUNWAY_TAXI;
     else if ((timeDiff >= 500) && (timeDiff < 600))
-        leg = AILeg::TAKEOFF;
+        leg = AILeg::ALIGN_RUNWAY;
     else if ((timeDiff >= 600) && (timeDiff < 1000))
         leg = AILeg::CLIMB;
     else if (timeDiff >= 1000) {

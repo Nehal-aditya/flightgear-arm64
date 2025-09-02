@@ -516,15 +516,20 @@ void FGTrafficManager::init()
     // TorstenD: don't start the traffic manager before the FDM is initialized
     // The FDM needs the scenery loaded and will wait for our spawned AIModels PagedLOD Nodes
     // to appear if they are close (less than 1000m) to our position
-    if (!fgGetBool("/sim/signals/fdm-initialized"))
+    if (!fgGetBool("/sim/signals/fdm-initialized")) {
+        SG_LOG(SG_AI, SG_DEBUG, "TrafficMgr waiting for FDM");
         return;
+    }
 
     assert(!doingInit);
 
-    if (!doDataSync())
+    if (!doDataSync()) {
+        SG_LOG(SG_AI, SG_DEBUG, "TrafficMgr waiting for Datasync");
         return; // remain in the init state whilst updating
+    }
 
     doingInit = true;
+    SG_LOG(SG_AI, SG_DEBUG, "Started Init TrafficMgr");
     if (string(fgGetString("/sim/traffic-manager/datafile")).empty()) {
         simgear::PathList dirs = globals->get_data_paths("AI/Traffic");
 
@@ -576,7 +581,7 @@ void FGTrafficManager::init()
 void FGTrafficManager::finishInit()
 {
     assert(doingInit);
-    SG_LOG(SG_AI, SG_INFO, "finishing AI-Traffic init");
+    SG_LOG(SG_AI, SG_DEBUG, "finishing AI-Traffic init");
     loadHeuristics();
     auto perfDB = globals->get_subsystem<PerformanceDB>();
     // Do sorting and scoring separately, to take advantage of the "homeport" variable
@@ -594,6 +599,7 @@ void FGTrafficManager::finishInit()
     doingInit = false;
     inited = true;
     active = true;
+    SG_LOG(SG_AI, SG_DEBUG, "TrafficMgr active " << scheduledAircraft.size() << " scheduled Aircraft ");
 }
 
 void FGTrafficManager::loadHeuristics()
@@ -676,14 +682,17 @@ bool FGTrafficManager::metarReady(double dt)
 
 void FGTrafficManager::update(double dt)
 {
+    //    SG_LOG(SG_AI, SG_DEBUG, "FGTrafficManager Update " << std::setprecision(10) << dt);
     if (!enabled) {
         if (inited || doingInit)
             shutdown();
         return;
     }
 
-    if (!metarReady(dt))
+    if (!metarReady(dt)) {
+        SG_LOG(SG_AI, SG_DEBUG, "TrafficMgr Waiting for METAR");
         return;
+    }
 
     if (aiDataUpdateNow) {
         aiDataUpdateNow = false;
@@ -700,6 +709,7 @@ void FGTrafficManager::update(double dt)
         }
 
         if (!doingInit || !scheduleParser->isFinished()) {
+            SG_LOG(SG_AI, SG_DEBUG, "TrafficMgr Waiting for Schedule Parser");
             return;
         }
 

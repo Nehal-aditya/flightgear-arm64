@@ -709,6 +709,7 @@ void FGAIAircraft::announcePositionToController()
         if (trafficRef->getDepartureAirport()->getDynamics()->getGroundController()->exists())
             controller = trafficRef->getDepartureAirport()->getDynamics()->getGroundController();
         break;
+    case AILeg::ALIGN_RUNWAY:
     case AILeg::TAKEOFF: //Take off tower controller
         if (trafficRef->getDepartureAirport()->getDynamics()) {
             controller = trafficRef->getDepartureAirport()->getDynamics()->getTowerController();
@@ -780,7 +781,7 @@ void FGAIAircraft::announcePositionToController()
                                      _getLatitude(), _getLongitude(), hdg, speed, altitude_ft,
                                      trafficRef->getRadius(), leg, this);
     } else {
-        if (fp->getLeg() <= AILeg::PARKING) {
+        if (fp->getLeg() < AILeg::PARKING) {
             // No controller when parked
             SG_LOG(SG_AI, SG_ALERT, "Can't announcePosition " << this->getCallSign() << " no controller on Leg " << fp->getLeg());
         }
@@ -1773,6 +1774,7 @@ void FGAIAircraft::dumpCSVHeader(const std::unique_ptr<sg_ofstream>& o)
     (*o) << "stuckCounter\t";
     (*o) << "blockerId\t";
     (*o) << "holdPos\t";
+    (*o) << "ATC Controller\t";
     (*o) << "ATC Status\t";
     (*o) << std::endl;
 }
@@ -1851,6 +1853,7 @@ void FGAIAircraft::dumpCSV(const std::unique_ptr<sg_ofstream>& o, int lineIndex)
     (*o) << waitsForId << "\t";
     (*o) << holdPos << "\t";
     (*o) << (getATCController() ? getATCController()->getName() : "") << "\t";
+    (*o) << (getATCController() ? getATCController()->getRecord(getID())->getState() : -1) << "\t";
     (*o) << std::endl;
 }
 

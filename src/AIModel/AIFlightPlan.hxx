@@ -261,7 +261,8 @@ private:
     time_t calcArrivalTimes() const;
 
     void createPushBackFallBack(FGAIAircraft*, bool, FGAirport*, double radius, const std::string&, const std::string&, const std::string&);
-    bool createTakeoffTaxi(FGAIAircraft*, bool firstFlight, FGAirport* apt, double radius, const std::string& fltType, const std::string& acType, const std::string& airline);
+    bool createRunwayTaxi(FGAIAircraft*, bool firstFlight, FGAirport* apt, double radius, const std::string& fltType, const std::string& acType, const std::string& airline);
+    bool createAlignRunway(FGAIAircraft*, bool, FGAirport*, const SGGeod& pos, double speed, const std::string& flightType);
     bool createClimb(FGAIAircraft*, bool, FGAirport*, FGAirport* arrival, double, double, const std::string&);
     bool createCruise(FGAIAircraft*, bool, FGAirport*, FGAirport*, const SGGeod& current, double, double, const std::string&);
     bool createDescent(FGAIAircraft*, FGAirport*, const SGGeod& current, double speed, double alt, const std::string&, double distance);

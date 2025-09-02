@@ -165,95 +165,64 @@ void FGTowerController::updateAircraftInformation(int id, SGGeod geod,
         // already exists here. So, we can simplify the current code.
 
         ActiveRunwayQueue* rwy = parent->getRunwayQueue((*i)->getRunway());
-        //if (parent->getId() == fgGetString("/sim/presets/airport-id")) {
-        //    for (rwy = parent->getRunwayQueue().begin(); rwy != parent->getRunwayQueue().end(); ++rwy) {
-        //        rwy->printrunwayQueue();
-        //    }
-        //}
-
-        // only bother running the following code if the current aircraft is the
-        // first in line for departure
-        /* if (current.getAircraft() == rwy->getFirstAircraftInrunwayQueue()) {
-            if (rwy->getCleared()) {
-                if (id == rwy->getCleared()) {
-                    current.setHoldPosition(false);
-                } else {
-                    current.setHoldPosition(true);
+        auto firstInQueue = rwy->getFirstAircraftInDepartureQueue();
+        rwy->printRunwayQueue();
+        if (firstInQueue && firstInQueue->getId() == (*i)->getId()) {
+            // We are first either align or clear for takeoff
+            switch ((*i)->getState()) {
+            case ATCMessageState::ACK_SWITCH_GROUND_TOWER:
+                checkTransmissionState(ATCMessageState::ACK_SWITCH_GROUND_TOWER, ATCMessageState::ACK_SWITCH_GROUND_TOWER, i, now, MSG_LINE_UP_RWY, ATC_GROUND_TO_AIR);
+                break;
+            case ATCMessageState::CLEARED_TAKEOFF:
+                if ((*i)->getRunwaySlot() < now) {
+                    (*i)->setHoldPosition(false);
+                    checkTransmissionState(ATCMessageState::CLEARED_TAKEOFF, ATCMessageState::CLEARED_TAKEOFF, i, now, MSG_ACKNOWLEDGE_CLEARED_FOR_TAKEOFF, ATC_AIR_TO_GROUND);
+                    (*i)->setState(ATCMessageState::ACK_CLEARED_TAKEOFF);
                 }
-            } else {
-                // For now. At later stages, this will probably be the place to check for inbound traffic.
-                rwy->setCleared(id);
-            }
-        } */
-        // only bother with aircraft that have a takeoff status of 2, since those are essentially under tower control
-        auto ac = rwy->getFirstAircraftInDepartureQueue();
-        if (ac) {
-            //FIXME replace by ATCMessageState
-            if (ac->getTakeOffStatus() == AITakeOffStatus::QUEUED) {
-                // transmit takeoff clearance
-                ac->setTakeOffStatus(AITakeOffStatus::CLEARED_FOR_TAKEOFF);
-                TrafficVectorIterator first = searchActiveTraffic(ac->getId());
-                //FIXME use checkTransmissionState
-                if (first == activeTraffic.end() || activeTraffic.empty()) {
-                    SG_LOG(SG_ATC, SG_ALERT,
-                           "FGApproachController updating aircraft without traffic record at " << SG_ORIGIN);
-                } else {
-                    (*first)->setState(ATCMessageState::CLEARED_TAKEOFF);
-                    transmit((*first), &(*parent), MSG_CLEARED_FOR_TAKEOFF, ATC_GROUND_TO_AIR, true);
+                break;
+            case ATCMessageState::ACK_CLEARED_TAKEOFF:
+                if ((*i)->getRunwaySlot() < now) {
+                    (*i)->setHoldPosition(false);
+                    checkTransmissionState(ATCMessageState::ACK_CLEARED_TAKEOFF, ATCMessageState::ACK_CLEARED_TAKEOFF, i, now, MSG_ACKNOWLEDGE_CLEARED_FOR_TAKEOFF, ATC_GROUND_TO_AIR);
+                    (*i)->setState(ATCMessageState::ANNOUNCE_ARRIVAL);
                 }
-            }
-        }
-        //FIXME Make it an member of traffic record
-        if ((*i)->getTakeOffStatus() == AITakeOffStatus::CLEARED_FOR_TAKEOFF &&
-            (*i)->getRunwaySlot() < now) {
-            (*i)->setHoldPosition(false);
-            if (checkTransmissionState(ATCMessageState::CLEARED_TAKEOFF, ATCMessageState::CLEARED_TAKEOFF, i, now, MSG_ACKNOWLEDGE_CLEARED_FOR_TAKEOFF, ATC_AIR_TO_GROUND)) {
-                (*i)->setState(ATCMessageState::ANNOUNCE_ARRIVAL);
+                break;
+            case ATCMessageState::LINE_UP_RUNWAY:
+                if ((*i)->getRunwaySlot() < now) {
+                    (*i)->setHoldPosition(false);
+                    checkTransmissionState(ATCMessageState::LINE_UP_RUNWAY, ATCMessageState::LINE_UP_RUNWAY, i, now, MSG_LINE_UP_RWY, ATC_AIR_TO_GROUND);
+                    (*i)->setState(ATCMessageState::ACK_LINE_UP_RUNWAY);
+                } else {
+                    (*i)->setHoldPosition(true);
+                }
+                break;
+            case ATCMessageState::ACK_LINE_UP_RUNWAY:
+                if ((*i)->getRunwaySlot() < now) {
+                    (*i)->setHoldPosition(false);
+                    checkTransmissionState(ATCMessageState::ACK_LINE_UP_RUNWAY, ATCMessageState::ACK_LINE_UP_RUNWAY, i, now, MSG_ACKNOWLEDGE_LINE_UP_RWY, ATC_GROUND_TO_AIR);
+                    (*i)->setState(ATCMessageState::CLEARED_TAKEOFF);
+                }
+                break;
+            default:
+                // As long as the first isn't cleared wait
+                if ((*i)->getState() < ATCMessageState::CLEARED_TAKEOFF) {
+                    (*i)->setHoldPosition(true);
+                }
+                SG_LOG(SG_ATC, SG_BULK,
+                       (*i)->getCallsign() << "(" << (*i)->getId() << ") Waiting for " << ((*i)->getRunwaySlot() - now) << " seconds MsgStatus " << (*i)->getState());
+                break;
             }
         } else {
-            (*i)->setHoldPosition(true);
-            SG_LOG(SG_ATC, SG_BULK,
-                   (*i)->getCallsign() << "(" << (*i)->getId() << ")   Waiting for " << ((*i)->getRunwaySlot() - now) << " seconds");
-        }
-        int clearanceId = rwy->getCleared();
-        if (clearanceId) {
-            if (id == clearanceId) {
-                if ((*i)->hasHoldPosition()) {
-                    SG_LOG(SG_ATC, SG_BULK, (*i)->getCallsign() << "(" << (*i)->getId() << ")   Unset Hold " << clearanceId << " for rwy " << rwy->getRunwayName());
-                }
-                (*i)->setHoldPosition(false);
-            } else {
-                SG_LOG(SG_ATC, SG_BULK, (*i)->getCallsign() << "(" << (*i)->getId() << ")   Not cleared " << id << " Currently cleared " << clearanceId);
-            }
-        } else {
-            if ((*i) == rwy->getFirstAircraftInDepartureQueue()) {
-                SG_LOG(SG_ATC, SG_BULK,
-                       (*i)->getCallsign() << "(" << (*i)->getId() << ")   Cleared for runway " << getName() << " " << rwy->getRunwayName() << " Id " << id);
-                auto blocker = airportGroundRadar->getBlockedBy(*i);
-                if (blocker == nullptr) {
-                    // FIXME presumably this can be replaced by ground radar
-                    rwy->setCleared(id);
-                    auto l_ac = rwy->getFirstOfStatus(AITakeOffStatus::QUEUED);
-                    if (l_ac) {
-                        l_ac->setTakeOffStatus(AITakeOffStatus::QUEUED);
-                        // transmit takeoff clearance? But why twice?
-                    }
-                } else {
-                    (*i)->setWaitsForId(blocker->getId());
-                    double distM = SGGeodesy::distanceM((*i)->getPos(), blocker->getPos());
-                    int newSpeed = blocker->getSpeed() * (distM / 100);
-                    SG_LOG(SG_ATC, SG_DEBUG,
-                           (*i)->getCallsign() << "(" << (*i)->getId() << ") is blocked for takeoff by " << blocker->getCallsign() << "(" << blocker->getId() << ") new speed " << newSpeed);
-                    (*i)->setSpeedAdjustment(newSpeed);
-                }
-            } else {
-#if 0 // Ticket #2770 : ATC/TowerController floods log
-                SG_LOG(SG_ATC, SG_BULK,
-                "Not cleared " << current.getAircraft()->getCallSign() << " " << rwy->getFirstAircraftInDepartureQueue()->getCallSign());
-#endif
+            auto blocker = airportGroundRadar->getBlockedBy(*i);
+            if (blocker != nullptr) {
+                (*i)->setWaitsForId(blocker->getId());
+                double distM = SGGeodesy::distanceM((*i)->getPos(), blocker->getPos());
+                int newSpeed = blocker->getSpeed() * (distM / 100);
+                SG_LOG(SG_ATC, SG_DEBUG,
+                       (*i)->getCallsign() << "(" << (*i)->getId() << ") is blocked for takeoff by " << blocker->getCallsign() << "(" << blocker->getId() << ") new speed " << newSpeed);
+                (*i)->setSpeedAdjustment(newSpeed);
             }
         }
-    } else {
     }
 }
 
@@ -278,8 +247,6 @@ void FGTowerController::signOff(int id)
 
         SG_LOG(SG_ATC, SG_BULK, (*i)->getCallsign() << "(" << (*i)->getId() << ")  Cleared " << id << " from " << runwayIt->getRunwayName() << " cleared " << runwayIt->getCleared());
         runwayIt->removeFromQueue(id);
-
-        (*i)->resetTakeOffStatus();
     } else {
         time_t now = globals->get_time_params()->get_cur_time();
         if (checkTransmissionState(ATCMessageState::NORMAL, ATCMessageState::LANDING_TAXI, i, now, MSG_TAXI_PARK, ATC_GROUND_TO_AIR)) {

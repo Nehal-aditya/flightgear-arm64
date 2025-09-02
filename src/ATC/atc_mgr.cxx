@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 
-#ifdef HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <AIModel/AIConstants.hxx>
 #include <AIModel/AIFlightPlan.hxx>
@@ -364,6 +362,13 @@ void FGATCManager::update(double time)
             case AILeg::RUNWAY_TAXI: // Taxiing to runway
                 if (userAircraftTrafficRef->getDepartureAirport()->getDynamics()->getGroundController()->exists())
                     controller = userAircraftTrafficRef->getDepartureAirport()->getDynamics()->getGroundController();
+                break;
+            case AILeg::ALIGN_RUNWAY: //Take off tower controller
+                if (userAircraftTrafficRef->getDepartureAirport()->getDynamics()) {
+                    controller = userAircraftTrafficRef->getDepartureAirport()->getDynamics()->getTowerController();
+                } else {
+                    SG_LOG(SG_AI, SG_BULK, "Error: Could not find Dynamics at airport : " << userAircraftTrafficRef->getDepartureAirport()->getId());
+                }
                 break;
             case AILeg::TAKEOFF: //Take off tower controller
                 if (userAircraftTrafficRef->getDepartureAirport()->getDynamics()) {

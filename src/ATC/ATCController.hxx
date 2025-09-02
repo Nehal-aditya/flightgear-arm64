@@ -43,7 +43,10 @@ enum Type {
     SWITCH_GROUND_TOWER,
     // 9 = Acknowledge switch tower frequency
     ACK_SWITCH_GROUND_TOWER,
-    // 10 = Cleared for takeoff
+    // Cleared line up to runway
+    LINE_UP_RUNWAY,
+    ACK_LINE_UP_RUNWAY,
+    // Cleared for takeoff
     CLEARED_TAKEOFF,
     ACK_CLEARED_TAKEOFF,
     ANNOUNCE_ARRIVAL,
@@ -110,6 +113,8 @@ public:
         MSG_ACKNOWLEDGE_RESUME_TAXI,
         MSG_REPORT_RUNWAY_HOLD_SHORT,
         MSG_ACKNOWLEDGE_REPORT_RUNWAY_HOLD_SHORT,
+        MSG_LINE_UP_RWY,
+        MSG_ACKNOWLEDGE_LINE_UP_RWY,
         MSG_CLEARED_FOR_TAKEOFF,
         MSG_ACKNOWLEDGE_CLEARED_FOR_TAKEOFF,
         MSG_SWITCH_TOWER_FREQUENCY,

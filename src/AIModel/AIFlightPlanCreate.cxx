@@ -68,8 +68,11 @@ bool FGAIFlightPlan::create(FGAIAircraft* ac, FGAirport* dep,
                                 radius, fltType, aircraftType, airline);
         break;
     case AILeg::RUNWAY_TAXI:
-        retVal = createTakeoffTaxi(ac, firstFlight, dep, radius, fltType,
-                                   aircraftType, airline);
+        retVal = createRunwayTaxi(ac, firstFlight, dep, radius, fltType,
+                                  aircraftType, airline);
+        break;
+    case AILeg::ALIGN_RUNWAY:
+        retVal = createAlignRunway(ac, firstFlight, dep, SGGeod::fromDeg(longitude, latitude), speed, fltType);
         break;
     case AILeg::TAKEOFF:
         retVal = createTakeOff(ac, firstFlight, dep, SGGeod::fromDeg(longitude, latitude), speed, fltType);
@@ -298,15 +301,15 @@ void FGAIFlightPlan::createDefaultTakeoffTaxi(FGAIAircraft* ac,
 }
 
 /**
- * Creates a flightplan for AILeg::TAXI
+ * Creates a flightplan for AILeg::TAXI to the runway.
  */
 
-bool FGAIFlightPlan::createTakeoffTaxi(FGAIAircraft* ac, bool firstFlight,
-                                       FGAirport* apt,
-                                       double radius,
-                                       const string& fltType,
-                                       const string& acType,
-                                       const string& airline)
+bool FGAIFlightPlan::createRunwayTaxi(FGAIAircraft* ac, bool firstFlight,
+                                      FGAirport* apt,
+                                      double radius,
+                                      const string& fltType,
+                                      const string& acType,
+                                      const string& airline)
 {
     int route;
     // If this function is called during initialization,
@@ -330,7 +333,7 @@ bool FGAIFlightPlan::createTakeoffTaxi(FGAIAircraft* ac, bool firstFlight,
                                             depHeading);
     }
     FGRunway* rwy = apt->getRunwayByIdent(activeRunway);
-    SG_LOG(SG_AI, SG_DEBUG, "Taxi to " << apt->getId() << "/" << activeRunway);
+    SG_LOG(SG_AI, SG_BULK, "Taxi to " << apt->getId() << "/" << activeRunway);
     assert(rwy != NULL);
     SGGeod runwayTakeoff = rwy->pointOnCenterlineDisplaced(5.0);
 
@@ -341,23 +344,12 @@ bool FGAIFlightPlan::createTakeoffTaxi(FGAIAircraft* ac, bool firstFlight,
         return true;
     }
 
-    FGTaxiNodeRef runwayNode;
-    if (gn->getVersion() > 0) {
-        runwayNode = gn->findNearestNodeOnRunwayEntry(runwayTakeoff);
-    } else {
-        runwayNode = gn->findNearestNode(runwayTakeoff);
-    }
-
+    // Find out which node to start from
     // A negative gateId indicates an overflow parking, use a
     // fallback mechanism for this.
     // Starting from gate 0 in this case is a bit of a hack
     // which requires a more proper solution later on.
-    // delete taxiRoute;
-    // taxiRoute = new FGTaxiRoute;
-
-    // Determine which node to start from.
     FGTaxiNodeRef node;
-    // Find out which node to start from
     FGParking* park = gate.parking();
     if (park) {
         node = park->getPushBackPoint();
@@ -373,6 +365,13 @@ bool FGAIFlightPlan::createTakeoffTaxi(FGAIAircraft* ac, bool firstFlight,
         }
     } else {
         SG_LOG(SG_AI, SG_WARN, "Taxiroute could not be constructed no parking." << (apt ? apt->getId() : "????"));
+    }
+
+    FGTaxiNodeRef runwayNode;
+    if (gn->getVersion() > 0) {
+        runwayNode = gn->findNearestNodeOnRunwayEntry(runwayTakeoff);
+    } else {
+        runwayNode = gn->findNearestNode(runwayTakeoff);
     }
 
     FGTaxiRoute taxiRoute;
@@ -419,26 +418,66 @@ bool FGAIFlightPlan::createTakeoffTaxi(FGAIAircraft* ac, bool firstFlight,
     // These can probably be generated on the fly however.
     while (taxiRoute.next(node, &route)) {
         char buffer[10];
-        snprintf(buffer, sizeof(buffer), "%d", node->getIndex());
+        snprintf(buffer, sizeof(buffer), "taxi-%d", node->getIndex());
+        if (node->getIsOnRunway()) {
+            break;
+        }
         FGAIWaypoint* wpt =
             createOnGround(ac, buffer, node->geod(), apt->getElevation(),
                            ac->getPerformance()->vTaxi());
         wpt->setRouteIndex(route);
-        //cerr << "Nodes left " << taxiRoute->nodesLeft() << " ";
-        if (taxiRoute.nodesLeft() == 1) {
-            // Note that we actually have hold points in the ground network, but this is just an initial test.
-            //cerr << "Setting departurehold point: " << endl;
-            wpt->setName(wpt->getName() + string("_DepartureHold"));
-            wpt->setFlaps(0.5f);
-            wpt->setTakeOffLights();
-        }
-        if (taxiRoute.nodesLeft() == 0) {
-            wpt->setName(wpt->getName() + string("_Accel"));
-            wpt->setTakeOffLights();
-            wpt->setFlaps(0.5f);
-        }
         pushBackWaypoint(wpt);
     }
+    return true;
+}
+
+/**
+ * Creates a flightplan for AILeg::ALIGN_RUNWAY.
+ */
+
+bool FGAIFlightPlan::createAlignRunway(FGAIAircraft* ac,
+                                       bool firstFlight,
+                                       FGAirport* apt,
+                                       const SGGeod& pos,
+                                       double speed,
+                                       const string& fltType)
+{
+    int route = 0;
+    FGRunway* rwy = apt->getRunwayByIdent(activeRunway);
+    SG_LOG(SG_AI, SG_BULK, "Taxi to " << apt->getId() << "/" << activeRunway);
+    assert(rwy != NULL);
+    SGGeod runwayTakeoff = rwy->pointOnCenterlineDisplaced(5.0);
+
+    FGGroundNetwork* gn = apt->groundNetwork();
+    if (!gn->exists()) {
+        SG_LOG(SG_AI, SG_DEBUG, "No groundnet " << apt->getId() << " creating default taxi.");
+        createDefaultTakeoffTaxi(ac, apt, rwy);
+        return true;
+    }
+    FGTaxiNodeRef runwayNode;
+    if (gn->getVersion() > 0) {
+        runwayNode = gn->findNearestNodeOnRunwayEntry(runwayTakeoff);
+    } else {
+        runwayNode = gn->findNearestNode(runwayTakeoff);
+    }
+
+    FGTaxiNodeRef startNode = gn->findNearestNode(pos);
+    FGTaxiRoute taxiRoute;
+    if (runwayNode) {
+        taxiRoute = gn->findShortestRoute(startNode, runwayNode);
+    } else {
+        SG_LOG(SG_AI, SG_WARN, "No Runwaynode " << apt->getId() << "/" << rwy->ident());
+    }
+
+    while (taxiRoute.next(startNode, &route)) {
+        auto wptName = "align-" + std::to_string(startNode->getIndex());
+        FGAIWaypoint* wpt =
+            createOnGround(ac, wptName, startNode->geod(), apt->getElevation(),
+                           ac->getPerformance()->vTaxi());
+        wpt->setRouteIndex(route);
+        pushBackWaypoint(wpt);
+    }
+
     double accell_point = 105.0;
     // Acceleration point, 105 meters into the runway,
     SGGeod entryPoint = waypoints.back()->getPos();
@@ -834,8 +873,7 @@ bool FGAIFlightPlan::createDescent(FGAIAircraft* ac,
     double headingDiffToRunwayThreshold = SGMiscd::normalizePeriodic(-180, 180, ac->getTrueHeadingDeg() - courseTowardsThreshold);
     // double headingDiffToRunwayEnd = SGMiscd::normalizePeriodic(-180, 180, ac->getTrueHeadingDeg() - courseTowardsRwyEnd);
 
-    SG_LOG(SG_AI, SG_BULK, ac->getCallSign() << "| "
-                                             << " WPs : " << waypoints.size() << " Heading Diff (rwy) : " << headingDiffRunway << " Distance : " << distance << " Azimuth : " << azimuth << " Heading : " << ac->getTrueHeadingDeg() << " Initial Headingdiff " << initialHeadingDiff << " Lateral : " << lateralOffset);
+    SG_LOG(SG_AI, SG_BULK, ac->getCallSign() << "| " << " WPs : " << waypoints.size() << " Heading Diff (rwy) : " << headingDiffRunway << " Distance : " << distance << " Azimuth : " << azimuth << " Heading : " << ac->getTrueHeadingDeg() << " Initial Headingdiff " << initialHeadingDiff << " Lateral : " << lateralOffset);
     // Erase the two bogus BOD points: Note check for conflicts with scripted AI flightPlans
     IncrementWaypoint(false);
     IncrementWaypoint(false);
@@ -851,7 +889,7 @@ bool FGAIFlightPlan::createDescent(FGAIAircraft* ac,
 
             // Entering not "straight" into runway so we do a s-curve
             int rightAngle = headingDiffRunway > 0 ? 90 : -90;
-            int firstTurnIncrement = headingDiffRunway > 0 ? 2 : -2;
+            int firstTurnIncrement = headingDiffRunway > 0 ? 3 : -3;
 
             SGGeod firstTurnCenter = SGGeodesy::direct(current, ac->getTrueHeadingDeg() + rightAngle, initialTurnRadius);
             SGGeod newCurrent = current;
@@ -859,7 +897,7 @@ bool FGAIFlightPlan::createDescent(FGAIAircraft* ac,
             if (abs(headingDiffToRunwayThreshold) < 90) {
                 newCurrent = SGGeodesy::direct(current, ac->getTrueHeadingDeg(), distance + 1000);
                 firstTurnCenter = SGGeodesy::direct(newCurrent, ac->getTrueHeadingDeg() + rightAngle, initialTurnRadius);
-                createLine(ac, current, ac->getTrueHeadingDeg(), distance + 1000, waypoints.size() > 0 ? waypoints.back()->getAltitude() : alt, 0, vDescent, "move%03d");
+                createLine(ac, current, ac->getTrueHeadingDeg(), distance + 1000, waypoints.size() > 0 ? waypoints.back()->getAltitude() : alt, 0, vDescent, "crossover%03d");
             }
             int offset = 1000;
             while (SGGeodesy::distanceM(firstTurnCenter, secondaryTarget) < 2 * initialTurnRadius) {

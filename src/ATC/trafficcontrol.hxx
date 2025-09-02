@@ -11,8 +11,8 @@
 #include <osg/Shape>
 
 #include <simgear/compiler.h>
-// There is probably a better include than sg_geodesy to get the SG_NM_TO_METER...
 #include <simgear/debug/logstream.hxx>
+// There is probably a better include than sg_geodesy to get the SG_NM_TO_METER...
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/structure/SGReferenced.hxx>
 #include <simgear/structure/SGSharedPtr.hxx>
@@ -214,12 +214,12 @@ private:
     double speed;
     double altitude;
     double radius;
-    int takeOffStatus = AITakeOffStatus::NONE; // 1 = joined departure queue; 2 = Passed DepartureHold waypoint; handover control to tower; 0 = any other state.
     time_t takeOffTimeSlot{0};
     std::string callsign;
-    std::string runway;
+    std::string runway; //FIXME departure or arrival runway. not relevant since flights are short
+    FGAirportRef departure;
+    FGAirportRef arrival;
     SGSharedPtr<FGAIAircraft> aircraft;
-
 
 public:
     FGTrafficRecord();
@@ -268,9 +268,6 @@ public:
     {
         return instruction.hasInstruction();
     };
-    void resetTakeOffStatus() { takeOffStatus = AITakeOffStatus::NONE; };
-    void setTakeOffStatus(int status) { takeOffStatus = status; };
-    int getTakeOffStatus() { return takeOffStatus; };
     void setTakeOffSlot(time_t timeSlot) { takeOffTimeSlot = timeSlot; };
     time_t getTakeOffSlot() { return takeOffTimeSlot; };
 
@@ -418,15 +415,21 @@ public:
         return runway;
     };
 
+
+    void setDeparture(const FGAirportRef& dep) { departure = dep; }
+    FGAirportRef getDeparture() const { return departure; }
+
+    void setArrival(const FGAirportRef& arr) { arrival = arr; }
+    FGAirportRef getArrival() const { return arrival; }
+
     void setAircraft(FGAIAircraft* ref);
+    FGAIAircraft* getAircraft() const;
 
     void updateState()
     {
         state++;
         allowTransmission = true;
     };
-
-    FGAIAircraft* getAircraft() const;
 
     int getTime() const
     {
@@ -535,7 +538,9 @@ public:
 
     const SGSharedPtr<FGTrafficRecord> get(const int id) const;
 
-    void removeFromQueue(int id);
+    void removeFromQueue(const int id);
+
+    bool isQueued(const int id) const;
 
     void updateDepartureQueue();
 

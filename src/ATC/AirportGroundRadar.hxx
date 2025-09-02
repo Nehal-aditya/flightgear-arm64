@@ -10,6 +10,7 @@
 #include "ATC/trafficcontrol.hxx"
 #include "Airports/airports_fwd.hxx"
 
+
 using quadtree::QuadTree;
 using FGTrafficRef = SGSharedPtr<FGTrafficRecord>;
 

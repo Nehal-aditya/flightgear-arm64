@@ -183,6 +183,7 @@ void FGGroundController::updateAircraftInformation(int id, SGGeod geod,
     if ((now - lastTransmission) > 10) {
         available = true;
     }
+    int state = (*current)->getState();
     if (!needsTaxiClearance) {
         checkHoldPosition(id, geod.getLatitudeDeg(), geod.getLongitudeDeg(), heading, speed, alt);
         if (checkForCircularWaits(id)) {
@@ -194,24 +195,36 @@ void FGGroundController::updateAircraftInformation(int id, SGGeod geod,
             }
         }
     } else {
-        (*current)->setHoldPosition(true);
-        int state = (*current)->getState();
+        SG_LOG(SG_ATC, SG_DEBUG,
+               "Holding " << (*current)->getState() << " " << (*current)->getCallsign() << " " << available << " " << (now - lastTransmission));
 
         if (checkTransmissionState(ATCMessageState::NORMAL, ATCMessageState::ACK_RESUME_TAXI, current, now, MSG_REQUEST_TAXI_CLEARANCE, ATC_AIR_TO_GROUND)) {
+            (*current)->setHoldPosition(true);
+            (*current)->setState(ATCMessageState::TAXI_CLEARED);
+        }
+        if (checkTransmissionState(ATCMessageState::ACK_SWITCH_GROUND_TOWER, ATCMessageState::ACK_SWITCH_GROUND_TOWER, current, now, MSG_REQUEST_TAXI_CLEARANCE, ATC_AIR_TO_GROUND)) {
+            (*current)->setHoldPosition(true);
             (*current)->setState(ATCMessageState::TAXI_CLEARED);
         }
         if (checkTransmissionState(ATCMessageState::TAXI_CLEARED, ATCMessageState::TAXI_CLEARED, current, now, MSG_ISSUE_TAXI_CLEARANCE, ATC_GROUND_TO_AIR)) {
-            (*current)->setState(ATCMessageState::ACK_TAXI_CLEARED);
-        }
-        if (checkTransmissionState(ATCMessageState::ACK_TAXI_CLEARED, ATCMessageState::ACK_TAXI_CLEARED, current, now, MSG_ACKNOWLEDGE_TAXI_CLEARANCE, ATC_AIR_TO_GROUND)) {
-            (*current)->setState(ATCMessageState::START_TAXI);
-        }
-        if ((state == ATCMessageState::START_TAXI) && available) {
-            (*current)->setState(ATCMessageState::NORMAL);
             (*current)->getAircraft()->setTaxiClearanceRequest(false);
             (*current)->setHoldPosition(false);
-            available = false;
+            (*current)->setState(ATCMessageState::ACK_TAXI_CLEARED);
         }
+    }
+    if (checkTransmissionState(ATCMessageState::ACK_TAXI_CLEARED, ATCMessageState::ACK_TAXI_CLEARED, current, now, MSG_ACKNOWLEDGE_TAXI_CLEARANCE, ATC_AIR_TO_GROUND)) {
+        (*current)->setState(ATCMessageState::START_TAXI);
+    }
+    if (checkTransmissionState(ATCMessageState::START_TAXI, ATCMessageState::START_TAXI, current, now, MSG_REPORT_RUNWAY_HOLD_SHORT, ATC_GROUND_TO_AIR)) {
+        (*current)->setState(ATCMessageState::REPORT_RUNWAY);
+    }
+    if (checkTransmissionState(ATCMessageState::REPORT_RUNWAY, ATCMessageState::REPORT_RUNWAY, current, now, MSG_ACKNOWLEDGE_REPORT_RUNWAY_HOLD_SHORT, ATC_AIR_TO_GROUND)) {
+        (*current)->setState(ATCMessageState::ACK_REPORT_RUNWAY);
+    }
+    if ((state == ATCMessageState::START_TAXI) && available) {
+        (*current)->getAircraft()->setTaxiClearanceRequest(false);
+        (*current)->setHoldPosition(false);
+        available = false;
     }
 }
 
@@ -278,7 +291,6 @@ void FGGroundController::checkSpeedAdjustment(int id, double lat,
             (*i)->setSpeedAdjustment(newSpeed);
         } else {
             if (oldWaitsForId != blocker->getId()) {
-                (*i)->setState(ATCMessageState::NORMAL);
                 (*i)->setRequestHoldPosition(true);
             }
         }
@@ -333,43 +345,31 @@ void FGGroundController::checkHoldPosition(int id, double lat,
                "AI error: Trying to access non-existing aircraft in FGGroundNetwork::checkHoldPosition at ");
     }
     current = i;
-    if ((*current)->getTakeOffStatus() == AITakeOffStatus::QUEUED) {
-        (*current)->setHoldPosition(true);
-        return;
-    }
-
-    if ((*current)->getTakeOffStatus() == AITakeOffStatus::CLEARED_FOR_TAKEOFF) {
-        (*current)->setHoldPosition(false);
-        (*current)->clearSpeedAdjustment();
-        return;
-    }
     if ((now - lastTransmission) > 2) {
         available = true;
     }
-    if ((*current)->getState() == ATCMessageState::NORMAL && available) {
+    if (available) {
         if ((*current)->getRequestHoldPosition()) { // No has a hold short instruction
             transmit((*current), parent, MSG_HOLD_POSITION, ATC_GROUND_TO_AIR, true);
             SG_LOG(SG_ATC, SG_DEBUG, "Transmitting hold short instruction ");
-            (*current)->setState(ATCMessageState::ACK_HOLD);
             (*current)->setRequestHoldPosition(false);
             (*current)->setHoldPosition(true);
             lastTransmission = now;
             available = false;
             // Don't act on the changed instruction until the transmission is confirmed
             // So set back to original status
-            SG_LOG(SG_ATC, SG_BULK, "Current transmit state " << (*current)->getState());
+            SG_LOG(SG_ATC, SG_DEBUG, "Current transmit state " << (*current)->getState());
         }
         if ((*current)->getResumeTaxi()) { // No has a hold short instruction
             transmit((*current), parent, MSG_RESUME_TAXI, ATC_GROUND_TO_AIR, true);
             SG_LOG(SG_ATC, SG_DEBUG, "Transmitting resume instruction ");
-            (*current)->setState(ATCMessageState::ACK_RESUME_TAXI);
             (*current)->setResumeTaxi(false);
             (*current)->setHoldPosition(false);
             lastTransmission = now;
             available = false;
             // Don't act on the changed instruction until the transmission is confirmed
             // So set back to original status
-            SG_LOG(SG_ATC, SG_BULK, "Current transmit state " << (*current)->getState());
+            SG_LOG(SG_ATC, SG_DEBUG, "Current transmit state " << (*current)->getState());
         }
     }
     // 6 = Report runway
@@ -379,24 +379,25 @@ void FGGroundController::checkHoldPosition(int id, double lat,
 
     //int state = (*current)->getState();
     if (checkTransmissionState(ATCMessageState::ACK_HOLD, ATCMessageState::ACK_HOLD, current, now, MSG_ACKNOWLEDGE_HOLD_POSITION, ATC_AIR_TO_GROUND)) {
-        (*current)->setState(ATCMessageState::NORMAL);
         (*current)->setHoldPosition(true);
     }
     if (checkTransmissionState(ATCMessageState::ACK_RESUME_TAXI, ATCMessageState::ACK_RESUME_TAXI, current, now, MSG_ACKNOWLEDGE_RESUME_TAXI, ATC_AIR_TO_GROUND)) {
-        (*current)->setState(ATCMessageState::NORMAL);
         (*current)->setHoldPosition(false);
     }
-    if ((*current)->getTakeOffStatus() && ((*current)->getState() == 0)) {
-        SG_LOG(SG_ATC, SG_DEBUG, "Scheduling " << (*current)->getAircraft()->getCallSign() << " for hold short");
-        (*current)->setState(ATCMessageState::REPORT_RUNWAY);
-    }
-    if (checkTransmissionState(ATCMessageState::REPORT_RUNWAY, ATCMessageState::REPORT_RUNWAY, current, now, MSG_REPORT_RUNWAY_HOLD_SHORT, ATC_AIR_TO_GROUND)) {
-    }
-    if (checkTransmissionState(ATCMessageState::ACK_REPORT_RUNWAY, ATCMessageState::ACK_REPORT_RUNWAY, current, now, MSG_ACKNOWLEDGE_REPORT_RUNWAY_HOLD_SHORT, ATC_GROUND_TO_AIR)) {
-    }
-    if (checkTransmissionState(ATCMessageState::SWITCH_GROUND_TOWER, ATCMessageState::SWITCH_GROUND_TOWER, current, now, MSG_SWITCH_TOWER_FREQUENCY, ATC_GROUND_TO_AIR)) {
+    // FIXME REPORT_RUNWAY
+    if (!parent->getRunwayQueue((*current)->getRunway())->isQueued((*current)->getId())) {
+        if (checkTransmissionState(ATCMessageState::ACK_REPORT_RUNWAY, ATCMessageState::ACK_REPORT_RUNWAY, current, now, MSG_ACKNOWLEDGE_REPORT_RUNWAY_HOLD_SHORT, ATC_GROUND_TO_AIR)) {
+            (*current)->setState(ATCMessageState::SWITCH_GROUND_TOWER);
+        }
+        if (checkTransmissionState(ATCMessageState::REPORT_RUNWAY, ATCMessageState::REPORT_RUNWAY, current, now, MSG_REPORT_RUNWAY_HOLD_SHORT, ATC_AIR_TO_GROUND)) {
+            (*current)->setState(ATCMessageState::ACK_REPORT_RUNWAY);
+        }
     }
     if (checkTransmissionState(ATCMessageState::ACK_SWITCH_GROUND_TOWER, ATCMessageState::ACK_SWITCH_GROUND_TOWER, current, now, MSG_ACKNOWLEDGE_SWITCH_TOWER_FREQUENCY, ATC_AIR_TO_GROUND)) {
+        (*current)->setState(ATCMessageState::LINE_UP_RUNWAY);
+    }
+    if (checkTransmissionState(ATCMessageState::SWITCH_GROUND_TOWER, ATCMessageState::SWITCH_GROUND_TOWER, current, now, MSG_SWITCH_TOWER_FREQUENCY, ATC_GROUND_TO_AIR)) {
+        (*current)->setState(ATCMessageState::ACK_SWITCH_GROUND_TOWER);
     }
 
     //(*current)->setState(0);

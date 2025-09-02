@@ -158,6 +158,7 @@ void FGAIManager::init()
 
     // register scenarios if we didn't do it already
     registerScenarios();
+    SG_LOG(SG_AI, SG_INFO, "finished AI Manager init");
 }
 
 void FGAIManager::registerScenarios(SGPropertyNode_ptr root)

@@ -137,7 +137,7 @@ void FGApproachController::updateAircraftInformation(int id, SGGeod geod,
                 }
             }
             //Start of our status runimplicit "announce arrival"
-            if (checkTransmissionState(ATCMessageState::NORMAL, ATCMessageState::NORMAL, current, now, MSG_ARRIVAL, ATC_AIR_TO_GROUND)) {
+            if (checkTransmissionState(ATCMessageState::ANNOUNCE_ARRIVAL, ATCMessageState::ANNOUNCE_ARRIVAL, current, now, MSG_ARRIVAL, ATC_AIR_TO_GROUND)) {
                 parent->getRunwayQueue((*current)->getRunway())->requestTimeSlot((*current));
                 (*current)->setState(ATCMessageState::ACK_ARRIVAL);
             }

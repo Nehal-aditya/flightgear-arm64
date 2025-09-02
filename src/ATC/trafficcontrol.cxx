@@ -21,7 +21,6 @@
 
 #include <Scenery/scenery.hxx>
 
-#include "atc_mgr.hxx"
 #include "trafficcontrol.hxx"
 #include <AIModel/AIAircraft.hxx>
 #include <AIModel/AIFlightPlan.hxx>
@@ -51,7 +50,7 @@ ActiveRunwayQueue::ActiveRunwayQueue(const std::string& apt, const std::string& 
 void ActiveRunwayQueue::removeFromQueue(int id)
 {
     SG_LOG(SG_ATC, SG_DEBUG, "Removed from RunwayQueue " << rwy << " " << id);
-    auto it = std::find_if(runwayQueue.begin(), runwayQueue.end(), [id](const SGSharedPtr<FGTrafficRecord> acft) {
+    auto it = std::find_if(runwayQueue.begin(), runwayQueue.end(), [id](const SGSharedPtr<FGTrafficRecord>& acft) {
         return acft->getId() == id;
     });
     if (it == runwayQueue.end()) {
@@ -61,6 +60,17 @@ void ActiveRunwayQueue::removeFromQueue(int id)
     }
     runwayQueue.erase(it);
     setCleared(0);
+}
+
+bool ActiveRunwayQueue::isQueued(const int id) const
+{
+    auto it = std::find_if(runwayQueue.begin(), runwayQueue.end(), [id](const SGSharedPtr<FGTrafficRecord>& acft) {
+        return acft->getId() == id;
+    });
+    if (it == runwayQueue.end()) {
+        return false;
+    }
+    return true;
 }
 
 void ActiveRunwayQueue::updateDepartureQueue()
@@ -90,18 +100,12 @@ void ActiveRunwayQueue::requestTimeSlot(SGSharedPtr<FGTrafficRecord> trafficReco
     // if the aircraft is the first arrival, add to the vector and return eta directly
     if (runwayQueue.empty()) {
         newEta = eta;
-        SG_LOG(SG_ATC, SG_DEBUG, icao << "/" << getRunwayName() << " Checked eta slots, using " << eta);
+        SG_LOG(SG_ATC, SG_DEBUG, icao << "/" << getRunwayName() << " Checked eta slots, using " << eta << " for " << trafficRecord->getCallsign());
     } else {
         // First check the already assigned slots to see where we need to fit the flight in
         SG_LOG(SG_ATC, SG_DEBUG, icao << "/" << getRunwayName() << " Checking eta slots " << eta << " : " << runwayQueue.size() << " Timediff : " << (eta - globals->get_time_params()->get_cur_time()));
 
-        // is this needed - just a debug output?
         std::vector<SGSharedPtr<FGTrafficRecord>>::iterator i;
-        for (i = runwayQueue.begin();
-             i != runwayQueue.end(); ++i) {
-            SG_LOG(SG_ATC, SG_DEBUG, "Stored time : " << (*i)->getPlannedArrivalTime());
-        }
-
         // if the flight is before the first scheduled slot + SEPARATION
         i = runwayQueue.begin();
         if ((eta + SEPARATION) < (*i)->getPlannedArrivalTime()) {
@@ -191,7 +195,7 @@ void ActiveRunwayQueue::updateFirst(SGSharedPtr<FGTrafficRecord> trafficRecord, 
 
     newETA = std::max(newETA, now);
 
-    SG_LOG(SG_ATC, SG_DEBUG, "Update First " << eta << " " << newETA << " " << now << " " << rwy << " Leg " << trafficRecord->getLeg() << " Size : " << runwayQueue.size() << " " << trafficRecord->getCallsign());
+    SG_LOG(SG_ATC, SG_DEBUG, "Update " << trafficRecord->getCallsign() << eta << " " << newETA << " " << now << " " << rwy << " Leg " << trafficRecord->getLeg() << " Size : " << runwayQueue.size() << " ");
 
     time_t diff = 0;
 
@@ -217,7 +221,7 @@ void ActiveRunwayQueue::printRunwayQueue() const
 
     SG_LOG(SG_ATC, SG_DEBUG, "Runway Queue for " << icao << "/" << rwy << " Size : " << runwayQueue.size());
     for (auto acft : runwayQueue) {
-        SG_LOG(SG_ATC, SG_DEBUG, " " << acft->getCallsign() << "(" << acft->getId() << ") Leg : " << acft->getLeg() << " TakeoffStatus : " << acft->getTakeOffStatus() << " Diff : " << acft->getRunwaySlot() - now << " " << acft->getRunwaySlot() << " " << acft->getPlannedArrivalTime() << " Lat : " << acft->getPos().getLatitudeDeg() << " Lon : " << acft->getPos().getLongitudeDeg() << " Speed " << acft->getSpeed() << " Elevation " << acft->getPos().getElevationM());
+        SG_LOG(SG_ATC, SG_DEBUG, " " << acft->getCallsign() << "(" << acft->getId() << ") Leg : " << acft->getLeg() << " MessageState : " << acft->getState() << " Diff : " << acft->getRunwaySlot() - now << " " << acft->getRunwaySlot() << " " << acft->getPlannedArrivalTime() << " Lat : " << acft->getPos().getLatitudeDeg() << " Lon : " << acft->getPos().getLongitudeDeg() << " Speed " << acft->getSpeed() << " Elevation " << acft->getPos().getElevationM());
     }
 }
 
@@ -236,10 +240,10 @@ const SGSharedPtr<FGTrafficRecord> ActiveRunwayQueue::get(const int id) const
 }
 
 /** Fetch the first aircraft in the departure queue with a certain status */
-const SGSharedPtr<FGTrafficRecord> ActiveRunwayQueue::getFirstOfStatus(int stat) const
+const SGSharedPtr<FGTrafficRecord> ActiveRunwayQueue::getFirstOfStatus(int msgStatus) const
 {
-    auto it = std::find_if(runwayQueue.begin(), runwayQueue.end(), [stat](const SGSharedPtr<FGTrafficRecord> acft) {
-        return acft->getTakeOffStatus() == stat;
+    auto it = std::find_if(runwayQueue.begin(), runwayQueue.end(), [msgStatus](const SGSharedPtr<FGTrafficRecord> acft) {
+        return acft->getState() == msgStatus;
     });
 
     if (it == runwayQueue.end()) {
@@ -264,7 +268,6 @@ void ActiveRunwayQueue::addToQueue(SGSharedPtr<FGTrafficRecord> ac)
     assert(ac);
     assert(!ac->getAircraft());
     assert(!ac->getAircraft()->getDie());
-    ac->setTakeOffStatus(AITakeOffStatus::QUEUED);
     runwayQueue.push_back(std::move(ac));
     printRunwayQueue();
 };
@@ -298,6 +301,12 @@ void FGTrafficRecord::setPositionAndIntentions(int pos,
     currentPos = pos;
     if (runway == "" && route) {
         setRunway(route->getRunway());
+    }
+    if (!getDeparture()) {
+        setDeparture(route->departureAirport());
+    }
+    if (!getArrival()) {
+        setArrival(route->arrivalAirport());
     }
 }
 

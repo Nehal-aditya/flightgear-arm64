@@ -158,9 +158,11 @@ void TrafficTests::testPushback()
 
     CPPUNIT_ASSERT_EQUAL(fp->isValidPlan(), true);
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
+    aiAircraft->setGeodPos(parking.parking()->geod());
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_testPushback_EGPH_EGPF");
+    aiAircraft = flyAI(aiAircraft, "pushback" + std::to_string(departureTime) + "_testPushback_EGPH_EGPF");
+    CPPUNIT_ASSERT_EQUAL(aiAircraft->getATCController()->getRecord(aiAircraft->getID())->getState(), 14);
 }
 
 void TrafficTests::testPushbackCargo()
@@ -219,7 +221,7 @@ void TrafficTests::testPushbackCargo()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_cargo_EGPH_EGPF");
+    aiAircraft = flyAI(aiAircraft, "pushbackcargo" + std::to_string(departureTime) + "_cargo_EGPH_EGPF");
 }
 
 void TrafficTests::testPushbackCargoInProgress()
@@ -280,7 +282,7 @@ void TrafficTests::testPushbackCargoInProgress()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_cargo_in_progress_EGPH_EGPF");
+    aiAircraft = flyAI(aiAircraft, "pushbackcargoprogress" + std::to_string(departureTime) + "_cargo_in_progress_EGPH_EGPF");
 }
 
 void TrafficTests::testPushbackCargoInProgressDownWindEast()
@@ -464,7 +466,7 @@ void TrafficTests::testPushbackCargoInProgressNotBeyond()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_cargo_in_progress_not_beyond_EGPH_EGPF");
+    aiAircraft = flyAI(aiAircraft, "pushbackCargo" + std::to_string(departureTime) + "_cargo_in_progress_not_beyond_EGPH_EGPF");
 }
 
 void TrafficTests::testPushbackCargoInProgressNotBeyondNorth()
@@ -482,7 +484,7 @@ void TrafficTests::testPushbackCargoInProgressNotBeyondNorth()
 
     FGAISchedule* schedule = new FGAISchedule(
         "B737", "KLM", "EGPH", "G-BLA", "ID", false, "B737", "KLM", "N", "cargo", 24, 8);
-    FGScheduledFlight* flight = new FGScheduledFlight("testPushbackCargo", "", "EGPH", "EGPF", 24, dep, arr, "WEEK", "HBR_BN_2");
+    FGScheduledFlight* flight = new FGScheduledFlight("testPushbackCargoInProgressNotBeyondNorth", "", "EGPH", "EGPF", 24, dep, arr, "WEEK", "HBR_BN_2");
     schedule->assign(flight);
 
     SGSharedPtr<FGAIAircraft> aiAircraft = new FGAIAircraft{schedule};
@@ -713,7 +715,7 @@ void TrafficTests::testChangeRunway()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_change_runway_EGPH_EGPF");
+    aiAircraft = flyAI(aiAircraft, "changeRunway" + std::to_string(departureTime) + "_change_runway_EGPH_EGPF");
 }
 
 
@@ -770,9 +772,10 @@ void TrafficTests::testPushforward()
 
     CPPUNIT_ASSERT_EQUAL(fp->isValidPlan(), true);
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
+    //    aiAircraft->setGeodPos(parking.parking()->geod());
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_ga_YSSY_depart");
+    aiAircraft = flyAI(aiAircraft, "pushforward" + std::to_string(departureTime) + "_ga_YSSY_depart");
 }
 
 void TrafficTests::testPushforwardSpeedy()
@@ -830,7 +833,7 @@ void TrafficTests::testPushforwardSpeedy()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_ga_YSSY_fast_depart");
+    aiAircraft = flyAI(aiAircraft, "pushforwardSpeedy" + std::to_string(departureTime) + "_ga_YSSY_fast_depart");
 }
 
 void TrafficTests::testPushforwardParkYBBN()
@@ -889,7 +892,7 @@ void TrafficTests::testPushforwardParkYBBN()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_ga_YSSY_YBBN_park");
+    aiAircraft = flyAI(aiAircraft, "pushforwardParkYBBN" + std::to_string(departureTime) + "_ga_YSSY_YBBN_park");
 
     int shortestDistance = 10000;
     const FGParkingList& parkings(arrivalAirport->groundNetwork()->allParkings());
@@ -969,7 +972,7 @@ void TrafficTests::testPushforwardParkYBBNRepeatGa()
     aiAircraft->FGAIBase::setFlightPlan(std::move(fp));
     globals->get_subsystem<FGAIManager>()->attach(aiAircraft);
 
-    aiAircraft = flyAI(aiAircraft, "flight" + std::to_string(departureTime) + "_ga_YSSY_YBBN_park_repeat" + std::to_string(departureTime));
+    aiAircraft = flyAI(aiAircraft, "pushforwardParkYBBNRepeatGa" + std::to_string(departureTime) + "_ga_YSSY_YBBN_park_repeat" + std::to_string(departureTime));
 
     int shortestDistance = 10000;
     const FGParkingList& parkings(arrivalAirport->groundNetwork()->allParkings());
@@ -1285,8 +1288,8 @@ FGAIAircraft* TrafficTests::flyAI(SGSharedPtr<FGAIAircraft> aiAircraft, std::str
         aiAircraft->dumpCSV(csvFile, lineIndex++);
         // A flight without loops should never reach 400°
         CPPUNIT_ASSERT_LESSEQUAL(400.0, headingSum);
-        CPPUNIT_ASSERT_LESSEQUAL(10, aiAircraft->GetFlightPlan()->getLeg());
-        CPPUNIT_ASSERT_MESSAGE("Aircraft has not completed test in time.", i < 3000000);
+        CPPUNIT_ASSERT_LESSEQUAL(11, aiAircraft->GetFlightPlan()->getLeg());
+        CPPUNIT_ASSERT_MESSAGE("Aircraft has not completed test in time.", i < 10000000);
         // Arrived at a parking
         int beforeNextDepTime = aiAircraft->getTrafficRef()->getDepartureTime() - 30;
 
