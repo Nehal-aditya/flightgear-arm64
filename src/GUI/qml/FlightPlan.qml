@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import QtQuick.Controls 2.2
 import FlightGear.Launcher 1.0
@@ -213,7 +216,7 @@ Item {
                         selectAirport(_launcher.flightPlan.departure.guid)
                     }
 
-                    onPickAirport: {
+                    onPickAirport: function(guid) {
                         selectAirport(guid)
                         _launcher.flightPlan.departure = airport
                     }
@@ -244,7 +247,7 @@ Item {
 
                 ClickableText {
                     width: parent.width
-                    color: Style.destructiveActionColor 
+                    color: Style.destructiveActionColor
                     text: qsTr("The flight-plan departure airport (%1) is different to the " +
                                "initial location (%2). Click here to set the initial location to " +
                                "the flight-plan's airport.").
@@ -267,8 +270,8 @@ Item {
                     label: qsTr("Cruise speed:")
                     unitsMode: Units.Speed
                     quantity: _launcher.flightPlan.cruiseSpeed
-                    onCommit: {
-                        _launcher.flightPlan.cruiseSpeed = newValue
+                    onCommit: function(newValue) {
+                        _launcher.flightPlan.cruiseSpeed = newValue;
                     }
                     KeyNavigation.tab: cruiseAltitude
 
@@ -282,7 +285,9 @@ Item {
                     label: qsTr("Cruise altitude:")
                     unitsMode: Units.AltitudeIncludingMeters
                     quantity: _launcher.flightPlan.cruiseAltitude
-                    onCommit: _launcher.flightPlan.cruiseAltitude = newValue
+                    onCommit: function(newValue) {
+                        _launcher.flightPlan.cruiseAltitude = newValue;
+                    }
                 }
             }
 
@@ -376,7 +381,7 @@ Item {
                         selectAirport(_launcher.flightPlan.destination.guid)
                     }
 
-                    onPickAirport: {
+                    onPickAirport: function(guid) {
                         selectAirport(guid)
                         _launcher.flightPlan.destination = airport
                     }
@@ -425,8 +430,8 @@ Item {
                         selectAirport(_launcher.flightPlan.alternate.guid)
                     }
 
-                    onPickAirport: {
-                        selectAirport(guid)
+                    onPickAirport: function(guid) {
+                        selectAirport(guid);
                         _launcher.flightPlan.alternate = airport
                     }
 

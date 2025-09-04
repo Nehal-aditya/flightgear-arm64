@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import FlightGear 1.0
 
@@ -99,7 +102,7 @@ FocusScope {
             }
         }
 
-        Keys.onPressed:  {
+        Keys.onPressed: function(event) {
             if ((event.key === Qt.Key_Colon) || (event.key === Qt.Key_Slash)) {
                 nextToFocus.focus = true;
                 event.accepted = true;
@@ -142,7 +145,7 @@ FocusScope {
             input.forceActiveFocus();
         }
 
-        onWheel: {
+        onWheel: function(wheel) {
             var delta = wheel.angleDelta.y
             if (delta > 0) {
                 root.incrementValue()

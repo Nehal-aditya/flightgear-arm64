@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import QtQuick.Controls 2.2
 
@@ -18,11 +21,11 @@ Item {
     Flickable {
         id: flick
         height: parent.height
-        width: parent.width 
+        width: parent.width
         ScrollBar.vertical: ScrollBar {}
 
         flickableDirection: Flickable.VerticalFlick
-        contentHeight: contents.childrenRect.height
+        contentHeight: contents.childrenRect.height + (Style.margin * 2)
 
         Column {
             id: contents
@@ -284,7 +287,7 @@ Item {
 
             Item {
                 width: parent.width
-                height: Math.max(installTarballText.implicitHeight, installTarballButton.height)
+                height: Math.max(installTarballText.height, installTarballButton.height)
                 Button {
                     id: installTarballButton
                     text: qsTr("Install add-on scenery")
@@ -330,4 +333,3 @@ Item {
 
     }
 }
-
