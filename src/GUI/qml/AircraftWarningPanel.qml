@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import FlightGear.Launcher 1.0
 
@@ -37,8 +40,8 @@ Rectangle {
 
             PropertyChanges {
                 target: warningText
-                text: "This aircraft is in need of maintenance, and may have bugs or incompatabilities. "
-                      + "If you would like to contribute to fixing and improving this aircaft, please see "
+                text: "This aircraft is in need of maintenance, and may have bugs or incompatibilities. "
+                      + "If you would like to contribute to fixing and improving this aircraft, please see "
                       + "<a href=\"\">this page on our wiki</a>.";
             }
         }

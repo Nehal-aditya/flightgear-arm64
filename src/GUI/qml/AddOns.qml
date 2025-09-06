@@ -318,7 +318,7 @@ Item {
                                "(Scenery downloaded this way should have a file name such as 'w40n020.tar.gz')"
                                )
                 }
-            } // of install-tarbal item
+            } // of install-tarball item
         } // of column
     } // of Flickable
 

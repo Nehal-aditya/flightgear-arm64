@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.14
 import FlightGear.Launcher 1.0
 import FlightGear 1.0
@@ -12,7 +15,7 @@ Item {
     property string option: ""
     property string setting: ""
 
-    // define a new visiblity property so we can control built-in 'visible' ourselves
+    // define a new visibility property so we can control built-in 'visible' ourselves
     property bool hidden: false
 
     implicitWidth: parent.width // which is assumed to be the section

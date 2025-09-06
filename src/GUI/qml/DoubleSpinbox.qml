@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import FlightGear 1.0
 
@@ -67,7 +70,7 @@ FocusScope {
         width: root.width
         enabled: root.enabled
 
-        // use wheel events to adjust up/dowm
+        // use wheel events to adjust up/down
         onClicked: {
             edit.forceActiveFocus();
         }

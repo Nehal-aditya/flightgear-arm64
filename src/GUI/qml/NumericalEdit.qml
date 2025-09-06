@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import FlightGear 1.0
 import FlightGear.Launcher 1.0
@@ -108,7 +111,7 @@ FocusScope {
         // ensure any initial value is accepted by our mode.
         // this stops people passing in completely wrong quantities
         if (!units.isUnitInMode(quantity.unit)) {
-            console.warn("NumericalEdit: was inited with incorrect unit");
+            console.warn("NumericalEdit: was initialized with incorrect unit");
             var q = quantity;
             q.unit = units.selectedUnit;
             commit(q);
@@ -146,7 +149,7 @@ FocusScope {
         width: root.width
         enabled: root.enabled
 
-        // use wheel events to adjust up/dowm
+        // use wheel events to adjust up/down
         onClicked: {
             edit.forceActiveFocus();
         }

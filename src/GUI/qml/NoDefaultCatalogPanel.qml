@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.2
 import FlightGear.Launcher 1.0 as FG
 
@@ -26,7 +29,7 @@ Item {
             StyledText {
                 text: qsTr("The official FlightGear aircraft hangar is not added, so many standard "
                       + "aircraft will not be available. You can add the  hangar now, or hide "
-                      + "this message. The offical hangar can always be restored from the 'Add-Ons' page.")
+                      + "this message. The official hangar can always be restored from the 'Add-Ons' page.")
                 wrapMode: Text.WordWrap
                 anchors.verticalCenter: parent.verticalCenter
                 width: root.width - (addDefaultButton.width + hideButton.width + Style.margin * 3)

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import FlightGear 1.0
 
@@ -94,8 +97,8 @@ FocusScope {
             }
         } // of time elements row
 
-        // frame rectange - we need this so we can clip our children
-        // but ensure our frame also apepars on top
+        // frame rectangle - we need this so we can clip our children
+        // but ensure our frame also appears on top
         Rectangle {
             z: 100
             anchors.fill: parent

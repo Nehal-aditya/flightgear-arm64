@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import FlightGear 1.0
 
@@ -53,7 +56,7 @@ Item {
             }
         }
 
-        // invisble item that moves directly with the mouse
+        // invisible item that moves directly with the mouse
         Item {
             id: dragThumb
             height: 2

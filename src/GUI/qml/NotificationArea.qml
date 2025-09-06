@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import QtQml 2.4
 
@@ -99,7 +102,7 @@ Item {
         id: notificationsColumn
         // height of this is determined by content. This is important
         // so the mouse area above only blocks clicks near active
-        // notifciations
+        // notifications
 
         anchors {
             right: parent.right

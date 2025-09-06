@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.14
 import QtQuick.Controls 2.2
 
@@ -37,7 +40,7 @@ Item {
         height: parent.height
         width: parent.width - Style.margin * 2
         x: Style.margin
-        
+
         ScrollBar.vertical: ScrollBar {}
 
         Column
@@ -222,7 +225,7 @@ Item {
                         suggestedWidthString: "MMMMMMMMMMM"
                         keywords: ["callsign", "handle", "name"]
 
-                        // between one and seven alphanumerics, underscores and/or hypens
+                        // between one and seven alphanumerics, underscores and/or hyphens
                         // spaces not permitted
                         validation: RegularExpressionValidator { regularExpression: /[\w-]{1,7}/ }
                         setting: "callsign"
@@ -249,7 +252,7 @@ Item {
                         function saveState()
                         {
                             // these values match the code in MPServersModel.cpp, sorry for that
-                            // nastyness
+                            // nastiness
                             _config.setValueForKey("mpSettings", "mp-server", _launcher.mpServersModel.currentServer);
                         }
 
@@ -258,7 +261,7 @@ Item {
                             // no-op, this is triggered by MPServersModel::restoreMPServerSelection
                         }
 
-                        // can't use a Binding here, since we need a bidrectional link
+                        // can't use a Binding here, since we need a bidirectional link
                         onSelectedIndexChanged: _launcher.mpServersModel.currentIndex = selectedIndex
 
                         Connections
@@ -400,7 +403,7 @@ Item {
 
                         function saveState()
                         {
-                            // ensure this is a no-op, we write the value explicity
+                            // ensure this is a no-op, we write the value explicitly
                             // in LauncherController::downloadDirChanged
                         }
                     }
@@ -408,7 +411,7 @@ Item {
 
                 onApply: {
                     // note we do /not/ apply the downloadDir setting here, since it's
-                    // only permitted to occurr once, and we set it via other means;
+                    // only permitted to occur once, and we set it via other means;
                     // on startup via runLauncherDialog, and if it changes, via
                     // LauncherMainWindow::downloadDirChanged
 
@@ -499,7 +502,7 @@ Item {
                     return result;
                 }
 
-                contents: [         
+                contents: [
                     SettingsComboBox {
                         id: msaa
                         label: qsTr("Anti-aliasing")
