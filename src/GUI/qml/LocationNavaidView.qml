@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import FlightGear 1.0
 import FlightGear.Launcher 1.0
@@ -51,7 +54,7 @@ Item {
 
         height: selectionGrid.height + Style.margin * 2
 
-        // set opacity here only, so we don't make the whole summary pannel translucent
+        // set opacity here only, so we don't make the whole summary panel translucent
         Rectangle {
             id: background
             anchors.fill: parent

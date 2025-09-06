@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import QtQml 2.4
 import FlightGear.Launcher 1.0
@@ -86,7 +89,7 @@ Item {
         // dynamic text sizing, so bind it manually
         y: logoText.y + Style.margin + logoText.contentHeight
         wrapMode: Text.WordWrap
-        text: qsTr("Licenced under the GNU Public License (GPL) - click for more info")
+        text: qsTr("Licensed under the GNU Public License (GPL) - click for more info")
         baseTextColor: "white"
         style: Text.Outline
         styleColor: "black"
@@ -116,7 +119,7 @@ Item {
 
         height: summaryGrid.height + Style.margin * 2
 
-        // set opacity here only, so we don't make the whole summary pannel translucent
+        // set opacity here only, so we don't make the whole summary panel translucent
         Rectangle {
             id: background
             anchors.fill: parent
@@ -150,7 +153,7 @@ Item {
             ClickableText {
                 text: {
                     if (_launcher.skipAircraftFromArgs) return qsTr("<i>set from user arguments (in Settings)</i>");
-                    if (_launcher.selectedAircraftInfo.name === "") return  qsTr("No aircraft selected"); 
+                    if (_launcher.selectedAircraftInfo.name === "") return  qsTr("No aircraft selected");
                     return _launcher.selectedAircraftInfo.name;
                     }
                 enabled: _launcher.selectedAircraftInfo.name !== "" && !_launcher.skipAircraftFromArgs
@@ -244,7 +247,7 @@ Item {
                     model: _launcher.selectedAircraftInfo.statesModel
                     displayRole: "name"
                     label: qsTr("State:")
-                    width: parent.width   
+                    width: parent.width
                     headerText: qsTr("Default state")
 
                     function select(index)

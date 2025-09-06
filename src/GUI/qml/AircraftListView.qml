@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.0
 import QtQuick.Controls 2.2
 import FlightGear.Launcher 1.0 as FG
@@ -20,7 +23,7 @@ Item {
         model.selectVariantForAircraftURI(_launcher.selectedAircraft);
         var row = model.indexForURI(_launcher.selectedAircraft);
         if (row >= 0) {
-            // sequence here is necessary so progrommatic moves
+            // sequence here is necessary so programmatic moves
             // are instant
             aircraftList.highlightMoveDuration = 0;
             aircraftList.currentIndex = row;
@@ -75,8 +78,8 @@ Item {
         highlight: highlight
         highlightMoveDuration: __realHighlightMoveDuration
 
-        // saved here becuase we need to reset highlightMoveDuration
-        // when doing a progrmatic set
+        // saved here because we need to reset highlightMoveDuration
+        // when doing a programmatic set
         readonly property int __realHighlightMoveDuration: 200
     }
 }

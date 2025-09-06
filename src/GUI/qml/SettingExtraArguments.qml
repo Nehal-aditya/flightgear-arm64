@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import FlightGear.Launcher 1.0
 import FlightGear 1.0
@@ -46,7 +49,7 @@ SettingControl {
             width: parent.width
             text: qsTr("<b>Warning:</b> specifying <tt>fg-root</tt>, <tt>fg-aircraft</tt>, <tt>fg-scenery</tt> or <tt>fg-home</tt> " +
                        "using this section is not recommended, and may cause problem or prevent the simulator from running. " +
-                       "Please use the add-ons page to setup scenery and aircrft directories, and the 'Select data files location' " +
+                       "Please use the add-ons page to setup scenery and aircraft directories, and the 'Select data files location' " +
                        "menu item to change the root data directory.");
         }
 

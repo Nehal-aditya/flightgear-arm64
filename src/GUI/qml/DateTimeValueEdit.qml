@@ -137,7 +137,7 @@ FocusScope {
     MouseArea {
         height: root.height
         width: root.width
-        // use wheel events to adjust up/dowm
+        // use wheel events to adjust up/down
         onClicked: {
             input.forceActiveFocus();
         }

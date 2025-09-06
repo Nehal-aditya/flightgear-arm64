@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.2
 import FlightGear.Launcher 1.0 as FG
 import FlightGear 1.0
@@ -94,7 +97,7 @@ ListHeaderBox
                 spacing: (Style.margin * 2)
 
                 StyledText {
-                    text: qsTr("Aircraft are rated by the community based on four critiera, on a scale from " +
+                    text: qsTr("Aircraft are rated by the community based on four criteria, on a scale from " +
                                "one to five. The ratings are designed to help make an informed guess how "+
                                "complete and functional an aircraft is.")
                     width: editRatingsPanel.width - Style.strutSize * 2
@@ -121,7 +124,7 @@ ListHeaderBox
                 }
 
                 RatingSlider {
-                    label: qsTr("Minimum exterial visual model rating")
+                    label: qsTr("Minimum external visual model rating")
                     ratings: _launcher.browseAircraftModel.ratings
                     ratingIndex: 3
                 }

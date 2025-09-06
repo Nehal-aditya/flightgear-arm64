@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.2
 import FlightGear 1.0
 
@@ -43,7 +46,7 @@ FocusScope
         border.color: (mouse.containsMouse | active) ? Style.themeColor: Style.minorFrameColor
         clip: true
         color: Style.backgroundColor
-        
+
         TextInput {
             id: buttonText
             anchors.left: parent.left
@@ -78,7 +81,7 @@ FocusScope
                 visible: parent.text == ""
                 text: root.placeholder
 
-                // werid rule here - we want to make the placeholder text very
+                // weird rule here - we want to make the placeholder text very
                 // subtle when the textdit is focused, so the user knows it will
                 // be overwritten
                 color: buttonText.activeFocus ? Style.disabledTextColor : Style.baseTextColor

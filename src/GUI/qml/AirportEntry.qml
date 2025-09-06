@@ -1,6 +1,9 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import FlightGear 1.0
-import FlightGear.Launcher 1.0 
+import FlightGear.Launcher 1.0
 
 FocusScope
 {
@@ -90,7 +93,7 @@ FocusScope
 
             // if we have a search and at least one valid result, select it
             // combined with the previous behaviour, this means entering an ICAO
-            // code (which are returend synchronously inside setSearch) and
+            // code (which are returned synchronously inside setSearch) and
             // hitting enter/return works as expected
             if (searchCompleter.haveExistingSearch && (searchCompleter.numResults > 0)) {
                 root.pickAirport(searchCompleter.guidAtIndex(0));

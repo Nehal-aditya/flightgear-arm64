@@ -1,6 +1,8 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import FlightGear 1.0
-
 
 Item {
     id: root
@@ -22,7 +24,7 @@ Item {
 
     onEnabledChanged: {
         // if we become enabled, ensure we hide the
-        // dsiabled prompt (can happen if hovering over 'fly!')
+        // disabled prompt (can happen if hovering over 'fly!')
         if (enabled) disabledTextBox.hide();
     }
 
@@ -82,7 +84,7 @@ Item {
         height:disabledTextContent.implicitHeight + Style.margin * 2
         width: disabledTextContent.implicitWidth + Style.margin * 2
         color: Style.themeColor
-        visible: false  
+        visible: false
 
         anchors.left: baseRect.right
         anchors.verticalCenter: baseRect.verticalCenter
@@ -112,7 +114,7 @@ Item {
         SequentialAnimation {
             id: showDisabledAnimation
             PropertyAction { target:disabledTextBox; property:"visible"; value: true }
-            NumberAnimation { 
+            NumberAnimation {
                 target:disabledTextBox; property:"opacity"
                 from: 0.0; to: 1.0
                 duration: 500
@@ -121,7 +123,7 @@ Item {
 
         SequentialAnimation {
             id: hideDisabledAnimation
-            NumberAnimation { 
+            NumberAnimation {
                 target:disabledTextBox; property:"opacity"
                 from: 1.0; to: 0.0
                 duration: 500

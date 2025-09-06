@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import FlightGear 1.0
 
@@ -10,7 +13,7 @@ Item {
     implicitWidth: track.width + label.width + 16
     implicitHeight: Math.max(label.height, thumb.height)
 
-    // helepr to set the value without an animation
+    // helper to set the value without an animation
     function setValue(newCheck)
     {
         sliderBehaviour.enabled = false;

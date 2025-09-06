@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import QtQml 2.4
 import FlightGear 1.0
@@ -9,16 +12,16 @@ Item {
         id: startupPagesModel
         ListElement { title: qsTr("Summary"); pageSource: "qrc:///qml/Summary.qml"; iconPath: "image://colored-icon/toolbox-summary"; state:"loader" }
         ListElement { title: qsTr("Aircraft"); pageSource: "qrc:///qml/AircraftList.qml"; iconPath: "image://colored-icon/toolbox-aircraft"; state:"loader" }
-        
-        ListElement { 
-            title: qsTr("Location"); pageSource: "qrc:///qml/Location.qml"; 
+
+        ListElement {
+            title: qsTr("Location"); pageSource: "qrc:///qml/Location.qml";
             iconPath: "image://colored-icon/toolbox-location"; state:"loader"
             buttonDisabled: false
             disabledText: qsTr("Location page disabled due to conflicting user arguments (in Settings)");
         }
 
         // due to some design stupidity by James, we can't use the Loader mechanism for these pages; they need to exist
-        // permanently so that collecting args works. So we instantiate them down below, and toggle the visiblity
+        // permanently so that collecting args works. So we instantiate them down below, and toggle the visibility
         // of them and the loader using a state.
 
         ListElement { title: qsTr("Environment"); pageSource: ""; iconPath: "image://colored-icon/toolbox-environment"; state:"environment"  }
@@ -67,7 +70,7 @@ Item {
 
     Connections {
         target: _launcher
-        function onSkipAircraftFromArgsChanged() { 
+        function onSkipAircraftFromArgsChanged() {
             startupPagesModel.setProperty(1, "buttonDisabled", _launcher.skipAircraftFromArgs);
         }
     }
@@ -201,11 +204,11 @@ Item {
         z: 100
 
         items: [
-            MenuItem { 
+            MenuItem {
                 text:qsTr("Fly!")
                 shortcut: "Ctrl+F"
                 enabled: _launcher.canFly
-                onTriggered: _launcher.fly() 
+                onTriggered: _launcher.fly()
             },
 
             MenuItem { text:qsTr("Open saved configuration..."); shortcut: "Ctrl+O";
@@ -219,7 +222,7 @@ Item {
             MenuItem { text:qsTr("Select data files location..."); onTriggered: _launcher.requestChangeDataPath(); },
             MenuItem { text:qsTr("Restore default settings..."); onTriggered: _launcher.requestRestoreDefaults(); },
             MenuDivider {},
-            MenuItem { text:qsTr("Quit"); shortcut: "Ctrl+Q"; onTriggered: _launcher.quit();  } 
+            MenuItem { text:qsTr("Quit"); shortcut: "Ctrl+Q"; onTriggered: _launcher.quit();  }
         ]
     }
 
