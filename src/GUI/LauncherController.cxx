@@ -1,3 +1,7 @@
+
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "config.h"
 
 #include "LauncherController.hxx"
@@ -79,6 +83,9 @@ LauncherController::LauncherController(QObject *parent, QWindow* window) :
     m_location = new LocationController(this);
     m_locationHistory = new RecentLocationsModel(this);
     m_selectedAircraftInfo = new QmlAircraftInfo(this);
+
+    // ensure uninstall disables the fly button
+    connect(m_selectedAircraftInfo, &QmlAircraftInfo::downloadChanged, this, &LauncherController::updateSelectedAircraft);
 
     m_config = new LaunchConfig(this);
     connect(m_config, &LaunchConfig::collect, this, &LauncherController::collectAircraftArgs);
@@ -525,7 +532,7 @@ void LauncherController::downloadDirChanged(QString path)
 
     auto options = flightgear::Options::sharedInstance();
     if (options->valueForOption("download-dir") == path.toStdString()) {
-        // this works because we propogate the value from QSettings to
+        // this works because we propagate the value from QSettings to
         // the flightgear::Options object in runLauncherDialog()
         // so the options object always contains our current idea of this
         // value

@@ -1,3 +1,7 @@
+
+// SPDX-FileCopyrightText: 2017 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import FlightGear.Launcher 1.0
 import FlightGear 1.0
@@ -19,11 +23,12 @@ Item {
     property bool compact: false
 
     implicitWidth: childrenRect.width
-    implicitHeight: childrenRect.height
+    implicitHeight: Math.max(button.height, sizeText.height, progressColumn.height)
 
     state: "not-installed"
 
-    onInstallStatusChanged: {
+    function updateState()
+    {
         if (installStatus == LocalAircraftCache.PackageInstalled) {
             state = "installed";
         } else if (installStatus == LocalAircraftCache.PackageNotInstalled) {
@@ -36,6 +41,8 @@ Item {
             state = "downloading"
         }
     }
+
+    onInstallStatusChanged: updateState()
 
     states: [
         State {
@@ -50,20 +57,16 @@ Item {
 
             PropertyChanges { target: sizeText; visible: true }
             PropertyChanges { target: confirmUninstallPanel; visible: false }
+            PropertyChanges { target: uninstallButton;  visible: false }
         },
 
         State {
             name: "installed"
 
-            PropertyChanges {
-                target: button
-                text: qsTr("Uninstall")
-                hoverText: ""
-                visible: true
-            }
-
+            PropertyChanges { target: uninstallButton;  visible: true }
             PropertyChanges { target: sizeText; visible: true }
             PropertyChanges { target: confirmUninstallPanel; visible: false }
+            PropertyChanges { target: button; visible: false }
         },
 
         State {
@@ -76,6 +79,7 @@ Item {
                 visible: true
             }
 
+            PropertyChanges { target: uninstallButton;  visible: true }
             PropertyChanges { target: sizeText; visible: true }
             PropertyChanges { target: confirmUninstallPanel; visible: false }
         },
@@ -95,6 +99,7 @@ Item {
                 visible: true
             }
 
+            PropertyChanges { target: uninstallButton;  visible: false }
             PropertyChanges { target: confirmUninstallPanel; visible: false }
         },
 
@@ -104,6 +109,7 @@ Item {
             PropertyChanges { target: statusText; visible: true }
             PropertyChanges { target: sizeText; visible: false }
             PropertyChanges { target: confirmUninstallPanel; visible: false }
+            PropertyChanges { target: uninstallButton;  visible: false }
 
             PropertyChanges {
                 target: button
@@ -116,6 +122,7 @@ Item {
         State {
             name: "confirm-uninstall"
             PropertyChanges { target: button; visible: false }
+            PropertyChanges { target: uninstallButton;  visible: false }
             PropertyChanges { target: progressFrame; visible: false }
             PropertyChanges { target: statusText; visible: false }
             PropertyChanges { target: sizeText; visible: false }
@@ -123,31 +130,43 @@ Item {
         }
     ]
 
-    Button {
-        id: button
-        onClicked: {
-            if ((root.state == "has-update") || (root.state == "not-installed")) {
-                _launcher.requestInstallUpdate(root.uri);
-            } else if (root.state == "installed") {
-                root.state = "confirm-uninstall"
-            } else {
-                _launcher.requestInstallCancel(root.uri)
+    Row {
+        id: buttonRow
+        spacing: Style.margin
+        Button {
+            id: button
+            onClicked: {
+                if ((root.state == "has-update") || (root.state == "not-installed")) {
+                    _launcher.requestInstallUpdate(root.uri);
+                } else {
+                    _launcher.requestInstallCancel(root.uri)
+                }
             }
+        }
+
+        Button {
+            id: uninstallButton
+            text: qsTr("Uninstall")
+            anchors.verticalCenter: button.verticalCenter
+            onClicked: root.state = "confirm-uninstall"
         }
     }
 
     StyledText {
         id: sizeText
-        anchors.left: button.right
-        anchors.leftMargin: 6
-        anchors.verticalCenter: button.verticalCenter
+        anchors.left: buttonRow.right
+        anchors.leftMargin: Style.margin
+        anchors.right: parent.right
+        anchors.verticalCenter: buttonRow.verticalCenter
         text: qsTr("Size: ") + (root.packageSize / 0x100000).toFixed(1) + qsTr(" MB")
     }
 
     Column {
-        anchors.verticalCenter: button.verticalCenter
-        anchors.left: button.right
-        anchors.leftMargin: 6
+        id: progressColumn
+
+        anchors.verticalCenter: buttonRow.verticalCenter
+        anchors.left: buttonRow.right
+        anchors.leftMargin: Style.margin
         anchors.right: parent.right
 
         Rectangle {
@@ -155,7 +174,7 @@ Item {
             radius: 6
             height: 12
 
-            width: parent.width
+            width: parent.width - (Style.margin * 2)
             visible: false // hidden by default
 
             border.color: Style.minorFrameColor
@@ -183,9 +202,11 @@ Item {
             id: statusText
             visible: false
             text: (compact ? "" : qsTr("Downloaded ")) + (root.downloadedBytes / 0x100000).toFixed(1) +
-                  qsTr(" MB of ") + (root.packageSize / 0x100000).toFixed(1) + qsTr(" MB");
+                qsTr(" MB of ") + (root.packageSize / 0x100000).toFixed(1) + qsTr(" MB");
         }
     } // item container for progress bar and text
+
+
 
     YesNoPanel {
         id: confirmUninstallPanel
@@ -195,7 +216,8 @@ Item {
         yesText: qsTr("Uninstall")
         noText: qsTr("Cancel")
 
-        onRejected: root.state = "installed"
+        // revert to the current underlying state
+        onRejected: updateState()
         onAccepted: _launcher.requestUninstall(root.uri)
      }
 }
