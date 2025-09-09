@@ -445,7 +445,8 @@ private:
   friend class Leg;
   
   int findLegIndex(const Leg* l) const;
-    
+
+  void runDelegates();
   void lockDelegates();
   void unlockDelegates();
 
