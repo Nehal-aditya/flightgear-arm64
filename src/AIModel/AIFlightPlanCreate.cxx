@@ -444,8 +444,12 @@ bool FGAIFlightPlan::createAlignRunway(FGAIAircraft* ac,
 {
     int route = 0;
     FGRunway* rwy = apt->getRunwayByIdent(activeRunway);
+    if (!rwy) {
+        SG_LOG(SG_AI, SG_DEV_WARN, "Runway doesn't exist " << apt->getId() << "/" << activeRunway);
+        return false;
+    }
     SG_LOG(SG_AI, SG_BULK, "Taxi to " << apt->getId() << "/" << activeRunway);
-    assert(rwy != NULL);
+    assert(rwy != nullptr);
     SGGeod runwayTakeoff = rwy->pointOnCenterlineDisplaced(5.0);
 
     FGGroundNetwork* gn = apt->groundNetwork();
@@ -495,7 +499,6 @@ bool FGAIFlightPlan::createAlignRunway(FGAIAircraft* ac,
     time_t now = globals->get_time_params()->get_cur_time();
 
     arrivalTime = now + calcArrivalTimes();
-    //cerr << "[done]" << endl;
     return true;
 }
 
@@ -673,8 +676,10 @@ bool FGAIFlightPlan::createTakeOff(FGAIAircraft* ac,
     SG_LOG(SG_AI, SG_BULK, "Takeoff from airport " << apt->getId() << "/" << activeRunway);
 
     FGRunway* rwy = apt->getRunwayByIdent(activeRunway);
-    if (!rwy)
+    if (!rwy) {
+        SG_LOG(SG_AI, SG_DEV_WARN, "Runway doesn't exist " << apt->getId() << "/" << activeRunway);
         return false;
+    }
 
     double airportElev = apt->getElevation();
 
