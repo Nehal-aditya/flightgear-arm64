@@ -1011,18 +1011,16 @@ void ErrorReporter::update(double dt)
 
 void ErrorReporter::shutdown()
 {
-    if (d->_isEnabled) {
-        globals->get_commands()->removeCommand("dismiss-error-report");
-        globals->get_commands()->removeCommand("save-error-report-data");
-        globals->get_commands()->removeCommand("show-error-report");
+    globals->get_commands()->removeCommand("dismiss-error-report");
+    globals->get_commands()->removeCommand("save-error-report-data");
+    globals->get_commands()->removeCommand("show-error-report");
 
-        // during a reset we don't want to touch the log callback; it was added in
-        // preinit, which does not get repeated on a reset
-        const bool inReset = fgGetBool("/sim/signals/reinit", false);
-        if (!inReset) {
-            sglog().removeCallback(d->_logCallback.get());
-            d->_logCallbackRegistered = false;
-        }
+    // during a reset we don't want to touch the log callback; it was added in
+    // preinit, which does not get repeated on a reset
+    const bool inReset = fgGetBool("/sim/signals/reinit", false);
+    if (!inReset) {
+        sglog().removeCallback(d->_logCallback.get());
+        d->_logCallbackRegistered = false;
     }
 }
 
