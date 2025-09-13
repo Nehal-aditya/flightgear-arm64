@@ -184,9 +184,9 @@ public:
      *                      or empty *and* the default translation (source
      *                      text) is empty.
      *
-     * Due to these conditions, this only makes sense when FlightGear uses the
-     * default translation and some translatable “strings” have been defined
-     * as empty elements (so that their “source text” is empty).
+     * Due to these conditions, this only makes sense when some translatable
+     * “strings” have been defined as empty elements (so that their “source
+     * text” is empty).
      */
     std::string getLocalizedString(const std::string& id,
                                    const std::string& resource,
