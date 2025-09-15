@@ -66,7 +66,13 @@ class VRManager : public osgXR::Manager
 
         VRManager();
 
-        static VRManager *instance();
+        static VRManager* instance(bool destroy = false);
+        static void destroyInstance()
+        {
+            instance(true);
+        }
+        // Call after reset, threading should still be disabled
+        void reset();
 
         void syncProperties();
         void syncReadOnlyProperties();

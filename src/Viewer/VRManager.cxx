@@ -91,14 +91,49 @@ VRManager::VRManager() :
     _propMirrorEnabled.node(true);
 }
 
-VRManager *VRManager::instance()
+VRManager* VRManager::instance(bool destroy)
 {
     static bool initialised = false;
+    if (destroy) {
+        if (initialised) {
+            managerInstance->destroyAndWait();
+            globals->get_renderer()->getViewerBase()->setRealizeOperation(nullptr);
+            globals->get_renderer()->getView()->apply(nullptr);
+        }
+        managerInstance = nullptr;
+        initialised = false;
+        return nullptr;
+    }
     if (!initialised) {
         managerInstance = new VRManager;
         initialised = true;
     }
     return managerInstance;
+}
+
+void VRManager::reset()
+{
+    auto composite_viewer = globals->get_renderer()->getCompositeViewer();
+
+    // Force retrigger of the CompositeViewer realize callback.
+    // We reuse the graphics context, so it will already be realized. This makes
+    // the CompositeViewer become realized without its realize operation
+    // callback being called, preventing osgXR from being reinitialised.
+
+    auto* viewerRealizeOp = composite_viewer->getRealizeOperation();
+    if (viewerRealizeOp) {
+        osgViewer::ViewerBase::Contexts contexts;
+        composite_viewer->getContexts(contexts);
+        for (auto citr = contexts.begin(); citr != contexts.end(); ++citr) {
+            osg::GraphicsContext* gc = *citr;
+
+            if (gc->valid()) {
+                gc->makeCurrent();
+                (*viewerRealizeOp)(gc);
+                gc->releaseContext();
+            }
+        }
+    }
 }
 
 void VRManager::syncProperties()

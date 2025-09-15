@@ -55,6 +55,7 @@
 
 #include <Scenery/scenery.hxx>
 #include <Scenery/tilemgr.hxx>
+#include <Viewer/VRManager.hxx>
 #include <Viewer/renderer.hxx>
 #include <GUI/FGFontCache.hxx>
 #include <GUI/MessageBox.hxx>
@@ -213,6 +214,9 @@ FGGlobals::~FGGlobals()
     }
 
     subsystem_mgr->shutdown();
+#ifdef ENABLE_OSGXR
+    flightgear::VRManager::destroyInstance();
+#endif
     subsystem_mgr->unbind();
 
     // don't cancel the pager until after shutdown, since AIModels (and
