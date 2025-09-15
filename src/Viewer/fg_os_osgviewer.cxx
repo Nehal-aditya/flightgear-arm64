@@ -392,9 +392,6 @@ void fgOSCloseWindow()
             viewer_base->stopThreading();
         }
     }
-#ifdef ENABLE_OSGXR
-    VRManager::instance()->destroyAndWait();
-#endif
     FGScenery::resetPagerSingleton();
     flightgear::addSentryBreadcrumb("fgOSCloseWindow, clearing camera group", "info");
     flightgear::CameraGroup::setDefault(NULL);
