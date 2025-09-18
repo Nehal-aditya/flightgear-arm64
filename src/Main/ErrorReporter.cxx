@@ -227,6 +227,8 @@ public:
 
     bool isAnyAircraftPath(const std::string& path) const;
 
+    static bool isFGDataPath(const std::string& path);
+
     /**
     @brief structure representing one or more errors, aggregated together
 
@@ -243,6 +245,10 @@ public:
         bool isCritical = false;
 
         bool addOccurence(const ErrorOcurrence& err);
+
+        using OcurrencePredicate = std::function<bool(const ErrorOcurrence&)>;
+        bool allOccurences(OcurrencePredicate pred) const;
+
     };
 
 
@@ -258,6 +264,7 @@ public:
 
     AggregateErrors::iterator getAggregate(Aggregation ag, const std::string& param = {});
 
+    AggregateErrors::iterator mainAircraftAggregate();
 
     void collectError(simgear::LoadFailure type, simgear::ErrorCode code, const std::string& details, const sg_location& location)
     {
@@ -381,6 +388,26 @@ public:
 
     void sendReportToSentry(AggregateReport& report)
     {
+        if (report.type == Aggregation::InputDevice) {
+            // for non-official input configs, don't report, it's just noise
+            // https://gitlab.com/flightgear/flightgear/-/issues/3177
+            if (report.allOccurences([](const ErrorOcurrence& oc) {
+                    return !isFGDataPath(oc.origin.getPath());
+                })) {
+                return;
+            }
+        }
+
+        // don't report socket or local IO issues to Sentry
+        // https://gitlab.com/flightgear/fgmeta/-/issues/33
+        if (report.type == Aggregation::TerraSync) {
+            if (report.allOccurences([](const ErrorOcurrence& oc) {
+                    return (oc.type == simgear::LoadFailure::IOError) || (oc.type == simgear::LoadFailure::NetworkError);
+                })) {
+                return;
+            }
+        }
+
         const int catId = static_cast<int>(report.type);
         flightgear::sentryReportUserError(static_categoryIds.at(catId), 
         report.parameter, 
@@ -397,6 +424,21 @@ public:
     bool showErrorReportCommand(const SGPropertyNode* args, SGPropertyNode*);
 };
 
+auto ErrorReporter::ErrorReporterPrivate::mainAircraftAggregate()
+    -> AggregateErrors::iterator
+{
+    const auto fullId = fgGetString("/sim/aircraft-id");
+
+    // we use the dir name so we combine reports from different variants, on Sentry
+    const auto aircraftDirName = lastPathComponent(fgGetString("/sim/aircraft-dir"));
+
+    if (fullId != fgGetString("/sim/aircraft")) {
+        return getAggregate(Aggregation::MainAircraft, aircraftDirName);
+    }
+
+    return getAggregate(Aggregation::HangarAircraft, aircraftDirName);
+}
+
 auto ErrorReporter::ErrorReporterPrivate::getAggregateForOccurence(const ErrorReporter::ErrorReporterPrivate::ErrorOcurrence& oc)
     -> AggregateErrors::iterator
 {
@@ -408,16 +450,7 @@ auto ErrorReporter::ErrorReporterPrivate::getAggregateForOccurence(const ErrorRe
     }
 
     if (oc.hasContextKey("primary-aircraft")) {
-        const auto fullId = fgGetString("/sim/aircraft-id");
-
-        // we use the dir name so we combine reports from different variants, on Sentry
-        const auto aircraftDirName = lastPathComponent(fgGetString("/sim/aircraft-dir"));
-
-        if (fullId != fgGetString("/sim/aircraft")) {
-            return getAggregate(Aggregation::MainAircraft, aircraftDirName);
-        }
-
-        return getAggregate(Aggregation::HangarAircraft, aircraftDirName);
+        return mainAircraftAggregate();
     }
 
     if (oc.hasContextKey("multiplayer")) {
@@ -485,18 +518,21 @@ auto ErrorReporter::ErrorReporterPrivate::getAggregateForOccurence(const ErrorRe
         return getAggregate(Aggregation::InputDevice, oc.getContextValue("input-device"));
     }
 
+    if (oc.code == simgear::ErrorCode::AircraftSystems) {
+        if (isMainAircraftPath(oc.origin.asString())) {
+            return mainAircraftAggregate();
+        }
+
+        if (isFGDataPath(oc.origin.asString())) {
+            return getAggregate(Aggregation::FGData);
+        }
+    }
+
     // start guessing :)
     // from this point on we're using less reliable inferences about where the
     // error came from, trying to avoid 'unknown'
     if (isMainAircraftPath(oc.origin.asString())) {
-        const auto fullId = fgGetString("/sim/aircraft-id");
-        const auto aircraftDirName = lastPathComponent(fgGetString("/sim/aircraft-dir"));
-
-        if (fullId != fgGetString("/sim/aircraft")) {
-            return getAggregate(Aggregation::MainAircraft, aircraftDirName);
-        }
-
-        return getAggregate(Aggregation::HangarAircraft, aircraftDirName);
+        return mainAircraftAggregate();
     }
 
     // GUI dialog errors often have no context
@@ -736,6 +772,26 @@ bool ErrorReporter::ErrorReporterPrivate::AggregateReport::addOccurence(const Er
     errors.push_back(err);
     lastErrorTime.stamp();
     return true;
+}
+
+bool ErrorReporter::ErrorReporterPrivate::isFGDataPath(const std::string& path)
+{
+    for (const auto& dp : globals->get_data_paths()) {
+        if (path.find(dp.utf8Str()) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool ErrorReporter::ErrorReporterPrivate::AggregateReport::allOccurences(OcurrencePredicate p) const
+{
+    auto it = std::find_if(errors.begin(), errors.end(), [p](const ErrorOcurrence& ext) {
+        return !p(ext);
+    });
+
+    return it == errors.end();
 }
 
 bool ErrorReporter::ErrorReporterPrivate::isMainAircraftPath(const std::string& path) const
