@@ -717,6 +717,13 @@ bool SetupRootDialog::downloadedDataExistsButStale()
         return false;
     }
 
+    // check for suffix mismatch, then we will always update
+    const auto info = fgBasePackageInfo(r);
+    if (info && (info.value().suffix != BUILD_SUFFIX)) {
+        SG_LOG(SG_IO, SG_INFO, "Base package suffix mismatch, build suffix is '" << BUILD_SUFFIX << "'");
+        return true;
+    }
+
     // update needed if the on-disk base package version is *lower* than static_basePackagePatchLevel
     return simgear::strutils::compare_versions(ver, minBasePackageVersion) < 0;
 }

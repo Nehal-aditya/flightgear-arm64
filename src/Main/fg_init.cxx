@@ -194,6 +194,17 @@ std::optional<FGBasePackageInfo> fgBasePackageInfo(const SGPath& path)
     cJSON* json = cJSON_Parse(content.c_str());
 
     FGBasePackageInfo r;
+    
+    auto ver = cJSON_GetObjectItem(json, "version");
+    if (ver) {
+        r.version = ver->valuestring;
+    }
+
+    auto suf = cJSON_GetObjectItem(json, "fgdata-suffix");
+    if (suf) {
+        r.suffix = suf->valuestring;
+    }
+
     r.buildDate = cJSON_GetObjectItem(json, "build-date")->valuestring;
     r.gitRevision = cJSON_GetObjectItem(json, "fgdata-sha")->valuestring;
 

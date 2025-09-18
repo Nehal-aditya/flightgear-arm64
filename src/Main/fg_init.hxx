@@ -42,6 +42,8 @@ std::string fgBasePackageVersion(const SGPath& path);
  * 
  */
 struct FGBasePackageInfo {
+    std::string version;
+    std::string suffix;
     std::string buildDate;
     std::string gitRevision;
 };
