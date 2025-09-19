@@ -140,7 +140,7 @@ void SplashScreen::createNodes()
         }
     }
 #endif
-    // setup the base geometry 
+    // setup the base geometry
     _splashFBOTexture = new osg::Texture2D;
     _splashFBOTexture->setInternalFormat(useSRGB ? GL_SRGB8 : GL_RGB);
 
@@ -166,7 +166,7 @@ void SplashScreen::createNodes()
 
     // parse the content from the tree
     // there can be many <content> <model-content> and <image> nodes
-    // <content> is reserved for use in defaults.xml and is the basic 
+    // <content> is reserved for use in defaults.xml and is the basic
     // text; model-content and images are for use in the model
     // to present model related information.
     auto root = globals->get_props()->getNode("/sim/startup");
@@ -181,7 +181,7 @@ void SplashScreen::createNodes()
                      image->getDoubleValue("x", 0.025f),
                      image->getDoubleValue("y", 0.935f),
                      image->getDoubleValue("width", 0.1),
-                     image->getDoubleValue("height", 0.1), 
+                     image->getDoubleValue("height", 0.1),
                      image->getNode("condition"),
                      false);
         }
@@ -230,7 +230,7 @@ void SplashScreen::createNodes()
         CreateTextFromNode(content, geode, true);
     }
 
-    // default content comes in second; and has the ability to be overriden by the model
+    // default content comes in second; and has the ability to be overridden by the model
     for (const auto& content : root->getChildren("content")) {
         if (content->getIndex()) { // Skip 0 element - reserved for future usage.
             // default content can be hidden by the model. By hidden it will never be
@@ -271,7 +271,7 @@ void SplashScreen::createNodes()
     _splashQuadCamera->setAllowEventFocus(false);
     _splashQuadCamera->setCullingActive(false);
     _splashQuadCamera->setRenderOrder(osg::Camera::NESTED_RENDER);
-    
+
     osg::StateSet* stateSet = _splashQuadCamera->getOrCreateStateSet();
     stateSet->setMode(GL_BLEND, osg::StateAttribute::ON);
     stateSet->setAttribute(new osg::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA), osg::StateAttribute::ON);
@@ -324,10 +324,10 @@ void SplashScreen::createNodes()
 // <color> <r><g><b> </color> define colour to be used
 // <font> specifies the font alignment, size and typeface
 // <max-width>  [optional] the max normalized width of the element
-// <max-height> [optional] the max normalized height of the element. 
+// <max-height> [optional] the max normalized height of the element.
 // <max-lines> [optional] the max number of lines this text can be wrapped over
 //              wrapping takes place at max-width
-// 
+//
 void SplashScreen::CreateTextFromNode(const SGPropertyNode_ptr& content, osg::Geode* geode, bool modelContent)
 {
     auto text = content->getStringValue("text", "");
@@ -339,7 +339,7 @@ void SplashScreen::CreateTextFromNode(const SGPropertyNode_ptr& content, osg::Ge
     std::string dynamicProperty = content->getStringValue("dynamic-text");
     if (!dynamicProperty.empty())
         dynamicValueNode = fgGetNode(dynamicProperty, true);
-    
+
     auto conditionNode = content->getChild("condition");
     SGCondition* condition = nullptr;
 
@@ -465,7 +465,7 @@ const SplashScreen::ImageItem *SplashScreen::addImage(const std::string &path, b
     item.aspectRatio = static_cast<double>(item.imageWidth) / item.imageHeight;
     if (item.height == 0 && item.imageWidth != 0)
         item.height = item.imageHeight * (item.width / item.imageWidth);
-    
+
     osg::Texture2D* imageTexture = new osg::Texture2D(item.Image);
     imageTexture->setResizeNonPowerOfTwoHint(false);
     imageTexture->setInternalFormat(GL_RGBA);
@@ -498,7 +498,7 @@ const SplashScreen::ImageItem *SplashScreen::addImage(const std::string &path, b
     stateSet->setTextureMode(0, GL_TEXTURE_2D, osg::StateAttribute::ON);
     stateSet->setTextureAttribute(0, imageTexture);
     stateSet->setMode(GL_BLEND, osg::StateAttribute::ON);
-    
+
     osg::Geode* geode = new osg::Geode;
     _splashFBOCamera->addChild(geode);
     geode->addDrawable(geometry);
@@ -529,7 +529,15 @@ SplashScreen::TextItem *SplashScreen::addText(osg::Geode* geode ,
     t->setFont(path.utf8Str());
     t->setColor(textColor);
     t->setFontResolution(64, 64);
-    t->setText(text, osgText::String::Encoding::ENCODING_UTF8);
+
+    if (text.empty()) {
+        // An empty string stops the primitives from being marked as dirty and causes a crash.
+        // See https://gitlab.com/flightgear/flightgear/-/issues/3043
+        t->setText(" ", osgText::String::Encoding::ENCODING_UTF8);
+    } else {
+        t->setText(text, osgText::String::Encoding::ENCODING_UTF8);
+    }
+
     t->setBackdropType(osgText::Text::OUTLINE);
     t->setBackdropColor(osg::Vec4(0.2, 0.2, 0.2, 1));
     t->setBackdropOffset(0.04);
@@ -574,7 +582,7 @@ void SplashScreen::TextItem::recomputeSize(int height) const
     if (heightFraction < 0.0) {
         heightFraction = 9999.0;
     }
-    
+
     double baseSize = fractionalCharSize;
     textNode->update();
     while ((textNode->getLineCount() > maxLineCount) ||
@@ -616,7 +624,7 @@ std::string SplashScreen::selectSplashImage()
     }
 
     if (!paths.empty()) {
-        // Select a random useable texture
+        // Select a random usable texture
         const int index = (int)(sg_random() * paths.size());
         return paths.at(index).utf8Str();
     }
@@ -632,7 +640,7 @@ std::string SplashScreen::selectSplashImage()
     }), paths.end());
 
     if (!paths.empty()) {
-        // Select a random useable texture
+        // Select a random usable texture
         const int index = (int)(sg_random() * paths.size());
         return paths.at(index).utf8Str();
     }
@@ -755,7 +763,7 @@ void SplashScreen::updateSplashSpinner()
 void SplashScreen::updateTipText()
 {
     // after 5 seconds change the tip; but only do this once.
-    // the tip will be set into a property and this in turn will be 
+    // the tip will be set into a property and this in turn will be
     // displayed by the content using a dynamic-text element
     if (!_haveSetStartupTip && (_splashStartTime.elapsedMSec() > 5000)) {
         _haveSetStartupTip = true;
@@ -764,7 +772,7 @@ void SplashScreen::updateTipText()
         if (tipCount == 0) {
             return;
         }
-        
+
         int tipIndex = globals->get_props()->getIntValue("/sim/session",0) % tipCount;
 
         std::string tipText = locale->getLocalizedStringWithIndex("tip", "tips", tipIndex);
@@ -793,58 +801,52 @@ void SplashScreen::resize( int width, int height )
 #endif
 
     const double screenAspectRatio = static_cast<double>(width) / height;
- 
+
     // resize all of the images on the splash screen (including the background)
     for (const auto& _imageItem : _imageItems) {
-     
-         if (_imageItem.isBackground) {
-             // background is based around the centre of the screen 
-             // and adjusted so that the largest of width,height is used
-             // to fill the screen so that the image fits without distortion 
-             double halfWidth = width * 0.5;
-             double halfHeight = height * 0.5;
+        if (_imageItem.isBackground) {
+            // background is based around the centre of the screen
+            // and adjusted so that the largest of width,height is used
+            // to fill the screen so that the image fits without distortion
+            double halfWidth = width * 0.5;
+            double halfHeight = height * 0.5;
 
-             // if this is the background image and we are in legacy mode then
-             // resize to keep the image scaled to fit in the centre
-             if (_legacySplashScreenMode) {
-                 halfWidth = width * 0.35;
-                 halfHeight = height * 0.35;
+            // if this is the background image and we are in legacy mode then
+            // resize to keep the image scaled to fit in the centre
+            if (_legacySplashScreenMode) {
+                halfWidth = width * 0.35;
+                halfHeight = height * 0.35;
 
-                 if (screenAspectRatio > _imageItem.aspectRatio) {
-                     // screen is wider than our image
-                     halfWidth = halfHeight;
-                 }
-                 else {
-                     // screen is taller than our image
-                     halfHeight = halfWidth;
-                 }
-             }
-             else {
-                 // adjust vertex positions; image covers entire area
-                 if (screenAspectRatio > _imageItem.aspectRatio) {
-                     // screen is wider than our image
-                     halfHeight = halfWidth / _imageItem.aspectRatio;
-                 }
-                 else {
-                     // screen is taller than our image
-                     halfWidth = halfHeight * _imageItem.aspectRatio;
-                 }
-             }
+                if (screenAspectRatio > _imageItem.aspectRatio) {
+                    // screen is wider than our image
+                    halfWidth = halfHeight;
+                } else {
+                    // screen is taller than our image
+                    halfHeight = halfWidth;
+                }
+            } else {
+                // adjust vertex positions; image covers entire area
+                if (screenAspectRatio > _imageItem.aspectRatio) {
+                    // screen is wider than our image
+                    halfHeight = halfWidth / _imageItem.aspectRatio;
+                } else {
+                    // screen is taller than our image
+                    halfWidth = halfHeight * _imageItem.aspectRatio;
+                }
+            }
             (*_imageItem.vertexArray)[0] = osg::Vec3(-halfWidth, -halfHeight, 0.0);
             (*_imageItem.vertexArray)[1] = osg::Vec3(halfWidth, -halfHeight, 0.0);
             (*_imageItem.vertexArray)[2] = osg::Vec3(halfWidth, halfHeight, 0.0);
             (*_imageItem.vertexArray)[3] = osg::Vec3(-halfWidth, halfHeight, 0.0);
-        }
-        else {
+        } else {
+            float imageWidth = _imageItem.width * width;
+            float imageHeight = _imageItem.imageHeight * (imageWidth / _imageItem.imageWidth);
 
-             float imageWidth = _imageItem.width * width;
-             float imageHeight = _imageItem.imageHeight * (imageWidth / _imageItem.imageWidth);
+            float imageX = _imageItem.x * (width - imageWidth);
+            float imageY = (1.0 - _imageItem.y) * (height - imageHeight);
 
-             float imageX = _imageItem.x * (width - imageWidth);
-             float imageY = (1.0 - _imageItem.y) * (height - imageHeight);
-
-             float originX = imageX - (width * 0.5);
-             float originY = imageY - (height * 0.5);
+            float originX = imageX - (width * 0.5);
+            float originY = imageY - (height * 0.5);
 
             (*_imageItem.vertexArray)[0] = osg::Vec3(originX, originY, 0.0);
             (*_imageItem.vertexArray)[1] = osg::Vec3(originX + imageWidth, originY, 0.0);
