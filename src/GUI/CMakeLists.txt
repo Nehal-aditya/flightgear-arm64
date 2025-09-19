@@ -98,6 +98,7 @@ if (HAVE_QT)
                             NavaidDiagram.hxx
                             SetupRootDialog.cxx
                             SetupRootDialog.hxx
+                            UpdateDownloadedFGData.hxx
                             AircraftItemModel.hxx
                             AircraftItemModel.cxx
                             CatalogListModel.cxx
@@ -128,6 +129,8 @@ if (HAVE_QT)
                             LauncherController.hxx
                             AddOnsController.cxx
                             AddOnsController.hxx
+                            QtDNSClient.hxx
+                            QtDNSClient.cxx
                             AddonsModel.cxx
                             AddonsModel.hxx
                             PixmapImageItem.cxx

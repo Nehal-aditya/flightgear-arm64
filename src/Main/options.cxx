@@ -2317,6 +2317,7 @@ public:
   OptionValueVec values;
   simgear::PathList configFiles;
   simgear::PathList propertyFiles;
+  SGPath customDownloadDir;
 };
 
 Options* Options::sharedInstance()
@@ -2984,14 +2985,25 @@ SGPath defaultDownloadDir()
     return globals->get_fg_home();
 }
 
-SGPath Options::actualDownloadDir()
+SGPath Options::actualDownloadDir() const
 {
+    // explicitly set download-dir on the command line always takes
+    // precedent
     SGPath downloadDir = SGPath::fromUtf8(valueForOption("download-dir"));
     if (!downloadDir.isNull()) {
         return downloadDir;
     }
 
+    if (!p->customDownloadDir.isNull()) {
+        return p->customDownloadDir;
+    }
+
     return defaultDownloadDir();
+}
+
+void Options::setCustomDownloadDir(const SGPath& path)
+{
+    p->customDownloadDir = path;
 }
 
 SGPath defaultTextureCacheDir()
@@ -3419,26 +3431,16 @@ void Options::printJSONReport() const
   cout << rootNode.dump(2) << endl;
 }
 
-#if defined(__CYGWIN__)
-SGPath Options::platformDefaultRoot() const
-{
-  return SGPath::fromUtf8("../data");
-}
-
-#elif defined(SG_WINDOWS)
-SGPath Options::platformDefaultRoot() const
-{
-  return SGPath::fromUtf8("..\\data");
-}
-#elif defined(SG_MAC)
-// platformDefaultRoot defined in CocoaHelpers.mm
-#else
 SGPath Options::platformDefaultRoot() const
 {
     return SGPath::fromUtf8(PKGLIBDIR);
 }
 
-#endif
+SGPath Options::downloadedDataRoot() const
+{
+    const auto fgdataDirName = "fgdata_" + std::to_string(FLIGHTGEAR_MAJOR_VERSION) + "_" + std::to_string(FLIGHTGEAR_MINOR_VERSION);
+    return actualDownloadDir() / fgdataDirName;
+}
 
 string_list Options::extractOptions() const
 {
@@ -3492,6 +3494,9 @@ OptionResult Options::setupRoot(int argc, char** argv)
         if (root.isNull()) {
             usingDefaultRoot = true;
             root = platformDefaultRoot();
+            if (!isFGData(root)) {
+                root = downloadedDataRoot();
+            }
             SG_LOG(SG_GENERAL, SG_INFO, "platform default fg_root = " << root );
         } else {
             SG_LOG(SG_GENERAL, SG_INFO, "Qt launcher set fg_root = " << root );
@@ -3500,7 +3505,7 @@ OptionResult Options::setupRoot(int argc, char** argv)
   }
 
   globals->set_fg_root(root);
-    string base_version = fgBasePackageVersion(root);
+  string base_version = fgBasePackageVersion(root);
 
 
 #if defined(HAVE_QT)
@@ -3665,6 +3670,32 @@ std::string Options::getArgValue(int argc, char* argv[], const char* checkArg)
     } // of args iteration
 
     return {};
+}
+
+bool Options::isFGData(const SGPath& p)
+{
+    // check assorted files exist in the root location, to avoid any chance of
+    // selecting an incomplete base package. This is probably overkill but does
+    // no harm
+    const string_list files{
+        "version"s,
+        "defaults.xml"s,
+        "Materials/base/materials-base.xml"s,
+        "gui/menubar.xml"s,
+        "Timezone/zone.tab"s};
+
+    if (!p.exists()) {
+        return false;
+    }
+
+    for (const auto& f : files) {
+        const auto path = p / f;
+        if (!path.exists()) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 } // of namespace flightgear

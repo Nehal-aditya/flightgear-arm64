@@ -59,6 +59,13 @@ SGPath defaultDownloadDir();
      */
         static void reset();
 
+        /**
+          * @brief check if a path 'looks like' it contains FGData by checking for
+          * the presence of various standard files. Note this does not do any version
+          * checking.
+          */
+        static bool isFGData(const SGPath& p);
+
         ~Options();
 
         /**
@@ -224,6 +231,17 @@ SGPath defaultDownloadDir();
         SGPath platformDefaultRoot() const;
 
         /**
+          * @brief Default location to download / update FGData. In older versions this
+          * was located inside the application (eg Contents/Resources on macOS). But
+          * now we download the data, it needs to be user-writeable.
+          *
+          * The value is computed based on actualDownloadDir at present
+          *
+          * @return SGPath
+          */
+        SGPath downloadedDataRoot() const;
+
+        /**
        * @brief extractOptions - extract the currently set options as
        * a string array. This can be used to examine what options were
        * requested / set so far.
@@ -234,7 +252,10 @@ SGPath defaultDownloadDir();
         /**
         @brief the actual download dir in use, which may be the default or a user-supplied value
      */
-        SGPath actualDownloadDir();
+        SGPath actualDownloadDir() const;
+
+        /** @brief define custom location for downloads from external storage. */
+        void setCustomDownloadDir(const SGPath& p);
 
         /**
        * Convert string to bool for boolean options. When param cannot be recognized as bool then
