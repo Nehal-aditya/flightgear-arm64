@@ -3,10 +3,13 @@
 
 #pragma once
 
+#pragma once
+
+#include <memory>
 #include <set>
+
 #include <QObject>
 #include <QVariant>
-#include <QScopedPointer>
 
 // forwards decls
 class QSettings;
@@ -93,5 +96,5 @@ private:
 
     std::vector<Arg> m_values;
     QString m_defaultDownloadDir;
-    mutable QScopedPointer<QSettings> m_loadSaveSettings;
+    mutable std::unique_ptr<QSettings> m_loadSaveSettings;
 };

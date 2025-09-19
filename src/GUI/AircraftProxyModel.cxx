@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "AircraftProxyModel.hxx"
 
 #include <QSettings>
@@ -5,6 +8,7 @@
 
 #include "AircraftItemModel.hxx"
 #include "FavouriteAircraftData.hxx"
+#include "SettingsWrapper.hxx"
 
 #include <simgear/package/Package.hxx>
 
@@ -221,7 +225,7 @@ bool AircraftProxyModel::filterAircraft(const QModelIndex &sourceIndex) const
 
 void AircraftProxyModel::loadRatingsSettings()
 {
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     m_ratingsFilter = settings.value("enable-ratings-filter", true).toBool();
     QVariantList vRatings = settings.value("ratings-filter").toList();
     if (vRatings.size() == 4) {
@@ -235,7 +239,7 @@ void AircraftProxyModel::loadRatingsSettings()
 
 void AircraftProxyModel::saveRatingsSettings()
 {
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     settings.setValue("enable-ratings-filter", m_ratingsFilter);
     QVariantList vRatings;
     for (int i=0; i < 4; ++i) {
@@ -256,9 +260,9 @@ bool AircraftProxyModel::lessThan(const QModelIndex& left, const QModelIndex& ri
     const QString variantRight = right.data(AircraftVariantDescriptionRole).toString();
 
     // we're comparing by default by variantDescriptionRole but when the variantDescriptionRole
-    // is equal (e.g. two the same aircrafts installed from different sources - fgaddon + git)
+    // is equal (e.g. two of the same aircraft installed from different sources - fgaddon + git)
     // we sort them by the AircraftURIRole. This ensures that the order of the same
-    // items in the view is constant
+    // items in the view is consistent
     const int c = QString::compare(variantLeft, variantRight, Qt::CaseInsensitive);
     if (c == 0) {
         const QString uriLeft = left.data(AircraftURIRole).toString();

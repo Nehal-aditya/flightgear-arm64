@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "AddOnsController.hxx"
 
 #include <QSettings>
@@ -18,14 +21,15 @@
 
 #include "Add-ons/Addon.hxx"
 #include "Add-ons/addon_fwd.hxx"
-#include "LocalAircraftCache.hxx"
-#include "LauncherMainWindow.hxx"
-#include "CatalogListModel.hxx"
 #include "AddonsModel.hxx"
+#include "CatalogListModel.hxx"
 #include "InstallSceneryDialog.hxx"
-#include "QtLauncher.hxx"
-#include "PathListModel.hxx"
 #include "LaunchConfig.hxx"
+#include "LauncherMainWindow.hxx"
+#include "LocalAircraftCache.hxx"
+#include "PathListModel.hxx"
+#include "QtLauncher.hxx"
+#include "SettingsWrapper.hxx"
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -63,7 +67,7 @@ AddOnsController::AddOnsController(LauncherMainWindow *parent, LaunchConfig* con
         setLocalAircraftPaths();
     });
 
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     int size = settings.beginReadArray("addon-modules");
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);
@@ -106,7 +110,7 @@ void AddOnsController::setLocalAircraftPaths()
 
     const auto commandLineAircraftPaths = flightgear::Options::sharedInstance()->valuesForOption("fg-aircraft");
     for (const auto& arg : commandLineAircraftPaths) {
-        // inner loop becuase a single arg can define multiple paths
+        // inner loop because a single arg can define multiple paths
         for (const auto& p : SGPath::pathsFromUtf8(arg)) {
             paths.append(QString::fromStdString(p.utf8Str()));
         }
@@ -264,7 +268,7 @@ QString AddOnsController::addSceneryPath() const
 
 QString AddOnsController::installCustomScenery()
 {
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     QString downloadDir = settings.value("download-dir").toString();
     InstallSceneryDialog dlg(nullptr, downloadDir);
     if (dlg.exec() == QDialog::Accepted) {
@@ -282,7 +286,6 @@ void AddOnsController::openDirectory(QString path)
 
 void AddOnsController::setAddons(AddonsModel* addons)
 {
-    
 }
 
 
@@ -295,7 +298,7 @@ void AddOnsController::setModulePaths(QStringList modulePaths)
 
     m_addonsModuleModel->resetData(modulePaths);
 
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     int i = 0;
     settings.beginWriteArray("addon-modules");
     for (const QString& path : modulePaths) {
@@ -314,7 +317,7 @@ void AddOnsController::setModulePaths(QStringList modulePaths)
 void AddOnsController::officialCatalogAction(QString s)
 {
     if (s == "hide") {
-        QSettings settings;
+        auto settings = flightgear::getQSettings();
         settings.setValue("hide-official-catalog-message", true);
     } else if (s == "add-official") {
         flightgear::addSentryBreadcrumb("user requested to add the default catalog", "info");
@@ -326,7 +329,7 @@ void AddOnsController::officialCatalogAction(QString s)
 
 bool AddOnsController::shouldShowOfficialCatalogMessage() const
 {
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     bool showOfficialCatalogMesssage = !globals->get_subsystem<FGHTTPClient>()->isDefaultCatalogInstalled();
     if (settings.value("hide-official-catalog-message").toBool()) {
         showOfficialCatalogMesssage = false;
@@ -354,7 +357,7 @@ void AddOnsController::onCatalogsChanged()
 
 void AddOnsController::onAddonsChanged()
 {
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
 
     int i = 0;
     settings.beginWriteArray("addon-modules");
@@ -386,7 +389,7 @@ void AddOnsController::collectArgs()
 
     // add-on module paths
     // we could query this directly from AddonsModel, but this is simpler right now
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     int size = settings.beginReadArray("addon-modules");
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);

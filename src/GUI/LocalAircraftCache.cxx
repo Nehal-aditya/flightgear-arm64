@@ -1,20 +1,7 @@
 // Written by James Turner, started October 2017
 //
-// Copyright (C) 2017 James Turner <zakalawe@mac.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2017 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
 
@@ -38,6 +25,8 @@
 #include <simgear/misc/ResourceManager.hxx>
 #include <simgear/props/props_io.hxx>
 #include <simgear/structure/exception.hxx>
+
+#include "SettingsWrapper.hxx"
 
 static quint32 CACHE_VERSION = 13;
 
@@ -87,7 +76,7 @@ bool AircraftItem::initFromFile(QDir dir, QString filePath)
     }
 
     if (sim->hasChild("long-description")) {
-        // clean up any XML whitspace in the text.
+        // clean up any XML whitespace in the text.
         ls.strings["desc"] = QString::fromStdString(sim->getStringValue("long-description")).simplified();
     }
 
@@ -123,7 +112,7 @@ bool AircraftItem::initFromFile(QDir dir, QString filePath)
     if (sim->hasChild("previews")) {
         SGPropertyNode_ptr previewsNode = sim->getChild("previews");
         const QString aircraftPrefix = "Aircraft/" + dir.dirName() + "/";
-        
+
         for (auto previewNode : previewsNode->getChildren("preview")) {
             // add file path as url
             QString pathInXml = QString::fromStdString(previewNode->getStringValue("path"));
@@ -134,14 +123,14 @@ bool AircraftItem::initFromFile(QDir dir, QString filePath)
             if (pathInXml.startsWith(aircraftPrefix)) {
                 pathInXml = pathInXml.mid(aircraftPrefix.length());
             }
-            
+
             QString previewPath = dir.absoluteFilePath(pathInXml);
-            
+
             if (!QFile::exists(previewPath)) {
                 qWarning() << "Missing local preview file" << previewPath;
                 continue;
             }
-            
+
             previews.append(QUrl::fromLocalFile(previewPath));
 
         }
@@ -435,7 +424,7 @@ protected:
 private:
     void readCache()
     {
-        QSettings settings;
+        auto settings = flightgear::getQSettings();
         QByteArray cacheData = settings.value("aircraft-cache").toByteArray();
         if (!cacheData.isEmpty()) {
             QDataStream ds(cacheData);
@@ -462,7 +451,7 @@ private:
 
     void writeCache()
     {
-        QSettings settings;
+        auto settings = flightgear::getQSettings();
         QByteArray cacheData;
         {
             QDataStream ds(&cacheData, QIODevice::WriteOnly);
@@ -488,7 +477,7 @@ private:
             if (m_done) { // thread termination bail-out
                 return;
             }
-            
+
             QDir childDir(child.absoluteFilePath());
             QMap<QString, AircraftItemPtr> baseAircraft;
             QList<AircraftItemPtr> variants;
@@ -797,9 +786,9 @@ int LocalAircraftCache::ratingFromProperties(SGPropertyNode* node, int ratingInd
 LocalAircraftCache::ParseSetXMLResult
 LocalAircraftCache::readAircraftProperties(const SGPath &setPath, SGPropertyNode_ptr props)
 {
-    // it woudld be race-y to touch the reosurce provider while the scan thread is running
+    // it would be race-y to touch the resource provider while the scan thread is running
     // and our provider would confuse current-aircraft-dir lookups as well. Since we
-    // can't do thread-specific reosurce providers, we just bail here.
+    // can't do thread-specific resource providers, we just bail here.
     if (d->m_scanThread) {
         return ParseSetXMLResult::Retry;
     }
@@ -813,7 +802,7 @@ LocalAircraftCache::readAircraftProperties(const SGPath &setPath, SGPropertyNode
 
     // we want to know the aircraft directory the aircraft lives in. This might
     // be a manually added path (for local aircraft) or the install dir for the
-    // hangar (for packaged aircraft). Becuase -set.xml files are always found at
+    // hangar (for packaged aircraft). Because -set.xml files are always found at
     // /some/path/foobarAircraft/<aircraft-name>/some-set.xml, and the path we
     // we want here is /some/path/foodbarAircraft, we use dirPath twice, and this
     // works any kind of installed aircraft

@@ -1,20 +1,7 @@
 // Written by James Turner, started October 2020
 //
-// Copyright (C) 2020 James Turner <james@flightgear.org>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2020 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
 
@@ -32,6 +19,7 @@
 #include <Main/globals.hxx>
 
 #include "LauncherNotificationsController.hxx"
+#include "SettingsWrapper.hxx"
 
 namespace {
 
@@ -69,7 +57,7 @@ private:
     void didFail()
     {
         // reset check time to tomorrow
-        QSettings settings;
+        auto settings = flightgear::getQSettings();
         const QDate n = QDate::currentDate().addDays(1);
         settings.setValue("next-update-check", n);
     }
@@ -81,10 +69,10 @@ private:
 
 UpdateChecker::UpdateChecker(QObject *parent) : QObject(parent)
 {
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     QDate nextCheck = settings.value("next-update-check").toDate();
     if (!nextCheck.isValid()) {
-        // check tomorrow, so we don't nag immediately after installaion
+        // check tomorrow, so we don't nag immediately after installation
         const QDate n = QDate::currentDate().addDays(1);
         settings.setValue("next-update-check", n);
 
@@ -101,7 +89,7 @@ UpdateChecker::UpdateChecker(QObject *parent) : QObject(parent)
         const string_list versionParts = simgear::strutils::split(FLIGHTGEAR_VERSION, ".");
         _majorMinorVersion = versionParts[0] + "." + versionParts[1];
 
-        // definitiely want to ensure HTTPS for this.
+        // definitely want to ensure HTTPS for this.
         std::string uri = "https://download.flightgear.org/builds/" + _majorMinorVersion + "/updates.xml";
         m_request = new UpdateXMLRequest(this, uri);
         http->makeRequest(m_request);
@@ -121,7 +109,7 @@ UpdateChecker::~UpdateChecker()
 
 void UpdateChecker::ignoreUpdate()
 {
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     if (m_status == PointUpdate) {
         settings.setValue("ignored-point-release", _currentUpdateVersion);
     } else if (m_status == MajorUpdate) {
@@ -141,7 +129,7 @@ void UpdateChecker::receivedUpdateXML(QByteArray body)
     SGPropertyNode_ptr props(new SGPropertyNode);
     const auto s = body.toStdString();
 
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     auto nc = LauncherNotificationsController::instance();
 
     try {

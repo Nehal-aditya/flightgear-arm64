@@ -2,21 +2,8 @@
 //
 // Written by James Turner, started December 2014.
 //
-// Copyright (C) 2014 James Turner <zakalawe@mac.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2014 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
 
@@ -40,6 +27,7 @@
 #include <Viewer/WindowBuilder.hxx>
 
 #include "QtLauncher.hxx"
+#include "SettingsWrapper.hxx"
 
 QString SetupRootDialog::rootPathKey()
 {
@@ -98,7 +86,7 @@ bool SetupRootDialog::runDialog(PromptState prompt)
 
 flightgear::SetupRootResult SetupRootDialog::restoreUserSelectedRoot(SGPath& sgpath)
 {
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     QString path = settings.value(rootPathKey()).toString();
 	bool ask = flightgear::checkKeyboardModifiersForSettingFGRoot();
     if (ask || (path == QStringLiteral("!ask"))) {
@@ -142,7 +130,7 @@ flightgear::SetupRootResult SetupRootDialog::restoreUserSelectedRoot(SGPath& sgp
 
 void SetupRootDialog::askRootOnNextLaunch()
 {
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     // set the option to the magic marker value
     settings.setValue(rootPathKey(), "!ask");
 }
@@ -213,7 +201,7 @@ void SetupRootDialog::onBrowse()
 
     globals->set_fg_root(m_browsedPath.toStdString());
 
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     settings.setValue(rootPathKey(), m_browsedPath);
 
     accept(); // we're done
@@ -232,7 +220,7 @@ void SetupRootDialog::onUseDefaults()
     SGPath r = flightgear::Options::sharedInstance()->platformDefaultRoot();
     m_browsedPath = QString::fromStdString(r.utf8Str());
     globals->set_fg_root(r);
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     settings.remove(rootPathKey()); // remove any setting
     accept();
 }
@@ -265,18 +253,20 @@ void SetupRootDialog::updatePromptText()
         break;
 
     case ChoseInvalidLocation:
-        t = tr("The choosen location (%1) does not appear to contain FlightGear data files. Please try another location.").arg(m_browsedPath);
+        t = tr("The chosen location (%1) does not appear to contain FlightGear data files. Please try another location.").arg(m_browsedPath);
         break;
 
     case ChoseInvalidVersion:
     {
         QString curVer = QString::fromStdString(fgBasePackageVersion(m_browsedPath.toStdString()));
-        t = tr("The choosen location (%1) contains files for version %2, but this is FlightGear %3. " \
-               "Please update or try another location").arg(m_browsedPath).arg(curVer).arg(QString::fromLatin1(FLIGHTGEAR_VERSION));
+        t = tr("The chosen location (%1) contains files for version %2, but this is FlightGear %3. "
+               "Please update or try another location")
+                .arg(m_browsedPath)
+                .arg(curVer)
+                .arg(QString::fromLatin1(FLIGHTGEAR_VERSION));
         break;
     }
     }
 
     m_ui->promptText->setText(t);
 }
-

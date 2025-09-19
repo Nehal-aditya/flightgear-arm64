@@ -1,20 +1,7 @@
 // Written by James Turner, started October 2020
 //
-// Copyright (C) 2020 James Turner <james@flightgear.org>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2020 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "LauncherNotificationsController.hxx"
 
@@ -22,6 +9,8 @@
 #include <QDebug>
 #include <QQmlEngine>
 #include <QSettings>
+
+#include "SettingsWrapper.hxx"
 
 static LauncherNotificationsController* static_instance = nullptr;
 
@@ -71,14 +60,14 @@ public:
 
     void removeIndex(int row)
     {
-        // work aroud the role-by-role destruction order of model data
+        // work around the role-by-role destruction order of model data
         // clear out the source first so the Loader unloads, before we
         // null args. This avoids 'args is null' warnings from the loaded
         // notification
         _data[row].source.clear();
         const auto idx = index(row, 0);
         emit dataChanged(idx, idx, {SourceRole});
-        
+
         // now we can remove everything else
         beginRemoveRows({}, row, row);
         _data.erase(_data.begin() + row);
@@ -151,7 +140,7 @@ void LauncherNotificationsController::dismissIndex(int index)
     // restore defaults will of course clear these settings, but that's
     // desirable anyway.
     if (d.args.property("persistent-dismiss").toBool()) {
-        QSettings settings;
+        auto settings = flightgear::getQSettings();
         settings.beginGroup("dismissed-notifications");
         settings.setValue(d.id, true);
     }
@@ -163,7 +152,7 @@ void LauncherNotificationsController::postNotification(QString id, QUrl source, 
 {
     const bool supportsPersistentDismiss = args.property("persistent-dismiss").toBool();
     if (supportsPersistentDismiss) {
-        QSettings settings;
+        auto settings = flightgear::getQSettings();
         settings.beginGroup("dismissed-notifications");
         bool alreadyDimissed = settings.value(id).toBool();
         if (alreadyDimissed) {

@@ -2,21 +2,8 @@
 //
 // Written by James Turner, started December 2014.
 //
-// Copyright (C) 2014 James Turner <zakalawe@mac.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2014 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
 
@@ -75,6 +62,7 @@
 #include "LauncherMainWindow.hxx"
 #include "LocalAircraftCache.hxx"
 #include "PathListModel.hxx"
+#include "SettingsWrapper.hxx"
 #include "SetupRootDialog.hxx"
 #include "UnitsModel.hxx"
 
@@ -183,7 +171,7 @@ bool initNavCache()
                 didComplete = true;
                 return;
             }
-            
+
             auto it = std::find_if(progressStrings.begin(), progressStrings.end(), [phase]
                                    (const ProgressLabel& l) { return l.phase == phase; });
             if (it == progressStrings.end()) {
@@ -330,8 +318,8 @@ namespace flightgear
 static std::unique_ptr<QApplication> static_qApp;
 
 
-// becuase QTranslator::load (find_translation, internally) doesn't handle the
-// sciprt part of a language code like: zh-Hans-CN, use this code borrowed from
+// because QTranslator::load (find_translation, internally) doesn't handle the
+// script part of a language code like: zh-Hans-CN, use this code borrowed from
 // Qt Creator to do the search manually.
 void selectUITranslation()
 {
@@ -365,11 +353,6 @@ void initApp(int& argc, char** argv, bool doInitQSettings)
     if (!qtInitDone) {
         qtInitDone = true;
 
-        // Disable Qt 5.15 warnings about obsolete Connections/onFoo: syntax
-        // we cannot use the new syntax
-        // as long as we have to support Qt 5.9
-        qputenv("QT_LOGGING_RULES", "qt.qml.connections.warning=false");
-        
         initQtResources(); // can't be called from a namespace
 
         s_argc = argc; // QApplication only stores a reference to argc,
@@ -385,10 +368,10 @@ void initApp(int& argc, char** argv, bool doInitQSettings)
         // Optimus / AMD symbols in main.cxx).
         QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
 
-		// becuase on Windows, Qt only supports integer scaling factors,
-		// forceibly enabling HighDpiScaling is controversial.
-		// leave things unset here, so users can use env var
-		// QT_AUTO_SCREEN_SCALE_FACTOR=1 to enable it at runtime
+        // because on Windows, Qt only supports integer scaling factors,
+        // forceibly enabling HighDpiScaling is controversial.
+        // leave things unset here, so users can use env var
+        // QT_AUTO_SCREEN_SCALE_FACTOR=1 to enable it at runtime
 
 #if !defined (SG_WINDOWS) && (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
@@ -486,6 +469,28 @@ void initQSettings()
     }
 }
 
+QSettings getQSettings()
+{
+#if defined(SG_MAC)
+    return QSettings(QSettings::IniFormat, QSettings::UserScope, QCoreApplication::organizationDomain(),
+                     "FlightGear_" FLIGHTGEAR_MAJOR_MINOR_VERSION);
+#else
+    return QSettings(QSettings::IniFormat, QSettings::UserScope, QCoreApplication::organizationName(),
+                     "FlightGear_" FLIGHTGEAR_MAJOR_MINOR_VERSION);
+#endif
+}
+
+std::unique_ptr<QSettings> createQSettings()
+{
+#if defined(SG_MAC)
+    return std::make_unique<QSettings>(QSettings::IniFormat, QSettings::UserScope, QCoreApplication::organizationDomain(),
+                                       "FlightGear_" FLIGHTGEAR_MAJOR_MINOR_VERSION);
+#else
+    return std::make_unique<QSettings>(QSettings::IniFormat, QSettings::UserScope, QCoreApplication::organizationName(),
+                                       "FlightGear_" FLIGHTGEAR_MAJOR_MINOR_VERSION);
+#endif
+}
+
 bool checkKeyboardModifiersForSettingFGRoot()
 {
     initQSettings();
@@ -570,7 +575,7 @@ void launcherSetSceneryPaths()
 
 // mimic what options.cxx does, so we can find airport data for parking
 // positions
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     // append explicit scenery paths
     Q_FOREACH(QString path, PathListModel::readEnabledPaths("scenery-paths-v2")) {
         globals->append_fg_scenery(path.toStdString());
@@ -614,7 +619,7 @@ bool runLauncherDialog()
         // launcher GUI. We'll disable the UI.
         LaunchConfig::setEnableDownloadDirUI(false);
     } else {
-        QSettings settings;
+        auto settings = flightgear::getQSettings();
         QString downloadDir = settings.value("download-dir").toString();
         if (!downloadDir.isEmpty()) {
             options->setOption("download-dir", downloadDir.toStdString());

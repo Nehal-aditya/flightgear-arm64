@@ -1,7 +1,12 @@
+// SPDX-FileCopyrightText: 2019 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "PathListModel.hxx"
 
 #include <QSettings>
 #include <QDebug>
+
+#include "SettingsWrapper.hxx"
 
 PathListModel::PathListModel(QObject *pr) :
     QAbstractListModel(pr)
@@ -16,7 +21,7 @@ PathListModel::~PathListModel()
 
 void PathListModel::loadFromSettings(QString key)
 {
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     if (!settings.contains(key))
         return;
 
@@ -53,13 +58,13 @@ void PathListModel::saveToSettings(QString key) const
         vl.append(v);
     }
 
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     settings.setValue(key, vl);
 }
 
 QStringList PathListModel::readEnabledPaths(QString settingsKey)
 {
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     if (!settings.contains(settingsKey))
         return {};
 
@@ -185,4 +190,3 @@ void PathListModel::swapIndices(int indexA, int indexB)
     emit dataChanged(index(indexB), index(indexB));
     emit enabledPathsChanged();
 }
-

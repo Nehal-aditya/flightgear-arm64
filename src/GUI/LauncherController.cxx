@@ -63,6 +63,7 @@
 #include "RecentAircraftModel.hxx"
 #include "RecentLocationsModel.hxx"
 #include "RouteDiagram.hxx"
+#include "SettingsWrapper.hxx"
 #include "SetupRootDialog.hxx"
 #include "StackController.hxx"
 #include "ThumbnailImageItem.hxx"
@@ -125,7 +126,7 @@ LauncherController::LauncherController(QObject *parent, QWindow* window) :
             &LocalAircraftCache::scanCompleted,
             this, &LauncherController::updateSelectedAircraft);
 
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     m_aircraftModel->setPackageRoot(globals->packageRoot());
 
     m_aircraftGridMode = settings.value("aircraftGridMode").toBool();
@@ -239,20 +240,20 @@ void LauncherController::initQML(int& styleTypeId)
 
 void LauncherController::setInAppMode()
 {
-	m_inAppMode = true;
-	m_keepRunningInAppMode = true;
-	m_appModeResult = true;
+    m_inAppMode = true;
+    m_keepRunningInAppMode = true;
+    m_appModeResult = true;
     emit inAppChanged();
 }
 
 bool LauncherController::keepRunningInAppMode() const
 {
-	return m_keepRunningInAppMode;
+    return m_keepRunningInAppMode;
 }
 
 bool LauncherController::inAppResult() const
 {
-	return m_appModeResult;
+    return m_appModeResult;
 }
 
 void LauncherController::initialRestoreSettings()
@@ -294,7 +295,7 @@ void LauncherController::initialRestoreSettings()
 
 void LauncherController::saveSettings()
 {
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     if (m_window->windowState() != Qt::WindowMaximized) {
         settings.setValue("window-geometry", m_window->geometry());
     }
@@ -372,7 +373,7 @@ void LauncherController::doRun()
     flightgear::addSentryBreadcrumb("acft path:" + m_selectedAircraftInfo->pathOnDisk().toStdString(), "info");
 
     // aircraft paths
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     QString downloadDir = settings.value("downloadSettings/downloadDir").toString();
     if (!downloadDir.isEmpty()) {
         QDir d(downloadDir);
@@ -641,25 +642,25 @@ void LauncherController::fly()
         return;
     m_flyRequested = true;
 
-	if (m_inAppMode) {
-		doApply();
-		m_keepRunningInAppMode = false;
-		m_appModeResult = true;
-	} else {
-		doRun();
-		qApp->exit(1);
-	}
+    if (m_inAppMode) {
+        doApply();
+        m_keepRunningInAppMode = false;
+        m_appModeResult = true;
+    } else {
+        doRun();
+        qApp->exit(1);
+    }
 }
 
 void LauncherController::quit()
 {
-	if (m_inAppMode) {
-		m_keepRunningInAppMode = false;
-		m_appModeResult = false;
-	} else {
+    if (m_inAppMode) {
+        m_keepRunningInAppMode = false;
+        m_appModeResult = false;
+    } else {
         saveSettings();
-		qApp->exit(0);
-	}
+        qApp->exit(0);
+    }
 }
 
 QStringList LauncherController::combinedSummary() const
@@ -790,7 +791,7 @@ QVariantList LauncherController::defaultSplashUrls() const
 
 QVariant LauncherController::loadUISetting(QString name, QVariant defaultValue) const
 {
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     if (!settings.contains(name))
         return defaultValue;
     return settings.value(name);
@@ -798,7 +799,7 @@ QVariant LauncherController::loadUISetting(QString name, QVariant defaultValue) 
 
 void LauncherController::saveUISetting(QString name, QVariant value) const
 {
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     settings.setValue(name, value);
 }
 
@@ -831,55 +832,55 @@ QPointF LauncherController::mapToGlobal(QQuickItem *item, const QPointF &pos) co
 
 void LauncherController::requestRestoreDefaults()
 {
-	QMessageBox mbox;
-	mbox.setText(tr("Restore all settings to defaults?"));
-	mbox.setInformativeText(tr("Restoring settings to their defaults may affect available add-ons such as scenery or aircraft."));
-	QPushButton* quitButton = mbox.addButton(tr("Restore and restart now"), QMessageBox::YesRole);
-	mbox.addButton(QMessageBox::Cancel);
-	mbox.setDefaultButton(QMessageBox::Cancel);
-	mbox.setIconPixmap(QPixmap(":/app-icon-large"));
+    QMessageBox mbox;
+    mbox.setText(tr("Restore all settings to defaults?"));
+    mbox.setInformativeText(tr("Restoring settings to their defaults may affect available add-ons such as scenery or aircraft."));
+    QPushButton* quitButton = mbox.addButton(tr("Restore and restart now"), QMessageBox::YesRole);
+    mbox.addButton(QMessageBox::Cancel);
+    mbox.setDefaultButton(QMessageBox::Cancel);
+    mbox.setIconPixmap(QPixmap(":/app-icon-large"));
 
-	mbox.exec();
-	if (mbox.clickedButton() != quitButton) {
-		return;
-	}
+    mbox.exec();
+    if (mbox.clickedButton() != quitButton) {
+        return;
+    }
 
-	{
-		QSettings settings;
-		settings.clear();
-		settings.setValue("restore-defaults-on-run", true);
-	}
+    {
+        auto settings = flightgear::getQSettings();
+        settings.clear();
+        settings.setValue("restore-defaults-on-run", true);
+    }
 
-	flightgear::restartTheApp();
+    flightgear::restartTheApp();
 }
 
 void LauncherController::requestChangeDataPath()
 {
-	QString currentLocText;
-	QSettings settings;
-	QString root = settings.value(SetupRootDialog::rootPathKey()).toString();
-	if (root.isNull()) {
-		currentLocText = tr("Currently the built-in data files are being used");
-	}
-	else {
-		currentLocText = tr("Currently using location: %1").arg(root);
-	}
+    QString currentLocText;
+    auto settings = flightgear::getQSettings();
+    QString root = settings.value(SetupRootDialog::rootPathKey()).toString();
+    if (root.isNull()) {
+        currentLocText = tr("Currently the built-in data files are being used");
+    } else {
+        currentLocText = tr("Currently using location: %1").arg(root);
+    }
 
-	QMessageBox mbox;
-	mbox.setText(tr("Change the data files used by FlightGear?"));
-	mbox.setInformativeText(tr("FlightGear requires additional files to operate. "
-		"(Also called the base package, or fg-data) "
-		"You can restart FlightGear and choose a "
-		"different data files location, or restore the default setting. %1").arg(currentLocText));
-	QPushButton* quitButton = mbox.addButton(tr("Restart FlightGear now"), QMessageBox::YesRole);
-	mbox.addButton(QMessageBox::Cancel);
-	mbox.setDefaultButton(QMessageBox::Cancel);
-	mbox.setIconPixmap(QPixmap(":/app-icon-large"));
+    QMessageBox mbox;
+    mbox.setText(tr("Change the data files used by FlightGear?"));
+    mbox.setInformativeText(tr("FlightGear requires additional files to operate. "
+                               "(Also called the base package, or fg-data) "
+                               "You can restart FlightGear and choose a "
+                               "different data files location, or restore the default setting. %1")
+                                .arg(currentLocText));
+    QPushButton* quitButton = mbox.addButton(tr("Restart FlightGear now"), QMessageBox::YesRole);
+    mbox.addButton(QMessageBox::Cancel);
+    mbox.setDefaultButton(QMessageBox::Cancel);
+    mbox.setIconPixmap(QPixmap(":/app-icon-large"));
 
-	mbox.exec();
-	if (mbox.clickedButton() != quitButton) {
-		return;
-	}
+    mbox.exec();
+    if (mbox.clickedButton() != quitButton) {
+        return;
+    }
 
     SetupRootDialog::askRootOnNextLaunch();
     flightgear::restartTheApp();
@@ -913,7 +914,7 @@ void LauncherController::setAircraftGridMode(bool aircraftGridMode)
     if (m_aircraftGridMode == aircraftGridMode)
         return;
 
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     settings.setValue("aircraftGridMode", aircraftGridMode);
     m_aircraftGridMode = aircraftGridMode;
     emit aircraftGridModeChanged(m_aircraftGridMode);
@@ -922,7 +923,7 @@ void LauncherController::setAircraftGridMode(bool aircraftGridMode)
 void LauncherController::resetGettingStartedTips()
 {
     {
-        QSettings settings;
+        auto settings = flightgear::getQSettings();
         settings.beginGroup("GettingStarted-DontShow");
         settings.remove(""); // remove all keys in the current group
         settings.endGroup();

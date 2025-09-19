@@ -2,21 +2,8 @@
 //
 // Written by James Turner, started October 2015.
 //
-// Copyright (C) 2015 James Turner <zakalawe@mac.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2015 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "LocationController.hxx"
 
@@ -38,6 +25,7 @@
 #include "NavaidDiagram.hxx"
 #include "NavaidSearchModel.hxx"
 #include "QmlPositionedModel.hxx"
+#include "SettingsWrapper.hxx"
 
 #include <Airports/airport.hxx>
 #include <Airports/groundnetwork.hxx>
@@ -131,7 +119,7 @@ void LocationController::setLaunchConfig(LaunchConfig *config)
 
 void LocationController::restoreSearchHistory()
 {
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     m_recentLocations = loadPositionedList(settings.value("recent-locations"));
 }
 
@@ -375,7 +363,7 @@ void LocationController::showHistoryInSearchModel()
         qWarning() << Q_FUNC_INFO << "couldn't find default airport for:" << QString::fromStdString(defaultICAO);
     }
 
-    // Sentry FLIGHTGEAR-1BM indicates we are somtimes passing null pointers
+    // Sentry FLIGHTGEAR-1BM indicates we are sometimes passing null pointers
     // in this list; checks above are an attempt to diagnose this.
     m_searchModel->setItems(locs);
 }
@@ -670,10 +658,10 @@ QVariantMap LocationController::saveLocation() const
                 }
             }
 
-        } else { // not an aiport, must be a navaid
+        } else { // not an airport, must be a navaid
             locationSet.insert("location-navaid", QString::fromStdString(m_location->ident()));
             if (m_location->type() == FGPositioned::DME) {
-                // so we don't get ambiguous on VORTACs, explicity mark TACANs
+                // so we don't get ambiguous on VORTACs, explicitly mark TACANs
                 // otherwise every VORTAC would be ambiguous
                 locationSet.insert("location-is-tacan", true);
             }
@@ -828,7 +816,7 @@ void LocationController::setLocationProperties()
         fgSetString("/sim/presets/airport-id", "");
 
         // location is a navaid
-        // note setting the ident here is ambigious, we really only need and
+        // note setting the ident here is ambiguous, we really only need and
         // want the 'navaid-id' property. However setting the 'real' option
         // gives a better UI experience (eg existing Position in Air dialog)
         FGPositioned::Type ty = m_location->type();
@@ -895,7 +883,7 @@ void LocationController::applyPositionOffset()
     if (m_offsetEnabled) {
         // flip direction of azimuth to balance the flip done in fgApplyStartOffset
         // I don't know why that flip exists but changing it there will break
-        // command-line compatability so compensating here instead
+        // command-line compatibility so compensating here instead
         int offsetAzimuth = static_cast<int>(m_offsetRadial.value) - 180;
         m_config->setArg("offset-azimuth", QString::number(offsetAzimuth));
         const double offsetNm = m_offsetDistance.convertToUnit(Units::NauticalMiles).value;
@@ -917,7 +905,7 @@ void LocationController::applyAltitude()
         break;
 
     case Units::FeetAGL:
-        // fixme - allow the sim to accpet AGL start position
+        // fixme - allow the sim to accept AGL start position
         m_config->setArg("altitude", QString::number(m_altitude.value));
         break;
 
@@ -1030,7 +1018,7 @@ void LocationController::onCollectConfig()
         // of location is an airport
     } else {
         // location is a navaid
-        // note setting the ident here is ambigious, we really only need and
+        // note setting the ident here is ambiguous, we really only need and
         // want the 'navaid-id' property. However setting the 'real' option
         // gives a better UI experience (eg existing Position in Air dialog)
         FGPositioned::Type ty = m_location->type();
@@ -1218,6 +1206,6 @@ void LocationController::addToRecent(FGPositionedRef pos)
     }
 
     m_recentLocations.insert(m_recentLocations.begin(), pos);
-    QSettings settings;
+    auto settings = flightgear::getQSettings();
     settings.setValue("recent-locations", savePositionList(m_recentLocations));
 }
