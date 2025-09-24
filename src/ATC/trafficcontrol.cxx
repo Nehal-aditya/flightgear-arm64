@@ -401,7 +401,7 @@ void FGTrafficRecord::setPositionAndHeading(double lat, double lon,
     speed = spd;
     altitude = alt;
     if (leg > AILeg::UNKNOWN) {
-        this->leg = leg;
+        this->setLeg(leg);
     }
 }
 

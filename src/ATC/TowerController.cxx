@@ -88,14 +88,30 @@ void FGTowerController::announcePosition(int id,
             ActiveRunwayQueue* rwy = parent->getRunwayQueue(intendedRoute->getRunway());
             rwy->requestTimeSlot(sharedRec);
             SG_LOG(SG_ATC, SG_DEBUG, ref->getTrafficRef()->getCallSign() << "(" << ref->getID() << ") You are number " << rwy->getrunwayQueueSize() << " for takeoff from " << parent->parent()->getId() << "/" << rwy->getRunwayName() << " " << ref);
-            airportGroundRadar->add(sharedRec);
+            if (airportGroundRadar->add(sharedRec)) {
+                SG_LOG(SG_ATC, SG_DEBUG,
+                       "Added " << (sharedRec)->getCallsign() << "(" << (sharedRec)->getId() << ") " << sharedRec);
+
+            } else {
+                SG_LOG(SG_ATC, SG_DEV_WARN,
+                       "Not Added " << (sharedRec)->getCallsign() << "(" << (sharedRec)->getId() << ") " << sharedRec);
+            }
         } else if (leg < AILeg::CRUISE) {
             SG_LOG(SG_ATC, SG_DEBUG, ref->getTrafficRef()->getCallSign() << "(" << ref->getID() << ") Goodbye from " << intendedRoute->departureAirport()->getId() << " " << ref->getTrafficRef() << " " << ref);
         } else {
             SG_LOG(SG_ATC, SG_DEBUG, ref->getTrafficRef()->getCallSign() << "(" << ref->getID() << ") Welcome to " << intendedRoute->arrivalAirport()->getId() << " " << ref->getTrafficRef() << " " << ref);
-            airportGroundRadar->add(sharedRec);
         }
     } else {
+        if ((*i)->getLeg() != leg && leg == AILeg::PARKING_TAXI) {
+            if (airportGroundRadar->add(*i)) {
+                SG_LOG(SG_ATC, SG_DEBUG,
+                       "Added " << (*i)->getCallsign() << "(" << (*i)->getId() << ") " << (*i));
+
+            } else {
+                SG_LOG(SG_ATC, SG_DEV_WARN,
+                       "Not Added " << (*i)->getCallsign() << "(" << (*i)->getId() << ") " << (*i));
+            }
+        }
         if (((*i)->getLeg() > AILeg::RUNWAY_TAXI) && ((*i)->getLeg() < AILeg::CRUISE ||
                                                       (*i)->getLeg() > AILeg::LANDING)) {
             // We must be on the ground

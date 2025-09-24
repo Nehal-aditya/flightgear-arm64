@@ -206,7 +206,6 @@ public:
 
     void incrementLeg()
     {
-        SG_LOG(SG_AI, SG_BULK, "Increment Leg " << leg);
         leg++;
     };
 

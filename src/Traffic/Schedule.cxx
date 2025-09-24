@@ -568,9 +568,7 @@ FGScheduledFlight* FGAISchedule::findAvailableFlight(const string& currentDestin
     for (FGScheduledFlightVecIterator i = fltBegin; i != fltEnd; ++i) {
         //bool valid = true;
         if (!(*i)->isAvailable()) {
-            SG_LOG(SG_AI, SG_BULK, "" << (*i)->getCallSign() << "is no longer available");
-
-            //cerr << (*i)->getCallSign() << "is no longer available" << endl;
+            SG_LOG(SG_AI, SG_BULK, "" << (*i)->getCallSign() << " is no longer available");
             continue;
         }
         if (!((*i)->getRequirement() == req)) {

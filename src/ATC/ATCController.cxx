@@ -449,12 +449,16 @@ void FGATCController::handover(SGSharedPtr<FGTrafficRecord> aiObject, int leg)
     if (aiObject) {
         aiObject->clearResolveCircularWait();
         activeTraffic.push_back(aiObject);
-        if (leg == AILeg::LANDING) {
+        if (leg == AILeg::PARKING_TAXI) {
             // The first contact
-            SG_LOG(SG_ATC, SG_DEBUG,
-                   "Added " << (aiObject)->getCallsign() << "(" << (aiObject)->getId() << ") " << aiObject);
+            if (airportGroundRadar->add(aiObject)) {
+                SG_LOG(SG_ATC, SG_DEBUG,
+                       "Added " << (aiObject)->getCallsign() << "(" << (aiObject)->getId() << ") " << aiObject);
 
-            airportGroundRadar->add(aiObject);
+            } else {
+                SG_LOG(SG_ATC, SG_DEV_WARN,
+                       "Not Added " << (aiObject)->getCallsign() << "(" << (aiObject)->getId() << ") " << getName());
+            }
         }
     }
 }

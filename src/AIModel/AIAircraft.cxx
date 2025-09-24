@@ -1103,6 +1103,7 @@ bool FGAIAircraft::handleAirportEndPoints(FGAIWaypoint* prev, time_t now)
     if (prev->contains("legend"s)) {
         int nextLeg = determineNextLeg(fp->getLeg());
         while (nextLeg != fp->getLeg()) {
+            SG_LOG(SG_AI, SG_BULK, getCallSign() << "(" << getID() << ") Increment Leg " << nextLeg << " Leggy " << fp->getLeg());
             fp->incrementLeg();
         }
     }
@@ -1580,7 +1581,7 @@ bool FGAIAircraft::reachedEndOfCruise(double& distance)
             SG_LOG(SG_AI, SG_BULK, "Descent speed     : " << descentSpeed);
             SG_LOG(SG_AI, SG_BULK, "VerticalDistance  : " << verticalDistance << ". Altitude : " << altitude_ft << ". Elevation " << trafficRef->getArrivalAirport()->getElevation());
             SG_LOG(SG_AI, SG_BULK, "DecentTimeNeeded  : " << descentTimeNeeded);
-            SG_LOG(SG_AI, SG_BULK, "DistanceCovered   : " << distanceCoveredByDescent);
+            SG_LOG(SG_AI, SG_BULK, "DistanceCovered   : " << distanceCoveredByDescent << " Dist : " << dist);
         }
 
         distance = distanceCoveredByDescent;

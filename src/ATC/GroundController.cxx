@@ -113,7 +113,14 @@ void FGGroundController::announcePosition(int id,
         }
         SG_LOG(SG_ATC, SG_DEBUG,
                "Added " << sharedRec->getCallsign() << "(" << sharedRec->getId() << ") " << sharedRec);
-        airportGroundRadar->add(sharedRec);
+        if (airportGroundRadar->add(sharedRec)) {
+            SG_LOG(SG_ATC, SG_DEBUG,
+                   "Added " << (sharedRec)->getCallsign() << "(" << (sharedRec)->getId() << ") " << sharedRec);
+
+        } else {
+            SG_LOG(SG_ATC, SG_DEV_WARN,
+                   "Not Added " << (sharedRec)->getCallsign() << "(" << (sharedRec)->getId() << ") " << sharedRec);
+        }
     } else {
         bool moved = airportGroundRadar->move(SGRect<double>(lat, lon), *i);
         if (!moved) {
