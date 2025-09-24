@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 pragma Singleton
 import QtQml 2.0
 
@@ -24,6 +27,9 @@ QtObject
     readonly property string disabledThemeColor: disabledTextColor
     readonly property string disabledMinorFrameColor: "#afafaf"
 
+    readonly property string noteFrameColor: "#fe6600"
+    readonly property string noteBackgroundColor: "#f6a773"
+
     readonly property string baseTextColor: "#2f2f2f"
     readonly property string themeContrastTextColor: "#efefef"
     readonly property string themeContrastLinkColor: baseTextColor
@@ -38,4 +44,3 @@ QtObject
 
     readonly property int menuItemHeight: baseFontPixelSize + (margin * 2)
 }
-

@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2014 James Turner
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 <RCC>
     <qresource prefix="/">
         <file alias="app-icon-large">../../icons/128x128/apps/flightgear.png</file>
@@ -41,6 +46,7 @@
         <file>qml/ListHeaderBox.qml</file>
         <file>qml/UpdateAllPanel.qml</file>
         <file>qml/Style.qml</file>
+        <file>qml/Note.qml</file>
         <file>qml/qmldir</file>
         <file>qml/ClickableText.qml</file>
         <file>qml/Section.qml</file>

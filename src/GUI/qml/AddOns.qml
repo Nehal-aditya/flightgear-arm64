@@ -79,7 +79,7 @@ Item {
                     }
 
                     ClickableText {
-                        visible: !_addOns.isOfficialHangarRegistered && !addCatalogPanel.isActive
+                        visible: !_addOns.isOfficialHangarRegistered && !addCatalogPanel.isActive && _launcher.isNetworkAvailable
                         anchors { left: parent.left; right: parent.right; margins: Style.margin }
                         text : qsTr("The official FlightGear aircraft hangar is not set up. To add it, click here.");
                         onClicked:  {

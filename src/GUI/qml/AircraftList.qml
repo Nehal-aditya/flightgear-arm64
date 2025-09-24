@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.2
 import FlightGear.Launcher 1.0 as FG
 import FlightGear 1.0
@@ -98,6 +101,8 @@ FocusScope
 
             TabButton {
                 id: browseButton
+                enabled: _launcher.isNetworkAvailable
+
                 text: qsTr("Browse")
                 onClicked: {
                     root.state = "browse"
@@ -120,6 +125,7 @@ FocusScope
 
             TabButton {
                 id: updatesButton
+                enabled: _launcher.isNetworkAvailable
               //  visible: _launcher.baseAircraftModel.showUpdateAll
                 text: qsTr("Updates")
                 onClicked: {
@@ -248,7 +254,7 @@ FocusScope
 
             StyledText {
                 anchors.fill: parent
-                text: qsTr("To install additional aircraft, click the the 'Browse' tab at the top of this page.")
+                text: qsTr("To install additional aircraft, click the the 'Browse' tab at the top of this page. (This requires a network connection)")
                 wrapMode: Text.WordWrap
                 font.pixelSize: Style.headingFontPixelSize
                 horizontalAlignment: Text.AlignHCenter
@@ -422,4 +428,3 @@ FocusScope
 
 
 }
-

@@ -9,6 +9,7 @@
 
 #include "QtLauncher.hxx"
 
+#include <QtNetwork/qnetworkinformation.h>
 #include <locale.h>
 
 // Qt
@@ -29,6 +30,10 @@
 #include <QTranslator>
 #include <QUrl>
 #include <QtGlobal>
+
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 1, 0))
+#include <QNetworkInformation>
+#endif
 
 // Simgear
 #include <simgear/timing/timestamp.hxx>
@@ -436,6 +441,10 @@ void initApp(int& argc, char** argv, bool doInitQSettings)
 #endif
     }
 
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 3, 0))
+    QNetworkInformation::loadDefaultBackend();
+#endif
+
     if (doInitQSettings) {
         initQSettings();
     }
@@ -640,9 +649,6 @@ bool runLauncherDialog()
     globals->get_locale()->selectLanguage(lang);
     globals->packageRoot()->setLocale(globals->get_locale()->getPreferredLanguage());
 
-    // startup the HTTP system now since packages needs it
-    FGHTTPClient::getOrCreate();
-
     QPointer<NaturalEarthDataLoaderThread> naturalEarthLoader = new NaturalEarthDataLoaderThread;
     naturalEarthLoader->start();
 
@@ -651,6 +657,10 @@ bool runLauncherDialog()
     fgqt_setPoseAsStandaloneApp(false);
 
     LauncherMainWindow dlg(false);
+
+    // startup the HTTP system now since packages needs it
+    // do this *after* LauncherController so pkg::Root::setOnline has been invoked
+    FGHTTPClient::getOrCreate();
 
     if (options->isOptionSet("fullscreen")) {
         dlg.showFullScreen();
