@@ -22,6 +22,7 @@
 
 #include "QtLauncher.hxx"
 
+#include <QtNetwork/qnetworkinformation.h>
 #include <locale.h>
 
 // Qt
@@ -95,6 +96,7 @@
 using namespace flightgear;
 using namespace simgear::pkg;
 using std::string;
+using namespace std::chrono_literals;
 
 namespace { // anonymous namespace
 
@@ -723,11 +725,10 @@ bool runLauncherDialog()
     // try to initialise various Cocoa structures.
     flightgear::WindowBuilder::setPoseAsStandaloneApp(false);
 
-    LauncherMainWindow dlg(false);
 
-    // startup the HTTP system now since packages needs it
-    // do this *after* LauncherController so pkg::Root::setOnline has been invoked
     FGHTTPClient::getOrCreate();
+
+    LauncherMainWindow dlg(false);
 
     if (options->isOptionSet("fullscreen")) {
         dlg.showFullScreen();

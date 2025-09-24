@@ -78,6 +78,7 @@
 
 
 using namespace simgear::pkg;
+using namespace std::chrono_literals;
 
 LauncherController::LauncherController(QObject *parent, QWindow* window) :
     QObject(parent),
@@ -179,9 +180,14 @@ LauncherController::LauncherController(QObject *parent, QWindow* window) :
     connect(QNetworkInformation::instance(), &QNetworkInformation::reachabilityChanged,
             this, &LauncherController::onReachabilityChanged);
     onReachabilityChanged();
+#else
+    QTimer::singleShot(2s, this, []() {
+        auto pkgRoot = globals->packageRoot();
+        pkgRoot->refresh(true);
+    });
 #endif
 
-    QTimer::singleShot(2000, this, &LauncherController::checkForOldDownloadDir);
+    QTimer::singleShot(2s, this, &LauncherController::checkForOldDownloadDir);
 }
 
 void LauncherController::initQML(int& styleTypeId)
@@ -1033,6 +1039,11 @@ void LauncherController::onReachabilityChanged()
     const auto online = (QNetworkInformation::instance()->reachability() == QNetworkInformation::Reachability::Online);
     auto pkgRoot = globals->packageRoot();
     pkgRoot->setOnlineMode(online);
+
+    if (online) {
+        pkgRoot->refresh(true);
+    }
+
     emit networkAvailableChanged();
 #endif
 }
