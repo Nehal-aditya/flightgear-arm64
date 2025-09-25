@@ -2,28 +2,10 @@
 //
 // Written by Curtis Olson, started January 1998.
 //
-// Copyright (C) 1997  Curtis L. Olson  - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-FileCopyrightText: 1998 Curtis L. Olson
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include <config.h>
 
 #include <algorithm>
 #include <functional>
@@ -45,6 +27,7 @@
 #include <Main/fg_props.hxx>
 #include <Main/globals.hxx>
 #include <Main/sentryIntegration.hxx>
+#include <Model/validateSharedModels.hxx>
 #include <Scripting/NasalModelData.hxx>
 #include <Scripting/NasalSys.hxx>
 #include <Viewer/renderer.hxx>
@@ -102,7 +85,6 @@ static void torrentScheduleTile(const SGBucket& bucket)
             torrent->add_torrent_url(torrent_url, torrent_path, out_path);
         }
     }
-    
 }
 
 #endif
@@ -150,7 +132,7 @@ public:
         _lodRoughDelta->removeChangeListener(this);
     }
 
-    virtual void valueChanged(SGPropertyNode* prop)
+    void valueChanged(SGPropertyNode* prop) override
     {
         if (prop == _useVBOsProp) {
             bool useVBOs = prop->getBoolValue();
@@ -166,7 +148,7 @@ public:
               if (pager) pager->setTargetMaximumNumberOfPageLOD(v);
             }
         } else if (prop == _lodDetailed || prop == _lodBareDelta || prop == _lodRoughDelta) {
-            // compatibility with earlier versions; set the static lod ranges appropriately as otherwise (bad) self managed
+            // compatibility with earlier versions; set the static LOD ranges appropriately as otherwise (bad) self managed
             // LOD on scenery with range animations doesn't work.
             // see also /sim/rendering/enable-range-lod-animations - which is false by default in > 2019.2 which also fixes
             // the scenery but in a more efficient way.
@@ -231,9 +213,7 @@ FGTileMgr::FGTileMgr():
 }
 
 
-FGTileMgr::~FGTileMgr()
-{
-}
+FGTileMgr::~FGTileMgr() = default;
 
 // Initialize the Tile Manager subsystem
 void FGTileMgr::init()
@@ -304,7 +284,7 @@ void FGTileMgr::reinit()
 
     if (scenerySuffixes.empty()) {
         // if preferences didn't load, use some default
-        scenerySuffixes = {"Objects", "Terrain"}; // defaut values
+        scenerySuffixes = {"Objects", "Terrain"}; // default values
     }
 
     #ifdef SG_TORRENT
@@ -412,8 +392,8 @@ bool FGTileMgr::sched_tile( const SGBucket& b, double priority, bool current_vie
             SG_LOG( SG_TERRAIN, SG_DEBUG, "  New tile cache size " << (int)tile_cache.get_size() );
         }
 
-        // update tile's properties.  We ensure the top level VPB tiles have maximum priority.  
-        // The LoD system will take care of appropriate prioritization of the subtiles
+        // update tile's properties.  We ensure the top level VPB tiles have maximum priority.
+        // The LOD system will take care of appropriate prioritization of the sub-tiles
         tile_cache.request_tile(v, 1.0, current_view, duration);
     }
 
@@ -525,7 +505,7 @@ void FGTileMgr::update_queues(bool& isDownloadingScenery)
         {
             // Prepare the ssg nodes corresponding to each tile.
             // Set the ssg transform and update it's range selector
-            // based on current visibilty
+            // based on current visibility
             e->prep_ssg_node(vis);
 
             if (!e->is_loaded()) {
@@ -630,6 +610,12 @@ void FGTileMgr::update(double)
         {
             _scenery_loaded->setBoolValue(true);
             fgSplashProgress("");
+
+            // by this time Models/ should be in-sync, so run the check now.
+            // we could do this in a listener on the property, but we already have
+            // 'special' knowledge of Models/ in isTileDirSyncing so this feels
+            // reasonable.
+            flightgear::validateSharedModels();
         }
         else
         {

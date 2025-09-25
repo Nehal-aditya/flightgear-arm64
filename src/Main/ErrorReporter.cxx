@@ -14,6 +14,7 @@
 #include <deque>
 #include <map>
 #include <mutex>
+#include <string>
 
 #include <simgear/debug/ErrorReportingCallback.hxx>
 #include <simgear/debug/LogCallback.hxx>
@@ -31,6 +32,7 @@
 #include <Main/locale.hxx>
 #include <Main/options.hxx>
 #include <Main/sentryIntegration.hxx>
+#include <Model/validateSharedModels.hxx>
 #include <Scripting/NasalClipboard.hxx> // clipboard access
 
 using simgear::LoadFailure;
@@ -63,10 +65,12 @@ enum class Aggregation {
     InputDevice,
     FGData,
     MultiPlayer,
-    Unknown,     ///< error coudln't be attributed more specifcially
-    OutOfMemory, ///< separate category to give it a custom message
+    Unknown,      ///< error coudln't be attributed more specifcially
+    OutOfMemory,  ///< separate category to give it a custom message
+    SharedModels, ///< special category, for when shared models are not found
     Traffic,
-    ShadersEffects
+    ShadersEffects,
+    NetworkFailure, ///< category for issues related to (local) connectivity
 };
 
 // these should correspond to simgear::ErrorCode enum
@@ -110,8 +114,10 @@ string_list static_categoryIds = {
     "error-category-multiplayer",
     "error-category-unknown",
     "error-category-out-of-memory",
+    "error-category-shared-models",
     "error-category-traffic",
-    "error-category-shaders"};
+    "error-category-shaders",
+    "error-category-network"};
 
 class RecentLogCallback : public simgear::LogCallback
 {
@@ -241,6 +247,7 @@ public:
         bool haveShownToUser = false;
         OccurrenceVec errors;
         bool isCritical = false;
+        bool isMessage = false;
 
         bool addOccurence(const ErrorOcurrence& err);
 
@@ -291,17 +298,9 @@ public:
 
         const auto ty = it->type;
         // decide if it's a critical error or not
-        if ((ty == Aggregation::OutOfMemory) || (ty == Aggregation::InputDevice)) {
-            it->isCritical = true;
-        }
-
         // aircraft errors are critical if they occur during initial
         // aircraft load, otherwise we just show the warning
         if (!_haveDonePostInit && (ty == Aggregation::MainAircraft)) {
-            it->isCritical = true;
-        }
-
-        if (code == simgear::ErrorCode::LoadEffectsShaders) {
             it->isCritical = true;
         }
     }
@@ -394,6 +393,11 @@ public:
 
         // don't report socket or local IO issues to Sentry
         // https://gitlab.com/flightgear/fgmeta/-/issues/33
+        if (report.type == Aggregation::NetworkFailure) {
+            return;
+        }
+
+
         if (report.type == Aggregation::TerraSync) {
             if (report.allOccurences([](const ErrorOcurrence& oc) {
                     return (oc.type == LoadFailure::IOError) || (oc.type == LoadFailure::NetworkError);
@@ -416,6 +420,12 @@ public:
     bool dismissReportCommand(const SGPropertyNode* args, SGPropertyNode*);
     bool saveReportCommand(const SGPropertyNode* args, SGPropertyNode*);
     bool showErrorReportCommand(const SGPropertyNode* args, SGPropertyNode*);
+
+    /**
+     * @brief check if the report is still adding new errors, we avoid showing the UI
+     * until all the errors are collected/
+     */
+    bool reportIsOngoing(const AggregateReport& report) const;
 };
 
 auto ErrorReporter::ErrorReporterPrivate::mainAircraftAggregate()
@@ -443,6 +453,14 @@ auto ErrorReporter::ErrorReporterPrivate::getAggregateForOccurence(const ErrorRe
         return getAggregate(Aggregation::OutOfMemory, {});
     }
 
+    // errors about shared models typically indicate that the shared Models are
+    // missing or out of date.
+    if ((oc.type == simgear::LoadFailure::NotFound) || (oc.type == simgear::LoadFailure::BadData)) {
+        if (oc.detailedInfo.find("OBJECT_SHARED") != std::string::npos) {
+            return getAggregate(Aggregation::SharedModels);
+        }
+    }
+
     if (oc.hasContextKey("primary-aircraft")) {
         return mainAircraftAggregate();
     }
@@ -464,6 +482,13 @@ auto ErrorReporter::ErrorReporterPrivate::getAggregateForOccurence(const ErrorRe
     // all TerraSync coded errors go there: this is errors for the
     // actual download process (eg, failed to write to disk)
     if (oc.code == simgear::ErrorCode::TerraSync) {
+        const auto details = oc.detailedInfo;
+        if ((details.find("socket error") != std::string::npos) ||
+            (details.find("SSL connect error") != std::string::npos) ||
+            (details.find("Couldn't resolve host name") != std::string::npos)) {
+            return getAggregate(Aggregation::NetworkFailure, {});
+        }
+
         return getAggregate(Aggregation::TerraSync, {});
     }
 
@@ -572,6 +597,14 @@ auto ErrorReporter::ErrorReporterPrivate::getAggregate(Aggregation ag, const std
         r.parameter = param;
         _aggregated.push_back(r);
         it = _aggregated.end() - 1;
+    }
+
+    switch (ag) {
+    case Aggregation::OutOfMemory:
+    case Aggregation::NetworkFailure:
+        it->isMessage = true;
+    default:
+        break;
     }
 
     return it;
@@ -811,6 +844,18 @@ bool ErrorReporter::ErrorReporterPrivate::isAnyAircraftPath(const std::string& p
     return false;
 }
 
+bool ErrorReporter::ErrorReporterPrivate::reportIsOngoing(const AggregateReport& report) const
+{
+    // don't wait for these to end, since they might continue forever
+    if ((report.type == Aggregation::NetworkFailure) || (report.type == Aggregation::OutOfMemory)) {
+        return false;
+    }
+
+    SGTimeStamp n = SGTimeStamp::now();
+    const auto ageSec = (n - report.lastErrorTime).toSecs();
+    return (ageSec < NoNewErrorsTimeout);
+}
+
 
 ////////////////////////////////////////////
 
@@ -903,7 +948,6 @@ void ErrorReporter::init()
 
     if (dd || !d->_enabledNode->getBoolValue()) {
         d->_isEnabled = false;
-        SG_LOG(SG_GENERAL, SG_INFO, "Error reporting popups disabled");
     } else {
         d->_isEnabled = true;
     }
@@ -920,17 +964,18 @@ void ErrorReporter::update(double dt)
     bool showDialog = false;
     bool showPopup = false;
     bool havePendingReports = false;
+    bool showMessage = false;
 
     // beginning of locked section
     {
         std::lock_guard<std::mutex> g(d->_lock);
         // we are into the update phase (postinit has occurred). We treat errors
-        // after this point with lower severity, to avoid popups into a flight
+        // after this point with lower severity, to avoid popups during flight
         d->_haveDonePostInit = true;
 
         SGTimeStamp n = SGTimeStamp::now();
 
-        // ensure we pause between successive error dialogs
+        // ensure we delay between successive error dialogs
         const auto timeSinceLastDialog = (n - d->_nextShowTimeout).toSecs();
         if (timeSinceLastDialog < MinimumIntervalBetweenDialogs) {
             return;
@@ -955,29 +1000,39 @@ void ErrorReporter::update(double dt)
                 }
             }
 
+            // if we have shown the special 'missing shared models' warning,
+            // don't also report it here.
+            if (report.type == Aggregation::SharedModels) {
+                if (flightgear::haveShownSharedModelsError()) {
+                    report.haveShownToUser = true;
+                }
+            }
+
             if (report.haveShownToUser) {
                 // unless we ever re-show?
                 continue;
             }
 
-            const auto ageSec = (n - report.lastErrorTime).toSecs();
-            if (ageSec > NoNewErrorsTimeout) {
-                d->presentErrorToUser(report);
-                if (report.isCritical) {
-                    showDialog = true;
-                } else {
-                    showPopup = true;
-                }
-
-                if (d->_isEnabled) {
-                    d->sendReportToSentry(report);
-                }
-
-                // if we show one report, don't consider any others for now
-                break;
-            } else {
+            if (d->reportIsOngoing(report)) {
                 havePendingReports = true;
+                continue;
             }
+
+            d->presentErrorToUser(report);
+            if (report.isCritical) {
+                showDialog = true;
+            } else if (report.isMessage) {
+                showMessage = true;
+            } else {
+                showPopup = true;
+            }
+
+            if (d->_isEnabled) {
+                d->sendReportToSentry(report);
+            }
+
+            // if we show one report, don't consider any others for now
+            break;
         } // of active aggregates iteration
 
         if (!havePendingReports) {
@@ -988,6 +1043,16 @@ void ErrorReporter::update(double dt)
     if (!d->_isEnabled || flightgear::isHeadlessMode()) {
         showDialog = false;
         showPopup = false;
+        showMessage = false;
+    }
+
+    // show messages: these are local configuration pieces
+    // so always warn them to the user, eg DNS/network failure, out-of-memory, or
+    // missing shared models.
+    if (showMessage) {
+        SGPropertyNode_ptr popupArgs(new SGPropertyNode);
+        popupArgs->setStringValue("message", d->_displayNode->getStringValue("category"));
+        globals->get_commands()->execute("show-error-message-popup", popupArgs, nullptr);
     }
 
     // do not call into another subsystem with our lock held,
