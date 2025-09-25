@@ -19,7 +19,6 @@
 #include <QQmlComponent>
 #include <QQuickWindow>
 #include <QSettings>
-#include <QtNetwork/qnetworkinformation.h>
 
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 1, 0))
 #include <QNetworkInformation>
@@ -1040,8 +1039,10 @@ bool LauncherController::isNetworkAvailable() const
 
 void LauncherController::onReachabilityChanged()
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 1, 0))
     const auto online = (QNetworkInformation::instance()->reachability() == QNetworkInformation::Reachability::Online);
     auto pkgRoot = globals->packageRoot();
     pkgRoot->setOnlineMode(online);
     emit networkAvailableChanged();
+#endif
 }

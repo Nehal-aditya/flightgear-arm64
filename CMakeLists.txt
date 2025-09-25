@@ -391,6 +391,10 @@ if (ENABLE_QT)
             set(minQtVersion 5.12.1)
         endif()
 
+        # short-circuit the check in FindWrapOpenGL.cmake, to avoid looking for
+        # AGL.framework, which is removed from the Apple SDKs now
+        set(WrapOpenGL_AGL "-framework OpenGL")
+
         find_package(Qt${QT_VERSION_MAJOR} ${minQtVersion} REQUIRED COMPONENTS Widgets Gui Network Qml Quick Svg)
         if (NOT Qt${QT_VERSION_MAJOR}Widgets_FOUND)
             message(FATAL_ERROR "Qt support enabled, Qt was found but some required packages are missing, stopping.")

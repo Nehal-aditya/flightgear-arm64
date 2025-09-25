@@ -10,7 +10,6 @@
 #include <QDate>
 #include <QDebug>
 #include <QSettings>
-#include <QtNetwork/qnetworkinformation.h>
 
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 1, 0))
 #include <QNetworkInformation>

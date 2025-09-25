@@ -9,7 +9,6 @@
 
 #include "QtLauncher.hxx"
 
-#include <QtNetwork/qnetworkinformation.h>
 #include <locale.h>
 
 // Qt
