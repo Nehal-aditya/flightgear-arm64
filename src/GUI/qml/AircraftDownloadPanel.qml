@@ -29,6 +29,15 @@ Item {
 
     function updateState()
     {
+        if (!_launcher.isNetworkAvailable) {
+            if (installStatus == LocalAircraftCache.PackageInstalled) {
+                state = "installed";
+            } else {
+                state = "offline";
+            }
+            return;
+        }
+
         if (installStatus == LocalAircraftCache.PackageInstalled) {
             state = "installed";
         } else if (installStatus == LocalAircraftCache.PackageNotInstalled) {
@@ -127,6 +136,15 @@ Item {
             PropertyChanges { target: statusText; visible: false }
             PropertyChanges { target: sizeText; visible: false }
             PropertyChanges { target: confirmUninstallPanel; visible: true }
+        },
+
+        State {
+            name: "offline"
+
+            PropertyChanges { target: uninstallButton;  visible: false }
+            PropertyChanges { target: sizeText; visible: true }
+            PropertyChanges { target: confirmUninstallPanel; visible: false }
+            PropertyChanges { target: button; visible: false }
         }
     ]
 

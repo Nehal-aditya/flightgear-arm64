@@ -1,25 +1,9 @@
 // LauncherController.hxx - GUI launcher dialog using Qt5
 //
-// Written by James Turner, started March 2018.
-//
-// Copyright (C) 2018 James Turner <james@flightgear.org>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifndef LAUNCHERCONTROLLER_HXX
-#define LAUNCHERCONTROLLER_HXX
+#pragma once
 
 #include <QObject>
 #include <QUrl>
@@ -97,8 +81,10 @@ class LauncherController : public QObject
     Q_PROPERTY(int launchCount READ launchCount CONSTANT);
     Q_PROPERTY(int versionLaunchCount READ versionLaunchCount CONSTANT);
 
-    // property to indicate if we're disabling the aircraft selection because the user entered it manuall
+    // property to indicate if we're disabling the aircraft selection because the user entered it manually
     Q_PROPERTY(bool skipAircraftFromArgs MEMBER m_skipAircraftFromArgs NOTIFY skipAircraftFromArgsChanged)
+
+    Q_PROPERTY(bool isNetworkAvailable READ isNetworkAvailable NOTIFY networkAvailableChanged)
 public:
     explicit LauncherController(QObject *parent, QWindow* win);
 
@@ -158,7 +144,7 @@ public:
     Q_INVOKABLE void saveUISetting(QString name, QVariant value) const;
 
     /**
-     * @brief urlToDataPath - convetr  a FGData path into a gloabl file:/// URL suitable for Qt.openExternally()
+     * @brief urlToDataPath - convert a FGData path into a global file:/// URL suitable for Qt.openExternally()
      * @param relPath - the path rlative to FG_ROOT
      * @return a file QUrl
      */
@@ -199,10 +185,10 @@ public:
 	bool keepRunningInAppMode() const;
 	bool inAppResult() const;
 
-	QSize minWindowSize() const 
-	{
-		return m_minWindowSize; 
-	}
+    QSize minWindowSize() const
+    {
+        return m_minWindowSize;
+    }
 
     void setMinWindowSize(QSize sz);
 
@@ -229,11 +215,13 @@ public:
     }
 
     QString flyButtonLabel() const;
+
+    bool isNetworkAvailable() const;
 signals:
 
     void selectedAircraftChanged(QUrl selectedAircraft);
     void selectedAircraftStateChanged();
-    
+
     void searchChanged();
     void summaryChanged();
 	void minWindowSizeChanged();
@@ -248,6 +236,8 @@ signals:
 
     void didResetGettingStartedTips();
     void skipAircraftFromArgsChanged();
+
+    void networkAvailableChanged();
 public slots:
     void setSelectedAircraft(QUrl selectedAircraft);
 
@@ -300,6 +290,8 @@ private:
     QString selectAircraftStateAutomatically();
     bool haveOldWindowsDownloadDir() const;
 
+    void onReachabilityChanged();
+
 private:
     QWindow* m_window = nullptr;
 
@@ -336,5 +328,3 @@ private:
     bool m_flyRequested = false;
     bool m_skipAircraftFromArgs = false;
 };
-
-#endif // LAUNCHERCONTROLLER_HXX

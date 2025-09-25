@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
+#include "simgear/package/Root.hxx"
 
 #include "LauncherController.hxx"
 
@@ -18,6 +19,10 @@
 #include <QQmlComponent>
 #include <QQuickWindow>
 #include <QSettings>
+
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 1, 0))
+#include <QNetworkInformation>
+#endif
 
 // simgear headers
 #include <simgear/package/Install.hxx>
@@ -169,6 +174,12 @@ LauncherController::LauncherController(QObject *parent, QWindow* window) :
         m_versionLaunchCount = settings.value(versionedCountKey, 0).toInt();
         settings.setValue(versionedCountKey, m_versionLaunchCount + 1);
     }
+
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 1, 0))
+    connect(QNetworkInformation::instance(), &QNetworkInformation::reachabilityChanged,
+            this, &LauncherController::onReachabilityChanged);
+    onReachabilityChanged();
+#endif
 
     QTimer::singleShot(2000, this, &LauncherController::checkForOldDownloadDir);
 }
@@ -1005,4 +1016,23 @@ bool LauncherController::haveOldWindowsDownloadDir() const
     // tex-cache dir is created by default, so check if it's populated
     simgear::Dir texCacheDir(p / "TextureCache");
     return (texCacheDir.exists() && !texCacheDir.isEmpty());
+}
+
+bool LauncherController::isNetworkAvailable() const
+{
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 1, 0))
+    return QNetworkInformation::instance()->reachability() == QNetworkInformation::Reachability::Online;
+#else
+    return true;
+#endif
+}
+
+void LauncherController::onReachabilityChanged()
+{
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 1, 0))
+    const auto online = (QNetworkInformation::instance()->reachability() == QNetworkInformation::Reachability::Online);
+    auto pkgRoot = globals->packageRoot();
+    pkgRoot->setOnlineMode(online);
+    emit networkAvailableChanged();
+#endif
 }

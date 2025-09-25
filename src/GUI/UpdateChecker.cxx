@@ -20,9 +20,13 @@
 
 #include "UpdateChecker.hxx"
 
-#include <QSettings>
 #include <QDate>
 #include <QDebug>
+#include <QSettings>
+
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 1, 0))
+#include <QNetworkInformation>
+#endif
 
 #include <simgear/io/HTTPMemoryRequest.hxx>
 #include <simgear/props/props_io.hxx>
@@ -91,6 +95,14 @@ UpdateChecker::UpdateChecker(QObject *parent) : QObject(parent)
 
         return;
     }
+
+// if we're offline when the launcher starts, skip the check
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 1, 0))
+    if (QNetworkInformation::instance()->reachability() != QNetworkInformation::Reachability::Online) {
+        qInfo() << "Launcher update check: not online, deferring";
+        return;
+    }
+#endif
 
     if (nextCheck <= QDate::currentDate()) {
         // start a check

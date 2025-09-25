@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2017 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import FlightGear 1.0
 
@@ -6,6 +9,7 @@ Rectangle {
 
     property alias text: buttonText.text
     property bool active: false
+    property bool enabled: true
 
     signal clicked
 
@@ -18,13 +22,14 @@ Rectangle {
     StyledText {
         id: buttonText
         anchors.centerIn: parent
-        color: (active | mouse.containsMouse) ? Style.themeContrastTextColor : Style.baseTextColor
+        color: root.enabled ? ((active | mouse.containsMouse) ? Style.themeContrastTextColor : Style.baseTextColor) : Style.disabledTextColor
     }
 
     MouseArea {
         id: mouse
         anchors.fill: parent
-        hoverEnabled: true
+        hoverEnabled: root.enabled
+        enabled: root.enabled
 
         onClicked: {
             root.clicked();
