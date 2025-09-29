@@ -1,12 +1,6 @@
 // SPDX-FileCopyrightText: 2010 Durk Talsma
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-/**************************************************************************
- * The ATC Manager interfaces the users aircraft within the AI traffic system
- * and also monitors the ongoing AI traffic patterns for potential conflicts
- * and interferes where necessary.
- *************************************************************************/
-
 #pragma once
 
 #include <simgear/structure/SGReferenced.hxx>
@@ -22,6 +16,11 @@
 typedef std::vector<FGATCController*> AtcVec;
 typedef std::vector<FGATCController*>::iterator AtcVecIterator;
 
+/**
+ * The ATC Manager interfaces the users aircraft within the AI traffic system
+ * and also monitors the ongoing AI traffic patterns for potential conflicts
+ * and interferes where necessary.
+ */
 class FGATCManager : public SGSubsystem
 {
 private:

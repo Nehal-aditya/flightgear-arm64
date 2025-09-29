@@ -273,6 +273,68 @@ FGAIWaypoint* FGAIFlightPlan::cloneWithPos(FGAIAircraft* ac, FGAIWaypoint* aWpt,
     return wpt;
 }
 
+static double accelDistance(double v0, double v1, double accel)
+{
+    double t = fabs(v1 - v0) / accel; // time in seconds to change velocity
+    // area under the v/t graph: (t * v0) + (dV / 2t) where (dV = v1 - v0)
+    return t * 0.5 * (v1 + v0);
+}
+
+/**
+ * Find the best taxi route to the runway, considering acceleration and take-off distance.
+ * The route is selected so that the aircraft can accelerate to rotation speed
+ * and then to take-off speed within the available runway length.
+ * If no such route can be found, the shortest route is returned.
+ */
+
+FGTaxiRoute FGAIFlightPlan::findBestTaxiRouteToRunway(const FGAIAircraft* ac, const FGAirport* apt, const FGRunway* rwy, const FGGroundNetwork* gn, const FGTaxiNodeRef node)
+{
+    const double accel = ac->getPerformance()->acceleration();
+    const double vTaxi = ac->getPerformance()->vTaxi();
+    const double vRotate = ac->getPerformance()->vRotate();
+    const double vTakeoff = ac->getPerformance()->vTakeoff();
+
+    const double accelMetric = accel * SG_KT_TO_MPS;
+    const double vTaxiMetric = vTaxi * SG_KT_TO_MPS;
+    const double vRotateMetric = vRotate * SG_KT_TO_MPS;
+    const double vTakeoffMetric = vTakeoff * SG_KT_TO_MPS;
+
+    // distance from the runway threshold to accelerate to rotation speed.
+    const double d = accelDistance(vTaxiMetric, vRotateMetric, accelMetric) + 105.0;
+    // After rotation, we still need to accelerate to the take-off speed.
+    const double t = d + accelDistance(vRotateMetric, vTakeoffMetric, accelMetric);
+
+    FGTaxiRoute taxiRoute;
+    int lastId = -1;
+    const double scanLength = std::min((rwy->lengthM() - t), 500.0);
+    // We scan the runway for possible entry points, starting at the threshold,
+    for (double distanceDownRunway = 0; distanceDownRunway <= scanLength; distanceDownRunway += 10.0) {
+        //        SG_LOG(SG_AI, SG_WARN, "Found better taxi route to " << apt->getId() << "/" << rwy->ident() << " dist " << distanceDownRunway);
+        // Determine which node to end at.
+        SGGeod runwayTakeoff = rwy->pointOnCenterlineDisplaced(distanceDownRunway);
+        FGTaxiNodeRef runwayNode;
+        if (gn->getVersion() > 0) {
+            runwayNode = gn->findNearestNodeOnRunwayEntry(runwayTakeoff, rwy);
+            if (runwayNode && lastId != runwayNode->getIndex()) {
+                lastId = runwayNode->getIndex();
+                // Recalculate the actual distance down the runway to this node.
+                distanceDownRunway = SGGeodesy::distanceM(runwayNode->geod(), rwy->pointOnCenterlineDisplaced(0));
+            }
+        } else {
+            runwayNode = gn->findNearestNode(runwayTakeoff);
+        }
+
+        if (runwayNode && node && distanceDownRunway <= scanLength) {
+            auto tr = gn->findShortestRoute(node, runwayNode);
+            if (taxiRoute.empty() || (!tr.empty() && tr < taxiRoute)) {
+                taxiRoute = tr;
+                SG_LOG(SG_AI, SG_BULK, "Found better taxi route to " << apt->getId() << "/" << rwy->ident() << " with length " << tr.getDistance() << " at " << distanceDownRunway);
+            }
+        }
+    }
+    return taxiRoute;
+}
+
 
 void FGAIFlightPlan::createDefaultTakeoffTaxi(FGAIAircraft* ac,
                                               FGAirport* aAirport,
@@ -319,7 +381,7 @@ bool FGAIFlightPlan::createRunwayTaxi(FGAIAircraft* ac, bool firstFlight,
         gate = apt->getDynamics()->getAvailableParking(radius, fltType,
                                                        acType, airline);
         if (!gate.isValid()) {
-            SG_LOG(SG_AI, SG_WARN, "Could not find parking for a " << acType << " of flight type " << fltType << " of airline     " << airline << " at airport     " << apt->getId());
+            SG_LOG(SG_AI, SG_DEV_WARN, "Could not find parking for a " << acType << " of flight type " << fltType << " of airline     " << airline << " at airport     " << apt->getId());
         }
     }
 
@@ -335,11 +397,9 @@ bool FGAIFlightPlan::createRunwayTaxi(FGAIAircraft* ac, bool firstFlight,
     FGRunway* rwy = apt->getRunwayByIdent(activeRunway);
     SG_LOG(SG_AI, SG_BULK, "Taxi to " << apt->getId() << "/" << activeRunway);
     assert(rwy != NULL);
-    SGGeod runwayTakeoff = rwy->pointOnCenterlineDisplaced(5.0);
-
     FGGroundNetwork* gn = apt->groundNetwork();
     if (!gn->exists()) {
-        SG_LOG(SG_AI, SG_DEBUG, "No groundnet " << apt->getId() << " creating default taxi.");
+        SG_LOG(SG_AI, SG_DEV_WARN, "No groundnet " << apt->getId() << " creating default taxi.");
         createDefaultTakeoffTaxi(ac, apt, rwy);
         return true;
     }
@@ -360,29 +420,18 @@ bool FGAIFlightPlan::createRunwayTaxi(FGAIAircraft* ac, bool firstFlight,
             } else if (lastNodeVisited) {
                 node = lastNodeVisited;
             } else {
-                SG_LOG(SG_AI, SG_WARN, "Taxiroute could not be constructed no lastNodeVisited at " << (apt ? apt->getId() : "????") << gate.isValid());
+                SG_LOG(SG_AI, SG_DEV_WARN, "Taxiroute could not be constructed no lastNodeVisited at " << (apt ? apt->getId() : "????") << " " << gate.isValid());
             }
         }
     } else {
-        SG_LOG(SG_AI, SG_WARN, "Taxiroute could not be constructed no parking." << (apt ? apt->getId() : "????"));
+        SG_LOG(SG_AI, SG_DEV_WARN, "Taxiroute could not be constructed no parking." << (apt ? apt->getId() : "????"));
     }
 
-    FGTaxiNodeRef runwayNode;
-    if (gn->getVersion() > 0) {
-        runwayNode = gn->findNearestNodeOnRunwayEntry(runwayTakeoff);
-    } else {
-        runwayNode = gn->findNearestNode(runwayTakeoff);
-    }
-
-    FGTaxiRoute taxiRoute;
-    if (runwayNode && node) {
-        taxiRoute = gn->findShortestRoute(node, runwayNode);
-    } else {
-    }
+    FGTaxiRoute taxiRoute = findBestTaxiRouteToRunway(ac, apt, rwy, gn, node);
 
     // This may happen with buggy ground networks
     if (taxiRoute.size() <= 1) {
-        SG_LOG(SG_AI, SG_DEBUG, "Taxiroute too short " << apt->getId() << "creating default taxi.");
+        SG_LOG(SG_AI, SG_DEV_WARN, "Taxiroute too short " << apt->getId() << "creating default taxi.");
         createDefaultTakeoffTaxi(ac, apt, rwy);
         return true;
     }
@@ -408,11 +457,7 @@ bool FGAIFlightPlan::createRunwayTaxi(FGAIAircraft* ac, bool firstFlight,
             taxiRoute.next(skipNode, &route); // chop off the first waypoint, because that is already the last of the pushback route
         }
     }
-
     // push each node on the taxi route as a waypoint
-
-    //cerr << "Building taxi route" << endl;
-
     // Note that the line wpt->setRouteIndex was commented out by revision [afcdbd] 2012-01-01,
     // which breaks the rendering functions.
     // These can probably be generated on the fly however.
@@ -450,7 +495,6 @@ bool FGAIFlightPlan::createAlignRunway(FGAIAircraft* ac,
     }
     SG_LOG(SG_AI, SG_BULK, "Taxi to " << apt->getId() << "/" << activeRunway);
     assert(rwy != nullptr);
-    SGGeod runwayTakeoff = rwy->pointOnCenterlineDisplaced(5.0);
 
     FGGroundNetwork* gn = apt->groundNetwork();
     if (!gn->exists()) {
@@ -458,20 +502,8 @@ bool FGAIFlightPlan::createAlignRunway(FGAIAircraft* ac,
         createDefaultTakeoffTaxi(ac, apt, rwy);
         return true;
     }
-    FGTaxiNodeRef runwayNode;
-    if (gn->getVersion() > 0) {
-        runwayNode = gn->findNearestNodeOnRunwayEntry(runwayTakeoff);
-    } else {
-        runwayNode = gn->findNearestNode(runwayTakeoff);
-    }
-
     FGTaxiNodeRef startNode = gn->findNearestNode(pos);
-    FGTaxiRoute taxiRoute;
-    if (runwayNode) {
-        taxiRoute = gn->findShortestRoute(startNode, runwayNode);
-    } else {
-        SG_LOG(SG_AI, SG_WARN, "No Runwaynode " << apt->getId() << "/" << rwy->ident());
-    }
+    FGTaxiRoute taxiRoute = findBestTaxiRouteToRunway(ac, apt, rwy, gn, startNode);
 
     while (taxiRoute.next(startNode, &route)) {
         auto wptName = "align-" + std::to_string(startNode->getIndex());
@@ -602,14 +634,6 @@ bool FGAIFlightPlan::createLandingTaxi(FGAIAircraft* ac,
 
     arrivalTime = now + calcArrivalTimes();
     return true;
-}
-
-static double accelDistance(double v0, double v1, double accel)
-{
-    double t = fabs(v1 - v0) / accel; // time in seconds to change velocity
-    // area under the v/t graph: (t * v0) + (dV / 2t) where (dV = v1 - v0)
-    SG_LOG(SG_AI, SG_BULK, "Brakingtime " << t);
-    return t * 0.5 * (v1 + v0);
 }
 
 // find the horizontal distance to gain the specific altitude, holding

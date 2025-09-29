@@ -314,17 +314,78 @@ FGTaxiNodeRef FGGroundNetwork::findNearestNodeOffRunway(const SGGeod& aGeod, FGR
     return *node;
 }
 
-FGTaxiNodeRef FGGroundNetwork::findNearestNodeOnRunwayEntry(const SGGeod& aGeod) const
+/**
+ * Returns the nearest node on the runway where the connected segment is in direction of runway heading. Falls back to ones behind aircraft
+ * @param aGeod Reference point
+ * @param aRunway the runway to consider
+ * @return
+ *
+ */
+
+FGTaxiNodeRef FGGroundNetwork::findNearestNodeOnRunwayEntry(const SGGeod& aGeod, const FGRunway* aRunway) const
 {
     double d = DBL_MAX;
     SGVec3d cartPos = SGVec3d::fromGeod(aGeod);
     FGTaxiNodeRef result;
+    FGTaxiNodeVector::const_iterator it;
+    if (!aRunway) {
+        SG_LOG(SG_AI, SG_DEV_WARN, "No Runway provided");
+        return nullptr;
+    }
+    SG_LOG(SG_AI, SG_BULK, "findNearestNodeOnRunwayEntry " << aRunway->ident() << " " << aRunway->headingDeg());
+    for (it = m_nodes.begin(); it != m_nodes.end(); ++it) {
+        if (!(*it)->getIsOnRunway())
+            continue;
+        double localDistanceSqr = distSqr(cartPos, (*it)->cart());
+        double headingTowardsEntry = SGGeodesy::courseDeg(aGeod, (*it)->geod());
+        double diff = fabs(SGMiscd::normalizePeriodic(-180, 180, aRunway->headingDeg() - headingTowardsEntry));
+        SG_LOG(SG_AI, SG_BULK, "findNearestNodeOnRunwayEntry Diff : " << diff << " Id : " << (*it)->getIndex());
+        if (diff > 10) {
+            // Only down the runway not backwards
+            continue;
+        }
+        FGTaxiSegmentVector entrySegments = findSegmentsFrom((*it));
+        // Some kind of star
+        if (entrySegments.size() > 2) {
+            continue;
+        }
+        // two segments and next points are on runway, too. Must be a segment before end
+        // single runway point not at end is ok
+        if (entrySegments.size() == 2 &&
+            ((*entrySegments.at(0)->getEnd()).getIsOnRunway() ||
+             (*entrySegments.at(1)->getEnd()).getIsOnRunway())) {
+            continue;
+        }
+        if (entrySegments.empty()) {
+            SG_LOG(SG_AI, SG_ALERT, "findNearestNodeOnRunwayEntry broken node :" << diff << " Node Id : " << (*it)->getIndex() << " Apt : " << aRunway->airport()->getId());
+            continue;
+        }
+        double entryHeading = SGGeodesy::courseDeg((entrySegments.back())->getEnd()->geod(),
+                                                   (*it)->geod());
+        diff = fabs(SGMiscd::normalizePeriodic(-180, 180, aRunway->headingDeg() - entryHeading));
+        SG_LOG(SG_AI, SG_BULK, "findNearestNodeOnRunwayEntry2 Diff :" << diff << " Rwy Heading " << aRunway->headingDeg() << " Entry " << entryHeading << " Id : " << (*it)->getIndex() << " " << aRunway->ident());
+        if (diff > 75) {
+            // Only entries going in our direction
+            continue;
+        }
+        if (localDistanceSqr < d) {
+            SG_LOG(SG_AI, SG_BULK, "findNearestNodeOnRunwayEntry3 " << localDistanceSqr << " " << (*it)->getIndex());
+            d = localDistanceSqr;
+            result = *it;
+        }
+    }
+    if (result) {
+        SG_LOG(SG_AI, SG_BULK, "findNearestNodeOnRunwayEntry found :" << result->getIndex());
+        return result;
+    }
+    // Ok then fallback to old algorithm ignoring direction
+    d = DBL_MAX;
     for (auto it = m_nodes.begin(); it != m_nodes.end(); ++it) {
         if (!(*it)->getIsOnRunway())
             continue;
         double localDistanceSqr = distSqr(cartPos, (*it)->cart());
         if (localDistanceSqr < d) {
-            SG_LOG(SG_AI, SG_BULK, "findNearestNodeOnRunway from Threshold " << localDistanceSqr);
+            SG_LOG(SG_AI, SG_BULK, "findNearestNodeOnRunwayEntry from Threshold " << localDistanceSqr);
             d = localDistanceSqr;
             result = *it;
         }
@@ -336,11 +397,11 @@ FGTaxiNodeRef FGGroundNetwork::findNearestNodeOnRunwayEntry(const SGGeod& aGeod)
 /**
  * Returns the nearest node in that is in direction of runway heading. Falls back to ones behind aircraft
  * @param aGeod Reference point
- * @param aRunway
+ * @param aRunway the runway to consider
  * @return
  *
  */
-FGTaxiNodeRef FGGroundNetwork::findNearestNodeOnRunwayExit(const SGGeod& aGeod, FGRunway* aRunway) const
+FGTaxiNodeRef FGGroundNetwork::findNearestNodeOnRunwayExit(const SGGeod& aGeod, const FGRunway* aRunway) const
 {
     double d = DBL_MAX;
     SGVec3d cartPos = SGVec3d::fromGeod(aGeod);
@@ -511,7 +572,7 @@ public:
     FGTaxiNodeRef previousNode;
 };
 
-FGTaxiRoute FGGroundNetwork::findShortestRoute(FGTaxiNode* start, FGTaxiNode* end, bool fullSearch)
+FGTaxiRoute FGGroundNetwork::findShortestRoute(FGTaxiNode* start, FGTaxiNode* end, bool fullSearch) const
 {
     if (!start || !end) {
         throw sg_exception("Bad arguments to findShortestRoute");

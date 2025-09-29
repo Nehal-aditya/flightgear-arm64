@@ -128,7 +128,9 @@ void FGATCManager::postinit()
 
         if (pk.isValid()) {
             dcs->setParkingAvailable(pk.parking(), false);
-            fp.reset(new FGAIFlightPlan);
+            FGAIFlightPlan* aiFlightplan = new FGAIFlightPlan;
+            aiFlightplan->setDeparture(dcs->parent());
+            fp.reset(aiFlightplan);
             controller = dcs->getStartupController();
             int stationFreq = dcs->getGroundFrequency(1);
             if (stationFreq > 0) {

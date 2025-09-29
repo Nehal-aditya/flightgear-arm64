@@ -21,11 +21,13 @@ class AIFlightPlanTests : public CppUnit::TestFixture
     // Set up the test suite.
     CPPUNIT_TEST_SUITE(AIFlightPlanTests);
     CPPUNIT_TEST(testAIFlightPlan);
-    CPPUNIT_TEST(testAIFlightPlans);
     CPPUNIT_TEST(testAIFlightPlanLeftCircle);
     CPPUNIT_TEST(testAIFlightPlanLoadXML);
     CPPUNIT_TEST(testLeftTurnFlightplanXML);
     CPPUNIT_TEST(testRightTurnFlightplanXML);
+
+    CPPUNIT_TEST(testAIFlightPlans);
+    CPPUNIT_TEST(testCreateTaxiRunwayDeparture);
     CPPUNIT_TEST_SUITE_END();
 
 
@@ -39,8 +41,10 @@ public:
     // The tests.
     void testAIFlightPlan();
     void testAIFlightPlanLeftCircle();
-    void testAIFlightPlans();
     void testAIFlightPlanLoadXML();
     void testLeftTurnFlightplanXML();
     void testRightTurnFlightplanXML();
+    // The tests for "create"
+    void testAIFlightPlans();
+    void testCreateTaxiRunwayDeparture();
 };

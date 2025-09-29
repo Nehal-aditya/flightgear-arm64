@@ -305,7 +305,7 @@ void FGGroundController::checkSpeedAdjustment(int id, double lat,
     } else {
         int oldWaitsForId = (*i)->getWaitsForId();
         int waitTime = now - (*i)->getWaitingSince();
-        if (oldWaitsForId > 0 && waitTime > 5) {
+        if (oldWaitsForId > 0 && waitTime > 20) {
             SG_LOG(SG_ATC, SG_DEBUG,
                    (*i)->getCallsign() << "(" << (*i)->getId() << ") cleared of blocker (" << oldWaitsForId << ")");
             (*i)->setResumeTaxi(true);

@@ -153,15 +153,6 @@ void FGATCController::transmit(FGTrafficRecord* rec, FGAirportDynamics* parent, 
     auto depApt = rec->getDeparture();
     auto arrApt = rec->getArrival();
 
-    if (!depApt) {
-        SG_LOG(SG_ATC, SG_DEV_ALERT, "TrafficRec has empty departure airport, can't transmit");
-        return;
-    }
-    if (!arrApt) {
-        SG_LOG(SG_ATC, SG_DEV_ALERT, "TrafficRec has empty arrival airport, can't transmit");
-        return;
-    }
-
     stationFreq = getFrequency();
     taxiFreq = depApt->getDynamics()->getGroundFrequency(2);
     towerFreq = depApt->getDynamics()->getTowerFrequency(2);
@@ -181,13 +172,17 @@ void FGATCController::transmit(FGTrafficRecord* rec, FGAirportDynamics* parent, 
         text = sender + ". Ready to Start up.";
         break;
     case MSG_REQUEST_ENGINE_START:
+        if (!depApt) {
+            SG_LOG(SG_ATC, SG_DEV_ALERT, "TrafficRec has empty departure airport, can't transmit msg " << msgId << " at Leg " << rec->getLeg() << " " << rec->getCallsign());
+            return;
+        }
         text =
             receiver + ", This is " + sender + ". Position " +
             getGateName(rec->getAircraft()) + ". Information " +
             atisInformation + ". " +
             rec->getAircraft()->getTrafficRef()->getFlightRules() +
             " to " +
-            rec->getAircraft()->getTrafficRef()->getArrivalAirport()->getName() + ". Request start-up.";
+            depApt->getName() + ". Request start-up.";
         break;
         // Acknowledge engine startup permission
         // Assign departure runway
@@ -364,14 +359,14 @@ void FGATCController::transmit(FGTrafficRecord* rec, FGAirportDynamics* parent, 
         break;
     case MSG_TAXI_PARK:
         if (!rec->getAircraft()->GetFlightPlan()->getParkingGate()) {
-            SG_LOG(SG_ATC, SG_ALERT, "Flightplan without gate");
+            SG_LOG(SG_ATC, SG_ALERT, "Flightplan without gate " << rec->getCallsign() << "(" << rec->getId() << ") ");
             break;
         }
         text = receiver + " taxi to " + rec->getAircraft()->GetFlightPlan()->getParkingGate()->getName() + " . " + sender;
         break;
     case MSG_ACKNOWLEDGE_TAXI_PARK:
         if (!rec->getAircraft()->GetFlightPlan()->getParkingGate()) {
-            SG_LOG(SG_ATC, SG_ALERT, "Flightplan without gate");
+            SG_LOG(SG_ATC, SG_ALERT, "Flightplan without gate " << rec->getCallsign() << "(" << rec->getId() << ") ");
             break;
         }
         text = receiver + " taxi to " + rec->getAircraft()->GetFlightPlan()->getParkingGate()->getName() + " . " + sender;

@@ -72,7 +72,7 @@ void FGApproachController::announcePosition(int id,
     if (i == activeTraffic.end() || activeTraffic.empty()) {
         FGTrafficRecord* rec = new FGTrafficRecord();
         rec->setId(id);
-
+        rec->setPositionAndIntentions(currentPosition, intendedRoute);
         rec->setPositionAndHeading(lat, lon, heading, speed, alt, leg);
         rec->setRunway(intendedRoute->getRunway());
         rec->setLeg(leg);

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: (C) 2020  James Turner <james@flightgear.org>
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 set(TESTSUITE_SOURCES
     ${TESTSUITE_SOURCES}

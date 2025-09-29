@@ -1,20 +1,8 @@
 /*
- * Copyright (C) 2021 Keith Paterson
- *
- * This file is part of the program FlightGear.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * SPDX-FileName: test_groundnet.cxx
+ * SPDX-FileComment: Tests for airport ground handling code
+ * SPDX-FileCopyrightText: 2021 Keith Paterson
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -79,6 +67,12 @@ void GroundnetTests::setUp()
     } catch (...) {
     }
 
+    try {
+        FGAirportRef yssy = FGAirport::getByIdent("YSSY");
+        yssy->testSuiteInjectGroundnetXML(SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "YSSY.groundnet.xml");
+    } catch (...) {
+    }
+
     globals->get_subsystem_mgr()->add<PerformanceDB>();
     globals->get_subsystem_mgr()->add<FGATCManager>();
     globals->get_subsystem_mgr()->add<FGAIManager>();
@@ -112,7 +106,7 @@ void GroundnetTests::testShortestRoute()
     FGGroundNetwork* network = egph->groundNetwork();
     FGParkingRef startParking = network->findParkingByName("main-apron10");
     FGRunwayRef runway = egph->getRunwayByIndex(0);
-    FGTaxiNodeRef end = network->findNearestNodeOnRunwayEntry(runway->threshold());
+    FGTaxiNodeRef end = network->findNearestNodeOnRunwayEntry(runway->threshold(), runway);
     FGTaxiRoute route = network->findShortestRoute(startParking, end);
     CPPUNIT_ASSERT_EQUAL(true, network->exists());
     CPPUNIT_ASSERT_EQUAL(29, route.size());
@@ -175,4 +169,28 @@ void GroundnetTests::testFind()
     FGTaxiSegment* pushForwardSegment = network->findSegmentByHeading(startParking, startParking->getHeading());
     CPPUNIT_ASSERT(pushForwardSegment);
     CPPUNIT_ASSERT_EQUAL(1027, pushForwardSegment->getEnd()->getIndex());
+}
+
+void GroundnetTests::testFindNearestNodeOnRunwayEntry()
+{
+    FGAirportRef yssy = FGAirport::getByIdent("YSSY");
+
+    FGGroundNetwork* network = yssy->groundNetwork();
+    CPPUNIT_ASSERT_EQUAL(true, network->exists());
+
+    FGRunwayRef runway = yssy->getRunwayByIdent("16L");
+    FGTaxiNodeRef node = network->findNearestNodeOnRunwayEntry(runway->threshold(), runway);
+    CPPUNIT_ASSERT(node);
+    CPPUNIT_ASSERT_EQUAL(262, node->getIndex());
+    CPPUNIT_ASSERT(node->getIsOnRunway());
+
+    FGTaxiNodeRef node2 = network->findNearestNodeOnRunwayEntry(runway->pointOnCenterline(400), runway);
+    CPPUNIT_ASSERT(node2);
+    CPPUNIT_ASSERT_EQUAL(263, node2->getIndex());
+    CPPUNIT_ASSERT(node2->getIsOnRunway());
+
+    FGTaxiNodeRef node3 = network->findNearestNodeOnRunwayEntry(runway->pointOnCenterline(600), runway);
+    CPPUNIT_ASSERT(node3);
+    CPPUNIT_ASSERT_EQUAL(1014, node3->getIndex());
+    CPPUNIT_ASSERT(node3->getIsOnRunway());
 }

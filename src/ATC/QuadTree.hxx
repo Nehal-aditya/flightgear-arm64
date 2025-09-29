@@ -583,7 +583,7 @@ public:
             }
             bool removed = rootNode.get()->removeFullScan(value, equalFunction, "Error/");
             if (!removed) {
-                SG_LOG(SG_ATC, SG_ALERT, "Not removed " << value);
+                SG_LOG(SG_ATC, SG_ALERT, "Not removed while moving " << value);
                 rootNode.get()->findFullScan(value, equalFunction, "Error/");
             }
             return rootNode.get()->add(getBoxFunction(value), value, equalFunction, getBoxFunction);

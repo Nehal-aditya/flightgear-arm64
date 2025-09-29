@@ -88,7 +88,7 @@ public:
     void SetTransponderCode(const std::string& tc) { transponderCode = tc; };
 
     // included as performance data needs them, who else?
-    inline PerformanceData* getPerformance() { return _performance; };
+    inline PerformanceData* getPerformance() const { return _performance; };
     inline bool onGround() const { return no_roll; };
     inline double getSpeed() const { return speed; };
     inline double getRoll() const { return roll; };

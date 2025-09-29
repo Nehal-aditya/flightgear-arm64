@@ -158,6 +158,10 @@ public:
     {
         return distance < other.distance;
     }
+    bool operator>(const FGTaxiRoute& other) const
+    {
+        return distance > other.distance;
+    }
     bool empty()
     {
         return nodes.empty();
@@ -248,7 +252,7 @@ public:
     virtual ~FGGroundNetwork();
 
     void setVersion(int v) { version = v; }
-    int getVersion() { return version; }
+    int getVersion() const { return version; }
 
     void init();
     bool exists()
@@ -263,8 +267,8 @@ public:
 
     FGTaxiNodeRef findNodeByIndex(int index) const;
     FGTaxiNodeRef findNearestNode(const SGGeod& aGeod) const;
-    FGTaxiNodeRef findNearestNodeOnRunwayEntry(const SGGeod& aGeod) const;
-    FGTaxiNodeRef findNearestNodeOnRunwayExit(const SGGeod& aGeod, FGRunway* aRunway = NULL) const;
+    FGTaxiNodeRef findNearestNodeOnRunwayEntry(const SGGeod& aGeod, const FGRunway* aRunway = NULL) const;
+    FGTaxiNodeRef findNearestNodeOnRunwayExit(const SGGeod& aGeod, const FGRunway* aRunway = NULL) const;
 
     FGTaxiNodeRef findNearestNodeOffRunway(const SGGeod& aGeod, FGRunway* aRunway, double distanceM) const;
 
@@ -292,7 +296,7 @@ public:
     FGTaxiSegmentVector findSegmentsFrom(const FGTaxiNodeRef& from) const;
 
 
-    FGTaxiRoute findShortestRoute(FGTaxiNode* start, FGTaxiNode* end, bool fullSearch = true);
+    FGTaxiRoute findShortestRoute(FGTaxiNode* start, FGTaxiNode* end, bool fullSearch = true) const;
 
 
     void blockSegmentsEndingAt(const FGTaxiSegment* seg, int blockId, time_t blockTime, time_t now);

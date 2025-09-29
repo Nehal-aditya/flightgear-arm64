@@ -403,3 +403,51 @@ void AIFlightPlanTests::testRightTurnFlightplanXML()
     CPPUNIT_ASSERT_EQUAL(false, wp2->getInAir());
     CPPUNIT_ASSERT_DOUBLES_EQUAL(10.0, wp2->getSpeed(), 0.1);
 }
+
+void AIFlightPlanTests::testCreateTaxiRunwayDeparture()
+{
+    auto aiFP = new FGAIFlightPlan;
+    aiFP->setName("Bob");
+    aiFP->setRunway("34L");
+
+    FGAirportRef yssy = FGAirport::getByIdent("YSSY");
+    FGAirportRef egpf = FGAirport::getByIdent("EGPF");
+
+
+    // Time to depart
+    std::string dep = FGTestApi::strings::getTimeString(30);
+    // Time to arrive
+    std::string arr = FGTestApi::strings::getTimeString(320);
+
+    FGAISchedule* schedule = new FGAISchedule(
+        "B737", "KLM", "EGPH", "G-BLA", "ID", false, "B737", "KLM", "N", "cargo", 24, 8);
+    FGScheduledFlight* flight = new FGScheduledFlight("testCreateTaxiRunwayDeparture", "", "YSSY", "EGPF", 24, dep, arr, "WEEK", "HBR_BN_2");
+    schedule->assign(flight);
+
+    SGSharedPtr<FGAIAircraft> aiAircraft = new FGAIAircraft{schedule};
+
+    std::string activeRunway;
+    FGRunwayRef rwy;
+
+    int aircraftHeading = 302;
+    int heading = 5;
+
+    // heading of vector towards threshold
+    yssy->getDynamics()->getActiveRunway("com", 2, activeRunway, heading);
+    yssy->testSuiteInjectGroundnetXML(SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "YSSY.groundnet.xml");
+    rwy = yssy->getRunwayByIdent(activeRunway);
+    SGGeod threshold = rwy->threshold();
+    SGGeod aiAircraftPos = SGGeodesy::direct(threshold, aiAircraft->getTrueHeadingDeg(), 120000);
+
+    aiAircraft->setLatitude(aiAircraftPos.getLatitudeDeg());
+    aiAircraft->setLongitude(aiAircraftPos.getLongitudeDeg());
+    aiAircraft->setHeading(aircraftHeading);
+
+    ParkingAssignment parking = yssy->getDynamics()->getParkingByName("T2-38");
+
+    aiFP->setGate(parking);
+
+    bool isValid = aiFP->create(aiAircraft, yssy, egpf, AILeg::RUNWAY_TAXI, 5000, 200, 51, 10,
+                                false, 20, "ga", "B737", "KLM", 1000);
+    CPPUNIT_ASSERT_EQUAL(true, isValid);
+}

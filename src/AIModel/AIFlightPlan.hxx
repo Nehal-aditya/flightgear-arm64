@@ -227,6 +227,7 @@ public:
     void setGate(const ParkingAssignment& pka);
     FGParking* getParkingGate() const;
 
+    void setDeparture(FGAirportRef apt) { departure = apt; }
     FGAirportRef departureAirport() const;
     FGAirportRef arrivalAirport() const;
 
@@ -259,6 +260,8 @@ private:
 
     time_t calcArrivalTimes() const;
 
+    //FIXME These are basically factory methods and should go to a factory
+    FGTaxiRoute findBestTaxiRouteToRunway(const FGAIAircraft*, const FGAirport*, const FGRunway*, const FGGroundNetwork*, const FGTaxiNodeRef);
     void createPushBackFallBack(FGAIAircraft*, bool, FGAirport*, double radius, const std::string&, const std::string&, const std::string&);
     bool createRunwayTaxi(FGAIAircraft*, bool firstFlight, FGAirport* apt, double radius, const std::string& fltType, const std::string& acType, const std::string& airline);
     bool createAlignRunway(FGAIAircraft*, bool, FGAirport*, const SGGeod& pos, double speed, const std::string& flightType);
@@ -271,6 +274,7 @@ private:
     void createDefaultLandingTaxi(FGAIAircraft*, FGAirport* aAirport);
     void createDefaultTakeoffTaxi(FGAIAircraft*, FGAirport* aAirport, FGRunway* aRunway);
     bool createParking(FGAIAircraft*, FGAirport*, double radius);
+
     void deleteWaypoints();
     void resetWaypoints();
     void eraseLastWaypoint();
