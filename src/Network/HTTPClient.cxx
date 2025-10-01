@@ -108,12 +108,6 @@ void FGHTTPClient::init()
   if (packageRoot) {
     // package system needs access to the HTTP engine too
     packageRoot->setHTTPClient(_http.get());
-
-    // start a refresh now
-    // setting 'force' true to work around the problem where a slightly stale
-    // catalog exists, but aircraft are modified - this causes an MD5 sum
-    // mismatch
-    packageRoot->refresh(true);
   }
 
     _inited = true;

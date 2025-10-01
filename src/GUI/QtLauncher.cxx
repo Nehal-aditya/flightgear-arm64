@@ -81,6 +81,7 @@
 using namespace flightgear;
 using namespace simgear::pkg;
 using std::string;
+using namespace std::chrono_literals;
 
 #if defined(OSG_OPENGL)
   #error "Don't include osg/GL in this file, it will cause problems"
@@ -655,11 +656,10 @@ bool runLauncherDialog()
     // try to initialise various Cocoa structures.
     fgqt_setPoseAsStandaloneApp(false);
 
-    LauncherMainWindow dlg(false);
 
-    // startup the HTTP system now since packages needs it
-    // do this *after* LauncherController so pkg::Root::setOnline has been invoked
     FGHTTPClient::getOrCreate();
+
+    LauncherMainWindow dlg(false);
 
     if (options->isOptionSet("fullscreen")) {
         dlg.showFullScreen();
