@@ -779,12 +779,14 @@ int fgMainInit( int argc, char **argv )
 #endif
 
     simgear::clearEffectCache();
-    simgear::canvas::vgShutdown();
 
     // clean up here; ensure we null globals to avoid
     // confusing the atexit() handler
     delete globals;
     globals = nullptr;
+
+    // now CanvasMgr subsystem is gone, we can destroy this
+    simgear::canvas::vgShutdown();
 
     // delete the NavCache here. This will cause the destruction of many cached
     // objects (eg, airports, navaids, runways).
