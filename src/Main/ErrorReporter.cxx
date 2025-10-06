@@ -489,6 +489,10 @@ auto ErrorReporter::ErrorReporterPrivate::getAggregateForOccurence(const ErrorRe
             return getAggregate(Aggregation::NetworkFailure, {});
         }
 
+        if (oc.type == simgear::LoadFailure::NetworkError) {
+            return getAggregate(Aggregation::NetworkFailure, {});
+        }
+
         return getAggregate(Aggregation::TerraSync, {});
     }
 
