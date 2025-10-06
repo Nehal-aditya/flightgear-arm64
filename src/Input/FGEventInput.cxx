@@ -265,7 +265,9 @@ void FGInputDevice::Configure( SGPropertyNode_ptr aDeviceNode )
   deviceNode = aDeviceNode;
 
   // export our class_id to property tree
-  deviceNode->getNode("_class-id", true)->setValue(class_id.c_str());
+  deviceNode->setStringValue("_class-id", class_id);
+  deviceNode->setStringValue("serial-number", serialNumber);
+  deviceNode->setStringValue("unique-name", _uniqueName);
 
   SG_LOG(SG_INPUT, SG_DEBUG, "FGInputDevice::Configure");
 
