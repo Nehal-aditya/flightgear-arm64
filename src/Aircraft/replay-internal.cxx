@@ -1287,7 +1287,7 @@ int loadContinuousHeader(const std::string& path, std::istream* in, SGPropertyNo
 {
     std::ifstream in0;
     if (!in) {
-        in0.open(path);
+        in0.open(path, std::ifstream::binary);
         in = &in0;
     }
     if (!*in) {
