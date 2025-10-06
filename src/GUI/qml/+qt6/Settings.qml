@@ -195,6 +195,12 @@ Item {
                 }
 
                 contents: [
+                    Note {
+                        visible:!_launcher.isNetworkAvailable
+                        width: parent.width
+                        text: qsTr("No network connection was detected, so multi-player flight will not be available");
+                    },
+
                     SettingCheckbox {
                         id: enableMP
                         label: qsTr("Connect to the multi-player network")
@@ -335,6 +341,12 @@ Item {
                 }
 
                 contents: [
+                    Note {
+                        visible:!_launcher.isNetworkAvailable
+                        width: parent.width
+                        text: qsTr("No network connection was detected, so scenery will not be downloaded or updated. Previously downloaded scenery will be available as normal.");
+                    },
+
                     SettingCheckbox {
                         id: terrasync
                         label: qsTr("Download scenery automatically")

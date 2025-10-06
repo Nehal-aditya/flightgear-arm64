@@ -279,7 +279,11 @@ NewGUI::showDialog (const string &name)
         return false;
     }
 
-    flightgear::addSentryBreadcrumb("showing GUI dialog:" + name, "info");
+    // log dialog show/close except these noisy ones (screen_window & screen_display)
+    if (name.find("__screen_") != 0) {
+        flightgear::addSentryBreadcrumb("showing GUI dialog:" + name, "info");
+    }
+
     try {
         _active_dialogs[name] = new FGPUIDialog(getDialogProperties(name));
 
@@ -342,7 +346,9 @@ bool
 NewGUI::closeDialog (const string& name)
 {
     if(_active_dialogs.find(name) != _active_dialogs.end()) {
-        flightgear::addSentryBreadcrumb("closing GUI dialog:" + name, "info");
+        if (name.find("__screen_") != 0) {
+            flightgear::addSentryBreadcrumb("closing GUI dialog:" + name, "info");
+        }
 
         if(_active_dialog == _active_dialogs[name])
             _active_dialog.clear();

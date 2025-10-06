@@ -15,6 +15,7 @@
 #include <deque>
 #include <map>
 #include <mutex>
+#include <string>
 
 #include <simgear/debug/ErrorReportingCallback.hxx>
 #include <simgear/debug/LogCallback.hxx>
@@ -32,8 +33,10 @@
 #include <Main/locale.hxx>
 #include <Main/options.hxx>
 #include <Main/sentryIntegration.hxx>
+#include <Model/validateSharedModels.hxx>
 #include <Scripting/NasalClipboard.hxx> // clipboard access
 
+using simgear::LoadFailure;
 using std::string;
 
 namespace {
@@ -63,10 +66,12 @@ enum class Aggregation {
     InputDevice,
     FGData,
     MultiPlayer,
-    Unknown,     ///< error coudln't be attributed more specifcially
-    OutOfMemory, ///< seperate category to give it a custom message
+    Unknown,      ///< error coudln't be attributed more specifcially
+    OutOfMemory,  ///< separate category to give it a custom message
+    SharedModels, ///< special category, for when shared models are not found
     Traffic,
-    ShadersEffects
+    ShadersEffects,
+    NetworkFailure, ///< category for issues related to (local) connectivity
 };
 
 // these should correspond to simgear::ErrorCode enum
@@ -110,8 +115,10 @@ string_list static_categoryIds = {
     "error-category-multiplayer",
     "error-category-unknown",
     "error-category-out-of-memory",
+    "error-category-shared-models",
     "error-category-traffic",
-    "error-category-shaders"};
+    "error-category-shaders",
+    "error-category-network"};
 
 class RecentLogCallback : public simgear::LogCallback
 {
@@ -159,7 +166,7 @@ private:
 std::string lastPathComponent(const std::string& d)
 {
     const auto lastSlash = d.rfind('/');
-    return d.substr(lastSlash+1);
+    return d.substr(lastSlash + 1);
 }
 
 } // namespace
@@ -220,17 +227,19 @@ public:
     string _aircraftDirectoryName;
 
     /**
-        @brief hueristic to identify relative paths as origination from the main aircraft as opposed
+        @brief heuristic to identify relative paths as origination from the main aircraft as opposed
                 to something else. This is based on containing the aircraft directory name.
      */
     bool isMainAircraftPath(const std::string& path) const;
 
     bool isAnyAircraftPath(const std::string& path) const;
 
+    static bool isFGDataPath(const std::string& path);
+
     /**
     @brief structure representing one or more errors, aggregated together
 
-    This is what we send to Sentry, or present to the user, after combining occurences from
+    This is what we send to Sentry, or present to the user, after combining occurrences from
     the same / related sources, or duplicates.
      */
     struct AggregateReport {
@@ -241,8 +250,12 @@ public:
         bool haveShownToUser = false;
         OccurrenceVec errors;
         bool isCritical = false;
+        bool isMessage = false;
 
         bool addOccurence(const ErrorOcurrence& err);
+
+        using OcurrencePredicate = std::function<bool(const ErrorOcurrence&)>;
+        bool allOccurences(OcurrencePredicate pred) const;
     };
 
 
@@ -258,12 +271,14 @@ public:
 
     AggregateErrors::iterator getAggregate(Aggregation ag, const std::string& param = {});
 
+    AggregateErrors::iterator mainAircraftAggregate();
+
 
     void collectError(simgear::LoadFailure type, simgear::ErrorCode code, const std::string& details, const sg_location& location)
     {
         ErrorOcurrence occurrence{code, type, details, location, time(nullptr), string_list(), ErrorContext()};
 
-        // snapshot the top of the context stacks into our occurence data
+        // snapshot the top of the context stacks into our occurrence data
         for (const auto& c : thread_errorContextStack) {
             occurrence.context[c.first] = c.second.back();
         }
@@ -273,7 +288,7 @@ public:
         std::lock_guard<std::mutex> g(_lock); // begin access to shared state
         auto it = getAggregateForOccurence(occurrence);
 
-        // add to the occurence, if it's not a duplicate
+        // add to the occurrence, if it's not a duplicate
         if (!it->addOccurence(occurrence)) {
             return; // duplicate, nothing else to do
         }
@@ -290,17 +305,9 @@ public:
 
         const auto ty = it->type;
         // decide if it's a critical error or not
-        if ((ty == Aggregation::OutOfMemory) || (ty == Aggregation::InputDevice)) {
-            it->isCritical = true;
-        }
-
         // aircraft errors are critical if they occur during initial
         // aircraft load, otherwise we just show the warning
         if (!_haveDonePostInit && (ty == Aggregation::MainAircraft)) {
-            it->isCritical = true;
-        }
-
-        if (code == simgear::ErrorCode::LoadEffectsShaders) {
             it->isCritical = true;
         }
     }
@@ -375,16 +382,40 @@ public:
         assert(it != _aggregated.end());
         _activeReportIndex = static_cast<int>(std::distance(_aggregated.begin(), it));
         _displayNode->setBoolValue("index", _activeReportIndex);
-        _displayNode->setBoolValue("have-next", _activeReportIndex < (int) _aggregated.size() - 1);
+        _displayNode->setBoolValue("have-next", _activeReportIndex < (int)_aggregated.size() - 1);
         _displayNode->setBoolValue("have-previous", _activeReportIndex > 0);
     }
 
     void sendReportToSentry(AggregateReport& report)
     {
+        if (report.type == Aggregation::InputDevice) {
+            // for non-official input configs, don't report, it's just noise
+            // https://gitlab.com/flightgear/flightgear/-/issues/3177
+            if (report.allOccurences([](const ErrorOcurrence& oc) {
+                    return !isFGDataPath(oc.origin.getPath());
+                })) {
+                return;
+            }
+        }
+
+        // don't report socket or local IO issues to Sentry
+        // https://gitlab.com/flightgear/fgmeta/-/issues/33
+        if (report.type == Aggregation::NetworkFailure) {
+            return;
+        }
+
+        if (report.type == Aggregation::TerraSync) {
+            if (report.allOccurences([](const ErrorOcurrence& oc) {
+                    return (oc.type == LoadFailure::IOError) || (oc.type == LoadFailure::NetworkError);
+                })) {
+                return;
+            }
+        }
+
         const int catId = static_cast<int>(report.type);
-        flightgear::sentryReportUserError(static_categoryIds.at(catId), 
-        report.parameter, 
-        _displayNode->getStringValue());
+        flightgear::sentryReportUserError(static_categoryIds.at(catId),
+                                          report.parameter,
+                                          _displayNode->getStringValue());
     }
 
     void writeReportToStream(const AggregateReport& report, std::ostream& os) const;
@@ -395,7 +426,28 @@ public:
     bool dismissReportCommand(const SGPropertyNode* args, SGPropertyNode*);
     bool saveReportCommand(const SGPropertyNode* args, SGPropertyNode*);
     bool showErrorReportCommand(const SGPropertyNode* args, SGPropertyNode*);
+
+    /**
+     * @brief check if the report is still adding new errors, we avoid showing the UI
+     * until all the errors are collected/
+     */
+    bool reportIsOngoing(const AggregateReport& report) const;
 };
+
+auto ErrorReporter::ErrorReporterPrivate::mainAircraftAggregate()
+    -> AggregateErrors::iterator
+{
+    const auto fullId = fgGetString("/sim/aircraft-id");
+
+    // we use the dir name so we combine reports from different variants, on Sentry
+    const auto aircraftDirName = lastPathComponent(fgGetString("/sim/aircraft-dir"));
+
+    if (fullId != fgGetString("/sim/aircraft")) {
+        return getAggregate(Aggregation::MainAircraft, aircraftDirName);
+    }
+
+    return getAggregate(Aggregation::HangarAircraft, aircraftDirName);
+}
 
 auto ErrorReporter::ErrorReporterPrivate::getAggregateForOccurence(const ErrorReporter::ErrorReporterPrivate::ErrorOcurrence& oc)
     -> AggregateErrors::iterator
@@ -407,17 +459,16 @@ auto ErrorReporter::ErrorReporterPrivate::getAggregateForOccurence(const ErrorRe
         return getAggregate(Aggregation::OutOfMemory, {});
     }
 
-    if (oc.hasContextKey("primary-aircraft")) {
-        const auto fullId = fgGetString("/sim/aircraft-id");
-
-        // we use the dir name so we combine reports from different variants, on Sentry
-        const auto aircraftDirName = lastPathComponent(fgGetString("/sim/aircraft-dir"));
-
-        if (fullId != fgGetString("/sim/aircraft")) {
-            return getAggregate(Aggregation::MainAircraft, aircraftDirName);
+    // errors about shared models typically indicate that the shared Models are
+    // missing or out of date.
+    if ((oc.type == simgear::LoadFailure::NotFound) || (oc.type == simgear::LoadFailure::BadData)) {
+        if (oc.detailedInfo.find("OBJECT_SHARED") != std::string::npos) {
+            return getAggregate(Aggregation::SharedModels);
         }
+    }
 
-        return getAggregate(Aggregation::HangarAircraft, aircraftDirName);
+    if (oc.hasContextKey("primary-aircraft")) {
+        return mainAircraftAggregate();
     }
 
     if (oc.hasContextKey("multiplayer")) {
@@ -437,6 +488,17 @@ auto ErrorReporter::ErrorReporterPrivate::getAggregateForOccurence(const ErrorRe
     // all TerraSync coded errors go there: this is errors for the
     // actual download process (eg, failed to write to disk)
     if (oc.code == simgear::ErrorCode::TerraSync) {
+        const auto details = oc.detailedInfo;
+        if ((details.find("socket error") != std::string::npos) ||
+            (details.find("SSL connect error") != std::string::npos) ||
+            (details.find("Couldn't resolve host name") != std::string::npos)) {
+            return getAggregate(Aggregation::NetworkFailure, {});
+        }
+
+        if (oc.type == simgear::LoadFailure::NetworkError) {
+            return getAggregate(Aggregation::NetworkFailure, {});
+        }
+
         return getAggregate(Aggregation::TerraSync, {});
     }
 
@@ -465,8 +527,6 @@ auto ErrorReporter::ErrorReporterPrivate::getAggregateForOccurence(const ErrorRe
             return getAggregate(Aggregation::TerraSync, {});
         }
 
-        
-
         // shouldn't ever happen
         return getAggregate(Aggregation::CustomScenery, {});
     }
@@ -485,18 +545,21 @@ auto ErrorReporter::ErrorReporterPrivate::getAggregateForOccurence(const ErrorRe
         return getAggregate(Aggregation::InputDevice, oc.getContextValue("input-device"));
     }
 
+    if (oc.code == simgear::ErrorCode::AircraftSystems) {
+        if (isMainAircraftPath(oc.origin.asString())) {
+            return mainAircraftAggregate();
+        }
+
+        if (isFGDataPath(oc.origin.asString())) {
+            return getAggregate(Aggregation::FGData);
+        }
+    }
+
     // start guessing :)
     // from this point on we're using less reliable inferences about where the
     // error came from, trying to avoid 'unknown'
     if (isMainAircraftPath(oc.origin.asString())) {
-        const auto fullId = fgGetString("/sim/aircraft-id");
-        const auto aircraftDirName = lastPathComponent(fgGetString("/sim/aircraft-dir"));
-
-        if (fullId != fgGetString("/sim/aircraft")) {
-            return getAggregate(Aggregation::MainAircraft, aircraftDirName);
-        }
-
-        return getAggregate(Aggregation::HangarAircraft, aircraftDirName);
+        return mainAircraftAggregate();
     }
 
     // GUI dialog errors often have no context
@@ -511,7 +574,7 @@ auto ErrorReporter::ErrorReporterPrivate::getAggregateForOccurence(const ErrorRe
         return getAggregate(Aggregation::FGData);
     }
 
-    // becuase we report shader errors from the main thread, they don't
+    // because we report shader errors from the main thread, they don't
     // get attributed. Collect them into their own category, which also
     // means we can display a more specific message
     if (oc.code == simgear::ErrorCode::LoadEffectsShaders) {
@@ -544,6 +607,14 @@ auto ErrorReporter::ErrorReporterPrivate::getAggregate(Aggregation ag, const std
         r.parameter = param;
         _aggregated.push_back(r);
         it = _aggregated.end() - 1;
+    }
+
+    switch (ag) {
+    case Aggregation::OutOfMemory:
+    case Aggregation::NetworkFailure:
+        it->isMessage = true;
+    default:
+        break;
     }
 
     return it;
@@ -721,7 +792,7 @@ void ErrorReporter::ErrorReporterPrivate::writeLogToStream(const ErrorOcurrence&
 bool ErrorReporter::ErrorReporterPrivate::AggregateReport::addOccurence(const ErrorOcurrence& err)
 {
     auto it = std::find_if(errors.begin(), errors.end(), [err](const ErrorOcurrence& ext) {
-        // check if the two occurences match for the purposes of
+        // check if the two occurrences match for the purposes of
         // de-duplication.
         return (ext.code == err.code) &&
                (ext.type == err.type) &&
@@ -738,6 +809,26 @@ bool ErrorReporter::ErrorReporterPrivate::AggregateReport::addOccurence(const Er
     return true;
 }
 
+bool ErrorReporter::ErrorReporterPrivate::isFGDataPath(const std::string& path)
+{
+    for (const auto& dp : globals->get_data_paths()) {
+        if (path.find(dp.utf8Str()) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool ErrorReporter::ErrorReporterPrivate::AggregateReport::allOccurences(OcurrencePredicate p) const
+{
+    auto it = std::find_if(errors.begin(), errors.end(), [p](const ErrorOcurrence& ext) {
+        return !p(ext);
+    });
+
+    return it == errors.end();
+}
+
 bool ErrorReporter::ErrorReporterPrivate::isMainAircraftPath(const std::string& path) const
 {
     const auto pos = path.find(_aircraftDirectoryName);
@@ -746,8 +837,8 @@ bool ErrorReporter::ErrorReporterPrivate::isMainAircraftPath(const std::string& 
 
 /**
  * @brief helper to determine if a file looks like it belongs to an aircraft.
- * 
- * This is used to detect potential cross-aircraft packaging bugs which often lead to 
+ *
+ * This is used to detect potential cross-aircraft packaging bugs which often lead to
  * 'not found' error reports. So we're looking for paths which look plausibly like any
  * aircraft path, even though @ref isMainAircraftPath didn't match on them.
  */
@@ -761,6 +852,18 @@ bool ErrorReporter::ErrorReporterPrivate::isAnyAircraftPath(const std::string& p
 
     // TODO: decide if we also include paths which contain 'Aircraft' as a component
     return false;
+}
+
+bool ErrorReporter::ErrorReporterPrivate::reportIsOngoing(const AggregateReport& report) const
+{
+    // don't wait for these to end, since they might continue forever
+    if ((report.type == Aggregation::NetworkFailure) || (report.type == Aggregation::OutOfMemory)) {
+        return false;
+    }
+
+    SGTimeStamp n = SGTimeStamp::now();
+    const auto ageSec = (n - report.lastErrorTime).toSecs();
+    return (ageSec < NoNewErrorsTimeout);
 }
 
 
@@ -857,7 +960,6 @@ void ErrorReporter::init()
 
     if (dd || !d->_enabledNode->getBoolValue()) {
         d->_isEnabled = false;
-        SG_LOG(SG_GENERAL, SG_INFO, "Error reporting popups disabled");
     } else {
         d->_isEnabled = true;
     }
@@ -874,17 +976,23 @@ void ErrorReporter::update(double dt)
     bool showDialog = false;
     bool showPopup = false;
     bool havePendingReports = false;
+    bool showMessage = false;
 
     // beginning of locked section
     {
         std::lock_guard<std::mutex> g(d->_lock);
+
+        if (!d->_enabledNode->getBoolValue()) {
+            return;
+        }
+
         // we are into the update phase (postinit has occurred). We treat errors
         // after this point with lower severity, to avoid popups into a flight
         d->_haveDonePostInit = true;
 
         SGTimeStamp n = SGTimeStamp::now();
 
-        // ensure we pause between successive error dialogs
+        // ensure we delay between successive error dialogs
         const auto timeSinceLastDialog = (n - d->_nextShowTimeout).toSecs();
         if (timeSinceLastDialog < MinimumIntervalBetweenDialogs) {
             return;
@@ -904,7 +1012,15 @@ void ErrorReporter::update(double dt)
         for (auto& report : d->_aggregated) {
             if (report.type == Aggregation::MultiPlayer) {
                 if (!d->_mpReportNode->getBoolValue()) {
-                    // mark it as shown, to supress it
+                    // mark it as shown, to suppress it
+                    report.haveShownToUser = true;
+                }
+            }
+
+            // if we have shown the special 'missing shared models' warning,
+            // don't also report it here.
+            if (report.type == Aggregation::SharedModels) {
+                if (flightgear::haveShownSharedModelsError()) {
                     report.haveShownToUser = true;
                 }
             }
@@ -914,24 +1030,26 @@ void ErrorReporter::update(double dt)
                 continue;
             }
 
-            const auto ageSec = (n - report.lastErrorTime).toSecs();
-            if (ageSec > NoNewErrorsTimeout) {
-                d->presentErrorToUser(report);
-                if (report.isCritical) {
-                    showDialog = true;
-                } else {
-                    showPopup = true;
-                }
-
-                if (d->_isEnabled) {
-                    d->sendReportToSentry(report);
-                }
-
-                // if we show one report, don't consider any others for now
-                break;
-            } else {
+            if (d->reportIsOngoing(report)) {
                 havePendingReports = true;
+                continue;
             }
+
+            d->presentErrorToUser(report);
+            if (report.isCritical) {
+                showDialog = true;
+            } else if (report.isMessage) {
+                showMessage = true;
+            } else {
+                showPopup = true;
+            }
+
+            if (d->_isEnabled) {
+                d->sendReportToSentry(report);
+            }
+
+            // if we show one report, don't consider any others for now
+            break;
         } // of active aggregates iteration
 
         if (!havePendingReports) {
@@ -942,6 +1060,16 @@ void ErrorReporter::update(double dt)
     if (!d->_isEnabled || flightgear::isHeadlessMode()) {
         showDialog = false;
         showPopup = false;
+        showMessage = false;
+    }
+
+    // show messages: these are local configuration pieces
+    // so always warn them to the user, eg DNS/network failure, out-of-memory, or
+    // missing shared models.
+    if (showMessage) {
+        SGPropertyNode_ptr popupArgs(new SGPropertyNode);
+        popupArgs->setStringValue("message", d->_displayNode->getStringValue("category"));
+        globals->get_commands()->execute("show-error-message-popup", popupArgs, nullptr);
     }
 
     // do not call into another subsystem with our lock held,
@@ -965,18 +1093,16 @@ void ErrorReporter::update(double dt)
 
 void ErrorReporter::shutdown()
 {
-    if (d->_isEnabled) {
-        globals->get_commands()->removeCommand("dismiss-error-report");
-        globals->get_commands()->removeCommand("save-error-report-data");
-        globals->get_commands()->removeCommand("show-error-report");
+    globals->get_commands()->removeCommand("dismiss-error-report");
+    globals->get_commands()->removeCommand("save-error-report-data");
+    globals->get_commands()->removeCommand("show-error-report");
 
-// during a reset we don't want to touch the log callback; it was added in
-// preinit, which does not get repeated on a reset
-        const bool inReset = fgGetBool("/sim/signals/reinit", false);
-        if (!inReset) {
-            sglog().removeCallback(d->_logCallback.get());
-            d->_logCallbackRegistered = false;
-        }
+    // during a reset we don't want to touch the log callback; it was added in
+    // preinit, which does not get repeated on a reset
+    const bool inReset = fgGetBool("/sim/signals/reinit", false);
+    if (!inReset) {
+        sglog().removeCallback(d->_logCallback.get());
+        d->_logCallbackRegistered = false;
     }
 }
 

@@ -503,6 +503,8 @@ void initApp(int& argc, char** argv, bool doInitQSettings)
 
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 3, 0))
     QNetworkInformation::loadDefaultBackend();
+#elif (QT_VERSION >= QT_VERSION_CHECK(6,1,0))
+    QNetworkInformation::load(QNetworkInformation::Feature::Reachability);
 #endif
 
     if (doInitQSettings) {

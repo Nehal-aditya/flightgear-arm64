@@ -21,6 +21,7 @@
 //
 // $Id$
 
+#include "simgear/structure/exception.hxx"
 #ifdef _MSC_VER
 #pragma warning (disable: 4786)
 #endif
@@ -142,17 +143,15 @@ FGFX::init()
     if(node) {
         for (int i = 0; i < node->nChildren(); ++i) {
             SGXmlSoundRef soundfx{new SGXmlSound};
-
+            auto child = node->getChild(i);
             try {
-                bool ok = soundfx->init( _props, node->getChild(i), this, _avionics,
-                               path.dir() );
+                bool ok = soundfx->init(_props, child, this, _avionics, path.dir());
                 if (ok) {
                     _xmlSounds.push_back(soundfx);
                 }
-            } catch ( sg_exception &e ) {
-                SG_LOG(SG_SOUND, SG_ALERT, e.getFormattedMessage());
+            } catch (const sg_exception& e) {
                 simgear::reportFailure(simgear::LoadFailure::BadData, simgear::ErrorCode::AudioFX,
-                                       "Failure creating Audio FX:" + e.getFormattedMessage(), path);
+                                       "Failure creating Audio FX:" + e.getFormattedMessage(), sg_location{child});
             }
         }
     }

@@ -51,6 +51,7 @@ auto exception_messageWhitelist = {
     "position is invalid, NaNs", ///< avoid spam when NaNs occur
     "bad AI flight plan",        ///< adjusting logic to avoid this is tricky
     "couldn't find shader",      ///< handled separately
+    "(EMEXEC)"                   ///< Emesary log spam
 
     /// suppress noise from user-entered METAR values : we special case
     /// when live metar fails to parse

@@ -71,6 +71,7 @@
 #include <Main/globals.hxx>
 #include <Main/fg_props.hxx>
 #include <Main/sentryIntegration.hxx>
+#include <Main/locale.hxx>
 
 using std::map;
 using std::string;
@@ -1010,6 +1011,17 @@ static naRef f_md5(naContext c, naRef me, int argc, naRef* args)
   );
 }
 
+static naRef f_translate(naContext c, naRef me, int argc, naRef* args)
+{
+    nasal::CallContext ctx(c, me, argc, args);
+    const auto id = ctx.requireArg<std::string>(0);
+    const auto res = ctx.requireArg<std::string>(1);
+    const auto defaultText = ctx.getArg<std::string>(2);
+
+    auto t = globals->get_locale()->getLocalizedString(id, res.c_str(), defaultText);
+    return nasal::to_nasal(c, t);
+}
+
 // Return UNIX epoch time in seconds.
 static naRef f_systime(naContext c, naRef me, int argc, naRef* args)
 {
@@ -1054,7 +1066,8 @@ static struct { const char* name; naCFunction func;
     {"md5", f_md5},
     {"systime", f_systime},
     {"maketimestamp", f_maketimeStamp},
-    {0, 0}};
+    {"translate", f_translate},
+    {nullptr, nullptr}};
 
 naRef FGNasalSys::cmdArgGhost()
 {
