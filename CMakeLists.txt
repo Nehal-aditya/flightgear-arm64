@@ -373,7 +373,10 @@ if (ENABLE_QT)
         list(APPEND qtNames "Qt6")
     endif()
 
-
+    # short-circuit the check in FindWrapOpenGL.cmake, to avoid looking for
+    # AGL.frameowkr, which is removed from the Apple SDKs now
+    set(WrapOpenGL_AGL "-framework OpenGL")
+    
     find_package(QT NAMES ${qtNames} COMPONENTS Core)
     if (QT_FOUND)
         if (${QT_VERSION_MAJOR} EQUAL "5")

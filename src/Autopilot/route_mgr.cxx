@@ -455,7 +455,6 @@ bool FGRouteMgr::loadRoute(const SGPath& p)
 {
   FlightPlan* fp = FlightPlan::create();
   if (!fp->load(p)) {
-    delete fp;
     return false;
   }
   
