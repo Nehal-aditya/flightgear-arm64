@@ -26,9 +26,8 @@
 #include <simgear/props/props_io.hxx>
 #include <simgear/structure/exception.hxx>
 
+#include "AircraftCompatibility.hxx"
 #include "SettingsWrapper.hxx"
-
-static quint32 CACHE_VERSION = 13;
 
 const std::vector<QByteArray> static_localizedStringTags = {"name", "desc"};
 
@@ -142,10 +141,7 @@ bool AircraftItem::initFromFile(QDir dir, QString filePath)
         thumbnailPath = "thumbnail.jpg";
     }
 
-    if (sim->hasChild("minimum-fg-version")) {
-        minFGVersion = QString::fromStdString(sim->getStringValue("minimum-fg-version"));
-    }
-
+    declaredCompatible = isAircraftCompatible(sim);
     homepageUrl = QUrl(QString::fromStdString(sim->getStringValue("urls/home-page")));
     supportUrl = QUrl(QString::fromStdString(sim->getStringValue("urls/support")));
     wikipediaUrl = QUrl(QString::fromStdString(sim->getStringValue("urls/wikipedia")));
@@ -230,7 +226,7 @@ void AircraftItem::fromDataStream(QDataStream& ds)
     for (int i=0; i<4; ++i) ds >> ratings[i];
     ds >> previews;
     ds >> thumbnailPath;
-    ds >> minFGVersion;
+    ds >> declaredCompatible;
     ds >> needsMaintenance >> usesHeliports >> usesSeaports;
     ds >> homepageUrl >> supportUrl >> wikipediaUrl;
     ds >> tags;
@@ -250,7 +246,7 @@ void AircraftItem::toDataStream(QDataStream& ds) const
     for (int i=0; i<4; ++i) ds << ratings[i];
     ds << previews;
     ds << thumbnailPath;
-    ds << minFGVersion;
+    ds << declaredCompatible;
     ds << needsMaintenance << usesHeliports << usesSeaports;
     ds << homepageUrl << supportUrl << wikipediaUrl;
     ds << tags;
@@ -276,15 +272,11 @@ QVariant AircraftItem::status(int variant)
         return LocalAircraftCache::AircraftUnmaintained;
     }
 
-    if (minFGVersion.isEmpty()) {
+    if (declaredCompatible) {
         return LocalAircraftCache::AircraftOk;
+    } else {
+        return LocalAircraftCache::AircraftIncompatible;
     }
-
-    const int c = simgear::strutils::compare_versions(FLIGHTGEAR_VERSION,
-                                                      minFGVersion.toStdString(), 2);
-    return (c < 0) ? LocalAircraftCache::AircraftNeedsNewerSimulator
-                   : LocalAircraftCache::AircraftOk;
-
 }
 
 namespace {
@@ -428,14 +420,15 @@ private:
         QByteArray cacheData = settings.value("aircraft-cache").toByteArray();
         if (!cacheData.isEmpty()) {
             QDataStream ds(cacheData);
-            quint32 count, cacheVersion;
+            quint32 count;
+            QString cacheVersion;
             ds >> cacheVersion >> count;
 
-            if (cacheVersion != CACHE_VERSION) {
+            if (cacheVersion != FLIGHTGEAR_MAJOR_MINOR_VERSION) {
                 return; // mis-matched cache, version, drop
             }
 
-             for (quint32 i=0; i<count; ++i) {
+            for (quint32 i = 0; i < count; ++i) {
                 AircraftItemPtr item(new AircraftItem);
                 item->fromDataStream(ds);
 
@@ -456,7 +449,11 @@ private:
         {
             QDataStream ds(&cacheData, QIODevice::WriteOnly);
             quint32 count = static_cast<quint32>(m_nextCache.count());
-            ds << CACHE_VERSION << count;
+
+            // Cache version is tied to the Major and Minor version of the release as the cache
+            // stores aircraft compatibility with specific releases.  We assume that aircraft
+            // compatibility is constant across patches.
+            ds << FLIGHTGEAR_MAJOR_MINOR_VERSION << count;
 
             Q_FOREACH(AircraftItemPtr item, m_nextCache.values()) {
                 item->toDataStream(ds);

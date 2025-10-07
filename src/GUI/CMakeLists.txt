@@ -99,6 +99,8 @@ if (HAVE_QT)
                             SetupRootDialog.cxx
                             SetupRootDialog.hxx
                             UpdateDownloadedFGData.hxx
+                            AircraftCompatibility.hxx
+                            AircraftCompatibility.cxx
                             AircraftItemModel.hxx
                             AircraftItemModel.cxx
                             CatalogListModel.cxx

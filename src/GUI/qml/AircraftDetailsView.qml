@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick 2.4
 import QtQuick.Controls 2.2
 import FlightGear.Launcher 1.0
@@ -6,7 +9,7 @@ import FlightGear 1.0
 Rectangle {
     id: root
     color: Style.backgroundColor
-    
+
     property alias aircraftURI: aircraft.uri
 
     MouseArea {
@@ -72,7 +75,6 @@ Rectangle {
                 AircraftWarningPanel {
                     id: warningBox
                     aircraftStatus: aircraft.status
-                    requiredFGVersion: aircraft.minimumFGVersion
                     width: parent.width
                 }
 
@@ -203,7 +205,6 @@ Rectangle {
                             id: ratingsLabel
                             text: qsTr("Ratings:")
                         }
-
 
                         AircraftRating {
                             title: qsTr("Flight model")

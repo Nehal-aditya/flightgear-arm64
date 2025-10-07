@@ -115,6 +115,7 @@ LauncherController::LauncherController(QObject *parent, QWindow* window) :
 
     m_browseAircraftModel = new AircraftProxyModel(this, m_aircraftModel);
     m_browseAircraftModel->setRatingFilterEnabled(true);
+    m_browseAircraftModel->setCompatibilityFilterEnabled(true);
 
     m_aircraftSearchModel = new AircraftProxyModel(this, m_aircraftModel);
 

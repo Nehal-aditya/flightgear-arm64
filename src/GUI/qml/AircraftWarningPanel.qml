@@ -7,7 +7,6 @@ import FlightGear.Launcher 1.0
 Rectangle {
     id: root
     property int aircraftStatus
-    property var requiredFGVersion
 
     visible: (aircraftStatus != LocalAircraftCache.AircraftOk)
 
@@ -26,11 +25,11 @@ Rectangle {
 
         State {
             name: "sim-version-too-low"
-            when: aircraftStatus == LocalAircraftCache.AircraftNeedsNewerSimulator
+            when: aircraftStatus == LocalAircraftCache.AircraftIncompatible
 
             PropertyChanges {
                 target: warningText
-                text: "This aircraft requires FlightGear version " + root.requiredFGVersion + " or higher."
+                text: "This aircraft has not been declared as compatible with this FlightGear version.  Aircraft may not work as expected."
             }
         },
 

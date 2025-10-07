@@ -1,22 +1,5 @@
-// AircraftModel.cxx - part of GUI launcher using Qt5
-//
-// Written by James Turner, started March 2015.
-//
-// Copyright (C) 2015 James Turner <zakalawe@mac.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2015 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #include "config.h"
 
@@ -36,6 +19,7 @@
 #include <simgear/package/Install.hxx>
 
 // FlightGear
+#include "AircraftCompatibility.hxx"
 #include "FavouriteAircraftData.hxx"
 #include "QmlAircraftInfo.hxx"
 #include <Main/globals.hxx>
@@ -340,8 +324,8 @@ QVariant AircraftItemModel::dataFromItem(AircraftItemPtr item, const DelegateSta
         return 0;
     } else if (role == AircraftStatusRole) {
         return item->status(0 /* variant is always 0 */);
-    } else if (role == AircraftMinVersionRole) {
-        return item->minFGVersion;
+    } else if (role == AircraftCompatibleRole) {
+        return item->declaredCompatible;
     }
 
     return QVariant();
@@ -393,7 +377,7 @@ QVariant AircraftItemModel::dataFromPackage(const PackageRef& item, const Delega
             return LocalAircraftCache::PackageNotInstalled;
         }
     } else if (role == AircraftVariantCountRole) {
-        // this value wants the number of aditional variants, i.e not
+        // this value wants the number of additional variants, i.e not
         // including the primary. Hence the -1 term.
         return static_cast<quint32>(item->variants().size() - 1);
     } else if (role == AircraftAuthorsRole) {
@@ -416,11 +400,8 @@ QVariant AircraftItemModel::dataFromPackage(const PackageRef& item, const Delega
         return packageRating(item, role - AircraftRatingRole);
     } else if (role == AircraftStatusRole) {
         return QmlAircraftInfo::packageAircraftStatus(item);
-    } else if (role == AircraftMinVersionRole) {
-        const std::string v = item->properties()->getStringValue("minimum-fg-version");
-        if (!v.empty()) {
-            return QString::fromStdString(v);
-        }
+    } else if (role == AircraftCompatibleRole) {
+        return isAircraftCompatible(item->properties());
     } else if (role == AircraftIsHelicopterRole) {
         return item->hasTag("helicopter");
     } else if (role == AircraftIsSeaplaneRole) {
@@ -477,7 +458,7 @@ QHash<int, QByteArray> AircraftItemModel::roleNames() const
     result[AircraftIsFavouriteRole] = "favourite";
 
     result[AircraftStatusRole] = "aircraftStatus";
-    result[AircraftMinVersionRole] = "requiredFGVersion";
+    result[AircraftCompatibleRole] = "declaredCompatible";
 
     result[AircraftHasRatingsRole] = "hasRatings";
     result[AircraftRatingRole] = "ratingFDM";
@@ -689,4 +670,3 @@ bool AircraftItemModel::isIndexRunnable(const QModelIndex& index) const
 
     return !ex->isDownloading();
 }
-

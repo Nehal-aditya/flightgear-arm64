@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2020 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #ifndef AIRCRAFTSEARCHFILTERMODEL_HXX
 #define AIRCRAFTSEARCHFILTERMODEL_HXX
 
@@ -16,6 +19,8 @@ public:
 
     Q_PROPERTY(bool ratingsFilterEnabled READ ratingsFilterEnabled WRITE setRatingFilterEnabled NOTIFY ratingsFilterEnabledChanged)
 
+    Q_PROPERTY(bool compatibilityFilterEnabled READ compatibilityFilterEnabled WRITE setCompatibilityFilterEnabled NOTIFY compatibilityFilterEnabledChanged)
+
     Q_PROPERTY(QString summaryText READ summaryText NOTIFY summaryTextChanged)
 
     Q_INVOKABLE void setAircraftFilterString(QString s);
@@ -30,9 +35,9 @@ public:
 
     Q_INVOKABLE void selectVariantForAircraftURI(QUrl uri);
 
-    Q_INVOKABLE void loadRatingsSettings();
+    Q_INVOKABLE void loadCompatibilityAndRatingsSettings();
 
-    Q_INVOKABLE void saveRatingsSettings();
+    Q_INVOKABLE void saveCompatibilityAndRatingsSettings();
 
     QList<int> ratings() const
     {
@@ -47,12 +52,20 @@ public:
     void setRatings(QList<int> ratings);
     void setRatingFilterEnabled(bool e);
 
+    bool compatibilityFilterEnabled() const
+    {
+        return m_compatibilityFilter;
+    }
+
+    void setCompatibilityFilterEnabled(bool e);
+
     QString summaryText() const;
 
     int count() const;
 signals:
     void ratingsChanged();
     void ratingsFilterEnabledChanged();
+    void compatibilityFilterEnabledChanged();
     void summaryTextChanged();
     void countChanged();
 
@@ -71,6 +84,7 @@ private:
     bool filterAircraft(const QModelIndex& sourceIndex) const;
 
     bool m_ratingsFilter = false;
+    bool m_compatibilityFilter = true;
     bool m_onlyShowInstalled = false;
     bool m_onlyShowWithUpdate = false;
     bool m_onlyShowFavourites = false;

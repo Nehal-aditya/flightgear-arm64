@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2015 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "config.h"
 
 #include "QmlAircraftInfo.hxx"
@@ -15,8 +18,9 @@
 
 #include <Main/globals.hxx>
 
-#include "LocalAircraftCache.hxx"
+#include "AircraftCompatibility.hxx"
 #include "FavouriteAircraftData.hxx"
+#include "LocalAircraftCache.hxx"
 
 using namespace simgear::pkg;
 using namespace std::chrono_literals;
@@ -566,18 +570,16 @@ QVariant QmlAircraftInfo::status() const
     return LocalAircraftCache::AircraftOk;
 }
 
-QString QmlAircraftInfo::minimumFGVersion() const
+bool QmlAircraftInfo::declaredCompatible() const
 {
     if (_item) {
-        return resolveItem()->minFGVersion;
+        return resolveItem()->declaredCompatible;
     } else if (_package) {
-        const std::string v = _package->properties()->getStringValue("minimum-fg-version");
-        if (!v.empty()) {
-            return QString::fromStdString(v);
-        }
+        return isAircraftCompatible(_package->properties());
+    } else {
+        // No item nor package
+        return false;
     }
-
-    return {};
 }
 
 AircraftItemPtr QmlAircraftInfo::resolveItem() const
@@ -727,14 +729,11 @@ QVariant QmlAircraftInfo::packageAircraftStatus(simgear::pkg::PackageRef p)
         return LocalAircraftCache::AircraftUnmaintained;
     }
 
-    if (!p->properties()->hasChild("minimum-fg-version")) {
+    if (isAircraftCompatible(p->properties())) {
         return LocalAircraftCache::AircraftOk;
+    } else {
+        return LocalAircraftCache::AircraftIncompatible;
     }
-
-    const std::string minFGVersion = p->properties()->getStringValue("minimum-fg-version");
-    const int c = simgear::strutils::compare_versions(FLIGHTGEAR_VERSION, minFGVersion, 2);
-    return (c < 0) ? LocalAircraftCache::AircraftNeedsNewerSimulator :
-                     LocalAircraftCache::AircraftOk;
 }
 
 QVariant QmlAircraftInfo::installStatus() const

@@ -15,16 +15,33 @@ ListHeaderBox
     contents: [
 
         ToggleSwitch {
+            id: doCompatibilityCheck
+            checked: _launcher.browseAircraftModel.compatibilityFilterEnabled
+
+            onCheckedChanged: {
+                _launcher.browseAircraftModel.compatibilityFilterEnabled = checked
+                _launcher.saveUISetting("enable-compatibility-filter", checked);
+            }
+
+            label: qsTr("Only display compatible aircraft")
+            anchors.verticalCenter: parent.verticalCenter
+        },
+
+        ToggleSwitch {
             id: doFilterCheck
             checked: _launcher.browseAircraftModel.ratingsFilterEnabled
 
             onCheckedChanged: {
                 _launcher.browseAircraftModel.ratingsFilterEnabled = checked
-                 _launcher.saveUISetting("enable-ratings-filter", checked);
+                _launcher.saveUISetting("enable-ratings-filter", checked);
             }
 
             label: qsTr("Filter using ratings")
-            anchors.verticalCenter: parent.verticalCenter
+            anchors {
+                verticalCenter: parent.verticalCenter
+                leftMargin: Style.margin
+                left: doCompatibilityCheck.right
+            }
         },
 
         StyledText {

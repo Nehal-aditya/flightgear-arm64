@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2018 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #ifndef QMLAIRCRAFTINFO_HXX
 #define QMLAIRCRAFTINFO_HXX
 
@@ -87,7 +90,7 @@ class QmlAircraftInfo : public QObject
     Q_PROPERTY(QVariant status READ status NOTIFY infoChanged)
     Q_PROPERTY(QVariant installStatus READ installStatus NOTIFY downloadChanged)
 
-    Q_PROPERTY(QString minimumFGVersion READ minimumFGVersion NOTIFY infoChanged)
+    Q_PROPERTY(bool declaredCompatible READ declaredCompatible NOTIFY infoChanged)
 
     Q_PROPERTY(QUrl homePage READ homePage NOTIFY infoChanged)
     Q_PROPERTY(QUrl supportUrl READ supportUrl NOTIFY infoChanged)
@@ -130,7 +133,7 @@ public:
     quint64 downloadedBytes() const;
 
     QVariant status() const;
-    QString minimumFGVersion() const;
+    bool declaredCompatible() const;
 
     static QVariant packageAircraftStatus(simgear::pkg::PackageRef p);
 

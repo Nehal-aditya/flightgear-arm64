@@ -1,22 +1,5 @@
-// AircraftModel.hxx - part of GUI launcher using Qt5
-//
-// Written by James Turner, started March 2015.
-//
-// Copyright (C) 2015 James Turner <zakalawe@mac.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+// SPDX-FileCopyrightText: 2015 James Turner
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifndef FG_GUI_AIRCRAFT_MODEL
 #define FG_GUI_AIRCRAFT_MODEL
@@ -54,7 +37,7 @@ const int AircraftIsFavouriteRole = Qt::UserRole + 20;
 const int AircraftPrimaryURIRole = Qt::UserRole + 21;
 
 const int AircraftStatusRole = Qt::UserRole + 22;
-const int AircraftMinVersionRole = Qt::UserRole + 23;
+const int AircraftCompatibleRole = Qt::UserRole + 23;
 
 const int AircraftRatingRole = Qt::UserRole + 100;
 const int AircraftVariantDescriptionRole = Qt::UserRole + 200;
@@ -78,9 +61,9 @@ public:
     void setPackageRoot(const simgear::pkg::RootRef& root);
 
     int rowCount(const QModelIndex& parent) const override;
-    
+
     QVariant data(const QModelIndex& index, int role) const override;
-    
+
     bool setData(const QModelIndex &index, const QVariant &value, int role) override;
 
     QHash<int, QByteArray> roleNames() const override;
@@ -113,9 +96,9 @@ public:
     int installedAircraftCount() const;
 signals:
     void aircraftInstallFailed(QModelIndex index, QString errorMessage);
-    
+
     void aircraftInstallCompleted(QModelIndex index);
-    
+
     void contentsChanged();
 
     void installedAircraftCountChanged();
@@ -151,7 +134,7 @@ private:
 
     void installSucceeded(QModelIndex index);
     void installFailed(QModelIndex index, simgear::pkg::Delegate::StatusCode reason);
-    
+
 private:
     PackageDelegate* m_delegate = nullptr;
 

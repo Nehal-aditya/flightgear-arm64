@@ -91,6 +91,19 @@ void AircraftProxyModel::setRatingFilterEnabled(bool e)
     emit countChanged();
 }
 
+void AircraftProxyModel::setCompatibilityFilterEnabled(bool e)
+{
+    if (e == m_compatibilityFilter) {
+        return;
+    }
+
+    m_compatibilityFilter = e;
+    invalidate();
+    emit compatibilityFilterEnabledChanged();
+    emit summaryTextChanged();
+    emit countChanged();
+}
+
 QString AircraftProxyModel::summaryText() const
 {
     const int unfilteredCount = sourceModel()->rowCount();
@@ -173,6 +186,16 @@ bool AircraftProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sour
         }
     }
 
+    // If there is no search active, i.e. we are browsing, we might apply the
+    // compatibility filter
+    if (m_filterString.isEmpty() && !m_onlyShowInstalled && m_compatibilityFilter) {
+        QVariant v = index.data(AircraftCompatibleRole);
+        if (!v.toBool()) {
+            // If it's not marked as compatible, then don't show it on the list
+            return false;
+        }
+    }
+
     if (m_onlyShowFavourites) {
         if (!index.data(AircraftIsFavouriteRole).toBool())
             return false;
@@ -223,9 +246,10 @@ bool AircraftProxyModel::filterAircraft(const QModelIndex &sourceIndex) const
     return false;
 }
 
-void AircraftProxyModel::loadRatingsSettings()
+void AircraftProxyModel::loadCompatibilityAndRatingsSettings()
 {
     auto settings = flightgear::getQSettings();
+    m_compatibilityFilter = settings.value("enable-compatibility-filter", true).toBool();
     m_ratingsFilter = settings.value("enable-ratings-filter", true).toBool();
     QVariantList vRatings = settings.value("ratings-filter").toList();
     if (vRatings.size() == 4) {
@@ -237,9 +261,10 @@ void AircraftProxyModel::loadRatingsSettings()
     invalidate();
 }
 
-void AircraftProxyModel::saveRatingsSettings()
+void AircraftProxyModel::saveCompatibilityAndRatingsSettings()
 {
     auto settings = flightgear::getQSettings();
+    settings.setValue("enable-compatibility-filter", m_compatibilityFilter);
     settings.setValue("enable-ratings-filter", m_ratingsFilter);
     QVariantList vRatings;
     for (int i=0; i < 4; ++i) {
