@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <unordered_set>
+#include <string>
 
 #include <Main/fg_props.hxx>
 #include <hidapi/hidapi.h>
@@ -201,7 +203,15 @@ FGHIDDevice::FGHIDDevice(hid_device_info* devInfo, FGHIDEventInput*)
         SetSerialNumber(simgear::strutils::convertWStringToUtf8(serial));
     }
 
-    SG_LOG(SG_INPUT, SG_DEBUG, "HID device:" << GetName() << " at path " << _hidPath);
+    std::string _usage = HID::nameForUsage(devInfo->usage_page, devInfo->usage);
+    SG_LOG(SG_INPUT, SG_DEBUG, "HID device " << _hidPath << " "
+        << "0x" << std::hex << devInfo->vendor_id << ":0x" << std::hex << devInfo->product_id << " "
+        << "release " << devInfo->release_number << " "
+        << "usage " << _usage << "(0x" << std::hex << devInfo->usage_page 
+        << ":0x" << std::hex << devInfo->usage << ") "
+        << "ifn " << devInfo->interface_number << " "
+        << GetName() );
+
 }
 
 FGHIDDevice::~FGHIDDevice()
@@ -761,10 +771,22 @@ void FGHIDEventInput::postinit()
 
     hid_device_info* devices = hid_enumerate(0 /* vendor ID */, 0 /* product ID */);
 
+    // open each device path only once, it may appear multiple times with different usage value
+    std::unordered_set<std::string> seenPaths;    
     for (hid_device_info* curDev = devices; curDev != nullptr; curDev = curDev->next) {
-        d->evaluateDevice(curDev);
+        if (curDev->path) {
+            std::string pathStr(curDev->path);
+            if (seenPaths.find(pathStr) == seenPaths.end()) {
+                seenPaths.insert(pathStr);
+                d->evaluateDevice(curDev);
+            } else {
+                std::string _usage = HID::nameForUsage(curDev->usage_page, curDev->usage);
+                SG_LOG(SG_INPUT, SG_DEBUG, "Skipping duplicate path " << pathStr << " "
+                    << "usage " << _usage << "(0x" << std::hex << curDev->usage_page << ":0x"
+                    << std::hex << curDev->usage << ")");
+            }            
+        }
     }
-
     hid_free_enumeration(devices);
 }
 
