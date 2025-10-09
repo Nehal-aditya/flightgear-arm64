@@ -30,7 +30,11 @@
 
 #include "FGButton.hxx"
 #include "FGDeviceConfigurationMap.hxx"
+#include "simgear/structure/SGSourceLocation.hxx"
+#include <simgear/misc/strutils.hxx>
 #include <simgear/structure/subsystem_mgr.hxx>
+
+#include "FGEventInput_private.hxx"
 
 // forward decls
 class SGInterpTable;
@@ -46,48 +50,6 @@ struct FGEventData {
     double dt {0.0};
 };
 
-/*
-  FGEventSetting
-  stores one value or property node together with an optional condition
-  Multiple FGEventSetting can be assigned to one FGInputEvent
-*/
-class FGEventSetting : public SGReferenced
-{
-public:
-    FGEventSetting( SGPropertyNode_ptr base );
-    // return evaluted condition or true if condition is nullptr
-    bool Test();
-    // return either value of valueNode or value if valueNode is nullptr
-    double GetValue();
-
-protected:
-    double value {0.0};
-    SGPropertyNode_ptr valueNode;
-    SGSharedPtr<const SGCondition> condition;
-};
-
-typedef SGSharedPtr<FGEventSetting> FGEventSetting_ptr;
-typedef std::vector<FGEventSetting_ptr> setting_list_t;
-
-class FGReportSetting : public SGReferenced,
-                        public SGPropertyChangeListener
-{
-public:
-    FGReportSetting( SGPropertyNode_ptr base );
-    unsigned int getReportId() const { return reportId; }
-    std::string getNasalFunctionName() const { return nasalFunction; }
-    bool Test();
-    std::string reportBytes(const std::string& moduleName) const;
-    virtual void valueChanged(SGPropertyNode * node);
-
-protected:
-    unsigned int reportId;
-    std::string nasalFunction;
-    bool dirty;
-};
-
-typedef SGSharedPtr<FGReportSetting> FGReportSetting_ptr;
-typedef std::vector<FGReportSetting_ptr> report_setting_list_t;
 
 /*
  * A wrapper class for a configured event.
@@ -228,7 +190,8 @@ public:
         Send( eventName.c_str(), value );
     }
 
-    virtual void SendFeatureReport(unsigned int reportId, const std::string& data);
+    virtual void SendFeatureReport(unsigned int reportId, const simgear::UInt8Vector& data);
+    virtual void SendOutputReport(unsigned int reportId, const simgear::UInt8Vector& data);
 
     virtual const char * TranslateEventName( FGEventData & eventData ) = 0;
 

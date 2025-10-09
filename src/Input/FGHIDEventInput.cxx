@@ -4,6 +4,7 @@
 // SPDX-FileCopyrightText: 2017 James Turner <james@flightgear.org>
 
 #include "config.h"
+#include "simgear/debug/debug_types.h"
 
 #include "FGHIDEventInput.hxx"
 
@@ -17,6 +18,7 @@
 #include <hidapi/hidapi.h>
 #include <hidapi/hidparse.h>
 
+#include <simgear/debug/ErrorReportingCallback.hxx>
 #include <simgear/io/lowlevel.hxx>
 #include <simgear/misc/strutils.hxx>
 #include <simgear/sg_inlines.h>
@@ -24,7 +26,7 @@
 
 #include "FGHIDUsage.hxx"
 
-const char* hexTable = "0123456789ABCDEF";
+using simgear::strutils::encodeHex;
 
 namespace HID {
 
@@ -87,7 +89,8 @@ public:
     void update(double dt) override;
     const char* TranslateEventName(FGEventData& eventData) override;
     void Send(const char* eventName, double value) override;
-    void SendFeatureReport(unsigned int reportId, const std::string& data) override;
+    void SendFeatureReport(unsigned int reportId, const simgear::UInt8Vector& data) override;
+    void SendOutputReport(unsigned int reportId, const simgear::UInt8Vector& data) override;
 
     class Item
     {
@@ -148,6 +151,8 @@ private:
 
     void defineReport(SGPropertyNode_ptr reportNode);
 
+    void dumpRawBytes(const std::string& b) const;
+
     std::vector<Report*> _reports;
     std::string _hidPath;
     hid_device* _device = nullptr;
@@ -160,7 +165,7 @@ private:
     bool _haveLocalDescriptor = false;
 
     /// allow specifying the descriptor as hex bytes in XML
-    std::vector<uint8_t> _rawXMLDescriptor;
+    simgear::UInt8Vector _rawXMLDescriptor;
 
     // all sets which will be send on the next update() call.
     std::set<Report*> _dirtyReports;
@@ -306,17 +311,7 @@ bool FGHIDDevice::parseUSBHIDDescriptor()
 #endif
 
     if (_debugRaw) {
-        SG_LOG(SG_INPUT, SG_INFO, "\nHID: descriptor for:" << GetUniqueName());
-        {
-            std::ostringstream byteString;
-
-            for (size_t i = 0; i < _rawXMLDescriptor.size(); ++i) {
-                byteString << hexTable[_rawXMLDescriptor[i] >> 4];
-                byteString << hexTable[_rawXMLDescriptor[i] & 0x0f];
-                byteString << " ";
-            }
-            SG_LOG(SG_INPUT, SG_INFO, "\tbytes: " << byteString.str());
-        }
+        SG_LOG(SG_INPUT, SG_INFO, "\nHID: descriptor for:" << GetUniqueName() << "\n\t" << encodeHex(_rawXMLDescriptor, ':'));
     }
 
     hid_item* rootItem = nullptr;
@@ -516,15 +511,8 @@ void FGHIDDevice::sendReport(Report* report) const
     reportLength /= 8;
 
     if (_debugRaw) {
-        std::ostringstream byteString;
-        for (size_t i = 0; i < reportLength; ++i) {
-            byteString << hexTable[reportBytes[i] >> 4];
-            byteString << hexTable[reportBytes[i] & 0x0f];
-            byteString << " ";
-        }
-        SG_LOG(SG_INPUT, SG_INFO, "sending bytes: " << byteString.str());
+        SG_LOG(SG_INPUT, SG_INFO, "sending bytes: " << encodeHex(reportBytes, ':'));
     }
-
 
     // send the data, based on the report type
     if (report->type == HID::ReportType::Feature) {
@@ -547,13 +535,7 @@ void FGHIDDevice::processInputReport(Report* report, unsigned char* data,
     if (_debugRaw) {
         SG_LOG(SG_INPUT, SG_INFO, GetName() << " FGHIDDeivce received input report:" << (int)report->number << ", len=" << length);
         {
-            std::ostringstream byteString;
-            for (size_t i = 0; i < length; ++i) {
-                byteString << hexTable[data[i] >> 4];
-                byteString << hexTable[data[i] & 0x0f];
-                byteString << " ";
-            }
-            SG_LOG(SG_INPUT, SG_INFO, "\tbytes: " << byteString.str());
+            SG_LOG(SG_INPUT, SG_INFO, "\tbytes: " << encodeHex(data, length, ':'));
         }
     }
 
@@ -588,7 +570,7 @@ void FGHIDDevice::processInputReport(Report* report, unsigned char* data,
     }
 }
 
-void FGHIDDevice::SendFeatureReport(unsigned int reportId, const std::string& data)
+void FGHIDDevice::SendFeatureReport(unsigned int reportId, const simgear::UInt8Vector& data)
 {
     if (!_device) {
         return;
@@ -596,20 +578,11 @@ void FGHIDDevice::SendFeatureReport(unsigned int reportId, const std::string& da
 
     if (_debugRaw) {
         SG_LOG(SG_INPUT, SG_INFO, GetName() << ": FGHIDDevice: Sending feature report:" << (int)reportId << ", len=" << data.size());
-        {
-            std::ostringstream byteString;
-
-            for (unsigned int i = 0; i < data.size(); ++i) {
-                byteString << hexTable[data[i] >> 4];
-                byteString << hexTable[data[i] & 0x0f];
-                byteString << " ";
-            }
-            SG_LOG(SG_INPUT, SG_INFO, "\tbytes: " << byteString.str());
-        }
+        SG_LOG(SG_INPUT, SG_INFO, "\tbytes: " << encodeHex(data, ':'));
     }
 
     uint8_t buf[65];
-    size_t len = std::min(data.length() + 1, sizeof(buf));
+    size_t len = std::min(data.size() + 1, sizeof(buf));
     buf[0] = reportId;
     memcpy(buf + 1, data.data(), len - 1);
     size_t r = hid_send_feature_report(_device, buf, len);
@@ -627,6 +600,8 @@ const char* FGHIDDevice::TranslateEventName(FGEventData& eventData)
 
 void FGHIDDevice::Send(const char* eventName, double value)
 {
+    // even though this called 'Send' it's really 'mark value for sending when we update', to
+    // avoid generating multiple output reports in a single update frame.
     auto item = itemWithName(eventName);
     if (item.second == nullptr) {
         SG_LOG(SG_INPUT, SG_WARN, GetName() << ": FGHIDDevice:unknown item name:" << eventName);
@@ -644,6 +619,36 @@ void FGHIDDevice::Send(const char* eventName, double value)
     // update the stored value prior to sending
     item.second->lastValue = intValue;
     _dirtyReports.insert(item.first);
+}
+
+void FGHIDDevice::SendOutputReport(unsigned int reportId, const simgear::UInt8Vector& data)
+{
+    if (!_device) {
+        return;
+    }
+
+    auto r = getReport(HID::ReportType::Out, reportId);
+    if (!r) {
+        SG_LOG(SG_INPUT, SG_DEV_ALERT, "HID device does not define an output report with ID:" << reportId);
+        return;
+    }
+
+
+    if (_debugRaw) {
+        SG_LOG(SG_INPUT, SG_INFO, GetName() << ": FGHIDDevice: output feature:" << (int)reportId << ", len=" << data.size());
+        SG_LOG(SG_INPUT, SG_INFO, "\tbytes: " << encodeHex(data, ':'));
+    }
+
+    uint8_t buf[65];
+    size_t len = std::min(data.size() + 1, sizeof(buf));
+    buf[0] = reportId;
+    memcpy(buf + 1, data.data(), len - 1);
+
+    auto result = hid_write(_device, buf, len);
+    if (result < 0) {
+        SG_LOG(SG_INPUT, SG_DEV_ALERT, GetName() << ": FGHIDDevice: Sending outpit report failed, error-string is:\n"
+                                                 << simgear::strutils::error_string(errno));
+    }
 }
 
 void FGHIDDevice::defineReport(SGPropertyNode_ptr reportNode)

@@ -2,42 +2,35 @@
 //
 // Written by Torsten Dreyer, started July 2009.
 //
-// Copyright (C) 2009 Torsten Dreyer, Torsten (at) t3r _dot_ de
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-FileCopyrightText: 2009 Torsten Dreyer
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include "simgear/debug/debug_types.h"
+#include "simgear/misc/strutils.hxx"
+#include "simgear/nasal/nasal.h"
+#include "simgear/structure/exception.hxx"
 
-#include <cstring>
+#include <config.h>
+
 #include "FGEventInput.hxx"
 #include <Main/fg_props.hxx>
+#include <Scripting/NasalSys.hxx>
+#include <cstdint>
+#include <cstring>
+#include <simgear/debug/ErrorReportingCallback.hxx>
 #include <simgear/io/sg_file.hxx>
-#include <simgear/props/props_io.hxx>
 #include <simgear/math/SGMath.hxx>
 #include <simgear/math/interpolater.hxx>
-#include <Scripting/NasalSys.hxx>
+#include <simgear/misc/strutils.hxx>
+#include <simgear/props/props_io.hxx>
+#include <utility>
 
 using simgear::PropertyList;
 using std::cout;
 using std::endl;
 using std::map;
 using std::string;
+using namespace std::string_literals;
 
 FGEventSetting::FGEventSetting( SGPropertyNode_ptr base ) :
   value(0.0)
@@ -50,16 +43,20 @@ FGEventSetting::FGEventSetting( SGPropertyNode_ptr base ) :
   } else {
     n = base->getNode( "property" );
     if( n == NULL ) {
-      SG_LOG( SG_INPUT, SG_WARN, "Neither <value> nor <property> defined for event setting." );
+        SG_LOG(SG_INPUT, SG_WARN, "Neither <value> nor <property> defined for event setting:" << base->getLocation());
     } else {
       valueNode = fgGetNode( n->getStringValue(), true );
     }
   }
 
-  if( (n = base->getChild("condition")) != NULL )
-    condition = sgReadCondition(base, n);
-  else
-    SG_LOG( SG_INPUT, SG_ALERT, "No condition for event setting." );
+  if ((n = base->getChild("condition")) != NULL) {
+      condition = sgReadCondition(base, n);
+  } else {
+      simgear::reportFailure(simgear::LoadFailure::Misconfigured,
+                             simgear::ErrorCode::InputDeviceConfig,
+                             "No condition for event setting",
+                             sg_location(base));
+  }
 }
 
 double FGEventSetting::GetValue()
@@ -129,9 +126,9 @@ void FGInputEvent::fire( FGEventData & eventData )
 {
   lastDt += eventData.dt;
   if( lastDt >= intervalSec ) {
-
-    for( binding_list_t::iterator it = bindings[eventData.modifiers].begin(); it != bindings[eventData.modifiers].end(); ++it )
-      fire( *it, eventData );
+      for (auto b : bindings[eventData.modifiers]) {
+          fire(b, eventData);
+      }
 
     lastDt -= intervalSec;
   }
@@ -141,8 +138,6 @@ void FGInputEvent::fire(SGAbstractBinding* binding, FGEventData& eventData)
 {
   binding->fire();
 }
-
-
 
 FGAxisEvent::FGAxisEvent( FGInputDevice * device, SGPropertyNode_ptr eventNode ) :
   FGInputEvent( device, eventNode )
@@ -163,9 +158,7 @@ FGAxisEvent::FGAxisEvent( FGInputDevice * device, SGPropertyNode_ptr eventNode )
   }
 }
 
-FGAxisEvent::~FGAxisEvent()
-{
-}
+FGAxisEvent::~FGAxisEvent() = default;
 
 void FGAxisEvent::fire( FGEventData & eventData )
 {
@@ -288,9 +281,9 @@ void FGInputDevice::Configure( SGPropertyNode_ptr aDeviceNode )
   debugEvents = deviceNode->getBoolValue("debug-events", debugEvents );
   grab = deviceNode->getBoolValue("grab", grab );
 
-  PropertyList reportNodes = deviceNode->getChildren("report");
-  for( PropertyList::iterator it = reportNodes.begin(); it != reportNodes.end(); ++it ) {
-      FGReportSetting_ptr r = new FGReportSetting(*it);
+  auto reportNodes = deviceNode->getChildren("report");
+  for (auto repNode : reportNodes) {
+      FGReportSetting_ptr r = new FGReportSetting(repNode);
       reportSettings.push_back(r);
   }
 
@@ -325,13 +318,31 @@ void FGInputDevice::update( double dt )
   for( map<string,FGInputEvent_ptr>::iterator it = handledEvents.begin(); it != handledEvents.end(); it++ )
     (*it).second->update( dt );
 
-  report_setting_list_t::const_iterator it;
-  for (it = reportSettings.begin(); it != reportSettings.end(); ++it) {
-    if ((*it)->Test()) {
-      std::string reportData = (*it)->reportBytes(nasalModule);
-      SendFeatureReport((*it)->getReportId(), reportData);
-    }
-  }
+  for (auto r : reportSettings) {
+      if (r->hasError()) {
+          continue;
+      }
+
+      try {
+          if (r->Test()) {
+              auto reportData = r->reportBytes(nasalModule);
+              if (debugEvents) {
+                  SG_LOG(SG_INPUT, SG_INFO, class_id << " " << GetUniqueName() << ": Sending report " << r->getReportId() << simgear::strutils::encodeHex(reportData));
+              }
+              if (r->getReportType() == FGReportSetting::Type::Feature) {
+                  SendFeatureReport(r->getReportId(), reportData);
+              } else {
+                  SendOutputReport(r->getReportId(), reportData);
+              }
+          }
+      } catch (sg_exception& e) {
+          r->markAsError();
+          simgear::reportFailure(simgear::LoadFailure::Unknown,
+                                 simgear::ErrorCode::InputDeviceConfig,
+                                 "Failed to send report:"s + e.getMessage(),
+                                 e.getLocation());
+      }
+  } // of report setting iteration
 }
 
 void FGInputDevice::HandleEvent( FGEventData & eventData )
@@ -363,15 +374,17 @@ void FGInputDevice::SetSerialNumber( std::string serial )
     serialNumber = serial;
 }
 
-void FGInputDevice::SendFeatureReport(unsigned int reportId, const std::string& data)
+void FGInputDevice::SendFeatureReport(unsigned int reportId, const simgear::UInt8Vector& data)
 {
     SG_LOG(SG_INPUT, SG_WARN, "SendFeatureReport not implemented");
 }
 
-
-FGEventInput::FGEventInput()
+void FGInputDevice::SendOutputReport(unsigned int reportId, const simgear::UInt8Vector& data)
 {
+    SG_LOG(SG_INPUT, SG_WARN, "SendOutputReport not implemented");
 }
+
+FGEventInput::FGEventInput() = default;
 
 FGEventInput::FGEventInput(const char* filePath, const char* propertyRoot):
   filePath(filePath),
@@ -379,10 +392,7 @@ FGEventInput::FGEventInput(const char* filePath, const char* propertyRoot):
 {
 }
 
-FGEventInput::~FGEventInput()
-{
-
-}
+FGEventInput::~FGEventInput() = default;
 
 void FGEventInput::shutdown()
 {
@@ -433,7 +443,7 @@ unsigned FGEventInput::AddDevice( FGInputDevice * inputDevice )
   const string deviceName = inputDevice->GetName();
   SGPropertyNode_ptr configNode = nullptr;
 
-  // if we have a serial number set, try using that to select a specfic configuration
+  // if we have a serial number set, try using that to select a specific configuration
   if (!inputDevice->GetSerialNumber().empty()) {
     const string nameWithSerial = deviceName + "::" + inputDevice->GetSerialNumber();
     if (configMap.hasConfiguration(nameWithSerial)) {
@@ -451,14 +461,13 @@ unsigned FGEventInput::AddDevice( FGInputDevice * inputDevice )
         SG_LOG(SG_INPUT, SG_INFO, "using instance-specific configuration for device "
                 << nameWithIndex << " : " << configNode->getStringValue("source"));
     }
-    // otherwise try the unmodifed name for the device
+    // otherwise try the unmodified name for the device
     else if (configMap.hasConfiguration(deviceName)) {
-      configNode = configMap.configurationForDeviceName(deviceName);
-    }
-    else {
-      SG_LOG(SG_INPUT, SG_INFO, "No configuration found for device " << deviceName);
-      delete inputDevice;
-      return INVALID_DEVICE_INDEX;
+        configNode = configMap.configurationForDeviceName(deviceName);
+    } else {
+        SG_LOG(SG_INPUT, SG_INFO, "No configuration found for device " << deviceName);
+        delete inputDevice;
+        return INVALID_DEVICE_INDEX;
     }
     inputDevice->SetUniqueName(nameWithIndex);
   }
@@ -518,17 +527,30 @@ void FGEventInput::RemoveDevice( unsigned index )
 
 FGReportSetting::FGReportSetting( SGPropertyNode_ptr base )
 {
+    location = base->getLocation();
     reportId = base->getIntValue("report-id");
     nasalFunction = base->getStringValue("nasal-function");
 
-    PropertyList watchNodes = base->getChildren( "watch" );
-    for (PropertyList::iterator it = watchNodes.begin(); it != watchNodes.end(); ++it ) {
-        std::string path = (*it)->getStringValue();
+    if (base->hasChild("report-type")) {
+        const auto s = base->getStringValue("report-type");
+        if (s == "output") {
+            _type = Type::Output;
+        } else if (s == "feature") {
+            _type = Type::Feature;
+        } else {
+            simgear::reportFailure(simgear::LoadFailure::Misconfigured,
+                                   simgear::ErrorCode::InputDeviceConfig,
+                                   "Invalid report type:" + s,
+                                   sg_location(base));
+        }
+    }
+
+    auto watchNodes = base->getChildren("watch");
+    for (auto w : watchNodes) {
+        std::string path = w->getStringValue();
         SGPropertyNode_ptr n = globals->get_props()->getNode(path, true);
         n->addChangeListener(this);
     }
-
-    dirty = true;
 }
 
 bool FGReportSetting::Test()
@@ -538,7 +560,7 @@ bool FGReportSetting::Test()
     return d;
 }
 
-std::string FGReportSetting::reportBytes(const std::string& moduleName) const
+simgear::UInt8Vector FGReportSetting::reportBytes(const std::string& moduleName) const
 {
     auto nas = globals->get_subsystem<FGNasalSys>();
     if (!nas) {
@@ -547,52 +569,61 @@ std::string FGReportSetting::reportBytes(const std::string& moduleName) const
 
     naRef module = nas->getModule(moduleName.c_str());
     if (naIsNil(module)) {
-        SG_LOG(SG_IO, SG_WARN, "No such Nasal module:" << moduleName);
-        return {};
+        throw sg_exception("Unknown Nasal module:" + moduleName, nasalFunction, sg_location(location));
     }
 
     naRef func = naHash_cget(module, (char*) nasalFunction.c_str());
     if (!naIsFunc(func)) {
-        return std::string();
+        throw sg_exception("Not a Nasal function:" + nasalFunction, nasalFunction, sg_location(location));
     }
 
     naRef result = nas->call(func, 0, 0, naNil());
     if (naIsString(result)) {
         size_t len = naStr_len(result);
         char* bytes = naStr_data(result);
-        return std::string(bytes, len);
+        char* endByte = bytes + len;
+        return simgear::UInt8Vector(
+            reinterpret_cast<uint8_t*>(bytes),
+            reinterpret_cast<uint8_t*>(endByte));
     }
 
     if (naIsVector(result)) {
       int len = naVec_size(result);
-      std::string s;
+      simgear::UInt8Vector d;
       for (int b=0; b < len; ++b) {
         int num = naNumValue(naVec_get(result, b)).num;
-        s.push_back(static_cast<char>(num));
+        d.push_back(static_cast<uint8_t>(num));
       }
 
-      // can't access FGInputDevice here to check debugEvents flag
-#if 0
-      std::ostringstream byteString;
-      static const char* hexTable = "0123456789ABCDEF";
-
-        for (int i=0; i<s.size(); ++i) {
-            uint8_t uc = static_cast<uint8_t>(s[i]);
-            byteString << hexTable[uc >> 4];
-            byteString << hexTable[uc & 0x0f];
-            byteString << " ";
-        }
-        SG_LOG(SG_INPUT, SG_INFO, "report bytes: (" << s.size() << ") " << byteString.str());
-#endif
-
-      return s;
+      return d;
     }
 
-    SG_LOG(SG_INPUT, SG_DEV_WARN, "bad return data from report setting");
-    return {};
+    // allow returning nil to mean no data
+    if (naIsNil(result)) {
+        return {};
+    }
+
+    throw sg_exception("Bad data from report setting", nasalFunction,
+                       sg_location(location));
 }
 
-void FGReportSetting::valueChanged(SGPropertyNode * node)
+void FGReportSetting::valueChanged(SGPropertyNode* n)
 {
+    auto it = watchValueCache.find(n);
+    const auto val = n->getStringValue();
+    if (it == watchValueCache.end()) {
+        watchValueCache.insert(std::make_pair(n, val));
+        dirty = true;
+        return;
+    }
+
+    // because we use string equality, for floating-point values, we will
+    // quantise to the precision of the string representation.
+    // that's an almost-feature, until we define explicit precision on properties
+    if (val == it->second) {
+        return;
+    }
+
+    it->second = val;
     dirty = true;
 }
