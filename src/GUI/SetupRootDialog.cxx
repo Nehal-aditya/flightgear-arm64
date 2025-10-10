@@ -26,10 +26,12 @@
 #include <QThread>
 #include <QUrl>
 
+#include "simgear/debug/debug_types.h"
 #include "ui_SetupRootDialog.h"
 
-#include <Main/globals.hxx>
 #include <Main/fg_init.hxx>
+#include <Main/fg_props.hxx>
+#include <Main/globals.hxx>
 #include <Main/options.hxx>
 #include <Viewer/WindowBuilder.hxx>
 
@@ -37,6 +39,7 @@
 #include "SettingsWrapper.hxx"
 #include "UpdateDownloadedFGData.hxx"
 #include <GUI/QtDNSClient.hxx>
+#include <Main/MultipleInstanceLock.hxx>
 
 #include <simgear/io/iostreams/sgstream.hxx>
 #include <simgear/io/untar.hxx>
@@ -506,10 +509,11 @@ QString SetupRootDialog::rootPathKey()
     return QString("fg-root-%1-%2").arg(FLIGHTGEAR_MAJOR_VERSION).arg(FLIGHTGEAR_MINOR_VERSION);
 }
 
-SetupRootDialog::SetupRootDialog(PromptState prompt) :
-    QDialog(),
-    m_promptState(prompt)
+SetupRootDialog::SetupRootDialog(PromptState prompt) : QDialog(),
+                                                       m_promptState(prompt)
 {
+    flightgear::ExclusiveInstanceLock::instance()->updateReason("setup-fgdata");
+
     m_ui.reset(new Ui::SetupRootDialog);
     m_ui->setupUi(this);
 
@@ -581,6 +585,8 @@ bool SetupRootDialog::runDialog(PromptState prompt)
 
 flightgear::SetupRootResult SetupRootDialog::restoreUserSelectedRoot(SGPath& sgpath)
 {
+    const auto readOnly = fgGetBool("/sim/fghome-readonly", false);
+
     auto settings = flightgear::getQSettings();
     QString path = settings.value(rootPathKey()).toString();
     const bool ask = flightgear::checkKeyboardModifiersForSettingFGRoot();
@@ -592,6 +598,12 @@ flightgear::SetupRootResult SetupRootDialog::restoreUserSelectedRoot(SGPath& sgp
     }
 
     if (ask || (path == QStringLiteral("!ask"))) {
+        if (readOnly) {
+            // assume the primary copy will ask, so just bail out
+            SG_LOG(SG_GENERAL, SG_MANDATORY_INFO, "restoreUserSelectedRoot: choice is 'ask', but we are read-only, exiting.");
+            return flightgear::SetupRootResult::UserExit;
+        }
+
         bool ok = runDialog(ManualChoiceRequested);
         if (!ok) {
             return flightgear::SetupRootResult::UserExit;
@@ -599,6 +611,13 @@ flightgear::SetupRootResult SetupRootDialog::restoreUserSelectedRoot(SGPath& sgp
 
         sgpath = globals->get_fg_root();
         return flightgear::SetupRootResult::UserSelected;
+    }
+
+    if (flightgear::ExclusiveInstanceLock::isLocked()) {
+        bool ok = flightgear::ExclusiveInstanceLock::showWaitDialog();
+        if (!ok) {
+            return flightgear::SetupRootResult::UserExit;
+        }
     }
 
     if (path.isEmpty()) {

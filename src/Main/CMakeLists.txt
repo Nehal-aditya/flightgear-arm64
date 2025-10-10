@@ -14,6 +14,7 @@ if(MSVC)
 endif(MSVC)
 
 set(SOURCES
+
     fg_commands.cxx
     fg_init.cxx
     fg_io.cxx
@@ -25,6 +26,7 @@ set(SOURCES
     locale.cxx
     logger.cxx
     main.cxx
+    MultipleInstanceLock.cxx
     options.cxx
     positioninit.cxx
     screensaver_control.cxx
@@ -45,6 +47,7 @@ set(HEADERS
     locale.hxx
     logger.hxx
     main.hxx
+    MultipleInstanceLock.hxx
     options.hxx
     positioninit.hxx
     screensaver_control.hxx
