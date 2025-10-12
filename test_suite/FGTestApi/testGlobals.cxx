@@ -1,6 +1,6 @@
-/* 
-SPDX-Copyright: James Turner
-SPDX-License-Identifier: GPL-2.0-or-later 
+/*
+SPDX-FileCopyrightText: 2016 James Turner
+SPDX-License-Identifier: GPL-2.0-or-later
 */
 
 #include "config.h"
@@ -33,8 +33,9 @@ SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <Airports/airport.hxx>
 #include <Navaids/FlightPlan.hxx>
-#include <Navaids/waypoint.hxx>
 #include <Navaids/routePath.hxx>
+#include <Navaids/waypoint.hxx>
+#include <Scenery/scenery.hxx>
 
 #include <Scripting/NasalSys.hxx>
 
@@ -97,14 +98,14 @@ bool logPositionToKML(const std::string& testName)
         global_kmlStream.close();
         global_lineStringOpen = false;
     }
-    
+
     SGPath p = SGPath::desktop() / (testName + ".kml");
     global_kmlStream.open(p);
     if (!global_kmlStream.is_open()) {
         SG_LOG(SG_GENERAL, SG_WARN, "unable to open:" << p);
         return false;
     }
-    
+
     // pre-amble
     global_kmlStream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
         "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n"
@@ -112,11 +113,11 @@ bool logPositionToKML(const std::string& testName)
     // need more precision for doubles when specifying lat/lon, see
     // https://xkcd.com/2170/  :)
     global_kmlStream.precision(12);
-    
+
     global_loggingToKML = true;
     return true;
 }
-    
+
 bool logLinestringsToKML(const std::string& testName)
 {
     // clear any previous state
@@ -124,14 +125,14 @@ bool logLinestringsToKML(const std::string& testName)
         global_kmlStream.close();
         global_lineStringOpen = false;
     }
-    
+
     SGPath p = SGPath::desktop() / (testName + ".kml");
     global_kmlStream.open(p);
     if (!global_kmlStream.is_open()) {
         SG_LOG(SG_GENERAL, SG_WARN, "unable to open:" << p);
         return false;
     }
-    
+
     // pre-amble
     global_kmlStream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
         "<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n"
@@ -139,7 +140,7 @@ bool logLinestringsToKML(const std::string& testName)
     // need more precision for doubles when specifying lat/lon, see
     // https://xkcd.com/2170/  :)
     global_kmlStream.precision(12);
-    
+
     global_loggingToKML = false;
     return true;
 }
@@ -147,9 +148,9 @@ bool logLinestringsToKML(const std::string& testName)
 void initStandardNasal(bool withCanvas)
 {
     fgInitAllowedPaths();
-    
+
     auto nasalNode = globals->get_props()->getNode("nasal", true);
-    
+
 // load loadpriority.xml, for default modules load order
 
     auto nasalLoadPriority = globals->get_props()->getNode("/sim/nasal-load-priority",true);
@@ -159,14 +160,14 @@ void initStandardNasal(bool withCanvas)
     auto props = globals->get_props();
     props->setStringValue("sim/flight-model", "null");
     props->setStringValue("sim/aircraft", "test-suite-aircraft");
-    
+
     props->setDoubleValue("sim/current-view/config/default-field-of-view-deg", 90.0);
     // ensure /sim/view/config exists
     props->setBoolValue("sim/view/config/foo", false);
-    
+
     props->setBoolValue("sim/rendering/precipitation-gui-enable", false);
     props->setBoolValue("sim/rendering/precipitation-aircraft-enable", false);
-    
+
 // disable various larger modules
     nasalNode->setBoolValue("canvas/enabled", withCanvas);
     nasalNode->setBoolValue("jetways/enabled", false);
@@ -194,11 +195,11 @@ void populateFPWithoutNasal(flightgear::FlightPlanRef f,
 
     // since we don't have the Nasal route-manager delegate, insert the
     // runway waypoints manually
-    
+
     auto depRwy = new RunwayWaypt(f->departureRunway(), f);
     depRwy->setFlag(WPT_DEPARTURE);
     f->insertWayptAtIndex(depRwy, -1);
-    
+
     for (auto ws : simgear::strutils::split(waypoints)) {
         WayptRef wpt = f->waypointFromString(ws);
         if (!wpt) {
@@ -207,14 +208,14 @@ void populateFPWithoutNasal(flightgear::FlightPlanRef f,
         }
         f->insertWayptAtIndex(wpt, -1);
     }
-    
-  
+
+
     auto destRwy = f->destinationRunway();
     f->insertWayptAtIndex(new BasicWaypt(destRwy->pointOnCenterline(-8 * SG_NM_TO_METER),
                                          destRwy->ident() + "-8", f), -1);
     f->insertWayptAtIndex(new RunwayWaypt(destRwy, f), -1);
 }
-    
+
 void populateFPWithNasal(flightgear::FlightPlanRef f,
                        const std::string& depICAO, const std::string& depRunway,
                        const std::string& destICAO, const std::string& destRunway,
@@ -222,13 +223,13 @@ void populateFPWithNasal(flightgear::FlightPlanRef f,
 {
     FGAirportRef depApt = FGAirport::getByIdent(depICAO);
     f->setDeparture(depApt->getRunwayByIdent(depRunway));
-    
+
     FGAirportRef destApt = FGAirport::getByIdent(destICAO);
     f->setDestination(destApt->getRunwayByIdent(destRunway));
-    
+
     // insert after the last departure waypoint
     int insertIndex = 1;
-    
+
     for (auto ws : simgear::strutils::split(waypoints)) {
         WayptRef wpt = f->waypointFromString(ws);
         f->insertWayptAtIndex(wpt, insertIndex++);
@@ -237,7 +238,7 @@ void populateFPWithNasal(flightgear::FlightPlanRef f,
 
 
 }  // End of namespace setUp.
-    
+
     void beginLineString(const std::string& ident)
     {
         global_lineStringOpen = true;
@@ -249,7 +250,7 @@ void populateFPWithNasal(flightgear::FlightPlanRef f,
         global_kmlStream << "<tessellate>1</tessellate>\n";
         global_kmlStream << "<coordinates>\n";
     }
-    
+
     void logCoordinate(const SGGeod& pos)
     {
         if (!global_lineStringOpen) {
@@ -272,17 +273,17 @@ void populateFPWithNasal(flightgear::FlightPlanRef f,
                             "</Placemark>\n"
                          << std::endl;
     }
-    
+
 void setPosition(const SGGeod& g)
 {
     if (global_loggingToKML) {
         if (global_lineStringOpen) {
             endCurrentLineString();
         }
-        
+
         logCoordinate(g);
     }
-    
+
     globals->get_props()->setDoubleValue("position/latitude-deg", g.getLatitudeDeg());
     globals->get_props()->setDoubleValue("position/longitude-deg", g.getLongitudeDeg());
     globals->get_props()->setDoubleValue("position/altitude-ft", g.getElevationFt());
@@ -290,14 +291,13 @@ void setPosition(const SGGeod& g)
 
 const SGGeod getPosition()
 {
-    return SGGeod::fromDegFt(    
-    globals->get_props()->getDoubleValue("position/latitude-deg"),
-    globals->get_props()->getDoubleValue("position/longitude-deg"),
-    globals->get_props()->getDoubleValue("position/altitude-ft"));
+    return SGGeod::fromDegFt(
+        globals->get_props()->getDoubleValue("position/latitude-deg"),
+        globals->get_props()->getDoubleValue("position/longitude-deg"),
+        globals->get_props()->getDoubleValue("position/altitude-ft"));
 }
-    
 
-    
+
 void setPositionAndStabilise(const SGGeod& g)
 {
     setPosition(g);
@@ -349,7 +349,7 @@ bool runForTimeWithCheck(double t, RunCheck check)
     assert(ticks > 0);
     const int logInterval = 0.5 * tickHz;
     int nextLog = 0;
-    
+
     for (int t = 0; t < ticks; ++t) {
         globals->inc_sim_time_sec(tickDuration);
         globals->get_subsystem_mgr()->update(tickDuration);
@@ -375,7 +375,7 @@ bool runForTimeWithCheck(double t, RunCheck check)
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -392,32 +392,32 @@ void writeFlightPlanToKML(flightgear::FlightPlanRef fp)
 {
     if (!global_loggingToKML)
         return;
-    
+
     RoutePath rpath(fp);
-    
+
     for (int i=0; i<fp->numLegs(); ++i) {
         SGGeodVec legPath = rpath.pathForIndex(i);
         auto wp = fp->legAtIndex(i)->waypoint();
 
         writeGeodsToKML("FP-leg-" + wp->ident(), legPath);
-        
+
         SGGeod legWPPosition = wp->position();
         writePointToKML("WP " + wp->ident(), legWPPosition);
     }
 }
-    
+
 void writeGeodsToKML(const std::string &label, const flightgear::SGGeodVec& geods)
 {
     if (global_lineStringOpen) {
         endCurrentLineString();
     }
-    
+
     beginLineString(label);
-    
+
     for (const auto& g : geods) {
         logCoordinate(g);
     }
-    
+
     endCurrentLineString();
 }
 
@@ -489,6 +489,8 @@ void shutdownTestGlobals()
         global_kmlStream.close();
         global_loggingToKML = false;
     }
+
+    FGScenery::resetPagerSingleton();
 }
 
 }  // End of namespace tearDown.

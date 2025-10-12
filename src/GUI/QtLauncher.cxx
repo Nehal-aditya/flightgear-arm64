@@ -70,6 +70,7 @@
 #include <Navaids/navrecord.hxx>
 
 
+#include <Main/MultipleInstanceLock.hxx>
 #include <Main/fg_init.hxx>
 #include <Main/locale.hxx>
 #include <Main/options.hxx>
@@ -119,47 +120,18 @@ bool initNavCache()
 
     const auto wflags = Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::MSWindowsFixedSizeDialogHint;
 
-    if (NavDataCache::isAnotherProcessRebuilding()) {
-        const char* waitForOtherMsg = QT_TRANSLATE_NOOP("initNavCache", "Another copy of FlightGear is creating the navigation database. Waiting for it to finish.");
-        QString m = qApp->translate("initNavCache", waitForOtherMsg);
-
-        addSentryBreadcrumb("Launcher: showing wait for other process NavCache rebuild dialog", "info");
-        QProgressDialog waitForRebuild(m,
-                                       QString() /* cancel text */,
-                                       0, 0, Q_NULLPTR,
-                                       wflags);
-        waitForRebuild.setWindowModality(Qt::WindowModal);
-        waitForRebuild.setMinimumWidth(600);
-        waitForRebuild.setAutoReset(false);
-        waitForRebuild.setAutoClose(false);
-        waitForRebuild.show();
-
-        QTimer updateTimer;
-        updateTimer.setInterval(500);
-        bool rebuildIsDone = false;
-
-        QObject::connect(&updateTimer, &QTimer::timeout, [&waitForRebuild, &rebuildIsDone]() {
-            if (!NavDataCache::isAnotherProcessRebuilding()) {
-                waitForRebuild.done(0);
-                rebuildIsDone = true;
-                return;
-            }
-        });
-
-        updateTimer.start(); // timer won't actually run until we process events
-        waitForRebuild.exec();
-        updateTimer.stop();
-
-        if (!rebuildIsDone) {
-            flightgear::addSentryBreadcrumb("Launcher wait on other process nav-cache rebuild abandoned by user", "info");
+    if (flightgear::ExclusiveInstanceLock::isLocked()) {
+        bool ok = flightgear::ExclusiveInstanceLock::showWaitDialog();
+        if (!ok) {
             return false;
         }
-
-        addSentryBreadcrumb("Launcher: done waiting for other process NavCache rebuild dialog", "info");
     }
 
     NavDataCache* cache = NavDataCache::createInstance();
     if (cache->isRebuildRequired()) {
+        // start the rebuild right now, before showing the dialog
+        auto phase = cache->rebuild();
+
         QProgressDialog rebuildProgress(baseLabel,
                                         QString() /* cancel text */,
                                         0, 100, Q_NULLPTR,
@@ -213,6 +185,10 @@ bool initNavCache()
         flightgear::addSentryBreadcrumb("Launcher nav-cache rebuild complete", "info");
     }
 
+
+    // if using the launcher, this is when we're done with our exclusive section
+    // from now on, multiple copies can access FG_HOME / the nav-cache
+    flightgear::ExclusiveInstanceLock::destroyInstance();
     return true;
 }
 
@@ -823,6 +799,52 @@ bool showUpdateRootDialog(bool usingDefaultRoot)
 SetupRootResult restoreUserSelectedRoot(SGPath& path)
 {
     return SetupRootDialog::restoreUserSelectedRoot(path);
+}
+
+// defined here since it uses QWidgets
+bool ExclusiveInstanceLock::showWaitDialog()
+{
+    const char* waitForOtherMsg = QT_TRANSLATE_NOOP("initNavCache", "Another copy of FlightGear is preparing data files. Waiting for it to finish.");
+    QString m = qApp->translate("initNavCache", waitForOtherMsg);
+
+    const auto wflags = Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::MSWindowsFixedSizeDialogHint;
+
+    addSentryBreadcrumb("showing wait for other process dialog", "info");
+
+    QProgressDialog waitDialog(m,
+                               QString() /* cancel text */,
+                               0, 0, Q_NULLPTR,
+                               wflags);
+    waitDialog.setWindowModality(Qt::WindowModal);
+    waitDialog.setMinimumWidth(600);
+    waitDialog.setAutoReset(false);
+    waitDialog.setAutoClose(false);
+    waitDialog.show();
+
+    QTimer updateTimer;
+    updateTimer.setInterval(500);
+    bool done = false;
+
+    QObject::connect(&updateTimer, &QTimer::timeout, [&waitDialog, &done]() {
+        auto lockedReason = isLocked();
+        if (!lockedReason.has_value()) {
+            waitDialog.done(0);
+            done = true;
+            return;
+        }
+    });
+
+    updateTimer.start(); // timer won't actually run until we process events
+    waitDialog.exec();
+    updateTimer.stop();
+
+    if (!done) {
+        addSentryBreadcrumb("wait on other process abandoned by user", "info");
+        return false;
+    }
+
+    addSentryBreadcrumb("done waiting for other process lock dialog", "info");
+    return true;
 }
 
 } // of namespace flightgear

@@ -141,8 +141,10 @@
 #include "positioninit.hxx"
 #include "util.hxx"
 #include "AircraftDirVisitorBase.hxx"
-#include <Main/sentryIntegration.hxx>
+
 #include <Main/ErrorReporter.hxx>
+#include <Main/MultipleInstanceLock.hxx>
+#include <Main/sentryIntegration.hxx>
 
 #include "cJSON.h"
 
@@ -567,7 +569,8 @@ InitHomeResult fgInitHome()
         SG_LOG(SG_GENERAL, SG_INFO, "Running with FG_HOME readonly");
         return InitHomeExplicitReadOnly;
     }
-    
+
+    // todo: move this code into MultipleInstanceLock.cxx
     InitHomeResult result = InitHomeOkay;
 #if defined(SG_WINDOWS)
 	// don't use a PID file on Windows, because deleting on close is
@@ -580,8 +583,8 @@ InitHomeResult fgInitHome()
 		SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create mutex for multi-app protection");
         return InitHomeAbort;
 	} else if (GetLastError() == ERROR_ALREADY_EXISTS) {
-		SG_LOG(SG_GENERAL, SG_MANDATORY_INFO, "flightgear instance already running, switching to FG_HOME read-only.");
-		fgSetBool("/sim/fghome-readonly", true);
+        SG_LOG(SG_GENERAL, SG_MANDATORY_INFO, "flightgear instance already running, switching to FG_HOME read-only.");
+        fgSetBool("/sim/fghome-readonly", true);
         return InitHomeReadOnly;
 	} else {
 		SG_LOG(SG_GENERAL, SG_INFO, "Created multi-app mutex, we are in writeable mode");
@@ -648,6 +651,11 @@ InitHomeResult fgInitHome()
         result = InitHomeOkay;
     }
 #endif
+    // now we know we're the main copy, take an exclusive lock until we know FGData / nav-cache are correct
+    // this will cause either the launcher init or the splash screen to block in read-only copies, until
+    // we release the exclusive lock after nav-cache build is done.
+    flightgear::ExclusiveInstanceLock::createInstance("init-home");
+
     fgSetBool("/sim/fghome-readonly", false);
     return result;
 }

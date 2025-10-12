@@ -52,6 +52,7 @@
 #include <Viewer/splash.hxx>
 #include <flightgearBuildId.h>
 
+#include "Main/MultipleInstanceLock.hxx"
 #include "fg_commands.hxx"
 #include "fg_init.hxx"
 #include "fg_io.hxx"
@@ -307,24 +308,33 @@ static void fgIdleFunction ( void ) {
         if (guiInit(camera->getGraphicsContext())) {
             checkOpenGLVersion();
             fgSetVideoOptions();
-            idle_state+=2;
+            idle_state++;
             fgSplashProgress("loading-aircraft-list");
             fgSetBool("/sim/rendering/initialized", true);
         }
+    } else if (idle_state == 1) {
+        if (flightgear::ExclusiveInstanceLock::isLocked()) {
+            fgSplashProgress("wait-on-shared-lock");
+            return;
+        } else {
+            idle_state++;
+        }
 
-    } else if ( idle_state == 2 ) {
+    } else if (idle_state == 2) {
         initTerrasync();
         idle_state++;
         fgSplashProgress("loading-nav-dat");
 
-    } else if ( idle_state == 3 ) {
-
+    } else if (idle_state == 3) {
         bool done = fgInitNav();
         if (done) {
           ++idle_state;
           fgSplashProgress("init-scenery");
+          // now the nav-cache is built, we can let other copies of FG run in parallel
+          // note if we used the launcher, the lock was already dropped.
+          flightgear::ExclusiveInstanceLock::destroyInstance();
         }
-    } else if ( idle_state == 4 ) {
+    } else if (idle_state == 4) {
         idle_state++;
 
         mgr->add<TimeManager>();
@@ -351,7 +361,7 @@ static void fgIdleFunction ( void ) {
         globals->set_matlib( new SGMaterialLib );
         simgear::SGModelLib::setPanelFunc(FGPanelNode::load);
 
-    } else if (( idle_state == 5 ) || (idle_state == 2005)) {
+    } else if ((idle_state == 5) || (idle_state == 2005)) {
         idle_state+=2;
         flightgear::initPosition();
 
@@ -369,7 +379,7 @@ static void fgIdleFunction ( void ) {
         scenery->bind();
 
         fgSplashProgress("creating-subsystems");
-    } else if (( idle_state == 7 ) || (idle_state == 2007)) {
+    } else if ((idle_state == 7) || (idle_state == 2007)) {
         bool isReset = (idle_state == 2007);
         idle_state = 8; // from the next state on, reset & startup are identical
         SGTimeStamp st;
@@ -387,7 +397,7 @@ static void fgIdleFunction ( void ) {
         SG_LOG(SG_GENERAL, SG_INFO, "Creating subsystems took:" << st.elapsedMSec());
         fgSplashProgress("binding-subsystems");
 
-    } else if ( idle_state == 8 ) {
+    } else if (idle_state == 8) {
         idle_state++;
         SGTimeStamp st;
         st.stamp();
@@ -395,7 +405,7 @@ static void fgIdleFunction ( void ) {
         SG_LOG(SG_GENERAL, SG_INFO, "Binding subsystems took:" << st.elapsedMSec());
 
         fgSplashProgress("init-subsystems");
-    } else if ( idle_state == 9 ) {
+    } else if (idle_state == 9) {
         SGSubsystem::InitStatus status = mgr->incrementalInit();
         if ( status == SGSubsystem::INIT_DONE) {
           ++idle_state;
@@ -404,11 +414,11 @@ static void fgIdleFunction ( void ) {
           fgSplashProgress("init-subsystems");
         }
 
-    } else if ( idle_state == 10 ) {
+    } else if (idle_state == 10) {
         idle_state = 900;
         fgPostInitSubsystems();
         fgSplashProgress("finalize-position");
-    } else if ( idle_state == 900 ) {
+    } else if (idle_state == 900) {
         idle_state = 1000;
 
         // setup OpenGL view parameters
