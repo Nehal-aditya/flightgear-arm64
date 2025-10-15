@@ -209,7 +209,7 @@ test:
     - ./test_suite/fgfs_test_suite --fg-root $CI_PROJECT_DIR/testFGData --junit
   needs:
     - job: linux-build
-      artifacts: false
+      artifacts: true
     - project: flightgear/fgdata
       job: create-test-data
       ref: $BRANCH_REF
