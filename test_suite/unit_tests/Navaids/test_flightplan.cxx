@@ -119,7 +119,7 @@ public:
         // clear anything existing
         _plan->clearWayptsWithFlag(WPT_ARRIVAL);
         _plan->clearWayptsWithFlag(flightgear::WPT_APPROACH);
-        
+
         if (!_plan->destinationAirport()) {
             return;
         }
@@ -395,8 +395,8 @@ void FlightplanTests::testRoutePathVec()
 
 void FlightplanTests::testRoutePathFinalLegVQPR15()
 {
-  return ;
-  
+    return;
+
     // test behaviour of RoutePath when the last leg prior to the arrival runway
     // is beyond the runway. This occurs in Paro RNAVZ15 approach.
     
@@ -1390,11 +1390,11 @@ void FlightplanTests::testDeleteProcedureWaypoint()
     // procedures not loaded, abandon test
     if (!static_haveProcedures)
         return;
-    
+
     static_factory = std::make_shared<TestFPDelegateFactory>();
     FlightPlan::registerDelegateFactory(static_factory);
 
-  // https://gitlab.com/flightgear/flightgear/-/issues/3128
+    // https://gitlab.com/flightgear/flightgear/-/issues/3128
 
     auto egkk = FGAirport::findByIdent("EGKK"s);
     auto sid = egkk->findSIDWithIdent("DVR2P"s);

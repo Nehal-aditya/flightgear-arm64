@@ -1135,14 +1135,14 @@ double RoutePath::computeDistanceForIndex(int index) const
   }
 
 
-    SGGeod p = it->hasEntry ? it->turnEntryPos : it->pos;
-    double dist = SGGeodesy::distanceM(prevIt->turnExitPos, p);
-    dist += prevIt->turnDistanceM();
+  SGGeod p = it->hasEntry ? it->turnEntryPos : it->pos;
+  double dist = SGGeodesy::distanceM(prevIt->turnExitPos, p);
+  dist += prevIt->turnDistanceM();
 
-    if (!it->flyOver) {
-        // add entry distance
-        dist += it->turnDistanceM();
-    }
+  if (!it->flyOver) {
+      // add entry distance
+      dist += it->turnDistanceM();
+  }
 
     return dist;
 }

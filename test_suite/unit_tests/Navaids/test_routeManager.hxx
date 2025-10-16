@@ -84,6 +84,7 @@ public:
     void testsSelectWaypoint2();
     void testAppendWaypoint();
     void testEditProcedures();
+
 private:
     GPS* m_gps = nullptr;
 };

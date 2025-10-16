@@ -226,7 +226,7 @@ void populateFPWithoutNasal(flightgear::FlightPlanRef f,
 
     auto destRwy = f->destinationRunway();
     auto arrival8NmWp = new BasicWaypt(destRwy->pointOnCenterline(-8 * SG_NM_TO_METER),
-                                         destRwy->ident() + "-8", f);       
+                                       destRwy->ident() + "-8", f);
     auto arrivalRwyWp = new RunwayWaypt(destRwy, f);
     arrival8NmWp->setFlag(WPT_APPROACH);
     arrivalRwyWp->setFlag(WPT_APPROACH);
