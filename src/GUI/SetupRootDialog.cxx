@@ -62,7 +62,7 @@
 
 using namespace std::chrono_literals;
 
-const quint32 static_basePackagePatchLevel = 2;
+const quint32 static_basePackagePatchLevel = 3;
 const qint64 fourMB = 4 * 1024 * 1024;
 
 namespace {
