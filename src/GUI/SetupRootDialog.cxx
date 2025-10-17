@@ -700,7 +700,7 @@ bool SetupRootDialog::validateVersion(QString path)
         return false;
     }
 
-    return simgear::strutils::compare_versions(minBasePackageVersion, ver) >= 0;
+    return simgear::strutils::compare_versions(minBasePackageVersion, ver) <= 0;
 }
 
 bool SetupRootDialog::defaultRootAcceptable()
@@ -738,6 +738,11 @@ bool SetupRootDialog::downloadedDataExistsButStale()
 
     // check for suffix mismatch, then we will always update
     const auto info = fgBasePackageInfo(r);
+    if (!info) {
+        SG_LOG(SG_IO, SG_INFO, "downloaded data missing the base_package.json file, won't attempt to update it");
+        return false;
+    }
+
     if (info && (info.value().suffix != BUILD_SUFFIX)) {
         SG_LOG(SG_IO, SG_INFO, "Base package suffix mismatch, build suffix is '" << BUILD_SUFFIX << "'");
         return true;
