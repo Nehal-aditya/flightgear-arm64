@@ -199,9 +199,9 @@ void executeNasalTestsInDir(const SGPath& path)
 {
     simgear::Dir d(path);
 
-    for (const auto& testFile : d.children(simgear::Dir::TYPE_FILE, "*.nut")) {
+    for (const auto& testFile : d.children(simgear::Dir::TYPE_FILE, ".nut")) {
         SG_LOG(SG_NASAL, SG_INFO, "Processing test file " << testFile);
-
+        executeNasalTest(testFile);
     } // of test files iteration
 }
 
