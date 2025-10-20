@@ -145,7 +145,7 @@ FocusScope
             anchors.rightMargin: Style.margin
             anchors.verticalCenter: parent.verticalCenter
 
-            onSearch: {
+            onSearch: function(term) {
                _launcher.searchAircraftModel.setAircraftFilterString(term)
                 root.state = "search"
                 root.updateSelectionFromLauncher();
