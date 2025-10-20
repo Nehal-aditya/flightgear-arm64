@@ -1,7 +1,7 @@
 /*
  * SPDX-FileName: fgelev.cxx
  * SPDX-FileComment: compute scenery elevation
- * SPDX-FileCopyrightText: Copyright (C) 2009 - 2012  Mathias Froehlich
+ * SPDX-FileCopyrightText: Copyright (C) 2009 - 2025  Mathias Froehlich
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
@@ -9,76 +9,89 @@
 #include <config.h>
 #endif
 
-#include <iostream>
 #include <cstdlib>
 #include <iomanip>
+#include <iostream>
 
 #include <osg/ArgumentParser>
 #include <osg/Image>
 
+#include <simgear/bucket/newbucket.hxx>
+#include <simgear/bvh/BVHLineSegmentVisitor.hxx>
+#include <simgear/bvh/BVHMaterial.hxx>
+#include <simgear/bvh/BVHNode.hxx>
+#include <simgear/bvh/BVHPageNode.hxx>
+#include <simgear/bvh/BVHPager.hxx>
+#include <simgear/math/SGGeod.hxx>
+#include <simgear/misc/ResourceManager.hxx>
+#include <simgear/misc/sg_path.hxx>
 #include <simgear/props/props.hxx>
 #include <simgear/props/props_io.hxx>
-#include <simgear/misc/sg_path.hxx>
-#include <simgear/misc/ResourceManager.hxx>
-#include <simgear/bvh/BVHNode.hxx>
-#include <simgear/bvh/BVHLineSegmentVisitor.hxx>
-#include <simgear/bvh/BVHPager.hxx>
-#include <simgear/bvh/BVHPageNode.hxx>
-#include <simgear/bvh/BVHMaterial.hxx>
 #include <simgear/scene/material/matlib.hxx>
 #include <simgear/scene/model/BVHPageNodeOSG.hxx>
 #include <simgear/scene/model/ModelRegistry.hxx>
-#include <simgear/scene/util/SGReaderWriterOptions.hxx>
-#include <simgear/scene/util/OptionsReadFileCallback.hxx>
-#include <simgear/scene/util/SGSceneFeatures.hxx>
+#include <simgear/scene/tgdb/ReaderWriterSTG.hxx>
 #include <simgear/scene/tgdb/userdata.hxx>
+#include <simgear/scene/util/OptionsReadFileCallback.hxx>
+#include <simgear/scene/util/SGReaderWriterOptions.hxx>
+#include <simgear/scene/util/SGSceneFeatures.hxx>
+
+// Static linking of OSG needs special macros to force plugins to be included
+USE_OSGPLUGIN(btg)
+USE_OSGPLUGIN(stg)
 
 namespace sg = simgear;
 
-class Visitor : public sg::BVHLineSegmentVisitor {
+class Visitor : public sg::BVHLineSegmentVisitor
+{
 public:
-    Visitor(const SGLineSegmentd& lineSegment, sg::BVHPager& pager) :
-        BVHLineSegmentVisitor(lineSegment, 0),
-        _pager(pager)
-    { }
+    Visitor(const SGLineSegmentd& lineSegment, sg::BVHPager& pager) : BVHLineSegmentVisitor(lineSegment, 0),
+                                                                      _pager(pager)
+    {
+    }
     virtual ~Visitor()
-    { }
+    {
+    }
     virtual void apply(sg::BVHPageNode& node)
     {
         // we have a non threaded pager so load just right here.
         _pager.use(node);
         BVHLineSegmentVisitor::apply(node);
     }
+
 private:
     sg::BVHPager& _pager;
 };
 
 // Short circuit reading image files.
-class ReadFileCallback : public sg::OptionsReadFileCallback {
+class ReadFileCallback : public sg::OptionsReadFileCallback
+{
 public:
     virtual ~ReadFileCallback()
-    { }
+    {
+    }
 
     virtual osgDB::ReaderWriter::ReadResult readImage(const std::string& name, const osgDB::Options*)
-    { return new osg::Image; }
+    {
+        return new osg::Image;
+    }
 };
 
 static bool
 intersect(sg::BVHNode& node, sg::BVHPager& pager,
           const SGVec3d& start, SGVec3d& end, double offset, const simgear::BVHMaterial** material)
 {
-    SGVec3d perp = offset*perpendicular(start - end);
+    SGVec3d perp = offset * perpendicular(start - end);
     Visitor visitor(SGLineSegmentd(start + perp, end + perp), pager);
     node.accept(visitor);
     if (visitor.empty())
         return false;
     end = visitor.getLineSegment().getEnd();
-    * material = visitor.getMaterial();
+    *material = visitor.getMaterial();
     return true;
 }
 
-int
-main(int argc, char** argv)
+int main(int argc, char** argv)
 {
     /// Read arguments and environment variables.
 
@@ -86,27 +99,29 @@ main(int argc, char** argv)
     osg::ArgumentParser arguments(&argc, argv);
 
     if (arguments.read("--help")) {
-        std::cout << "Usage: fgelev [Options...]\n\nQuery the elevation of lon/lat points in the scenery." << std::endl;;
-        std::cout << "Input is read from STDIN line by line in the format <id> <lon> <lat>.  Output is to STDOUT in the format <id>: <elevation-m> [solid|-]" << std::endl << std::endl;
-        std::cout << "Optional arguments:" << std::endl;
+        std::cout << "Usage: fgelev --tile-lat <lat> --tile-lon <lon> [Options...]\n\nQuery the elevation of lon/lat points in the scenery for a give tile." << std::endl;
+        ;
+        std::cout << "Input is read from STDIN line by line in the format <id> <lon> <lat>.  Output is to STDOUT in the format <id>: <elevation-m> [solid|-]" << std::endl
+                  << std::endl;
+        std::cout << "Arguments:" << std::endl;
+        std::cout << "\t--tile-lat <lat> --tile-lon <lon>\t\tLatitude and Longitude of the tile to load. Note that only tile can be loaded at a time." << std::endl;
         std::cout << "\t[--expire N]\t\tExpire items in the cache after N requests (default 10). Use to control memory occupancy." << std::endl;
         std::cout << "\t[--print-solidness]\tOutput whether the location is on solid ground (\"solid\") or not (\"-\")." << std::endl;
         std::cout << "\t[--fg-root <path>]\tSet the FG data directory.  Used to retrieve terrain material information. Default to $FG_ROOT." << std::endl;
         std::cout << "\t[--fg-scenery <path>]\tSet the scenery directory.  Defaults to $FG_SCENERY, or $FG_ROOT/Scenery if $FG_SCENERY not set." << std::endl;
-        std::cout << "\t[--use-vpb]\t\tUse VirtualPlanetBuilder (aka WS3.0)." << std::endl;
-        std::cout << "\t[--tile-file <file>]\t\tSet the VPB (WS3.0) tile to read." << std::endl;
         return EXIT_FAILURE;
     }
 
     unsigned expire;
     if (arguments.read("--expire", expire)) {
-    } else expire = 10;
+    } else
+        expire = 10;
 
     bool printSolidness = arguments.read("--print-solidness");
 
     std::string fg_root;
     if (arguments.read("--fg-root", fg_root)) {
-    } else if (const char *fg_root_env = std::getenv("FG_ROOT")) {
+    } else if (const char* fg_root_env = std::getenv("FG_ROOT")) {
         fg_root = fg_root_env;
     } else {
         fg_root = PKGLIBDIR;
@@ -134,12 +149,12 @@ main(int argc, char** argv)
         props->getNode("sim/startup/season", true)->setStringValue("summer");
 
         SG_LOG(SG_GENERAL, SG_ALERT, "Problems loading FlightGear preferences.\n"
-               << "Probably FG_ROOT is not properly set.");
+                                         << "Probably FG_ROOT is not properly set.");
     }
 
-    bool use_vpb = arguments.read("--use-vpb");
-    props->setBoolValue("/scenery/use-vpb", use_vpb);
-    SGSceneFeatures::instance()->setVPBActive(use_vpb);
+    // Force Virtual Planet Builder
+    props->setBoolValue("/scenery/use-vpb", true);
+    SGSceneFeatures::instance()->setVPBActive(true);
 
     /// now set up the simgears required model stuff
 
@@ -156,7 +171,7 @@ main(int argc, char** argv)
         ml->load(fg_root, mpath.local8BitStr(), props);
     } catch (...) {
         SG_LOG(SG_GENERAL, SG_ALERT, "Problems loading FlightGear materials.\n"
-               << "Probably FG_ROOT is not properly set.");
+                                         << "Probably FG_ROOT is not properly set.");
     }
     simgear::SGModelLib::init(fg_root, props);
 
@@ -174,8 +189,9 @@ main(int argc, char** argv)
     options->setPluginStringData("SimGear::FG_ROOT", fg_root);
     // we do not need the builtin boundingvolumes
     options->setPluginStringData("SimGear::BOUNDINGVOLUMES", "OFF");
-    // And we only want terrain, no objects on top.
-    options->setPluginStringData("SimGear::FG_ONLY_TERRAIN", "ON");
+    // We only want to load airports from STG files.  No objects nor any WS2.0 terrain that might be
+    // on the scenery path.
+    options->setPluginStringData("SimGear::FG_ONLY_AIRPORTS", "ON");
 
     string_list scenerySuffixes = {"Terrain"}; // Just Terrain
     options->setSceneryPathSuffixes(scenerySuffixes);
@@ -183,22 +199,75 @@ main(int argc, char** argv)
     props->getNode("sim/rendering/random-objects", true)->setBoolValue(false);
     props->getNode("sim/rendering/random-vegetation", true)->setBoolValue(false);
 
-    std::string bvhFile = "w180s90-360x180.spt";
-    if (arguments.read("--tile-file", s))
-        bvhFile = s;
+    int tileLat, tileLon;
+    if (arguments.read("--tile-lat", s)) {
+        try {
+            tileLat = std::stoi(s);
+        } catch (const std::invalid_argument& ia) {
+            std::cerr << "Invalid --tile-lat argument: " << ia.what() << '\n';
+            return EXIT_FAILURE;
+        }
+    } else {
+        std::cerr << "--tile-lat required.\n";
+        return EXIT_FAILURE;
+    }
+
+    if (arguments.read("--tile-lon", s)) {
+        try {
+            tileLon = std::stoi(s);
+        } catch (const std::invalid_argument& ia) {
+            std::cerr << "Invalid --tile-lon argument: " << ia.what() << '\n';
+            return EXIT_FAILURE;
+        }
+    } else {
+        std::cerr << "--tile-lon required.\n";
+        return EXIT_FAILURE;
+    }
+
+    if ((tileLat < -90) || (tileLat > 90)) {
+        std::cerr << "--tile-lat must be between -90 and 90.\n";
+        return EXIT_FAILURE;
+    }
+
+    if ((tileLon < -180) || (tileLon > 180)) {
+        std::cerr << "--tile-lon must be between -180 and 180.\n";
+        return EXIT_FAILURE;
+    }
 
     // Here, all arguments are processed
     arguments.reportRemainingOptionsAsUnrecognized();
     arguments.writeErrorMessages(std::cerr);
 
+    // Now work out what VPB and STG files we need to generate.
+    string_list fileList;
+
+    // Main VPB tile is simply the L0 tile, assumed to be in in archive
+    const SGGeod minTile = SGGeod::fromDeg(tileLon, tileLat);
+    const SGBucket tile = SGBucket(minTile);
+
+    fileList.push_back("vpb/" + tile.gen_vpb_archive_filename(0, 0, 0, "subtile") + ".osgb"); // codespell:ignore subtile
+
+    int maxTileLon = tileLon + 1;
+
+    // Special case wrapping for longitude.  We don't need this for latitude
+    if (maxTileLon == 181) maxTileLon = -179;
+
+    const SGGeod maxTile = SGGeod::fromDeg(maxTileLon, tileLat + 1);
+
+    // Add all the possible STG files for this tile location.
+    std::vector<SGBucket> buckets;
+    sgGetBuckets(minTile, maxTile, buckets);
+
+    for (auto t : buckets) {
+        fileList.push_back(t.gen_index_str() + ".stg");
+    }
+
     // Get the whole world bvh tree
-    SGSharedPtr<sg::BVHNode> node;
-    node = sg::BVHPageNodeOSG::load(bvhFile, options, use_vpb);
+    SGSharedPtr<sg::BVHNode> node = sg::BVHPageNodeOSG::load(fileList, options, true);
 
     // if no model has been successfully loaded report failure.
     if (!node.valid()) {
-        SG_LOG(SG_GENERAL, SG_ALERT, arguments.getApplicationName()
-               << ": No data loaded");
+        SG_LOG(SG_GENERAL, SG_ALERT, arguments.getApplicationName() << ": No data loaded");
         return EXIT_FAILURE;
     }
 
@@ -241,8 +310,8 @@ main(int argc, char** argv)
         } else {
             SGGeod geod = SGGeod::fromCart(end);
             std::cout << std::fixed << std::setprecision(3) << geod.getElevationM();
-            if( printSolidness )
-                std::cout <<  " " << (material && material->get_solid() ? "solid" : "-");
+            if (printSolidness)
+                std::cout << " " << (material && material->get_solid() ? "solid" : "-");
             std::cout << std::endl;
         }
     }
