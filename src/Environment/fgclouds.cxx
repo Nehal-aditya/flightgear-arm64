@@ -134,10 +134,10 @@ double FGClouds::buildCloud(SGPropertyNode *cloud_def_root, SGPropertyNode *box_
                 z = h * z + pos[2];         // Up/Down. pos[2] is the cloudbase
 
                 //SGVec3f newpos = SGVec3f(x, y, z);
-                SGNewCloud cld(texture_root, cld_def, &seed);
+                SGNewCloud cld(cld_def, &seed);
 
                 //layer->addCloud(newpos, cld.genCloud());
-                layer->addCloud(lon, lat, z, x, y, index++, cld.genCloud());
+                layer->addCloud(cld, index++, lon, lat, z, x, y);
             }
         }
     }
@@ -301,19 +301,6 @@ void FGClouds::buildCloudLayers(void) {
     }
 }
 
-void FGClouds::set_3dClouds(bool enable)
-{
-    if (enable != clouds_3d_enabled) {
-        clouds_3d_enabled = enable;
-        buildCloudLayers();
-    }
-}
-
-bool FGClouds::get_3dClouds() const
-{
-    return clouds_3d_enabled;
-}
-
 /**
  * Adds a 3D cloud to a cloud layer.
  *
@@ -341,8 +328,8 @@ bool FGClouds::get_3dClouds() const
 
    SGSky* thesky = globals->get_renderer()->getSky();
    SGCloudField *layer = thesky->get_cloud_layer(l)->get_layer3D();
-   SGNewCloud cld(texture_root, arg, &seed);
-   bool success = layer->addCloud(lon, lat, alt, x, y, index, cld.genCloud());
+   SGNewCloud cld(arg, &seed);
+   bool success = layer->addCloud(cld, index, lon, lat, alt, x, y);
 
    // Adding a 3D cloud immediately makes this layer 3D.
    thesky->get_cloud_layer(l)->set_enable3dClouds(true);
@@ -366,7 +353,7 @@ bool FGClouds::get_3dClouds() const
 
    SGSky* thesky = globals->get_renderer()->getSky();
    SGCloudField *layer = thesky->get_cloud_layer(l)->get_layer3D();
-   return layer->deleteCloud(i);
+   return layer->removeCloud(i);
  }
 
 /**

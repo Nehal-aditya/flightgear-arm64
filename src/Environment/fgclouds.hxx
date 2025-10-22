@@ -39,6 +39,4 @@ public:
 
     int get_update_event(void) const;
     void set_update_event(int count);
-    bool get_3dClouds() const;
-    void set_3dClouds(bool enable);
 };

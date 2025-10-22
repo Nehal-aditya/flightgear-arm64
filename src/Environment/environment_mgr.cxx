@@ -38,46 +38,14 @@
 
 #include "AIModel/AINotifications.hxx"
 
-class FG3DCloudsListener : public SGPropertyChangeListener {
-public:
-  FG3DCloudsListener( FGClouds * fgClouds );
-  virtual ~FG3DCloudsListener();
-
-  virtual void valueChanged (SGPropertyNode * node);
-
-private:
-  FGClouds * _fgClouds;
-  SGPropertyNode_ptr _enableNode;
-};
-
-FG3DCloudsListener::FG3DCloudsListener( FGClouds * fgClouds ) :
-    _fgClouds( fgClouds )
-{
-  _enableNode = fgGetNode( "/sim/rendering/clouds3d-enable", true );
-  _enableNode->addChangeListener( this );
-
-  valueChanged( _enableNode );
-}
-
-FG3DCloudsListener::~FG3DCloudsListener()
-{
-  _enableNode->removeChangeListener( this );
-}
-
-void FG3DCloudsListener::valueChanged( SGPropertyNode * node )
-{
-  _fgClouds->set_3dClouds( _enableNode->getBoolValue() );
-}
-
 FGEnvironmentMgr::FGEnvironmentMgr () :
   _environment(new FGEnvironment()),
+  _fgClouds(new FGClouds),
   _multiplayerListener(nullptr),
   _sky(globals->get_renderer()->getSky()),
   nearestCarrier(nullptr),
   nearestAirport(nullptr)
 {
-  fgClouds = new FGClouds;
-  _3dCloudsEnableListener = new FG3DCloudsListener(fgClouds);
   set_subsystem("controller", Environment::LayerInterpolateController::createInstance( fgGetNode("/environment/config", true ) ));
 
   set_subsystem("climate", new FGClimate);
@@ -101,8 +69,7 @@ FGEnvironmentMgr::~FGEnvironmentMgr ()
   remove_subsystem("controller");
   remove_subsystem("magvar");
 
-  delete fgClouds;
-  delete _3dCloudsEnableListener;
+  delete _fgClouds;
   delete _environment;
 }
 
@@ -132,7 +99,7 @@ SGSubsystem::InitStatus FGEnvironmentMgr::incrementalInit()
 
   InitStatus r = SGSubsystemGroup::incrementalInit();
   if (r == INIT_DONE) {
-    fgClouds->Init();
+    _fgClouds->Init();
     _multiplayerListener = new FGEnvironmentMgrMultiplayerListener(this);
     globals->get_event_mgr()->addTask("updateClosestAirport",
         [this](){ this->updateClosestAirport(); }, 10 );
@@ -168,7 +135,7 @@ FGEnvironmentMgr::bind ()
   _tiedProperties.Tie( "effective-visibility-m", _sky,
           &SGSky::get_visibility );
 
-  _tiedProperties.Tie("rebuild-layers", fgClouds,
+  _tiedProperties.Tie("rebuild-layers", _fgClouds,
           &FGClouds::get_update_event,
           &FGClouds::set_update_event);
 //  _tiedProperties.Tie("turbulence/use-cloud-turbulence", &sgEnviro,
@@ -213,33 +180,9 @@ FGEnvironmentMgr::bind ()
 
   _tiedProperties.setRoot( fgGetNode("/sim/rendering", true ) );
 
-  _tiedProperties.Tie( "clouds3d-density", _sky,
-          &SGSky::get_3dCloudDensity,
-          &SGSky::set_3dCloudDensity);
-
   _tiedProperties.Tie("clouds3d-vis-range", _sky,
           &SGSky::get_3dCloudVisRange,
           &SGSky::set_3dCloudVisRange);
-
-  _tiedProperties.Tie("clouds3d-impostor-range", _sky,
-          &SGSky::get_3dCloudImpostorDistance,
-          &SGSky::set_3dCloudImpostorDistance);
-
-  _tiedProperties.Tie("clouds3d-lod1-range", _sky,
-          &SGSky::get_3dCloudLoD1Range,
-          &SGSky::set_3dCloudLoD1Range);
-
-  _tiedProperties.Tie("clouds3d-lod2-range", _sky,
-          &SGSky::get_3dCloudLoD2Range,
-          &SGSky::set_3dCloudLoD2Range);
-
-  _tiedProperties.Tie("clouds3d-wrap", _sky,
-          &SGSky::get_3dCloudWrap,
-          &SGSky::set_3dCloudWrap);
-
-  _tiedProperties.Tie("clouds3d-use-impostors", _sky,
-          &SGSky::get_3dCloudUseImpostors,
-          &SGSky::set_3dCloudUseImpostors);
 }
 
 void
@@ -266,7 +209,7 @@ FGEnvironmentMgr::update (double dt)
 
   if( _cloudLayersDirty ) {
     _cloudLayersDirty = false;
-    fgClouds->set_update_event( fgClouds->get_update_event()+1 );
+    _fgClouds->set_update_event(_fgClouds->get_update_event()+1 );
   }
   updateTowerPosition();
 

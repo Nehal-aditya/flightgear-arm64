@@ -367,9 +367,6 @@ public:
       _scenery->scene_graph->setChildValue(_scenery->models_branch, b);
     } else if (name == "aircraft") {
       _scenery->scene_graph->setChildValue(_scenery->aircraft_branch, b);
-    } else if (name == "clouds") {
-      // clouds live elsewhere in the scene, but we handle them here
-      globals->get_renderer()->getSky()->set_clouds_enabled(b);
     } else if (name == "draw-otw") {
       // legacy setting but let's keep it working
       fgGetNode("/sim/rendering/draw-mask")->setBoolValue("terrain", b);
