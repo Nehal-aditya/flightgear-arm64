@@ -71,7 +71,8 @@ private:
         ChoseInvalidVersion,
         ChoseInvalidArchive,
         DownloadingExtractingArchive,
-        UpdatingViaTerrasync
+        UpdatingViaTerrasync,
+        DownloadFailed
     };
 
     SetupRootDialog(PromptState prompt);
@@ -88,5 +89,6 @@ private:
     PromptState m_promptState;
     QScopedPointer<Ui::SetupRootDialog> m_ui;
     QString m_browsedPath;
+    QString m_lastErrorMessage;
     QNetworkAccessManager* m_networkManager;
 };

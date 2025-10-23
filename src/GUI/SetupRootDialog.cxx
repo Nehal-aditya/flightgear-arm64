@@ -126,8 +126,9 @@ public:
         });
 
         connect(m_dns, &QtDNSClient::failed, [this](QString msg) {
-            m_error = true;
-            emit failed(tr("Download of data files failed due to a DNS error: %1").arg(msg));
+            qWarning() << "Failed to query download servers dynamically, falling back to download.flightgear.org";
+            m_servers.append("https://download.flightgear.org");
+            startRequest();
         });
 
         m_dns->makeDNSRequest();
@@ -477,6 +478,11 @@ public:
             onNetworkError(r->error());
         }
 #endif
+    }
+
+    bool hasError() const
+    {
+        return m_error;
     }
 signals:
     void extractionError(QString file, QString msg);
@@ -840,10 +846,19 @@ void SetupRootDialog::onDownload()
 
     connect(installThread, &InstallFGDataThread::failed, this, [this](QString s) {
         m_ui->downloadText->setText(tr("Download failed: %1").arg(s));
+        m_lastErrorMessage = s;
+        m_promptState = DownloadFailed;
     });
 
-    connect(installThread, &InstallFGDataThread::finished, this, [this]() {
-        accept();
+    connect(installThread, &InstallFGDataThread::finished, this, [this, installThread]() {
+        if (installThread->hasError()) {
+            // go back to the first page
+            m_promptState = DownloadFailed;
+            updatePromptText();
+            m_ui->contentsPages->setCurrentIndex(0);
+        } else {
+            accept();
+        }
     });
 
     installThread->start();
@@ -947,6 +962,11 @@ void SetupRootDialog::updatePromptText()
         t = tr("The data files need to be updated to version %1. "
                "Please press 'Update', or if you prefer, manually download the correct data files and then select them.")
                 .arg(QString::fromLatin1(FLIGHTGEAR_VERSION));
+        break;
+
+
+    case DownloadFailed:
+        t = tr("Automatic download of the data files has failed. Please download the files manually, using the instructions at https://www.flightgear.org/download/data/ (Error details: %1)").arg(m_lastErrorMessage);
         break;
     }
 
