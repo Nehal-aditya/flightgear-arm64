@@ -57,7 +57,8 @@ private:
         ChoseInvalidArchive,
         DownloadingExtractingArchive,
         UpdatingViaTerrasync,
-        ChoseInvalidDownloadLocation
+        ChoseInvalidDownloadLocation,
+        DownloadFailed
     };
 
     SetupRootDialog(PromptState prompt, const SGPath&);
