@@ -130,7 +130,7 @@ bool initNavCache()
     NavDataCache* cache = NavDataCache::createInstance();
     if (cache->isRebuildRequired()) {
         // start the rebuild right now, before showing the dialog
-        auto phase = cache->rebuild();
+        cache->rebuild();
 
         QProgressDialog rebuildProgress(baseLabel,
                                         QString() /* cancel text */,
@@ -771,11 +771,17 @@ LockFileDialogResult showLockFileDialog()
     mb.setIconPixmap(QPixmap(":/app-icon-large"));
     mb.setWindowTitle(title);
     mb.setText(text);
-    mb.setInformativeText(infoText);
+
     mb.addButton(QMessageBox::Ok);
     mb.setDefaultButton(QMessageBox::Ok);
-    mb.addButton(QMessageBox::Reset);
     mb.addButton(QMessageBox::Close);
+
+    // no lock file on Windows, so don't show the reset text/button. Enabling it
+    // causes more errors due to people clicking it erroneously
+#if !defined(SG_WINDOWS)
+    mb.setInformativeText(infoText);
+    mb.addButton(QMessageBox::Reset);
+#endif
 
     int r = mb.exec();
     if (r == QMessageBox::Reset)
