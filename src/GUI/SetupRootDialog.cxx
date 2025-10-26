@@ -966,7 +966,9 @@ void SetupRootDialog::updatePromptText()
 
 
     case DownloadFailed:
-        t = tr("Automatic download of the data files has failed. Please download the files manually, using the instructions at https://www.flightgear.org/download/data/ (Error details: %1)").arg(m_lastErrorMessage);
+        t = tr("Automatic download of the data files has failed. Please download the files manually using the instructions at %1 (Error details: %2)")
+            .arg("https://www.flightgear.org/download/data/")
+            .arg(m_lastErrorMessage);
         break;
     }
 
