@@ -28,7 +28,7 @@ Item {
 
             StyledText {
                 text: qsTr("The official FlightGear aircraft hangar is not added, so many standard "
-                      + "aircraft will not be available. You can add the  hangar now, or hide "
+                      + "aircraft will not be available. You can add the hangar now, or hide "
                       + "this message. The official hangar can always be restored from the 'Add-Ons' page.")
                 wrapMode: Text.WordWrap
                 anchors.verticalCenter: parent.verticalCenter

@@ -198,7 +198,7 @@ Item {
                     Note {
                         visible:!_launcher.isNetworkAvailable
                         width: parent.width
-                        text: qsTr("No network connection was detected, so multi-player flight will not be available");
+                        text: qsTr("No network connection was detected, so multi-player flight will not be available.");
                     },
 
                     SettingCheckbox {

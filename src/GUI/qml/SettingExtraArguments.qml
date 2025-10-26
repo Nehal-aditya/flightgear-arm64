@@ -47,8 +47,8 @@ SettingControl {
             enabled: root.enabled
             visible: tokenizer.haveUnsupportedArgs
             width: parent.width
-            text: qsTr("<b>Warning:</b> specifying <tt>fg-root</tt>, <tt>fg-aircraft</tt>, <tt>fg-scenery</tt> or <tt>fg-home</tt> " +
-                       "using this section is not recommended, and may cause problem or prevent the simulator from running. " +
+            text: qsTr("<b>Warning:</b> specifying <tt>--fg-root</tt>, <tt>--fg-aircraft</tt> or <tt>--fg-scenery</tt> " +
+                       "using this section is not recommended, and may cause problems or prevent the simulator from running. " +
                        "Please use the add-ons page to setup scenery and aircraft directories, and the 'Select data files location' " +
                        "menu item to change the root data directory.");
         }

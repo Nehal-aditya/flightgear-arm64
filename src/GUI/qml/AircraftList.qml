@@ -254,7 +254,7 @@ FocusScope
 
             StyledText {
                 anchors.fill: parent
-                text: qsTr("To install additional aircraft, click the the 'Browse' tab at the top of this page. (This requires a network connection)")
+                text: qsTr("To install additional aircraft, click on the 'Browse' tab at the top of this page. (This requires a network connection.)")
                 wrapMode: Text.WordWrap
                 font.pixelSize: Style.headingFontPixelSize
                 horizontalAlignment: Text.AlignHCenter
