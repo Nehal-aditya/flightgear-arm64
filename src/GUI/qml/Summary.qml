@@ -89,7 +89,7 @@ Item {
         // dynamic text sizing, so bind it manually
         y: logoText.y + Style.margin + logoText.contentHeight
         wrapMode: Text.WordWrap
-        text: qsTr("Licensed under the GNU Public License (GPL) - click for more info")
+        text: qsTr("Licensed under the GNU General Public License (GPL) - click for more info")
         baseTextColor: "white"
         style: Text.Outline
         styleColor: "black"
