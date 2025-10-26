@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2018 James Turner
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 set(xlf_file "en_US/FlightGear-Qt.xlf")
 
 if(EXISTS "${TRANSLATIONS_SRC_DIR}/${xlf_file}")
@@ -15,7 +18,7 @@ endif()
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS LinguistTools)
 if (${do_translate} AND NOT TARGET Qt${QT_VERSION_MAJOR}::lrelease)
     set(do_translate FALSE)
-    message(STATUS "Built-in translations disabled becuase Qt lrelease tool was not found."
+    message(STATUS "Built-in translations disabled because Qt lrelease tool was not found."
         "\n(on Linux You may need to install an additional package containing the Qt translation tools)")
 endif()
 
@@ -81,15 +84,14 @@ if (${do_translate})
     set(HAVE_QRC_TRANSLATIONS TRUE)
 
     add_custom_target(ts)
-    
+
     foreach(lang ${LANGUAGES})
         add_custom_target(
             ts_${lang}
             COMMAND Qt${QT_VERSION_MAJOR}::lupdate ${CMAKE_SOURCE_DIR}/src/GUI
-                -locations relative  -no-ui-lines -ts ${TRANSLATIONS_SRC_DIR}/${lang}/FlightGear-Qt.xlf
+                -locations relative -disable-heuristic similartext -no-ui-lines -ts ${TRANSLATIONS_SRC_DIR}/${lang}/FlightGear-Qt.xlf
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         )
         add_dependencies(ts ts_${lang})
     endforeach()
 endif() # of do translate
-
