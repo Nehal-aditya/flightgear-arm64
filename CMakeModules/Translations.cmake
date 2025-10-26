@@ -86,7 +86,7 @@ if (${do_translate})
         add_custom_target(
             ts_${lang}
             COMMAND Qt${QT_VERSION_MAJOR}::lupdate ${CMAKE_SOURCE_DIR}/src/GUI
-                -locations relative  -no-ui-lines -ts ${TRANSLATIONS_SRC_DIR}/${lang}/FlightGear-Qt.xlf
+                -locations relative -disable-heuristic similartext -no-ui-lines -ts ${TRANSLATIONS_SRC_DIR}/${lang}/FlightGear-Qt.xlf
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         )
         add_dependencies(ts ts_${lang})
