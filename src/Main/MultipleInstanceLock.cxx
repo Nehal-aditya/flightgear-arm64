@@ -150,7 +150,7 @@ LockStatus acquireLock()
     return LockOk;
 }
 
-void releaseLock()
+void releaseLock(SGPath lockPath)
 {
 #if defined(SG_WINDOWS)
     ReleaseMutex(static_fgMultipleInstanceMutex);
@@ -162,7 +162,6 @@ void releaseLock()
     }
 
     ::close(static_lockFileFd);
-    SGPath lockPath(globals->get_fg_home(), static_multiInstanceLockFile);
     lockPath.remove();
 #endif
 }
@@ -265,12 +264,17 @@ void ExclusiveInstanceLock::destroyInstance()
 ExclusiveInstanceLock::ExclusiveInstanceLock(std::string reason)
     : _reason(reason)
 {
+#if !defined(SG_WINDOWS)
+    _lockPath = SGPath(globals->get_fg_home(), static_multiInstanceLockFile);
+#endif
     writeLockReason(_reason);
 }
 
 ExclusiveInstanceLock::~ExclusiveInstanceLock()
 {
-    releaseLock();
+    // depending on C++ destruction order, we can't access globals here,
+    // so we save the path at constructor time
+    releaseLock(_lockPath);
 }
 
 std::optional<std::string> ExclusiveInstanceLock::isLocked()
