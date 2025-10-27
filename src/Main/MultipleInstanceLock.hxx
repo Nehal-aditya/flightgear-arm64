@@ -6,6 +6,8 @@
 #include <optional>
 #include <string>
 
+#include <simgear/misc/sg_path.hxx>
+
 namespace flightgear {
 
 /**
@@ -41,6 +43,7 @@ private:
     ExclusiveInstanceLock(std::string reason);
 
     std::string _reason;
+    SGPath _lockPath;
 };
 
 
