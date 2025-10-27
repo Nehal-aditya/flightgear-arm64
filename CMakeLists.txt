@@ -88,14 +88,7 @@ set(CMAKE_RELEASE_POSTFIX        ""  CACHE STRING "add a postfix, usually empty 
 set(CMAKE_RELWITHDEBINFO_POSTFIX ""  CACHE STRING "add a postfix, usually empty on windows")
 set(CMAKE_MINSIZEREL_POSTFIX     ""  CACHE STRING "add a postfix, usually empty on windows")
 
-# read 'version' file into a variable (stripping any newlines or spaces)
-file(READ flightgear-version versionFile)
-if (NOT versionFile)
-    message(FATAL_ERROR "Unable to determine FlightGear version. Version file is missing.")
-endif()
-string(STRIP "${versionFile}" FLIGHTGEAR_VERSION)
-# add a dependency on the version file
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS version)
+include(DetectVersion)
 
 # FlightGear packaging (to build a source tarball)
 include( ConfigureCPack )
@@ -420,13 +413,6 @@ if (ENABLE_PUI)
 endif()
 
 ##############################################################################
-
-# FlightGear and SimGear versions need to match major + minor
-# split version string into components, note CMAKE_MATCH_0 is the entire regexp match
-string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)" VERSION_REGEX ${FLIGHTGEAR_VERSION} )
-set(FG_VERSION_MAJOR ${CMAKE_MATCH_1})
-set(FG_VERSION_MINOR ${CMAKE_MATCH_2})
-set(FG_VERSION_PATCH ${CMAKE_MATCH_3})
 
 set(MIN_SIMGEAR_VERSION "${FG_VERSION_MAJOR}.${FG_VERSION_MINOR}.0")
 message(STATUS "Min Simgear version is ${MIN_SIMGEAR_VERSION}")

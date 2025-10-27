@@ -71,6 +71,9 @@ public:
 
         const auto dlBytes = m_repo->bytesDownloaded();
         emit downloadProgress(dlBytes, dlBytes + m_repo->bytesToDownload());
+
+        const auto lp = m_repo->lastCheckedPath();
+        emit installProgress(tr("Updated %1").arg(QString::fromStdString(lp.utf8Str())), -1);
     }
 
     ~UpdateFGData() = default;

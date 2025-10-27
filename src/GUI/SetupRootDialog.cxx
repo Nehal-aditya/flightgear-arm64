@@ -530,8 +530,10 @@ QString SetupRootDialog::rootPathKey()
     return QString("fg-root-%1-%2").arg(FLIGHTGEAR_MAJOR_VERSION).arg(FLIGHTGEAR_MINOR_VERSION);
 }
 
-SetupRootDialog::SetupRootDialog(PromptState prompt) : QDialog(),
-                                                       m_promptState(prompt)
+SetupRootDialog::SetupRootDialog(PromptState prompt, const SGPath& checked) : 
+    QDialog(),
+    m_promptState(prompt),
+    m_checkedPath(checked)
 {
     flightgear::ExclusiveInstanceLock::instance()->updateReason("setup-fgdata");
 
@@ -570,24 +572,27 @@ SetupRootDialog::SetupRootDialog(PromptState prompt) : QDialog(),
 
 bool SetupRootDialog::runDialog(bool usingDefaultRoot)
 {
+    // this code path is only used if have Qt enabled, but didn't use the launcher.
+    // in that case, we're coming from Options::setupRoot, which stores the path
+    // it checked in gloabls::get_fg_root() *before* it calls us here.
     SetupRootDialog::PromptState prompt =
         usingDefaultRoot ? DefaultPathCheckFailed : ExplicitPathCheckFailed;
-    return runDialog(prompt);
+    return runDialog(prompt, globals->get_fg_root());
 }
 
 bool SetupRootDialog::runUpdateDialog(bool usingDefaultRoot)
 {
     SG_UNUSED(usingDefaultRoot);
-    return runDialog(SetupRootDialog::PromptState::NeedToUpdateDownloadedData);
+    return runDialog(SetupRootDialog::PromptState::NeedToUpdateDownloadedData, SGPath{});
 }
 
-bool SetupRootDialog::runDialog(PromptState prompt)
+bool SetupRootDialog::runDialog(PromptState prompt, const SGPath& checkedPath)
 {
     // avoid double Apple menu and other weirdness if both Qt and OSG
     // try to initialise various Cocoa structures.
     flightgear::WindowBuilder::setPoseAsStandaloneApp(false);
 
-    SetupRootDialog dlg(prompt);
+    SetupRootDialog dlg(prompt, checkedPath);
     dlg.exec();
     if (dlg.result() != QDialog::Accepted) {
         return false;
@@ -636,36 +641,47 @@ flightgear::SetupRootResult SetupRootDialog::restoreUserSelectedRoot(SGPath& sgp
 
     if (path.isEmpty()) {
         if (downloadedDataExistsButStale()) {
-            bool ok = runDialog(NeedToUpdateDownloadedData);
+            bool ok = runDialog(NeedToUpdateDownloadedData, flightgear::Options::sharedInstance()->downloadedDataRoot());
             if (!ok) {
                 return flightgear::SetupRootResult::UserExit;
             }
 
             // assume update worked, fall through
         } 
-
-        return flightgear::SetupRootResult::UseDefault;
     }
 
-    if (validatePath(path) && validateVersion(path)) {
-        sgpath = SGPath::fromUtf8(path.toStdString());
-        return flightgear::SetupRootResult::RestoredOk;
-    }
+// to give better feedback, we need to record which path we tried,
+// that failed our check
+    SGPath checkedPath;
+    if (validatePath(path)) {
+        if (validateVersion(path)) {
+            sgpath = SGPath::fromUtf8(path.toStdString());
+            return flightgear::SetupRootResult::RestoredOk;
+        }
 
-    // we have an existing path but it's invalid.
-    // let's see if the default root is acceptable, in which case we will
-    // switch to it. (This gives a more friendly upgrade experience).
-    if (defaultRootAcceptable()) {
-        return flightgear::SetupRootResult::UseDefault;
+        // path semed good, but version failed, so this is the one to report
+        checkedPath = SGPath::fromUtf8(path.toStdString());
     }
 
     if (downloadedDataAcceptable()) {
         return flightgear::SetupRootResult::UseDefault;
+    } else if (checkedPath.isNull()) {
+        // if the download data exists, use that as our 'location we checked'
+        SGPath r = flightgear::Options::sharedInstance()->downloadedDataRoot();
+        if (flightgear::Options::isFGData(r)) {
+            checkedPath = r;
+        }
     }
 
     // okay, we don't have an acceptable FG_DATA anywhere we can find, we
     // have to ask the user what they want to do.
-    bool ok = runDialog(VersionCheckFailed);
+    bool ok = false;
+    if (checkedPath.isNull()) {
+        ok = runDialog(DefaultPathCheckFailed, SGPath{});
+    } else {
+        ok = runDialog(VersionCheckFailed, checkedPath);
+    }
+
     if (!ok) {
         return flightgear::SetupRootResult::UserExit;
     }
@@ -709,15 +725,6 @@ bool SetupRootDialog::validateVersion(QString path)
     return simgear::strutils::compare_versions(minBasePackageVersion, ver) <= 0;
 }
 
-bool SetupRootDialog::defaultRootAcceptable()
-{
-    return false;
-
-    SGPath r = flightgear::Options::sharedInstance()->platformDefaultRoot();
-    QString defaultRoot = QString::fromStdString(r.utf8Str());
-    return validatePath(defaultRoot) && validateVersion(defaultRoot);
-}
-
 bool SetupRootDialog::downloadedDataAcceptable()
 {
     SGPath r = flightgear::Options::sharedInstance()->downloadedDataRoot();
@@ -749,8 +756,14 @@ bool SetupRootDialog::downloadedDataExistsButStale()
         return false;
     }
 
-    if (info && (info.value().suffix != BUILD_SUFFIX)) {
-        SG_LOG(SG_IO, SG_INFO, "Base package suffix mismatch, build suffix is '" << BUILD_SUFFIX << "'");
+    // BUILD_SUFFIX includes a leading hypen, but the JSON info doesn't
+    std::string buildSuffix(BUILD_SUFFIX);
+    if (buildSuffix.find("-") == 0) {
+        buildSuffix.erase(0, 1); // effectively a 'pop front'
+    }
+
+    if (info && (info.value().suffix != buildSuffix)) {
+        SG_LOG(SG_IO, SG_INFO, "Base package suffix mismatch, build suffix is '" << buildSuffix << "'");
         return true;
     }
 
@@ -758,10 +771,7 @@ bool SetupRootDialog::downloadedDataExistsButStale()
     return simgear::strutils::compare_versions(ver, minBasePackageVersion) < 0;
 }
 
-SetupRootDialog::~SetupRootDialog()
-{
-
-}
+SetupRootDialog::~SetupRootDialog() = default;
 
 void SetupRootDialog::onBrowse()
 {
@@ -870,7 +880,8 @@ void SetupRootDialog::onUpdate()
     updatePromptText();
 
     m_ui->contentsPages->setCurrentIndex(1);
-
+    m_ui->installProgress->setMaximum(0); // show a 'unknown amount' progress
+    
     auto updateThread = new UpdateFGData(this);
     connect(updateThread, &UpdateFGData::downloadProgress, this, [this](quint64 cur, quint64 total) {
         m_ui->downloadProgress->setValue(cur);
@@ -883,8 +894,7 @@ void SetupRootDialog::onUpdate()
     });
 
     connect(updateThread, &UpdateFGData::installProgress, this, [this](QString s, int percent) {
-        m_ui->installText->setText(tr("Update %1% complete.\nExtracting %2").arg(percent).arg(s));
-        m_ui->installProgress->setValue(percent);
+        m_ui->installText->setText(s);
     });
 
     connect(updateThread, &UpdateFGData::failed, this, [this](QString s) {
@@ -909,7 +919,7 @@ void SetupRootDialog::onUpdate()
 void SetupRootDialog::updatePromptText()
 {
     QString t;
-    QString curRoot = QString::fromStdString(globals->get_fg_root().utf8Str());
+    QString curRoot = QString::fromStdString(m_checkedPath.utf8Str());
     switch (m_promptState) {
     case DefaultPathCheckFailed:
         t = tr("FlightGear needs to download additional data files. This can be done automatically by pressing 'Download', or you can download them yourself and select their location.");
@@ -921,7 +931,7 @@ void SetupRootDialog::updatePromptText()
 
     case VersionCheckFailed:
     {
-        QString curVer = QString::fromStdString(fgBasePackageVersion(globals->get_fg_root()));
+        QString curVer = QString::fromStdString(fgBasePackageVersion(m_checkedPath));
         t = tr("Detected incompatible version of the data files: version %1 found, but this is FlightGear %2. " \
                "(At location: '%3') " \
                "Please install or select a matching set of data files.").arg(curVer).arg(QString::fromLatin1(FLIGHTGEAR_VERSION)).arg(curRoot);
@@ -959,9 +969,9 @@ void SetupRootDialog::updatePromptText()
         break;
 
     case NeedToUpdateDownloadedData:
-        t = tr("The data files need to be updated to version %1. "
+        t = tr("The data files (found at '%2') need to be updated to version %1. "
                "Please press 'Update', or if you prefer, manually download the correct data files and then select them.")
-                .arg(QString::fromLatin1(FLIGHTGEAR_VERSION));
+                .arg(QString::fromLatin1(FLIGHTGEAR_VERSION)).arg(curRoot);
         break;
 
 

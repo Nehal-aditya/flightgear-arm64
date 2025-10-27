@@ -30,6 +30,8 @@ Example usage:
    endif()
 #]=======================================================================]
 
+include(FindPackageHandleStandardArgs)
+
 # Look for 'git' or 'eg' (easy git)
 #
 set(git_names git eg)
