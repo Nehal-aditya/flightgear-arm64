@@ -1,23 +1,7 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#
-# main.py --- Main module for terrasync.py
-#
-# Copyright (C) 2016  Torsten Dreyer
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the
-# License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+# SPDX-FileCopyrightText: 2016 Torsten Dreyer
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+"""Main module for terrasync.py."""
 
 import argparse
 import enum
@@ -66,7 +50,7 @@ def removeDirectoryTree(base, whatToRemove):
     """Recursively remove directory 'whatToRemove', with safety checks.
 
     This function ensures that 'whatToRemove' does not resolve to a
-    directory such as /, /home, /home/foobar, C:\, d:\, etc. It is also
+    directory such as /, /home, /home/foobar, C:\\, d:\\, etc. It is also
     an error if 'whatToRemove' does not literally start with the value
     of 'base' (IOW, this function refuses to erase anything that is not
     under 'base').
@@ -315,7 +299,7 @@ class DownloadBoundaries:
 
 
 def parse_terrasync_coordinate(coordinate):
-    matches = re.match("(w|e)(\d{3})(n|s)(\d{2})", coordinate)
+    matches = re.match(r"(w|e)(\d{3})(n|s)(\d{2})", coordinate)
     if not matches:
         return None
 
