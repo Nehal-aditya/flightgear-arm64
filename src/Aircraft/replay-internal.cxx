@@ -1502,7 +1502,7 @@ bool loadTapeContinuous(
     continuous->m_in_time_to_frameinfo.clear();
     continuous->m_num_frames_extra_properties = 0;
     continuous->m_num_frames_multiplayer = 0;
-    continuous->m_indexing_in.open(filename.str());
+    continuous->m_indexing_in.open(filename.str(), std::ifstream::binary);
     continuous->m_indexing_pos = in.tellg();
     continuous->m_in_compression = continuous
                                        ->m_in_config->getNode("meta/continuous-compression", true /*create*/)
@@ -1600,7 +1600,7 @@ bool FGReplayInternal::loadTape(
     m_replay_error->setBoolValue(false);
     std::ifstream in_preview;
     std::ifstream& in(preview ? in_preview : m_continuous->m_in);
-    in.open(filename.str());
+    in.open(filename.str()), std::ifstream::binary;
     if (!in) {
         SG_LOG(SG_SYSTEMS, SG_ALERT, "Failed to open"
                                          << " Filename=" << filename.str() << " in.is_open()=" << in.is_open());
