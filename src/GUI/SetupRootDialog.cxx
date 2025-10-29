@@ -149,6 +149,8 @@ public:
      */
     qint64 resumeDownload(QNetworkRequest& req)
     {
+        m_resumeData.close(); // close because we may remove
+
         std::unique_lock g(m_mutex);
         qint64 resumeBytes = m_resumeData.size();
         m_resumedBytesSize = 0;
@@ -184,6 +186,11 @@ public:
 
         req.setRawHeader("Range", QString("bytes=%1-").arg(resumeBytes).toUtf8());
         m_readResumeFile = true;
+    
+        // finally, open the file for reading *and* writing, since once we release our
+        // mutex, the running thread will start pulling data out now m_readResumeFile is set
+        m_resumeData.open(QIODevice::ReadWrite);
+
         return fourMB;
     }
 
@@ -222,7 +229,6 @@ public:
         m_downloadUrl = QUrl(templateUrl.arg(majorMinorVersion).arg(majorMinorVersion).arg(static_basePackagePatchLevel));
 
         qInfo() << "Download URI:" << m_downloadUrl;
-        m_resumeData.close();
 
         QNetworkRequest req{m_downloadUrl};
         req.setMaximumRedirectsAllowed(5);
@@ -237,8 +243,9 @@ public:
         m_download = m_networkManager->get(req);
         m_download->setReadBufferSize(64 * 1024 * 1024);
 
-        if (!m_resumeData.open(QIODevice::ReadWrite)) {
-            qWarning() << "Failed to open download resume file";
+        if (!m_readResumeFile) {
+            // if we're not resuming, just write to the resume file
+            m_resumeData.open(QIODevice::WriteOnly | QIODevice::Truncate);
         }
 
         connect(m_download, &QNetworkReply::downloadProgress, this, &InstallFGDataThread::onDownloadProgress);
