@@ -414,6 +414,7 @@ public:
                 m_buffer.clear();
                 m_resumeData.close();
                 m_resumeData.open(QIODevice::WriteOnly | QIODevice::Truncate);
+                m_readResumeFile = false;
                 qWarning() << "Server can't resume, reverting to full download";
             }
         }
