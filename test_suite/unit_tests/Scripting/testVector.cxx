@@ -11,6 +11,7 @@ void VectorTests::setUp()
 {
     FGTestApi::setUp::initTestGlobals("vector");
 
+    globals->get_subsystem_mgr()->bind();
     globals->get_subsystem_mgr()->init();
 
     FGTestApi::setUp::initStandardNasal(true);
