@@ -165,6 +165,38 @@ FGAIWaypoint* FGAIFlightPlan::createOnRunway(FGAIAircraft* ac,
 }
 
 void FGAIFlightPlan::createArc(FGAIAircraft* ac, const SGGeod& center, int startAngle,
+                               int endAngle, int increment, int radius, double aElev, double aSpeed, const char* pattern)
+{
+    double trackSegmentLength = (2 * M_PI * radius) / 360.0;
+    double dummyAz2;
+    char buffer[20];
+
+    if (endAngle > startAngle && increment < 0) {
+        endAngle -= 360;
+    }
+    if (endAngle < startAngle && increment > 0) {
+        endAngle += 360;
+    }
+
+    int nPoints = fabs(fabs(endAngle - startAngle) / increment);
+
+    for (int i = startAngle; !(endAngle <= i && i < endAngle + fabs(increment)); i += increment) {
+        if (fabs(i) > 720) {
+            SG_LOG(SG_AI, SG_WARN, "FGAIFlightPlan::createArc runaway " << startAngle << " " << endAngle << " " << increment);
+            break;
+        }
+        SGGeod result;
+        SGGeodesy::direct(center, i,
+                          radius, result, dummyAz2);
+        snprintf(buffer, sizeof(buffer), pattern, i);
+        FGAIWaypoint* wpt = createOnGround(ac, buffer, result, aElev, aSpeed);
+        wpt->setCrossat(aElev);
+        wpt->setTrackLength(trackSegmentLength);
+        pushBackWaypoint(wpt);
+    }
+}
+
+void FGAIFlightPlan::createArc(FGAIAircraft* ac, const SGGeod& center, int startAngle,
                                int endAngle, int increment, int radius, double aElev, double altDiff, double aSpeed, const char* pattern)
 {
     double trackSegmentLength = (2 * M_PI * radius) / 360.0;
@@ -184,7 +216,7 @@ void FGAIFlightPlan::createArc(FGAIAircraft* ac, const SGGeod& center, int start
 
     for (int i = startAngle; !(endAngle <= i && i < endAngle + fabs(increment)); i += increment) {
         if (fabs(i) > 720) {
-            SG_LOG(SG_AI, SG_WARN, "FGAIFlightPlan::createArc runaway " << startAngle << " " << endAngle << " " << increment);
+            SG_LOG(SG_AI, SG_DEV_WARN, "FGAIFlightPlan::createArc runaway " << startAngle << " " << endAngle << " " << increment);
             break;
         }
         SGGeod result;
@@ -385,16 +417,11 @@ bool FGAIFlightPlan::createRunwayTaxi(FGAIAircraft* ac, bool firstFlight,
         }
     }
 
-    const string& rwyClass = getRunwayClassFromTrafficType(fltType);
-
-    // Only set this if it hasn't been set by ATC already.
-    if (activeRunway.empty()) {
-        // cerr << "Getting runway for " << ac->getTrafficRef()->getCallSign() << " at " << apt->getId() << endl;
-        double depHeading = ac->getTrafficRef()->getCourse();
-        apt->getDynamics()->getActiveRunway(rwyClass, RunwayAction::TAKEOFF, activeRunway,
-                                            depHeading);
+    FGRunway* rwy = ensureActiveRunway(ac, apt, fltType);
+    if (!rwy) {
+        SG_LOG(SG_AI, SG_DEV_WARN, "Could not find active runway for " << ac->getTrafficRef()->getCallSign() << " at " << apt->getId());
+        return false;
     }
-    FGRunway* rwy = apt->getRunwayByIdent(activeRunway);
     SG_LOG(SG_AI, SG_BULK, "Taxi to " << apt->getId() << "/" << activeRunway);
     assert(rwy != NULL);
     FGGroundNetwork* gn = apt->groundNetwork();
@@ -1336,6 +1363,20 @@ const char* FGAIFlightPlan::getRunwayClassFromTrafficType(const string& fltType)
     return "com";
 }
 
+// Ensure activeRunway is set (query dynamics/ATC if needed) and return the runway pointer.
+FGRunway* FGAIFlightPlan::ensureActiveRunway(FGAIAircraft* ac, FGAirport* apt, const string& fltType)
+{
+    const string& rwyClass = getRunwayClassFromTrafficType(fltType);
+
+    // Only set this if it hasn't been set by ATC already.
+    if (activeRunway.empty()) {
+        double depHeading = ac->getTrafficRef()->getCourse();
+        apt->getDynamics()->getActiveRunway(rwyClass, RunwayAction::TAKEOFF, activeRunway,
+                                            depHeading);
+    }
+
+    return apt->getRunwayByIdent(activeRunway);
+}
 
 double FGAIFlightPlan::getTurnRadius(double speed, bool inAir)
 {

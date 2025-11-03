@@ -21,6 +21,7 @@ class FGParking : public FGTaxiNode
 {
 private:
   const double heading;
+  const double reverseHeading;
   const double radius;
   const std::string type;
   const std::string airlineCodes;
@@ -38,16 +39,19 @@ public:
             const std::string& codes);
     virtual ~FGParking() = default;
 
-  double getHeading  () const { return heading;     };
-  double getRadius   () const { return radius;      };
+    double getHeading() const { return heading; };
+    double getReverseHeading() const { return reverseHeading; };
+    double getRadius() const { return radius; };
 
-  std::string getType     () const { return type;        };
-  std::string getCodes    () const { return airlineCodes;};
-  std::string getName     () const { return ident(); };
+    std::string getType() const { return type; };
+    std::string getCodes() const { return airlineCodes; };
+    std::string getName() const { return ident(); };
 
-  void setPushBackPoint(const FGTaxiNodeRef& node);
-  FGTaxiNodeRef getPushBackPoint () { return pushBackPoint; };
+    void setPushBackPoint(const FGTaxiNodeRef& node);
+    FGTaxiNodeRef getPushBackPoint() { return pushBackPoint; };
 
-  bool operator< (const FGParking &other) const {
-    return radius < other.radius; };
+    bool operator<(const FGParking& other) const
+    {
+        return radius < other.radius;
+    };
 };

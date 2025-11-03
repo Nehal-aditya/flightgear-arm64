@@ -1,4 +1,7 @@
 <?xml version="1.0"?>
+<!--SPDX-FileName: YSSY.groundnet.xml-->
+<!--SPDX-FileCopyrightText: Copyright (C) 2021  Ian Tolosa-->
+<!--SPDX-License-Identifier: GPL-2.0-or-later-->
 <groundnet>
   <version>1</version>
   <fgaversion>Sat, 04 Sep 2021 09:33:24 GMT by FlightgearAirports 0.0.34</fgaversion>
@@ -40,7 +43,7 @@
     <Parking index="27" type="gate" lat="S33 55.959" lon="E151 10.6098" heading="86.0" radius="18" name="T3-" airlineCodes="QFA" number="16" pushBackRoute="142"/>
     <Parking index="28" type="cargo" lat="S33 55.9044" lon="E151 10.08" heading="257.0" radius="33" name="Cargo-" number="05" pushBackRoute="395"/>
     <Parking index="29" type="gate" lat="S33 56.0412" lon="E151 10.0614" heading="257.7" radius="33" name="T1-" airlineCodes="UAE,ETD" number="08" pushBackRoute="194"/>
-    <Parking index="30" type="gate" lat="S33 56.3718" lon="E151 9.8406" heading="126.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="56" pushBackRoute="705"/>
+    <Parking index="30" type="gate" lat="S33 56.3718" lon="E151 9.8406" heading="126.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="56" pushBackRoute="705"/><!--codespell:ignore-->
     <Parking index="31" type="cargo" lat="S33 55.8276" lon="E151 10.0596" heading="257.0" radius="33" name="Cargo-" number="03" pushBackRoute="937"/>
     <Parking index="32" type="cargo" lat="S33 55.7322" lon="E151 10.0992" heading="346.5" radius="40" name="Cargo-" number="01" pushBackRoute="292"/>
     <Parking index="33" type="cargo" lat="S33 55.7892" lon="E151 10.05" heading="257.0" radius="33" name="Cargo-" number="02" pushBackRoute="292"/>
@@ -55,16 +58,16 @@
     <Parking index="42" type="gate" lat="S33 56.3724" lon="E151 10.1328" heading="74.7" radius="33" name="T1-" airlineCodes="QFA" number="36" pushBackRoute="764"/>
     <Parking index="43" type="gate" lat="S33 56.3346" lon="E151 10.1166" heading="74.7" radius="33" name="T1-" airlineCodes="QFA" number="34" pushBackRoute="350"/>
     <Parking index="44" type="gate" lat="S33 56.2968" lon="E151 10.104" heading="74.7" radius="33" name="T1-" airlineCodes="QFA" number="32" pushBackRoute="945"/>
-    <Parking index="45" type="gate" lat="S33 56.2956" lon="E151 9.9732" heading="254.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA,QFA" number="51" pushBackRoute="944"/>
-    <Parking index="46" type="gate" lat="S33 56.334" lon="E151 9.9858" heading="254.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA,QFA" number="53" pushBackRoute="945"/>
+	<Parking index="45" type="gate" lat="S33 56.2956" lon="E151 9.9732" heading="254.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA,QFA" number="51" pushBackRoute="944"/><!--codespell:ignore-->
+    <Parking index="46" type="gate" lat="S33 56.334" lon="E151 9.9858" heading="254.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA,QFA" number="53" pushBackRoute="945"/><!--codespell:ignore-->
     <Parking index="47" type="gate" lat="S33 56.3838" lon="E151 10.002" heading="304.0" radius="40" name="T1-" airlineCodes="UAE" number="57" pushBackRoute="947"/>
-    <Parking index="48" type="gate" lat="S33 56.4042" lon="E151 9.9648" heading="344.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="58" pushBackRoute="729"/>
-    <Parking index="49" type="gate" lat="S33 56.4144" lon="E151 9.921" heading="344.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="59" pushBackRoute="727"/>
-    <Parking index="50" type="gate" lat="S33 56.4264" lon="E151 9.8754" heading="344.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="60" pushBackRoute="186"/>
-    <Parking index="51" type="gate" lat="S33 56.3988" lon="E151 9.825" heading="83.8" radius="18" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="63" pushBackRoute="712"/>
-    <Parking index="52" type="gate" lat="S33 56.3598" lon="E151 9.879" heading="154.5" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="54" pushBackRoute="599"/>
+    <Parking index="48" type="gate" lat="S33 56.4042" lon="E151 9.9648" heading="344.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="58" pushBackRoute="729"/><!--codespell:ignore-->
+    <Parking index="49" type="gate" lat="S33 56.4144" lon="E151 9.921" heading="344.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="59" pushBackRoute="727"/><!--codespell:ignore-->
+    <Parking index="50" type="gate" lat="S33 56.4264" lon="E151 9.8754" heading="344.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="60" pushBackRoute="186"/><!--codespell:ignore-->
+    <Parking index="51" type="gate" lat="S33 56.3988" lon="E151 9.825" heading="83.8" radius="18" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="63" pushBackRoute="712"/><!--codespell:ignore-->
+    <Parking index="52" type="gate" lat="S33 56.3598" lon="E151 9.879" heading="154.5" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="54" pushBackRoute="599"/><!--codespell:ignore-->
     <Parking index="53" type="gate" lat="S33 55.9026" lon="E151 10.782" heading="190.0" radius="18" name="T3-" airlineCodes="QFA" number="03" pushBackRoute="444"/>
-    <Parking index="54" type="gate" lat="S33 55.8936" lon="E151 10.749" heading="190.0" radius="33" name="T3-" airlineCodes="QFA" number="04" pushBackRoute="443"/>
+    <Parking index="54" type="gate" lat="S33 55.8936" lon="E151 10.749" heading="190.0" radius="33" name="T3-" airlineCodes="QFA" number="04"/>
     <Parking index="55" type="gate" lat="S33 55.8942" lon="E151 10.7136" heading="190.0" radius="18" name="T3-" airlineCodes="QFA" number="05" pushBackRoute="497"/>
     <Parking index="56" type="gate" lat="S33 55.8912" lon="E151 10.6806" heading="190.0" radius="26" name="T3-" airlineCodes="QFA" number="06" pushBackRoute="498"/>
     <Parking index="57" type="gate" lat="S33 55.8774" lon="E151 10.653" heading="190.0" radius="18" name="T3-" airlineCodes="QFA" number="07" pushBackRoute="499"/>
@@ -92,8 +95,8 @@
     <Parking index="79" type="gate" lat="S33 56.1054" lon="E151 10.8012" heading="286.0" radius="18" name="T2-" airlineCodes="VOZ, OZW" number="34" pushBackRoute="379"/>
     <Parking index="80" type="gate" lat="S33 56.0868" lon="E151 10.8156" heading="279.4" radius="18" name="T2-" airlineCodes="VOZ, OZW" number="32" pushBackRoute="813"/>
     <Parking index="81" type="gate" lat="S33 56.0844" lon="E151 10.7544" heading="100.0" radius="18" name="T2-" airlineCodes="VOZ, OZW" number="31A" pushBackRoute="208"/>
-    <Parking index="82" type="gate" lat="S33 56.316" lon="E151 9.9048" heading="83.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="50" pushBackRoute="599"/>
-    <Parking index="83" type="gate" lat="S33 56.4348" lon="E151 9.8328" heading="43.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="61" pushBackRoute="722"/>
+    <Parking index="82" type="gate" lat="S33 56.316" lon="E151 9.9048" heading="83.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="50" pushBackRoute="599"/><!--codespell:ignore-->
+    <Parking index="83" type="gate" lat="S33 56.4348" lon="E151 9.8328" heading="43.0" radius="33" name="T1-" airlineCodes="UAL,THA,SIA,PAL,JAL,ACA,CSN,DAL,CCA,ANA,AAL,LAN,MAS,BAW,ANZ,AAR,ACI,QTR,HAL,FJI,CAL,HVN,KAL,AIC,CPA,GIA" number="61" pushBackRoute="722"/><!--codespell:ignore-->
     <Parking index="84" type="cargo" lat="S33 55.9536" lon="E151 10.0848" heading="297.4" radius="33" name="Cargo-" number="06" pushBackRoute="394"/>
     <Parking index="85" type="gate" lat="S33 56.259" lon="E151 10.0908" heading="74.7" radius="33" name="T1-" airlineCodes="QFA" number="30" pushBackRoute="944"/>
     <Parking index="86" type="gate" lat="S33 56.2056" lon="E151 10.7886" heading="279.0" radius="18" name="T2-" airlineCodes="VOZ, OZW" number="42" pushBackRoute="219"/>
@@ -455,7 +458,9 @@
     <node index="440" lat="S33 55.9548" lon="E151 10.5372" isOnRunway="0" holdPointType="none"/>
     <node index="441" lat="S33 55.8642" lon="E151 10.4988" isOnRunway="0" holdPointType="PushBack"/>
     <node index="442" lat="S33 55.809" lon="E151 10.5978" isOnRunway="0" holdPointType="none"/>
+    <!--
     <node index="443" lat="S33 55.8432" lon="E151 10.7712" isOnRunway="0" holdPointType="PushBack"/>
+    -->
     <node index="444" lat="S33 55.8522" lon="E151 10.806" isOnRunway="0" holdPointType="PushBack"/>
     <node index="445" lat="S33 55.8612" lon="E151 10.8672" isOnRunway="0" holdPointType="PushBack"/>
     <node index="446" lat="S33 55.8582" lon="E151 10.8378" isOnRunway="0" holdPointType="PushBack"/>
@@ -1149,8 +1154,10 @@
     <arc begin="554" end="51" isPushBackRoute="1" name="Route"/>
     <arc begin="53" end="447" isPushBackRoute="1" name="Route"/>
     <arc begin="447" end="53" isPushBackRoute="1" name="Route"/>
+    <!-- Create unconnected segments to test
     <arc begin="54" end="448" isPushBackRoute="1" name="Route"/>
     <arc begin="448" end="54" isPushBackRoute="1" name="Route"/>
+    -->
     <arc begin="55" end="449" isPushBackRoute="1" name="Route"/>
     <arc begin="449" end="55" isPushBackRoute="1" name="Route"/>
     <arc begin="56" end="494" isPushBackRoute="1" name="0"/>
@@ -2071,8 +2078,10 @@
     <arc begin="451" end="442" isPushBackRoute="0" name="Route"/>
     <arc begin="442" end="856" isPushBackRoute="0" name="Route"/>
     <arc begin="856" end="442" isPushBackRoute="0" name="Route"/>
+    <!--
     <arc begin="443" end="448" isPushBackRoute="1" name="0"/>
     <arc begin="448" end="443" isPushBackRoute="1" name="0"/>
+    -->
     <arc begin="444" end="447" isPushBackRoute="1" name="0"/>
     <arc begin="447" end="444" isPushBackRoute="1" name="0"/>
     <arc begin="445" end="453" isPushBackRoute="1" name="0"/>

@@ -99,6 +99,47 @@ void GroundnetTests::testLoad()
     }
 }
 
+void GroundnetTests::testIntersections()
+{
+    FGAirportRef yssy = FGAirport::getByIdent("YSSY");
+
+    FGGroundNetwork* network = yssy->groundNetwork();
+    CPPUNIT_ASSERT_EQUAL(true, network->exists());
+
+    auto parking = network->findParkingByName("T3-16");
+
+    SG_LOG(SG_AI, SG_DEBUG, "Searching " << parking->getIndex() << "/" << parking->geod() << " at " << yssy->getId());
+
+    const double reverseParkingHeading = SGMiscd::normalizePeriodic(0, 360, parking->getHeading() + 180.0);
+
+    FGIntersectedTaxiSegment* segment = network->findIntersectionSegment(parking->geod(), reverseParkingHeading);
+    CPPUNIT_ASSERT(segment);
+    CPPUNIT_ASSERT(segment->getIntersection().isValid());
+    CPPUNIT_ASSERT_EQUAL(455, segment->getStart()->getIndex());
+    CPPUNIT_ASSERT_EQUAL(440, segment->getEnd()->getIndex());
+}
+
+void GroundnetTests::testIntersections2()
+{
+    FGAirportRef yssy = FGAirport::getByIdent("YSSY");
+
+    FGGroundNetwork* network = yssy->groundNetwork();
+    CPPUNIT_ASSERT_EQUAL(true, network->exists());
+
+    auto parking = network->findParkingByName("T2-59");
+    CPPUNIT_ASSERT(parking);
+
+    SG_LOG(SG_AI, SG_DEBUG, "Searching " << parking->getIndex() << "/" << parking->geod() << " at " << yssy->getId());
+
+    const double reverseParkingHeading = SGMiscd::normalizePeriodic(0, 360, parking->getHeading() + 180.0);
+
+    FGIntersectedTaxiSegment* segment = network->findIntersectionSegment(parking->geod(), reverseParkingHeading);
+    CPPUNIT_ASSERT(segment);
+    CPPUNIT_ASSERT(segment->getIntersection().isValid());
+    CPPUNIT_ASSERT_EQUAL(153, segment->getStart()->getIndex());
+    CPPUNIT_ASSERT_EQUAL(493, segment->getEnd()->getIndex());
+}
+
 void GroundnetTests::testShortestRoute()
 {
     FGAirportRef egph = FGAirport::getByIdent("EGPH");

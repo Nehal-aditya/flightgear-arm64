@@ -112,6 +112,29 @@ public:
     }
 };
 
+/**
+ * This class represents a taxi segment that is intersected.
+ */
+class FGIntersectedTaxiSegment : public FGTaxiSegment
+{
+public:
+    FGIntersectedTaxiSegment(FGTaxiNode* start, const SGGeod& intersectionPoint, FGTaxiNode* end) : FGTaxiSegment(start, end),
+                                                                                                    m_intersection(intersectionPoint) {}
+
+    void setIntersection(const SGGeod& pt)
+    {
+        m_intersection = pt;
+    }
+
+    SGGeod getIntersection() const
+    {
+        return m_intersection;
+    }
+
+private:
+    SGGeod m_intersection;
+};
+
 /***************************************************************************************
  * class FGTaxiRoute
  **************************************************************************************/
@@ -273,6 +296,7 @@ public:
     FGTaxiNodeRef findNearestNodeOffRunway(const SGGeod& aGeod, FGRunway* aRunway, double distanceM) const;
 
     FGTaxiSegment* findOppositeSegment(unsigned int index) const;
+    FGIntersectedTaxiSegment* findIntersectionSegment(const SGGeod& point, double heading) const;
 
     const FGParkingList& allParkings() const;
 

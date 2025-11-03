@@ -9,6 +9,9 @@
 #include <cppunit/TestFixture.h>
 #include <cppunit/extensions/HelperMacros.h>
 
+#include <AIModel/AIFlightPlan.hxx>
+#include <Airports/airport.hxx>
+
 #include <memory>
 
 #include <simgear/props/props.hxx>
@@ -26,8 +29,11 @@ class AIFlightPlanTests : public CppUnit::TestFixture
     CPPUNIT_TEST(testLeftTurnFlightplanXML);
     CPPUNIT_TEST(testRightTurnFlightplanXML);
 
-    CPPUNIT_TEST(testAIFlightPlans);
-    CPPUNIT_TEST(testCreateTaxiRunwayDeparture);
+    CPPUNIT_TEST(testCreateApproach);
+    CPPUNIT_TEST(testCreatePushbackWithRoute);
+    CPPUNIT_TEST(testCreatePushbackWithoutRoute);
+    CPPUNIT_TEST(testCreatePushForward);
+    CPPUNIT_TEST(testCreatePushbackNoRoute);
     CPPUNIT_TEST_SUITE_END();
 
 
@@ -45,6 +51,13 @@ public:
     void testLeftTurnFlightplanXML();
     void testRightTurnFlightplanXML();
     // The tests for "create"
-    void testAIFlightPlans();
+    void testCreateApproach();
     void testCreateTaxiRunwayDeparture();
+    void testCreatePushbackWithRoute();
+    void testCreatePushbackWithoutRoute();
+    void testCreatePushForward();
+    void testCreatePushbackNoRoute();
+
+private:
+    void printWaypoints(FGAIFlightPlan* aiFP);
 };

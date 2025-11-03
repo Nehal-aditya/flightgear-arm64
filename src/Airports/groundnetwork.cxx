@@ -507,6 +507,34 @@ FGTaxiSegment* FGGroundNetwork::findOppositeSegment(unsigned int index) const
     return seg->opposite();
 }
 
+FGIntersectedTaxiSegment* FGGroundNetwork::findIntersectionSegment(const SGGeod& start, double heading) const
+{
+    // Create a line segment from point in direction of heading
+    auto end = SGGeodesy::direct(start, heading, 500.0);
+
+    double dist = DBL_MAX;
+    FGIntersectedTaxiSegment* ret = nullptr;
+    for (auto seg : segments) {
+        auto intersection = SGGeodesy::intersection(start, end, seg->getStart()->geod(), seg->getEnd()->geod());
+        if (intersection.has_value()) {
+            const double newDist = SGGeodesy::distanceM(start, (*intersection));
+            const double dist1 = SGGeodesy::distanceM(seg->getStart()->geod(), (*intersection));
+            const double dist2 = SGGeodesy::distanceM(seg->getEnd()->geod(), (*intersection));
+            const double segmentLen = seg->getLength();
+
+            const double headingIntersection = SGMiscd::round(SGGeodesy::courseDeg(start, (*intersection)));
+
+            if (newDist > 0 && newDist < dist && SGMiscd::round(heading) == headingIntersection && dist1 < segmentLen && dist2 < segmentLen) {
+                dist = newDist;
+                ret = new FGIntersectedTaxiSegment(seg->getStart(), (*intersection), seg->getEnd());
+            }
+        }
+    }
+
+    SG_LOG(SG_AI, SG_BULK, "No intersection segment found at " << parent->getId());
+    return ret;
+}
+
 const FGParkingList& FGGroundNetwork::allParkings() const
 {
     return m_parkings;

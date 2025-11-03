@@ -284,50 +284,6 @@ void AIFlightPlanTests::testAIFlightPlanLeftCircle()
     CPPUNIT_ASSERT_EQUAL(aiFP->getNrOfWayPoints(), 11);
 }
 
-void AIFlightPlanTests::testAIFlightPlans()
-{
-    auto aiFP = new FGAIFlightPlan;
-    aiFP->setName("Bob");
-    aiFP->setRunway("24");
-
-    FGAirportRef egph = FGAirport::getByIdent("EGPH");
-    FGAirportRef egpf = FGAirport::getByIdent("EGPF");
-
-
-    // Time to depart
-    std::string dep = FGTestApi::strings::getTimeString(30);
-    // Time to arrive
-    std::string arr = FGTestApi::strings::getTimeString(320);
-
-    FGAISchedule* schedule = new FGAISchedule(
-        "B737", "KLM", "EGPH", "G-BLA", "ID", false, "B737", "KLM", "N", "cargo", 24, 8);
-    FGScheduledFlight* flight = new FGScheduledFlight("testPushbackCargo", "", "EGPH", "EGPF", 24, dep, arr, "WEEK", "HBR_BN_2");
-    schedule->assign(flight);
-
-    SGSharedPtr<FGAIAircraft> aiAircraft = new FGAIAircraft{schedule};
-
-    std::string activeRunway;
-    FGRunwayRef rwy;
-
-    // FLIGHTGEAR-1VBR
-    int aircraftHeading = 302;
-    int heading = 5;
-
-    // heading of vector towards threshold
-    egpf->getDynamics()->getActiveRunway("com", 2, activeRunway, heading);
-    rwy = egpf->getRunwayByIdent(activeRunway);
-    SGGeod threshold = rwy->threshold();
-    SGGeod aiAircraftPos = SGGeodesy::direct(threshold, aiAircraft->getTrueHeadingDeg(), 120000);
-
-    aiAircraft->setLatitude(aiAircraftPos.getLatitudeDeg());
-    aiAircraft->setLongitude(aiAircraftPos.getLongitudeDeg());
-    aiAircraft->setHeading(aircraftHeading);
-
-    bool isValid = aiFP->create(aiAircraft, egph, egpf, AILeg::APPROACH, 5000, 200, 51, 10,
-                                false, 20, "cargo", "B737", "KLM", 1000);
-    CPPUNIT_ASSERT_EQUAL(true, isValid);
-}
-
 void AIFlightPlanTests::testAIFlightPlanLoadXML()
 {
     const auto xml = R"(<?xml version="1.0" encoding="UTF-8"?>
@@ -404,6 +360,50 @@ void AIFlightPlanTests::testRightTurnFlightplanXML()
     CPPUNIT_ASSERT_DOUBLES_EQUAL(10.0, wp2->getSpeed(), 0.1);
 }
 
+void AIFlightPlanTests::testCreateApproach()
+{
+    auto aiFP = new FGAIFlightPlan;
+    aiFP->setName("Bob");
+    aiFP->setRunway("24");
+
+    FGAirportRef egph = FGAirport::getByIdent("EGPH");
+    FGAirportRef egpf = FGAirport::getByIdent("EGPF");
+
+
+    // Time to depart
+    std::string dep = FGTestApi::strings::getTimeString(30);
+    // Time to arrive
+    std::string arr = FGTestApi::strings::getTimeString(320);
+
+    FGAISchedule* schedule = new FGAISchedule(
+        "B737", "KLM", "EGPH", "G-BLA", "ID", false, "B737", "KLM", "N", "cargo", 24, 8);
+    FGScheduledFlight* flight = new FGScheduledFlight("testPushbackCargo", "", "EGPH", "EGPF", 24, dep, arr, "WEEK", "HBR_BN_2");
+    schedule->assign(flight);
+
+    SGSharedPtr<FGAIAircraft> aiAircraft = new FGAIAircraft{schedule};
+
+    std::string activeRunway;
+    FGRunwayRef rwy;
+
+    // FLIGHTGEAR-1VBR
+    int aircraftHeading = 302;
+    int heading = 5;
+
+    // heading of vector towards threshold
+    egpf->getDynamics()->getActiveRunway("com", 2, activeRunway, heading);
+    rwy = egpf->getRunwayByIdent(activeRunway);
+    SGGeod threshold = rwy->threshold();
+    SGGeod aiAircraftPos = SGGeodesy::direct(threshold, aiAircraft->getTrueHeadingDeg(), 120000);
+
+    aiAircraft->setLatitude(aiAircraftPos.getLatitudeDeg());
+    aiAircraft->setLongitude(aiAircraftPos.getLongitudeDeg());
+    aiAircraft->setHeading(aircraftHeading);
+
+    bool isValid = aiFP->create(aiAircraft, egph, egpf, AILeg::APPROACH, 5000, 200, 51, 10,
+                                false, 20, "cargo", "B737", "KLM", 1000);
+    CPPUNIT_ASSERT_EQUAL(true, isValid);
+}
+
 void AIFlightPlanTests::testCreateTaxiRunwayDeparture()
 {
     auto aiFP = new FGAIFlightPlan;
@@ -450,4 +450,220 @@ void AIFlightPlanTests::testCreateTaxiRunwayDeparture()
     bool isValid = aiFP->create(aiAircraft, yssy, egpf, AILeg::RUNWAY_TAXI, 5000, 200, 51, 10,
                                 false, 20, "ga", "B737", "KLM", 1000);
     CPPUNIT_ASSERT_EQUAL(true, isValid);
+}
+
+void AIFlightPlanTests::testCreatePushbackWithRoute()
+{
+    auto aiFP = new FGAIFlightPlan;
+    aiFP->setName("Bob");
+    aiFP->setRunway("34L");
+
+    FGAirportRef yssy = FGAirport::getByIdent("YSSY");
+    FGAirportRef egpf = FGAirport::getByIdent("EGPF");
+
+
+    // Time to depart
+    std::string dep = FGTestApi::strings::getTimeString(30);
+    // Time to arrive
+    std::string arr = FGTestApi::strings::getTimeString(320);
+
+    FGAISchedule* schedule = new FGAISchedule(
+        "B737", "KLM", "EGPH", "G-BLA", "ID", false, "B737", "KLM", "N", "cargo", 24, 8);
+    FGScheduledFlight* flight = new FGScheduledFlight("testCreateTaxiRunwayDeparture", "", "YSSY", "EGPF", 24, dep, arr, "WEEK", "HBR_BN_2");
+    schedule->assign(flight);
+
+    SGSharedPtr<FGAIAircraft> aiAircraft = new FGAIAircraft{schedule};
+
+    std::string activeRunway;
+    FGRunwayRef rwy;
+
+    int aircraftHeading = 302;
+    int heading = 5;
+
+    // heading of vector towards threshold
+    yssy->getDynamics()->getActiveRunway("com", 2, activeRunway, heading);
+    yssy->testSuiteInjectGroundnetXML(SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "YSSY.groundnet.xml");
+    rwy = yssy->getRunwayByIdent(activeRunway);
+    SGGeod threshold = rwy->threshold();
+    SGGeod aiAircraftPos = SGGeodesy::direct(threshold, aiAircraft->getTrueHeadingDeg(), 120000);
+
+    ParkingAssignment parking = yssy->getDynamics()->getParkingByName("T3-03");
+    aiAircraft->setLatitude(parking.parking()->geod().getLatitudeDeg());
+    aiAircraft->setLongitude(parking.parking()->geod().getLongitudeDeg());
+    aiAircraft->setHeading(parking.parking()->getHeading());
+
+
+    aiFP->setGate(parking);
+
+    bool isValid = aiFP->create(aiAircraft, yssy, egpf, AILeg::STARTUP_PUSHBACK, 5000, 200, 51, 10,
+                                false, 20, "ga", "B737", "KLM", 1000);
+    CPPUNIT_ASSERT_EQUAL(true, isValid);
+    CPPUNIT_ASSERT(aiFP != nullptr);
+    CPPUNIT_ASSERT_EQUAL(false, aiFP->empty());
+}
+
+void AIFlightPlanTests::testCreatePushbackWithoutRoute()
+{
+    auto aiFP = new FGAIFlightPlan;
+    aiFP->setName("Bob");
+    aiFP->setRunway("34L");
+
+    FGAirportRef yssy = FGAirport::getByIdent("YSSY");
+    FGAirportRef egpf = FGAirport::getByIdent("EGPF");
+
+
+    // Time to depart
+    std::string dep = FGTestApi::strings::getTimeString(30);
+    // Time to arrive
+    std::string arr = FGTestApi::strings::getTimeString(320);
+
+    FGAISchedule* schedule = new FGAISchedule(
+        "B737", "KLM", "EGPH", "G-BLA", "ID", false, "B737", "KLM", "N", "cargo", 24, 8);
+    FGScheduledFlight* flight = new FGScheduledFlight("testCreateTaxiRunwayDeparture", "", "YSSY", "EGPF", 24, dep, arr, "WEEK", "HBR_BN_2");
+    schedule->assign(flight);
+
+    SGSharedPtr<FGAIAircraft> aiAircraft = new FGAIAircraft{schedule};
+
+    std::string activeRunway;
+    FGRunwayRef rwy;
+
+    int aircraftHeading = 302;
+    int heading = 5;
+
+    // heading of vector towards threshold
+    yssy->getDynamics()->getActiveRunway("com", 2, activeRunway, heading);
+    yssy->testSuiteInjectGroundnetXML(SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "YSSY.groundnet.xml");
+    rwy = yssy->getRunwayByIdent(activeRunway);
+    SGGeod threshold = rwy->threshold();
+    SGGeod aiAircraftPos = SGGeodesy::direct(threshold, aiAircraft->getTrueHeadingDeg(), 120000);
+
+    ParkingAssignment parking = yssy->getDynamics()->getParkingByName("T3-04");
+    aiAircraft->setLatitude(parking.parking()->geod().getLatitudeDeg());
+    aiAircraft->setLongitude(parking.parking()->geod().getLongitudeDeg());
+    aiAircraft->setHeading(parking.parking()->getHeading());
+
+
+    aiFP->setGate(parking);
+
+    bool isValid = aiFP->create(aiAircraft, yssy, egpf, AILeg::STARTUP_PUSHBACK, 5000, 200, 51, 10,
+                                false, 20, "ga", "B737", "KLM", 1000);
+    CPPUNIT_ASSERT_EQUAL(true, isValid);
+    CPPUNIT_ASSERT(aiFP != nullptr);
+    CPPUNIT_ASSERT_EQUAL(false, aiFP->empty());
+    SG_LOG(SG_AI, SG_WARN, "" << aiFP->getLastWaypoint()->getName());
+    int pos = aiFP->getLastWaypoint()->getName().find("Pushback");
+    CPPUNIT_ASSERT(pos);
+    printWaypoints(aiFP);
+}
+
+void AIFlightPlanTests::testCreatePushForward()
+{
+    auto aiFP = new FGAIFlightPlan;
+    aiFP->setName("Bob");
+    aiFP->setRunway("34L");
+
+    FGAirportRef yssy = FGAirport::getByIdent("YSSY");
+    FGAirportRef egpf = FGAirport::getByIdent("EGPF");
+
+
+    // Time to depart
+    std::string dep = FGTestApi::strings::getTimeString(30);
+    // Time to arrive
+    std::string arr = FGTestApi::strings::getTimeString(320);
+
+    FGAISchedule* schedule = new FGAISchedule(
+        "B737", "KLM", "EGPH", "G-BLA", "ID", false, "B737", "KLM", "N", "cargo", 24, 8);
+    FGScheduledFlight* flight = new FGScheduledFlight("testCreateTaxiRunwayDeparture", "", "YSSY", "EGPF", 24, dep, arr, "WEEK", "HBR_BN_2");
+    schedule->assign(flight);
+
+    SGSharedPtr<FGAIAircraft> aiAircraft = new FGAIAircraft{schedule};
+
+    std::string activeRunway;
+    FGRunwayRef rwy;
+
+    int aircraftHeading = 302;
+    int heading = 5;
+
+    // heading of vector towards threshold
+    yssy->getDynamics()->getActiveRunway("com", 2, activeRunway, heading);
+    yssy->testSuiteInjectGroundnetXML(SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "YSSY.groundnet.xml");
+    rwy = yssy->getRunwayByIdent(activeRunway);
+    SGGeod threshold = rwy->threshold();
+    SGGeod aiAircraftPos = SGGeodesy::direct(threshold, aiAircraft->getTrueHeadingDeg(), 120000);
+
+    ParkingAssignment parking = yssy->getDynamics()->getParkingByName("DOM5-102");
+    aiAircraft->setLatitude(parking.parking()->geod().getLatitudeDeg());
+    aiAircraft->setLongitude(parking.parking()->geod().getLongitudeDeg());
+    aiAircraft->setHeading(parking.parking()->getHeading());
+
+
+    aiFP->setGate(parking);
+
+    bool isValid = aiFP->create(aiAircraft, yssy, egpf, AILeg::STARTUP_PUSHBACK, 5000, 200, 51, 10,
+                                false, 20, "ga", "B737", "KLM", 1000);
+    CPPUNIT_ASSERT_EQUAL(true, isValid);
+    CPPUNIT_ASSERT(aiFP != nullptr);
+    CPPUNIT_ASSERT_EQUAL(false, aiFP->empty());
+    int pos = aiFP->getLastWaypoint()->getName().find("Forward");
+    CPPUNIT_ASSERT(pos);
+}
+
+void AIFlightPlanTests::testCreatePushbackNoRoute()
+{
+    auto aiFP = new FGAIFlightPlan;
+    aiFP->setName("Bob");
+    aiFP->setRunway("34L");
+
+    FGAirportRef yssy = FGAirport::getByIdent("YSSY");
+    FGAirportRef egpf = FGAirport::getByIdent("EGPF");
+
+
+    // Time to depart
+    std::string dep = FGTestApi::strings::getTimeString(30);
+    // Time to arrive
+    std::string arr = FGTestApi::strings::getTimeString(320);
+
+    FGAISchedule* schedule = new FGAISchedule(
+        "B737", "KLM", "EGPH", "G-BLA", "ID", false, "B737", "KLM", "N", "cargo", 24, 8);
+    FGScheduledFlight* flight = new FGScheduledFlight("testCreateTaxiRunwayDeparture", "", "YSSY", "EGPF", 24, dep, arr, "WEEK", "HBR_BN_2");
+    schedule->assign(flight);
+
+    SGSharedPtr<FGAIAircraft> aiAircraft = new FGAIAircraft{schedule};
+
+    std::string activeRunway;
+    FGRunwayRef rwy;
+
+    int aircraftHeading = 302;
+    int heading = 5;
+
+    // heading of vector towards threshold
+    yssy->getDynamics()->getActiveRunway("com", 2, activeRunway, heading);
+    yssy->testSuiteInjectGroundnetXML(SGPath::fromUtf8(FG_TEST_SUITE_DATA) / "YSSY.groundnet.xml");
+    rwy = yssy->getRunwayByIdent(activeRunway);
+    SGGeod threshold = rwy->threshold();
+    SGGeod aiAircraftPos = SGGeodesy::direct(threshold, aiAircraft->getTrueHeadingDeg(), 120000);
+
+    ParkingAssignment parking = yssy->getDynamics()->getParkingByName("DOM5-102");
+    aiAircraft->setLatitude(parking.parking()->geod().getLatitudeDeg());
+    aiAircraft->setLongitude(parking.parking()->geod().getLongitudeDeg());
+    aiAircraft->setHeading(parking.parking()->getHeading());
+
+    aiFP->setGate(parking);
+
+    bool isValid = aiFP->create(aiAircraft, yssy, egpf, AILeg::STARTUP_PUSHBACK, 5000, 200, 51, 10,
+                                false, 20, "ga", "B737", "KLM", 1000);
+    CPPUNIT_ASSERT_EQUAL(true, isValid);
+    CPPUNIT_ASSERT(aiFP != nullptr);
+    CPPUNIT_ASSERT_EQUAL(false, aiFP->empty());
+    //Old code will push forward if pushback route missing and a pushforward route exists
+    int pos = aiFP->getLastWaypoint()->getName().find("pushforward");
+    CPPUNIT_ASSERT(pos > 0);
+}
+
+void AIFlightPlanTests::printWaypoints(FGAIFlightPlan* aiFP)
+{
+    SG_LOG(SG_AI, SG_INFO, "Size of waypoint queue " << aiFP->getNrOfWayPoints());
+    for (int i = 0; i < aiFP->getNrOfWayPoints(); i++) {
+        SG_LOG(SG_AI, SG_INFO, "Name : " << aiFP->getWayPoint(i)->getName() << std::setprecision(12) << " " << aiFP->getWayPoint(i)->getPos());
+    }
 }

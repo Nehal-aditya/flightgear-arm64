@@ -24,16 +24,16 @@ FGParking::FGParking(int index,
                      double aHeading, double aRadius,
                      const std::string& name,
                      const std::string& aType,
-                     const std::string& codes) :
-  FGTaxiNode(FGPositioned::PARKING, index, pos, false, 0, name),
-  heading(aHeading),
-  radius(aRadius),
-  type(aType),
-  airlineCodes(codes)
+                     const std::string& codes) : FGTaxiNode(FGPositioned::PARKING, index, pos, false, 0, name),
+                                                 heading(aHeading),
+                                                 reverseHeading(fmod(aHeading + 180.0, 360.0)),
+                                                 radius(aRadius),
+                                                 type(aType),
+                                                 airlineCodes(codes)
 {
 }
 
-void FGParking::setPushBackPoint(const FGTaxiNodeRef &node)
+void FGParking::setPushBackPoint(const FGTaxiNodeRef& node)
 {
     pushBackPoint = node;
 }

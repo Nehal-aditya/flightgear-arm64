@@ -202,6 +202,8 @@ public:
     int getRouteIndex(int i) const; // returns the AI related index of this current routes.
 
     const std::string& getRunway() { return activeRunway; }
+    // Ensure activeRunway is set (query ATC/dynamics if empty) and return the runway pointer.
+    FGRunway* ensureActiveRunway(FGAIAircraft* ac, FGAirport* apt, const std::string& fltType);
     bool isActive(time_t time) { return time >= this->getStartTime(); }
 
     void incrementLeg()
@@ -282,6 +284,7 @@ private:
 
     /**Create an arc flightplan around a center from startAngle to endAngle.*/
     void createArc(FGAIAircraft* ac, const SGGeod& center, int startAngle, int endAngle, int increment, int radius, double aElev, double altDiff, double aSpeed, const char* pattern);
+    void createArc(FGAIAircraft* ac, const SGGeod& center, int startAngle, int endAngle, int increment, int radius, double aElev, double aSpeed, const char* pattern);
     /**Create a line flightplan from start with dist and altitude diff*/
     void createLine(FGAIAircraft* ac, const SGGeod& startPoint, double azimuth, double dist, double aElev, double dAlt, double vDescent, const char* pattern);
 
