@@ -18,7 +18,6 @@
 #include <simgear/scene/sky/sky.hxx>
 //#include <simgear/environment/visual_enviro.hxx>
 #include <simgear/scene/sky/cloudfield.hxx>
-#include <simgear/scene/sky/newcloud.hxx>
 #include <simgear/structure/commands.hxx>
 #include <simgear/props/props_io.hxx>
 
@@ -86,8 +85,8 @@ double FGClouds::buildCloud(SGPropertyNode *cloud_def_root, SGPropertyNode *box_
             return 0.0;
     }
 
-    double x = mt_rand(&seed) * SGCloudField::fieldSize - (SGCloudField::fieldSize / 2.0);
-    double y = mt_rand(&seed) * SGCloudField::fieldSize - (SGCloudField::fieldSize / 2.0);
+    double x = mt_rand(&seed) * SGCloudField::ROUGH_FIELD_WIDTH_M - (SGCloudField::ROUGH_FIELD_WIDTH_M / 2.0);
+    double y = mt_rand(&seed) * SGCloudField::ROUGH_FIELD_WIDTH_M - (SGCloudField::ROUGH_FIELD_WIDTH_M / 2.0);
     double z = grid_z_rand * (mt_rand(&seed) - 0.5);
 
     float lon = fgGetNode("/position/longitude-deg", false)->getFloatValue();
@@ -210,7 +209,7 @@ void FGClouds::buildLayer(int iLayer, const string& name, double coverage) {
     totalCount = 1.0 / totalCount;
 
     // Determine how much cloud coverage we need in m^2.
-    double cov = coverage * SGCloudField::fieldSize * SGCloudField::fieldSize;
+    double cov = coverage * SGCloudField::ROUGH_FIELD_WIDTH_M * SGCloudField::ROUGH_FIELD_WIDTH_M;
 
     while (cov > 0.0f) {
         double choice = mt_rand(&seed);
