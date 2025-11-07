@@ -358,6 +358,12 @@ void initApp(int& argc, char** argv, bool doInitQSettings)
         QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
         static_qApp.reset(new QApplication(s_argc, argv));
+        // This processEvents() call prevents a crash when FG is started
+        // under X11 without the built-in launcher and a Qt dialog is
+        // opened (SIGPIPE received as Qt calls IceProcessMessages()).
+        // See https://stackoverflow.com/a/56687321 and
+        // https://bugreports.qt.io/browse/QTBUG-58709 for more info.
+        static_qApp->processEvents();
         static_qApp->setOrganizationName("FlightGear");
         static_qApp->setApplicationName("FlightGear");
         static_qApp->setOrganizationDomain("flightgear.org");
