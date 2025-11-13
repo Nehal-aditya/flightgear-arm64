@@ -613,14 +613,13 @@ bool SetupRootDialog::runDialog(PromptState prompt, const SGPath& checkedPath)
 flightgear::SetupRootResult SetupRootDialog::restoreUserSelectedRoot(SGPath& sgpath)
 {
     const auto readOnly = fgGetBool("/sim/fghome-readonly", false);
-
+    auto options = flightgear::Options::sharedInstance();
     auto settings = flightgear::getQSettings();
     QString path = settings.value(rootPathKey()).toString();
     const bool ask = flightgear::checkKeyboardModifiersForSettingFGRoot();
 
     QString downloadDir = settings.value("download-dir").toString();
     if (!downloadDir.isEmpty()) {
-        auto options = flightgear::Options::sharedInstance();
         options->setCustomDownloadDir(SGPath::fromUtf8(downloadDir.toStdString()));
     }
 
@@ -649,13 +648,23 @@ flightgear::SetupRootResult SetupRootDialog::restoreUserSelectedRoot(SGPath& sgp
 
     if (path.isEmpty()) {
         if (downloadedDataExistsButStale()) {
-            bool ok = runDialog(NeedToUpdateDownloadedData, flightgear::Options::sharedInstance()->downloadedDataRoot());
+            bool ok = runDialog(NeedToUpdateDownloadedData, options->downloadedDataRoot());
             if (!ok) {
                 return flightgear::SetupRootResult::UserExit;
             }
 
             // assume update worked, fall through
-        } 
+        }
+        
+        const auto pkgData = options->platformDefaultRoot();
+        if (flightgear::Options::isFGData(pkgData)) {
+            const auto pkgDataQt = QString::fromStdString(pkgData.utf8Str());
+            if (validateVersion(pkgDataQt)) {
+                return flightgear::SetupRootResult::UseDefault;
+            }
+
+            qWarning() << pkgDataQt << "contains FGData, but version doesn't match required:" << FLIGHTGEAR_VERSION;
+        }
     }
 
 // to give better feedback, we need to record which path we tried,
@@ -667,7 +676,7 @@ flightgear::SetupRootResult SetupRootDialog::restoreUserSelectedRoot(SGPath& sgp
             return flightgear::SetupRootResult::RestoredOk;
         }
 
-        // path semed good, but version failed, so this is the one to report
+        // path seemed good, but version failed, so this is the one to report
         checkedPath = SGPath::fromUtf8(path.toStdString());
     }
 
