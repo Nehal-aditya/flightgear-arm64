@@ -58,6 +58,8 @@ void ControlsTests::testClamp()
 
 void ControlsTests::testNANRejection()
 {
+    // disabled on stable
+#if 0
     CPPUNIT_ASSERT_THROW(fgSetDouble("/controls/flight/rudder-trim", std::nan("")), sg_range_exception);
 
     CPPUNIT_ASSERT_THROW(fgSetDouble("/controls/engines/engine[3]/condition", std::nan("")), sg_range_exception);
@@ -65,4 +67,5 @@ void ControlsTests::testNANRejection()
 
     CPPUNIT_ASSERT_THROW(controls->set_condition(FGControls::ALL_ENGINES, std::nan("")), sg_range_exception);
     CPPUNIT_ASSERT_THROW(controls->set_aileron(std::nan("")), sg_range_exception);
+#endif
 }

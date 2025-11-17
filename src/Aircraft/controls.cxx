@@ -448,10 +448,6 @@ void FGControls::set_aileron(double pos)
 
 void FGControls::_inner_set_aileron(double pos)
 {
-    if (std::isnan(pos)) {
-        throw sg_range_exception("FGControls::_inner_set_aileron: passed NaN");
-    }
-
     aileron = pos;
     SG_CLAMP_RANGE<double>(aileron, -1.0, 1.0);
     do_autocoordination();
@@ -471,10 +467,6 @@ void FGControls::set_aileron_trim(double pos)
 
 void FGControls::_inner_set_aileron_trim(double pos)
 {
-    if (std::isnan(pos)) {
-        throw sg_range_exception("FGControls::_inner_set_aileron_trim: passed NaN");
-    }
-
     aileron_trim = pos;
     SG_CLAMP_RANGE<double>(aileron_trim, -1.0, 1.0);
 }
@@ -492,10 +484,6 @@ void FGControls::set_elevator(double pos)
 
 void FGControls::_inner_set_elevator(double pos)
 {
-    if (std::isnan(pos)) {
-        throw sg_range_exception("FGControls::_inner_set_elevator: passed NaN");
-    }
-
     elevator = pos;
     SG_CLAMP_RANGE<double>(elevator, -1.0, 1.0);
 }
@@ -536,10 +524,6 @@ void FGControls::set_rudder(double pos)
 
 void FGControls::_inner_set_rudder(double pos)
 {
-    if (std::isnan(pos)) {
-        throw sg_range_exception("FGControls::_inner_set_rudder: passed NaN");
-    }
-
     rudder = pos;
     SG_CLAMP_RANGE<double>(rudder, -1.0, 1.0);
 }
@@ -551,10 +535,6 @@ void FGControls::move_rudder(double amt)
 
 void FGControls::_inner_set_rudder_trim(double pos)
 {
-    if (std::isnan(pos)) {
-        throw sg_range_exception("FGControls::_inner_set_rudder_trim: passed NaN");
-    }
-
     rudder_trim = pos;
     SG_CLAMP_RANGE<double>(rudder_trim, -1.0, 1.0);
 }
@@ -575,10 +555,6 @@ void FGControls::move_rudder_trim(double amt)
 
 void FGControls::_inner_set_flaps(double pos)
 {
-    if (std::isnan(pos)) {
-        throw sg_range_exception("FGControls::_inner_set_flaps: passed NaN");
-    }
-
     flaps = pos;
     SG_CLAMP_RANGE<double>(flaps, 0.0, 1.0);
 }
@@ -672,10 +648,6 @@ void FGControls::set_throttle(int engine, double pos)
 
 void FGControls::_inner_set_throttle(int engine, double pos)
 {
-    if (std::isnan(pos)) {
-        throw sg_range_exception("FGControls::_inner_set_throttle: passed NaN");
-    }
-
     if (engine == ALL_ENGINES) {
         for (int i = 0; i < MAX_ENGINES; i++) {
             throttle[i] = pos;
@@ -691,10 +663,6 @@ void FGControls::_inner_set_throttle(int engine, double pos)
 
 void FGControls::move_throttle(int engine, double amt)
 {
-    if (std::isnan(amt)) {
-        throw sg_range_exception("FGControls::move_throttle: passed NaN");
-    }
-
     if (engine == ALL_ENGINES) {
         for (int i = 0; i < MAX_ENGINES; i++) {
             throttle[i] += amt;
@@ -811,10 +779,6 @@ void FGControls::set_mixture(int engine, double pos)
 
 void FGControls::_inner_set_mixture(int engine, double pos)
 {
-    if (std::isnan(pos)) {
-        throw sg_range_exception("FGControls::_inner_set_mixture: passed NaN");
-    }
-
     if (engine == ALL_ENGINES) {
         for (int i = 0; i < MAX_ENGINES; i++) {
             mixture[i] = pos;
@@ -830,10 +794,6 @@ void FGControls::_inner_set_mixture(int engine, double pos)
 
 void FGControls::move_mixture(int engine, double amt)
 {
-    if (std::isnan(amt)) {
-        throw sg_range_exception("FGControls::move_mixture: passed NaN");
-    }
-
     if (engine == ALL_ENGINES) {
         for (int i = 0; i < MAX_ENGINES; i++) {
             mixture[i] += amt;
@@ -851,10 +811,6 @@ void FGControls::move_mixture(int engine, double amt)
 
 void FGControls::set_prop_advance(int engine, double pos)
 {
-    if (std::isnan(pos)) {
-        throw sg_range_exception("FGControls::set_prop_advance: passed NaN");
-    }
-
     if (engine == ALL_ENGINES) {
         for (int i = 0; i < MAX_ENGINES; i++) {
             prop_advance[i] = pos;
@@ -872,10 +828,6 @@ void FGControls::set_prop_advance(int engine, double pos)
 
 void FGControls::move_prop_advance(int engine, double amt)
 {
-    if (std::isnan(amt)) {
-        throw sg_range_exception("FGControls::move_prop_advance: passed NaN");
-    }
-
     if (engine == ALL_ENGINES) {
         for (int i = 0; i < MAX_ENGINES; i++) {
             prop_advance[i] += amt;
@@ -1065,10 +1017,6 @@ void FGControls::set_condition(int engine, double val)
 
 void FGControls::_inner_set_condition(int engine, double val)
 {
-    if (std::isnan(val)) {
-        throw sg_range_exception("FGControls::set_condition: passed NaN");
-    }
-
     if (engine == ALL_ENGINES) {
         for (int i = 0; i < MAX_ENGINES; i++) {
             condition[i] = val;
