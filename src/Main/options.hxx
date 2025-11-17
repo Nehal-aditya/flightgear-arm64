@@ -282,6 +282,11 @@ public:
   void setCustomDownloadDir(const SGPath& p);
 
   /**
+   * @brief the TerraSync dir we are actually using, based on defaults & options
+   */
+  SGPath actualTerrasyncDir() const;
+
+  /**
        * Convert string to bool for boolean options. When param cannot be recognized as bool then
        * the true is returned.
        */

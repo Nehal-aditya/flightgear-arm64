@@ -3033,6 +3033,16 @@ SGPath Options::actualDownloadDir() const
     return defaultDownloadDir();
 }
 
+SGPath Options::actualTerrasyncDir() const
+{
+    SGPath explicitTSyncDir = SGPath::fromUtf8(valueForOption("terrasync-dir"));
+    if (!explicitTSyncDir.isNull()) {
+        return explicitTSyncDir;
+    }
+
+    return actualDownloadDir() / "TerraSync";
+}
+
 void Options::setCustomDownloadDir(const SGPath& path)
 {
     p->customDownloadDir = path;

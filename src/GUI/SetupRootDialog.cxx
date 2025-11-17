@@ -53,6 +53,7 @@
 #include "QtLauncher.hxx"
 #include "SettingsWrapper.hxx"
 #include "UpdateDownloadedFGData.hxx"
+#include "DownloadTerrasyncSharedData.hxx"
 #include <GUI/QtDNSClient.hxx>
 #include <Main/MultipleInstanceLock.hxx>
 
@@ -184,6 +185,12 @@ public:
             return 0;
         }
 
+        // open the file in read-write mode
+        if (!m_resumeData.open(QIODevice::ReadWrite)) {
+            qWarning() << "Failed to open download resume file in read-write mode";
+            return 0;
+        }
+
         req.setRawHeader("Range", QString("bytes=%1-").arg(resumeBytes).toUtf8());
         m_readResumeFile = true;
     
@@ -239,20 +246,15 @@ public:
         // check if we can resume an existing download, returns the
         // number of overlap bytes or zero for no resume.
         m_resumeOverlapBytes = resumeDownload(req);
+        if (!m_readResumeFile) {
+            // if we're not resuming, empty the file and open it write-only
+            m_resumeData.open(QIODevice::WriteOnly | QIODevice::Truncate);
+        }
 
         m_download = m_networkManager->get(req);
         m_download->setReadBufferSize(64 * 1024 * 1024);
 
-        if (!m_readResumeFile) {
-            // if we're not resuming, just write to the resume file
-            m_resumeData.open(QIODevice::WriteOnly | QIODevice::Truncate);
-        }
-
         connect(m_download, &QNetworkReply::downloadProgress, this, &InstallFGDataThread::onDownloadProgress);
-
-        // lambda slot, but scoped to an object living on this thread.
-        // this means the extraction work is done asynchronously with the
-        // download
         connect(m_download, &QNetworkReply::readyRead, this, &InstallFGDataThread::processBytes);
         connect(m_download, &QNetworkReply::finished, this, &InstallFGDataThread::onReplyFinished);
         connect(m_download, &QNetworkReply::metaDataChanged, this, &InstallFGDataThread::onMetaDataChanged);
@@ -848,6 +850,7 @@ void SetupRootDialog::onDownload()
     }
 
     m_promptState = DownloadingExtractingArchive;
+    m_archiveName = tr("base data package");
     updatePromptText();
 
     m_ui->contentsPages->setCurrentIndex(1);
@@ -868,7 +871,6 @@ void SetupRootDialog::onDownload()
     connect(installThread, &InstallFGDataThread::installProgress, this, [this](QString s, int percent) {
         m_ui->installText->setText(tr("Installation %1% complete.\nExtracting %2").arg(percent).arg(s));
         m_ui->installProgress->setValue(percent);
-        // m_ui->installProgress->setMaximum(total);
     });
 
     connect(installThread, &InstallFGDataThread::failed, this, [this](QString s) {
@@ -884,11 +886,47 @@ void SetupRootDialog::onDownload()
             updatePromptText();
             m_ui->contentsPages->setCurrentIndex(0);
         } else {
-            accept();
+            startSharedDataDownload();
         }
     });
 
     installThread->start();
+}
+
+void SetupRootDialog::startSharedDataDownload()
+{
+    auto dlThread = new DownloadTerrasyncSharedData(this, m_networkManager);
+    connect(dlThread, &DownloadTerrasyncSharedData::downloadProgress, this, [this](quint64 current, quint64 total) {
+        m_ui->downloadProgress->setValue(current);
+        m_ui->downloadProgress->setMaximum(total);
+
+        const quint64 currentMb = current / (1024 * 1024);
+        const quint64 totalMb = total / (1024 * 1024);
+
+        const int percent = calculateProgressPercentage(current, total);
+
+        m_ui->downloadText->setText(tr("Downloading %1 of %2 MB (%3%)").arg(currentMb).arg(totalMb).arg(percent));
+    });
+
+    connect(dlThread, &DownloadTerrasyncSharedData::beginArchive, this, [this](QString s) {
+        m_archiveName = s;
+        updatePromptText();
+    });
+
+    connect(dlThread, &DownloadTerrasyncSharedData::installProgress, this, [this](QString s, int percent) {
+        m_ui->installText->setText(tr("Installation %1% complete.\nExtracting %2").arg(percent).arg(s));
+        m_ui->installProgress->setValue(percent);
+    });
+
+    connect(dlThread, &DownloadTerrasyncSharedData::failed, this, [this](QString s) {
+        accept();
+    });
+
+    connect(dlThread, &DownloadTerrasyncSharedData::finished, this, [this]() {
+        accept();
+    });
+
+    dlThread->start();
 }
 
 void SetupRootDialog::onUpdate()
@@ -975,11 +1013,9 @@ void SetupRootDialog::updatePromptText()
         t = tr("The chosen file (%1) is not a valid compressed archive.").arg(m_browsedPath);
         break;
 
-
     case DownloadingExtractingArchive:
-        t = tr("Please wait while the data files are downloaded, extracted and verified.");
+        t = tr("Please wait while the data files are downloaded, extracted and verified.\nCurrent archive: %1").arg(m_archiveName);
         break;
-
 
     case UpdatingViaTerrasync:
         t = tr("Please wait while the data files are updated and verified.");

@@ -118,6 +118,8 @@ if (HAVE_QT)
                             SetupRootDialog.cxx
                             SetupRootDialog.hxx
                             UpdateDownloadedFGData.hxx
+                            DownloadTerrasyncSharedData.hxx
+                            DownloadTerrasyncSharedData.cxx
                             AircraftItemModel.hxx
                             AircraftItemModel.cxx
                             CatalogListModel.cxx

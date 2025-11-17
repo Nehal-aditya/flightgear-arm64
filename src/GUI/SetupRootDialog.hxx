@@ -86,10 +86,13 @@ private:
     static bool downloadedDataAcceptable();
     static bool downloadedDataExistsButStale();
 
+    void startSharedDataDownload();
+
     PromptState m_promptState;
     QScopedPointer<Ui::SetupRootDialog> m_ui;
     QString m_browsedPath;
     SGPath m_checkedPath;
     QString m_lastErrorMessage;
     QNetworkAccessManager* m_networkManager;
+    QString m_archiveName;
 };
