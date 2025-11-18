@@ -59,9 +59,9 @@ private:
         UpdatingViaTerrasync
     };
 
-    SetupRootDialog(PromptState prompt);
+    SetupRootDialog(PromptState prompt, const SGPath&);
 
-    static bool runDialog(PromptState prompt);
+    static bool runDialog(PromptState prompt, const SGPath& checkedPath);
 
     static bool validatePath(QString path);
     static bool validateVersion(QString path);
@@ -73,5 +73,7 @@ private:
     PromptState m_promptState;
     QScopedPointer<Ui::SetupRootDialog> m_ui;
     QString m_browsedPath;
+    SGPath m_checkedPath;
+    QString m_lastErrorMessage;
     QNetworkAccessManager* m_networkManager;
 };

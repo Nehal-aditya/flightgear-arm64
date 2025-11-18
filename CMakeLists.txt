@@ -83,14 +83,7 @@ set(CMAKE_RELEASE_POSTFIX        ""  CACHE STRING "add a postfix, usually empty 
 set(CMAKE_RELWITHDEBINFO_POSTFIX ""  CACHE STRING "add a postfix, usually empty on windows")
 set(CMAKE_MINSIZEREL_POSTFIX     ""  CACHE STRING "add a postfix, usually empty on windows")
 
-# read 'version' file into a variable (stripping any newlines or spaces)
-file(READ flightgear-version versionFile)
-if (NOT versionFile)
-    message(FATAL_ERROR "Unable to determine FlightGear version. Version file is missing.")
-endif()
-string(STRIP "${versionFile}" FLIGHTGEAR_VERSION)
-# add a dependency on the version file
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS version)
+include(DetectVersion)
 
 # split version string into components, note CMAKE_MATCH_0 is the entire regexp match
 string(REGEX MATCH "([0-9]+)\\.([0-9]+)\\.([0-9]+)" VERSION_REGEX ${FLIGHTGEAR_VERSION})
@@ -427,6 +420,7 @@ endif (ENABLE_QT)
 
 # FlightGear and SimGear versions need to match major + minor
 set(MIN_SIMGEAR_VERSION "${FLIGHTGEAR_MAJOR_VERSION}.${FLIGHTGEAR_MINOR_VERSION}.0")
+
 message(STATUS "Min Simgear version is ${MIN_SIMGEAR_VERSION}")
 
 if (TARGET SimGearCore)

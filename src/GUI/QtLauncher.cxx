@@ -124,7 +124,7 @@ bool initNavCache()
     NavDataCache* cache = NavDataCache::createInstance();
     if (cache->isRebuildRequired()) {
         // start the rebuild right now, before showing the dialog
-        auto phase = cache->rebuild();
+        cache->rebuild();
 
         QProgressDialog rebuildProgress(baseLabel,
                                         QString() /* cancel text */,
@@ -426,7 +426,10 @@ void initApp(int& argc, char** argv, bool doInitQSettings)
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 3, 0))
     QNetworkInformation::loadDefaultBackend();
 #elif (QT_VERSION >= QT_VERSION_CHECK(6, 1, 0))
-    QNetworkInformation::load(QNetworkInformation::Feature::Reachability);
+    bool ok = QNetworkInformation::load(QNetworkInformation::Feature::Reachability);
+    if (!ok) {
+        qInfo() << "network information plugins:" << QNetworkInformation::availableBackends();
+    }
 #endif
 
     if (doInitQSettings) {
@@ -708,11 +711,20 @@ LockFileDialogResult showLockFileDialog()
     mb.setIconPixmap(QPixmap(":/app-icon-large"));
     mb.setWindowTitle(title);
     mb.setText(text);
-    mb.setInformativeText(infoText);
     mb.addButton(QMessageBox::Ok);
     mb.setDefaultButton(QMessageBox::Ok);
+#if !defined(SG_WINDOWS)
     mb.addButton(QMessageBox::Reset);
+    mb.setInformativeText(infoText);
+#endif
     mb.addButton(QMessageBox::Close);
+
+    // no lock file on Windows, so don't show the reset text/button. Enabling it
+    // causes more errors due to people clicking it erroneously
+#if !defined(SG_WINDOWS)
+    mb.setInformativeText(infoText);
+    mb.addButton(QMessageBox::Reset);
+#endif
 
     int r = mb.exec();
     if (r == QMessageBox::Reset)

@@ -1,6 +1,9 @@
 # Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
 # file Copyright.txt or https://cmake.org/licensing for details.
 
+# SPDX-License-Identifier: BSD-3-Clause
+# SPDX-FileCopyrightText: 2000-2025 Kitware, Inc. and Contributors
+
 #[=======================================================================[.rst:
 FindGit
 -------
@@ -29,6 +32,8 @@ Example usage:
      message("Git found: ${GIT_EXECUTABLE}")
    endif()
 #]=======================================================================]
+
+include(FindPackageHandleStandardArgs)
 
 # Look for 'git' or 'eg' (easy git)
 #

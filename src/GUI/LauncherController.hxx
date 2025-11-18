@@ -291,6 +291,7 @@ private:
     bool haveOldWindowsDownloadDir() const;
 
     void onReachabilityChanged();
+    void delayedPackageRefresh();
 
 private:
     QWindow* m_window = nullptr;

@@ -180,17 +180,27 @@ LauncherController::LauncherController(QObject *parent, QWindow* window) :
     }
 
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 1, 0))
-    connect(QNetworkInformation::instance(), &QNetworkInformation::reachabilityChanged,
-            this, &LauncherController::onReachabilityChanged);
-    onReachabilityChanged();
+    if (QNetworkInformation::instance()) {
+        connect(QNetworkInformation::instance(), &QNetworkInformation::reachabilityChanged,
+                this, &LauncherController::onReachabilityChanged);
+        onReachabilityChanged();
+    } else {
+        qWarning() << "No network information available";
+        delayedPackageRefresh();
+    }
 #else
+    delayedPackageRefresh();
+#endif
+
+    QTimer::singleShot(2s, this, &LauncherController::checkForOldDownloadDir);
+}
+
+void LauncherController::delayedPackageRefresh()
+{
     QTimer::singleShot(2s, this, []() {
         auto pkgRoot = globals->packageRoot();
         pkgRoot->refresh(true);
     });
-#endif
-
-    QTimer::singleShot(2s, this, &LauncherController::checkForOldDownloadDir);
 }
 
 void LauncherController::initQML(int& styleTypeId)

@@ -193,6 +193,9 @@ std::optional<FGBasePackageInfo> fgBasePackageInfo(const SGPath& path)
     FGBasePackageInfo r;
     r.buildDate = j.value<std::string>("build-date", {});
     r.gitRevision = j.value<std::string>("fgdata-sha", {});
+    r.suffix = j.value<std::string>("fgdata-suffix", {});
+    r.version = j.value<std::string>("version", {});
+
     return r;
 }
 
