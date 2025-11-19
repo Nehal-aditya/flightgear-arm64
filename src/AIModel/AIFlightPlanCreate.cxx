@@ -341,7 +341,7 @@ FGTaxiRoute FGAIFlightPlan::findBestTaxiRouteToRunway(const FGAIAircraft* ac, co
     const double scanLength = std::min((rwy->lengthM() - t), 500.0);
     // We scan the runway for possible entry points, starting at the threshold,
     for (double distanceDownRunway = 0; distanceDownRunway <= scanLength; distanceDownRunway += 10.0) {
-        //        SG_LOG(SG_AI, SG_WARN, "Found better taxi route to " << apt->getId() << "/" << rwy->ident() << " dist " << distanceDownRunway);
+        // SG_LOG(SG_AI, SG_WARN, "Finding better taxi route to " << apt->getId() << "/" << rwy->ident() << " dist " << distanceDownRunway);
         // Determine which node to end at.
         SGGeod runwayTakeoff = rwy->pointOnCenterlineDisplaced(distanceDownRunway);
         FGTaxiNodeRef runwayNode;
@@ -362,6 +362,20 @@ FGTaxiRoute FGAIFlightPlan::findBestTaxiRouteToRunway(const FGAIAircraft* ac, co
                 taxiRoute = tr;
                 SG_LOG(SG_AI, SG_BULK, "Found better taxi route to " << apt->getId() << "/" << rwy->ident() << " with length " << tr.getDistance() << " at " << distanceDownRunway);
             }
+        }
+    }
+    if (taxiRoute.empty()) {
+        SG_LOG(SG_AI, SG_DEV_WARN, "Could not find taxi route to " << apt->getId() << "/" << rwy->ident() << " falling back to using shortest route.");
+        FGTaxiNodeRef runwayNode;
+        SGGeod runwayTakeoff = rwy->pointOnCenterline(5.0);
+        if (gn->getVersion() > 0) {
+            runwayNode = gn->findNearestNodeOnRunwayEntry(runwayTakeoff, rwy);
+        } else {
+            runwayNode = gn->findNearestNode(runwayTakeoff);
+        }
+        taxiRoute = gn->findShortestRoute(node, runwayNode);
+        if (taxiRoute.empty()) {
+            SG_LOG(SG_AI, SG_BULK, "Could not find taxi route to " << apt->getId() << "/" << rwy->ident() << " using fallback shortest route.");
         }
     }
     return taxiRoute;

@@ -131,6 +131,10 @@ bool FGAIFlightPlan::createPushBack(FGAIAircraft* ac,
                 SG_LOG(SG_AI, SG_DEBUG, "Gate " << parking->ident() << " is a pushback gate.");
 
                 auto intersection = groundnet->findIntersectionSegment(parking->geod(), parking->getReverseHeading());
+                if (!intersection) {
+                    SG_LOG(SG_AI, SG_DEV_WARN, "No pushforward intersection found for pushback gate " << parking->ident());
+                    return false;
+                }
 
                 FGTaxiRoute routeFromStart = findBestTaxiRouteToRunway(ac, dep, rwy, groundnet, intersection->getStart());
                 FGTaxiRoute routeFromEnd = findBestTaxiRouteToRunway(ac, dep, rwy, groundnet, intersection->getEnd());

@@ -353,6 +353,7 @@ void FGAIAircraft::ProcessFlightPlan(double dt, time_t now)
     if (!curr) {
         if (!next) {
             SG_LOG(SG_AI, SG_WARN, getCallSign() << "(" << getID() << ") No more WPs");
+            setDie(true);
         } else {
             SG_LOG(SG_AI, SG_WARN, getCallSign() << "(" << getID() << ") No current WP" << next->getName());
         }
