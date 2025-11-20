@@ -309,7 +309,7 @@ public:
                 }
                 m_archive->extractBytes((const uint8_t*)resumeBytes.constData(), resumeBytes.size());
                 m_extractedBytes += resumeBytes.size();
-                if (m_resumeData.pos() >= m_resumedBytesSize) {
+                if (m_resumeData.pos() >= static_cast<qint64>(m_resumedBytesSize)) {
                     qInfo() << "done reading resume file bytes";
                     m_readResumeFile = false;
                 }
@@ -632,7 +632,7 @@ flightgear::SetupRootResult SetupRootDialog::restoreUserSelectedRoot(SGPath& sgp
             return flightgear::SetupRootResult::UserExit;
         }
 
-        bool ok = runDialog(ManualChoiceRequested);
+        bool ok = runDialog(ManualChoiceRequested, SGPath{});
         if (!ok) {
             return flightgear::SetupRootResult::UserExit;
         }
