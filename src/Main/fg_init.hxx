@@ -67,7 +67,7 @@ enum InitHomeResult
     InitHomeAbort
 };
 
-InitHomeResult fgInitHome();
+InitHomeResult fgInitHome(int argc, char** argv);
 void fgShutdownHome();
 void fgDeleteLockFile();
 

@@ -545,7 +545,8 @@ SetupRootDialog::SetupRootDialog(PromptState prompt, const SGPath& checked) :
     m_promptState(prompt),
     m_checkedPath(checked)
 {
-    flightgear::ExclusiveInstanceLock::instance()->updateReason("setup-fgdata");
+    auto exLock = flightgear::ExclusiveInstanceLock::instance();
+    exLock->updateReason("setup-fgdata");
 
     m_ui.reset(new Ui::SetupRootDialog);
     m_ui->setupUi(this);
