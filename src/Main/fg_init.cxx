@@ -530,7 +530,7 @@ SGPath fgHomePath()
     return SGPath::fromEnv("FG_HOME", platformDefaultDataPath());
 }
 
-InitHomeResult fgInitHome()
+InitHomeResult fgInitHome(int argc, char** argv)
 {
   SGPath dataPath = fgHomePath();
   globals->set_fg_home(dataPath);
@@ -548,9 +548,11 @@ InitHomeResult fgInitHome()
         return InitHomeAbort;
     }
 
-    if (fgGetBool("/sim/fghome-readonly", false)) {
+    const auto explicitReadOnly = flightgear::Options::checkForArgEnable(argc, argv, "read-only");
+    if (explicitReadOnly) {
         // user / config forced us into readonly mode, fine
-        SG_LOG(SG_GENERAL, SG_INFO, "Running with FG_HOME readonly");
+        SG_LOG(SG_GENERAL, SG_MANDATORY_INFO, "Running with FG_HOME readonly");
+        fgSetBool("/sim/fghome-readonly", true);
         return InitHomeExplicitReadOnly;
     }
 
