@@ -118,8 +118,9 @@ LockStatus acquireLock()
             return LockFailed;
         }
 
-        if (GetLastError() == ERROR_ALREADY_EXISTS) {
-            return LockAlreadyLocked;
+        if (GetLastError() != ERROR_ALREADY_EXISTS) {
+            SG_LOG(SG_IO, SG_ALERT, "Failed to create exclusive-access mutex: " << GetLastError());
+            return LockFailed;
         }
     }
 
@@ -154,6 +155,8 @@ void releaseLock(SGPath lockPath)
 {
 #if defined(SG_WINDOWS)
     ReleaseMutex(static_fgMultipleInstanceMutex);
+    CloseHandle(static_fgMultipleInstanceMutex);
+    static_fgMultipleInstanceMutex = nullptr;
     SG_LOG(SG_IO, SG_INFO, "Released lock");
 #else
     int err = ::flock(static_lockFileFd, LOCK_UN);
