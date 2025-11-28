@@ -1302,7 +1302,7 @@ void fgStartNewReset()
 {
     flightgear::updateSentryTag("have-reset", "yes");
 
-    // save user settings now, so that USERARCIVE-d values changes since the
+    // save user settings now, so that USERARCHIVE-d values changes since the
     // last init are recorded and hence re-loaded when we fgInitConfig down
     // later in this function. Otherwise all such settings are lost.
     globals->saveUserSettings();
