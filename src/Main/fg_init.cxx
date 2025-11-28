@@ -1296,7 +1296,7 @@ void fgStartNewReset()
 {
     flightgear::updateSentryTag("have-reset", "yes");
 
-    // save user settings now, so that USERARCIVE-d values changes since the
+    // save user settings now, so that USERARCHIVE-d values changes since the
     // last init are recorded and hence re-loaded when we fgInitConfig down
     // later in this function. Otherwise all such settings are lost.
     globals->saveUserSettings();
@@ -1333,11 +1333,6 @@ void fgStartNewReset()
     flightgear::VRManager::destroyInstance();
 #endif
     subsystemManger->unbind();
-
-    // hack fix for many reset crashes relating to the static instance
-    // of this class. Will be fixed better for future versions by making
-    // this a proper subsystem.
-    //FGATCDialogNew::hackyReset();
 
     // remove most subsystems, with a few exceptions.
     for (int g=0; g<SGSubsystemMgr::MAX_GROUPS; ++g) {
