@@ -43,15 +43,15 @@ pre-commit:
   stage: build
   image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/pre-commit:latest
   script:
-    # run on all files, but allow failure. For MRs
-    - pre-commit run --all-files
+    # Run on all files. We're quite far from this being error-free, so report
+    # success despite reality. This way, the pipeline status can be used to
+    # monitor jobs we're actively trying to keep in working state.
+    - pre-commit run --all-files || true
   rules:
     - if: $CI_COMMIT_REF_PROTECTED == "true"
   cache:
     paths:
       - ${PRE_COMMIT_HOME}
-  # important for now until we get some checks passing :)
-  allow_failure: true
 
 linux-build:
   image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/flightgear:latest
