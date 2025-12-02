@@ -118,7 +118,8 @@ LockStatus acquireLock()
             return LockFailed;
         }
 
-        if (GetLastError() != ERROR_ALREADY_EXISTS) {
+        const auto err = GetLastError();
+        if (err && (err != ERROR_ALREADY_EXISTS)) {
             SG_LOG(SG_IO, SG_ALERT, "Failed to create exclusive-access mutex: " << GetLastError());
             return LockFailed;
         }
