@@ -75,7 +75,7 @@ void FGFlightHistory::init()
 void FGFlightHistory::shutdown()
 {
     clear();
-    globals->get_commands()->removeCommand("dismiss-error-report");
+    globals->get_commands()->removeCommand("clear-flight-history");
 }
 
 void FGFlightHistory::reinit()
