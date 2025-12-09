@@ -8,6 +8,7 @@
 
 #include "SetupRootDialog.hxx"
 
+#include <QtCore/qsettings.h>
 #include <condition_variable>
 #include <mutex>
 
@@ -533,6 +534,8 @@ SetupRootDialog::SetupRootDialog(PromptState prompt, const SGPath& checked) : QD
             this, &SetupRootDialog::onDownload);
     connect(m_ui->changeDownloadLocation, &QPushButton::clicked,
             this, &SetupRootDialog::onSelectDownloadDir);
+    connect(m_ui->defaultDownloadLocation, &QPushButton::clicked,
+            this, &SetupRootDialog::onUseDefaultDownloadDir);
     connect(m_ui->buttonBox, &QDialogButtonBox::rejected,
             this, &QDialog::reject);
 
@@ -540,11 +543,12 @@ SetupRootDialog::SetupRootDialog(PromptState prompt, const SGPath& checked) : QD
     if (options->isOptionSet("download-dir")) {
         // if download dir is set on the command line, don't allow changing it here
         m_ui->changeDownloadLocation->setEnabled(false);
+        m_ui->defaultDownloadLocation->hide();
     }
 
     // download only works for release builds where we generate TXZs for now
     // if we fix https://gitlab.com/flightgear/fgdata/-/issues/56 this may change,
-    // eg genersting FGData / base-package snapshot once per month
+    // eg generating FGData / base-package snapshot once per month
     if (strcmp(FG_BUILD_TYPE, "Release")) {
         m_ui->downloadButton->setEnabled(false);
     }
@@ -557,7 +561,8 @@ SetupRootDialog::SetupRootDialog(PromptState prompt, const SGPath& checked) : QD
 
     if (prompt == NeedToUpdateDownloadedData) {
         m_ui->downloadButton->setText(tr("Update"));
-        m_ui->changeDownloadLocation->setEnabled(false);
+        m_ui->changeDownloadLocation->hide();
+        m_ui->defaultDownloadLocation->hide();
     }
 
     m_networkManager = new QNetworkAccessManager(this);
@@ -616,7 +621,7 @@ flightgear::SetupRootResult SetupRootDialog::restoreUserSelectedRoot(SGPath& sgp
             return flightgear::SetupRootResult::UserExit;
         }
 
-        bool ok = runDialog(ManualChoiceRequested);
+        bool ok = runDialog(ManualChoiceRequested, SGPath{});
         if (!ok) {
             return flightgear::SetupRootResult::UserExit;
         }
@@ -804,6 +809,18 @@ void SetupRootDialog::onBrowse()
     accept(); // we're done
 }
 
+bool SetupRootDialog::locationIsWritable(QString path)
+{
+    // we don't use QFileInfo::isWriteable here because of complexity around
+    // NTFS ACL checks (needs Qt 6.6 for QNtfsPermissionCheckGuard)
+    QFile f(path + "/_check_write");
+    if (!f.open(QIODeviceBase::NewOnly | QIODevice::WriteOnly)) {
+        return false;
+    }
+    f.remove(); // closes
+    return true;
+}
+
 void SetupRootDialog::onSelectDownloadDir()
 {
     auto settings = flightgear::getQSettings();
@@ -817,8 +834,24 @@ void SetupRootDialog::onSelectDownloadDir()
         return;
     }
 
+    if (!locationIsWritable(downloadDir)) {
+        m_browsedPath = downloadDir;
+        m_promptState = ChoseInvalidDownloadLocation;
+        updatePromptText();
+        return;
+    }
+
+    m_promptState = ManualChoiceRequested;
     settings.setValue("download-dir", downloadDir);
     flightgear::Options::sharedInstance()->setOption("download-dir", downloadDir.toStdString());
+    updatePromptText();
+}
+
+void SetupRootDialog::onUseDefaultDownloadDir()
+{
+    auto settings = flightgear::getQSettings();
+    settings.remove("download-dir");
+    flightgear::Options::sharedInstance()->clearOption("download-dir");
     updatePromptText();
 }
 
@@ -955,6 +988,9 @@ void SetupRootDialog::updatePromptText()
         t = tr("The chosen file (%1) is not a valid compressed archive.").arg(m_browsedPath);
         break;
 
+    case ChoseInvalidDownloadLocation:
+        t = tr("The chosen download location (%1) is not writable. Please select another location.").arg(m_browsedPath);
+        break;
 
     case DownloadingExtractingArchive:
         t = tr("Please wait while the data files are downloaded, extracted and verified.");
@@ -978,6 +1014,8 @@ void SetupRootDialog::updatePromptText()
     auto dd = flightgear::Options::sharedInstance()->actualDownloadDir();
     const auto dlp = QString::fromStdString(dd.utf8Str());
     m_ui->downloadLocationLabel->setText(tr("Data files will be downloaded to: %1").arg(dlp));
+
+    m_ui->defaultDownloadLocation->setEnabled(flightgear::Options::sharedInstance()->isOptionSet("download-dir"));
 }
 
 #include "SetupRootDialog.moc"
