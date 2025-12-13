@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2007 Mathias Froehlich <Mathias.Froehlich@web.de>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #ifndef FGEVENTHANDLER_H
 #define FGEVENTHANDLER_H 1
 
@@ -25,9 +28,9 @@ namespace flightgear
 class FGEventHandler : public osgGA::GUIEventHandler {
 public:
     FGEventHandler();
-    
+
     virtual ~FGEventHandler() {}
-    
+
     virtual const char* className() const {return "FGEventHandler"; }
 #if 0
     virtual void init(const osgGA::GUIEventAdapter& ea,
@@ -60,7 +63,7 @@ public:
 	{
 	    this->mouseClickHandler = mouseClickHandler;
 	}
-    
+
     fgMouseClickHandler getMouseClickHandler()
 	{
 	    return mouseClickHandler;
@@ -70,7 +73,7 @@ public:
 	{
 	    this->mouseMotionHandler = mouseMotionHandler;
 	}
-    
+
     fgMouseMotionHandler getMouseMotionHandler()
 	{
 	    return mouseMotionHandler;
@@ -99,7 +102,7 @@ public:
 
     void reset();
     void clear();
-    
+
     // Wrapper for osgViewer::GraphicsWindow::setWindowRectangle() that takes
     // coordinates excluding window furniture.
     //
@@ -117,7 +120,7 @@ protected:
     osg::ref_ptr<osgGA::GUIEventAdapter> statsEvent;
     int statsType;
     int currentModifiers;
-    
+
     void handleKey(const osgGA::GUIEventAdapter& ea, int& key, int& modifiers);
     bool resizable;
     bool mouseWarped;
@@ -145,7 +148,6 @@ private:
                     int& x, int& y);
 
     bool isMainWindow(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& us);
-    
 };
 
 bool eventToWindowCoords(const osgGA::GUIEventAdapter* ea, double& x, double& y);

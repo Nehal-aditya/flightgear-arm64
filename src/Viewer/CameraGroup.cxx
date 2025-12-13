@@ -111,7 +111,7 @@ relativeProjection(const osg::Matrix& P0, const osg::Matrix& R, const osg::Vec2d
     osg::Matrix S = osg::Matrix::scale(s, s, 1);
 
     // For the translation offset, incorporate the now known scale
-    // and recompute the position ot the first reference point in the
+    // and recompute the position of the first reference point in the
     // currents projection space without the yet unknown T.
     pRefInThis[0] = preMult(pRef[0], PtoPwithoutTS*S);
     // The translation is then the difference of the reference points
@@ -157,7 +157,7 @@ private:
             n->setDoubleValue(val);
         }
         n->addChangeListener(this);
-        valueChanged(n); // propogate initial state through
+        valueChanged(n); // propagate initial state through
     }
 
     void unlisten(const std::string& name) {
@@ -532,9 +532,9 @@ CameraInfo* CameraGroup::buildCamera(SGPropertyNode* cameraNode)
     osg::ref_ptr<SGReaderWriterOptions> options =
         SGReaderWriterOptions::fromPath(globals->get_fg_root());
     options->setPropertyNode(globals->get_props());
-    
+
     SViewSetCompositorParams(options, compositor_path);
-    
+
     Compositor *compositor = nullptr;
     if (info->flags & CameraInfo::VR_MIRROR)
         compositor = buildVRMirrorCompositor(window->gc, viewport);
@@ -589,7 +589,7 @@ void CameraGroup::buildSplashCamera(SGPropertyNode* cameraNode,
     camera->setGraphicsContext(window->gc.get());
     // If a viewport isn't set on the camera, then it's hard to dig it
     // out of the SceneView objects in the viewer, and the coordinates
-    // of mouse events are somewhat bizzare.
+    // of mouse events are somewhat bizarre.
     osg::Viewport* viewport = new osg::Viewport(
         0, 0, window->gc->getTraits()->width, window->gc->getTraits()->height);
     camera->setViewport(viewport);
@@ -664,7 +664,7 @@ void CameraGroup::buildGUICamera(SGPropertyNode* cameraNode,
     camera->setGraphicsContext(window->gc.get());
     // If a viewport isn't set on the camera, then it's hard to dig it
     // out of the SceneView objects in the viewer, and the coordinates
-    // of mouse events are somewhat bizzare.
+    // of mouse events are somewhat bizarre.
     osg::Viewport *viewport = new osg::Viewport(
         0, 0, window->gc->getTraits()->width, window->gc->getTraits()->height);
     camera->setViewport(viewport);

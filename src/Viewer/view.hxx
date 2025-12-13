@@ -5,23 +5,8 @@
 //   partially rewritten by Jim Wilson jim@kelcomaine.com using interface
 //                          by David Megginson March 2002
 //
-// Copyright (C) 1997 - 2000  Curtis L. Olson  - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-FileCopyrightText: 1997 - 2000  Curtis L. Olson
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 
 #ifndef _VIEWER_HXX
@@ -142,7 +127,7 @@ public:
 
     // Reference orientation rotations...
     //   These are rotations that represent the plane attitude effect on
-    //   the view (in Pilot view).  IE The view frustrum rotates as the plane
+    //   the view (in Pilot view).  IE The view frustum rotates as the plane
     //   turns, pitches, and rolls.
     //   In model view (lookat/chaseview) these end up changing the angle that
     //   the eye is looking at the ojbect (ie the model).
@@ -179,7 +164,7 @@ public:
     const SGQuatd& getViewOrientationOffset() { if ( _dirty ) { recalc(); } return mViewOffsetOr; }
 
     //////////////////////////////////////////////////////////////////////
-    // Part 4: View and frustrum data setters and getters
+    // Part 4: View and frustum data setters and getters
     //////////////////////////////////////////////////////////////////////
 
     double get_fov() const { return _fov_deg; }
@@ -248,10 +233,10 @@ private:
 
     // Reference orientation rotations...
     //   These are rotations that represent the plane attitude effect on
-    //   the view (in Pilot view).  IE The view frustrum rotates as the plane
+    //   the view (in Pilot view).  IE The view frustum rotates as the plane
     //   turns, pitches, and rolls.
     //   In model view (lookat/chaseview) these end up changing the angle that
-    //   the eye is looking at the ojbect (ie the model).
+    //   the eye is looking at the object (ie the model).
     //   FIXME: the FGModel class should have its own version of these so that
     //   it can generate it's own model rotations.
     double getRoll_deg () const { return _roll_deg; }
@@ -309,7 +294,7 @@ private:
 
     double get_fov_user() const { return _fov_user_deg; }
     void set_fov_user( double fov_deg ) { _fov_user_deg = fov_deg; }
-    
+
     //////////////////////////////////////////////////////////////////
     // private data                                                 //
     //////////////////////////////////////////////////////////////////
@@ -343,35 +328,34 @@ private:
     SGVec3d _dampTarget; ///< current target value we are damping towards
     SGVec3d _dampOutput; ///< current output of damping filter
     SGVec3d _dampFactor; ///< weighting of the damping filter
-    
+
     /* Generic damping support. */
     struct Damping {
-    
-       Damping(double factor, double min, double max);
-       void     setTarget(double target);
-       void     update(double dt, void* id);
-       double   get();
-       void     updateTarget(double& io);
-       void     reset(double target);
+        Damping(double factor, double min, double max);
+        void setTarget(double target);
+        void update(double dt, void* id);
+        double get();
+        void updateTarget(double& io);
+        void reset(double target);
 
-       private:
-           void*    _id;
-           double   _min;
-           double   _max;
-           double   _target;
-           double   _factor;
-           double   _current;
+    private:
+        void* _id;
+        double _min;
+        double _max;
+        double _target;
+        double _factor;
+        double _current;
     };
-    
+
     Damping _lookat_agl_damping;
     double  _lookat_agl_ground_altitude;
-    
+
     // Position offsets from FDM origin.  The X axis is positive
     // out the tail, Y is out the right wing, and Z is positive up.
     // distance in meters
     SGVec3d _offset_m;
     SGVec3d _configOffset_m;
-    
+
     SGVec3d _adjust_offset_m;
 
     // Target offsets from FDM origin (for "lookat" targets) The X
@@ -396,11 +380,11 @@ private:
 
     // internal view (e.g. cockpit) flag
     bool _internal;
-    
+
     // Dynamically update view angle and field of view so that we always
     // include the target and the ground below it.
     bool _lookat_agl;
-    
+
     int _view_index;
 
     // view is looking from a model
@@ -410,7 +394,7 @@ private:
     // view is looking at a model
     bool _at_model;
     int _at_model_index;  // number of model (for multi model)
-    
+
     // Field of view as requested by user. Usually copied directly into the
     // actual field of view, except for Tower AGL view.
     double _fov_user_deg;

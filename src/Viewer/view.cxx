@@ -5,23 +5,8 @@
 //   partially rewritten by Jim Wilson jim@kelcomaine.com using interface
 //                          by David Megginson March 2002
 //
-// Copyright (C) 1997 - 2000  Curtis L. Olson  - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
-// License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-// $Id$
+// SPDX-FileCopyrightText: 1997 - 2000  Curtis L. Olson
+// SPDX-License-Identifier: GPL-2.0-or-later
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -769,9 +754,9 @@ View::recalcLookFrom ()
   double roll;
 
   if (_from_model ) {
-    /* Look up aircraft position; this works for user's aircaft or multiplayer
-    aircraft. */
-    getAircraftPositionOrientation( _position, head, pitch, roll);
+      /* Look up aircraft position; this works for user's aircraft or
+       * multiplayer aircraft. */
+      getAircraftPositionOrientation(_position, head, pitch, roll);
   }
   else {
     /* Tower View Look From.
@@ -802,7 +787,7 @@ View::recalcLookFrom ()
 
   set_fov(_fov_user_deg);
 
-  // The rotation rotating from the earth centerd frame to
+  // The rotation rotating from the earth centered frame to
   // the horizontal local frame
   SGQuatd hlOr = SGQuatd::fromLonLat(_position);
 
@@ -815,7 +800,7 @@ View::recalcLookFrom ()
                                      _roll_offset_deg);
 
   // Compute the eyepoints orientation and position
-  // wrt the earth centered frame - that is global coorinates
+  // wrt the earth centered frame - that is global coordinates
   SGQuatd ec2body = hlOr*hlToBody;
 
   // The cartesian position of the basic view coordinate
@@ -1086,7 +1071,7 @@ View::recalcLookAt ()
 
   // the view direction
   SGVec3d dir = normalize(atCart - eyeCart);
-  // the up directon
+  // the up direction
   SGVec3d up = ec2eye.backTransform(SGVec3d(0, 0, -1));
   // rotate -dir to the 2-th unit vector
   // rotate up to 1-th unit vector

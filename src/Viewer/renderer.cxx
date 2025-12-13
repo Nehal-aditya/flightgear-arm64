@@ -266,7 +266,7 @@ FGRenderer::init()
         }
         _composite_viewer->setUseConfigureAffinity(osg_affinity_flag);
     }
-        
+
     // https://stackoverflow.com/questions/15207076/openscenegraph-and-multiple-viewers
     _composite_viewer->setReleaseContextAtEndOfFrameHint(false);
     _composite_viewer->setThreadingModel(osgViewer::Viewer::SingleThreaded);
@@ -386,7 +386,7 @@ FGRenderer::setupView()
     // The sun and moon radius are scaled down numbers of the actual
     // diameters. This is needed to fit both the sun and the moon
     // within the distance to the far clip plane.
-    // 
+    //
     // Their distance to the observer is specified in FGRendered::updateSky() and
     // set to 40000 for the Moon semi-mayor axis, 50000 for the mean
     // Earth-Sun distance (1AU). The location of the stars is
@@ -595,7 +595,7 @@ FGRenderer::updateSky()
     scolor.sun_angle   = l->get_sun_angle();
     scolor.moon_angle  = l->get_moon_angle();
     scolor.altitude_m =  altitude_m;
-    
+
     auto ephemerisSub = globals->get_subsystem<Ephemeris>();
     double delta_time_sec = _sim_delta_sec->getDoubleValue();
     _sky->reposition( sstate, *ephemerisSub->data(), delta_time_sec );
@@ -689,7 +689,7 @@ FGRenderer::PickList FGRenderer::pick(const osg::Vec2& windowPos)
 
     if (!computeIntersections(CameraGroup::getDefault(), windowPos, intersections))
         return result; // return empty list
-    
+
     // We attempt to highlight nodes until Highlight::highlight_nodes()
     // succeeds and returns +ve, or highlighting is disabled and it returns -1.
     auto highlight = globals->get_subsystem<Highlight>();

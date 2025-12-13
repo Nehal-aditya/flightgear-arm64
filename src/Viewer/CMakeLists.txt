@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2010 James Turner <james@flightgear.org>
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 include(FlightGearComponent)
 
 set(SOURCES
@@ -7,7 +10,7 @@ set(SOURCES
 	WindowSystemAdapter.cxx
 	fg_os_osgviewer.cxx
 	fgviewer.cxx
-    ViewPropertyEvaluator.cxx
+	ViewPropertyEvaluator.cxx
 	renderer.cxx
 	splash.cxx
 	view.cxx
