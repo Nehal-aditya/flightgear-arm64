@@ -38,37 +38,6 @@
 
 #include "AIModel/AINotifications.hxx"
 
-class FG3DCloudsListener : public SGPropertyChangeListener {
-public:
-  FG3DCloudsListener( FGClouds * fgClouds );
-  virtual ~FG3DCloudsListener();
-
-  virtual void valueChanged (SGPropertyNode * node);
-
-private:
-  FGClouds * _fgClouds;
-  SGPropertyNode_ptr _enableNode;
-};
-
-FG3DCloudsListener::FG3DCloudsListener( FGClouds * fgClouds ) :
-    _fgClouds( fgClouds )
-{
-  _enableNode = fgGetNode( "/sim/rendering/clouds3d-enable", true );
-  _enableNode->addChangeListener( this );
-
-  valueChanged( _enableNode );
-}
-
-FG3DCloudsListener::~FG3DCloudsListener()
-{
-  _enableNode->removeChangeListener( this );
-}
-
-void FG3DCloudsListener::valueChanged( SGPropertyNode * node )
-{
-  _fgClouds->set_3dClouds( _enableNode->getBoolValue() );
-}
-
 FGEnvironmentMgr::FGEnvironmentMgr () :
   _environment(new FGEnvironment()),
   _multiplayerListener(nullptr),
@@ -77,7 +46,6 @@ FGEnvironmentMgr::FGEnvironmentMgr () :
   nearestAirport(nullptr)
 {
   fgClouds = new FGClouds;
-  _3dCloudsEnableListener = new FG3DCloudsListener(fgClouds);
   set_subsystem("controller", Environment::LayerInterpolateController::createInstance( fgGetNode("/environment/config", true ) ));
 
   set_subsystem("climate", new FGClimate);

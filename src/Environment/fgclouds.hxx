@@ -8,14 +8,24 @@
 #pragma once
 
 #include <string>
+#include <osg/Image>
+#include <vector>
+#include <map>
+
+using std::vector;
 
 // forward decls
 class SGPropertyNode;
 class SGCloudField;
+class SGNewCloud;
 
 class FGClouds {
 
 private:
+    typedef std::tuple<SGNewCloud, osg::Vec3f> CloudPlacement;
+
+    typedef std::unordered_map<int, CloudPlacement> CloudPlacementMap;
+
     double buildCloud(SGPropertyNode* cloud_def_root, SGPropertyNode* box_def_root,
                       const std::string& name, double grid_z_rand, SGCloudField* layer);
     void buildLayer(int iLayer, const std::string& name, double coverage);
@@ -24,12 +34,52 @@ private:
 
     int update_event;
 
-    bool clouds_3d_enabled;
     int index;
+
+    // Voxel-based clouds
+    osg::ref_ptr<osg::Image> _roughVoxelData;
+    osg::ref_ptr<osg::Image> _detailedVoxelData;
+    osg::ref_ptr<osg::Image> _noiseData;
+
+    unsigned int _roughFieldWidth;
+    unsigned int _roughFieldHeight;
+    unsigned int _roughFieldVoxelSize;
+    unsigned int _detailedFieldWidth;
+    unsigned int _detailedFieldHeight;
+    unsigned int _detailedFieldVoxelSize;
+
+    CloudPlacementMap _cloudPlacementMap;
+
+    // This is the ECF cartesian coordinates of the voxel field.
+    SGVec3d _centerCart; 
+    osg::Matrixd _cloudPosMatrix;
+    
+    // Whether the cloud field requires regeneration.
+    bool _fieldDirty;
+
+    void copySubImage(const osg::Image* srcImage, int src_s, int src_t, int width, int height, osg::Image* destImage, int dest_s, int dest_t);
 
     bool add3DCloud(const SGPropertyNode *arg, SGPropertyNode * root);
     bool delete3DCloud(const SGPropertyNode *arg, SGPropertyNode * root);
     bool move3DCloud(const SGPropertyNode* arg, SGPropertyNode* root);
+
+    /**
+     * Add a new cloud with a given index at a specific point defined by lon/lat and an x/y offset
+     */
+    bool addCloud(SGNewCloud cloud, int index, float lon, float lat, float alt, float x, float y);
+    bool addCloud(SGNewCloud cloud, int index, SGGeod loc, float x, float y);
+    bool addCloud(SGNewCloud cloud, int index, float lon, float lat, float alt);
+    bool addCloud(SGNewCloud cloud, int index, SGGeod loc);
+
+    // add one cloud, data is not copied, ownership given
+    void addCloud( SGVec3f& pos, SGNewCloud cloud);
+    
+    // Cloud handling functions.
+    bool removeCloud(int index);
+    bool repositionCloud(int index, float lon, float lat, float alt);
+    bool repositionCloud(int index, float lon, float lat, float alt, float x, float y);
+
+    void rebuildField(void);
 
 public:
     FGClouds();

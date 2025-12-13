@@ -13,26 +13,30 @@
 #include <cstdio>
 #include <Main/fg_props.hxx>
 
+#include <osg/Image>
+
 #include <simgear/constants.h>
 #include <simgear/sound/soundmgr.hxx>
+#include <simgear/scene/sky/newcloud.hxx>
 #include <simgear/scene/sky/sky.hxx>
 //#include <simgear/environment/visual_enviro.hxx>
 #include <simgear/scene/sky/cloudfield.hxx>
-#include <simgear/scene/sky/newcloud.hxx>
+#include <simgear/scene/util/StateAttributeFactory.hxx>
 #include <simgear/structure/commands.hxx>
 #include <simgear/props/props_io.hxx>
 
 #include <Main/globals.hxx>
 #include <Main/util.hxx>
 #include <Viewer/renderer.hxx>
+#include <Viewer/view.hxx>
 #include <Airports/airport.hxx>
+#include <Time/light.hxx>
 
 // RNG seed to ensure cloud synchronization across multi-process
 // deployments
 static mt seed;
 
 FGClouds::FGClouds() :
-    clouds_3d_enabled(false),
     index(0)
 {
     update_event = 0;
@@ -61,6 +65,19 @@ void FGClouds::Init(void)
     globals->get_commands()->addCommand("add-cloud", this, &FGClouds::add3DCloud);
     globals->get_commands()->addCommand("del-cloud", this, &FGClouds::delete3DCloud);
     globals->get_commands()->addCommand("move-cloud", this, &FGClouds::move3DCloud);
+
+    // Build and assign the voxel fields
+    auto cloudsProp = globals->get_props()->getChild("/sim/rendering/hdr/clouds/");
+
+    _roughFieldWidth        = cloudsProp->getIntValue("rough-voxel-field-width", 128);
+    _roughFieldHeight       = cloudsProp->getIntValue("rough-voxel-field-height", 128);
+    _roughFieldVoxelSize    = cloudsProp->getIntValue("rough-voxel-size-m", 800);
+    _detailedFieldWidth     = cloudsProp->getIntValue("detailed-voxel-field-width", 128);
+    _detailedFieldHeight    = cloudsProp->getIntValue("detailed-voxel-field-height", 128);
+    _detailedFieldVoxelSize = cloudsProp->getIntValue("detailed-voxel-size-m", 200);
+
+    _fieldDirty = true;
+    rebuildField();
 }
 
 // Build an individual cloud. Returns the extents of the cloud for coverage calculations
@@ -86,8 +103,9 @@ double FGClouds::buildCloud(SGPropertyNode *cloud_def_root, SGPropertyNode *box_
             return 0.0;
     }
 
-    double x = mt_rand(&seed) * SGCloudField::fieldSize - (SGCloudField::fieldSize / 2.0);
-    double y = mt_rand(&seed) * SGCloudField::fieldSize - (SGCloudField::fieldSize / 2.0);
+    float roughFieldWidthM = (float) _roughFieldWidth * (float) _roughFieldVoxelSize;
+    double x = mt_rand(&seed) * roughFieldWidthM - (roughFieldWidthM / 2.0);
+    double y = mt_rand(&seed) * roughFieldWidthM - (roughFieldWidthM / 2.0);
     double z = grid_z_rand * (mt_rand(&seed) - 0.5);
 
     float lon = fgGetNode("/position/longitude-deg", false)->getFloatValue();
@@ -133,11 +151,8 @@ double FGClouds::buildCloud(SGPropertyNode *cloud_def_root, SGPropertyNode *box_
                 y = w * (y - 0.5) + pos[1]; // E/W
                 z = h * z + pos[2];         // Up/Down. pos[2] is the cloudbase
 
-                //SGVec3f newpos = SGVec3f(x, y, z);
-                SGNewCloud cld(texture_root, cld_def, &seed);
-
-                //layer->addCloud(newpos, cld.genCloud());
-                layer->addCloud(lon, lat, z, x, y, index++, cld.genCloud());
+                SGNewCloud cld(cld_def, &seed);
+                addCloud(cld, index++, lon, lat, z, x, y);
             }
         }
     }
@@ -157,14 +172,13 @@ void FGClouds::buildLayer(int iLayer, const string& name, double coverage) {
     SGSky* thesky = globals->get_renderer()->getSky();
 
     SGPropertyNode* cloud_def_root = fgGetNode("/environment/cloudlayers/clouds", false);
-    SGPropertyNode* box_def_root = fgGetNode("/environment/cloudlayers/boxes", false);
+    SGPropertyNode* box_def_root   = fgGetNode("/environment/cloudlayers/boxes", false);
     SGPropertyNode* layer_def_root = fgGetNode("/environment/cloudlayers/layers", false);
     SGCloudField* layer = thesky->get_cloud_layer(iLayer)->get_layer3D();
     layer->clear();
 
     // If we don't have the required properties, then render the cloud in 2D
-    if ((!clouds_3d_enabled) || coverage == 0.0 ||
-        layer_def_root == NULL || cloud_def_root == NULL || box_def_root == NULL) {
+    if (coverage == 0.0 || layer_def_root == NULL || cloud_def_root == NULL || box_def_root == NULL) {
         thesky->get_cloud_layer(iLayer)->set_enable3dClouds(false);
         return;
     }
@@ -210,7 +224,8 @@ void FGClouds::buildLayer(int iLayer, const string& name, double coverage) {
     totalCount = 1.0 / totalCount;
 
     // Determine how much cloud coverage we need in m^2.
-    double cov = coverage * SGCloudField::fieldSize * SGCloudField::fieldSize;
+    float roughFieldWidthM = (float) _roughFieldWidth * (float) _roughFieldVoxelSize;
+    double cov = coverage * roughFieldWidthM * roughFieldWidthM;
 
     while (cov > 0.0f) {
         double choice = mt_rand(&seed);
@@ -227,11 +242,6 @@ void FGClouds::buildLayer(int iLayer, const string& name, double coverage) {
             }
         }
     }
-
-    // Now we've built any clouds, enable them and set the density (coverage)
-    //layer->setCoverage(coverage);
-    //layer->applyCoverage();
-    thesky->get_cloud_layer(iLayer)->set_enable3dClouds(clouds_3d_enabled);
 }
 
 void FGClouds::buildCloudLayers(void) {
@@ -299,19 +309,8 @@ void FGClouds::buildCloudLayers(void) {
         cloud_root->setStringValue("layer-type", layer_type);
         buildLayer(iLayer, layer_type, coverage_norm);
     }
-}
 
-void FGClouds::set_3dClouds(bool enable)
-{
-    if (enable != clouds_3d_enabled) {
-        clouds_3d_enabled = enable;
-        buildCloudLayers();
-    }
-}
-
-bool FGClouds::get_3dClouds() const
-{
-    return clouds_3d_enabled;
+    rebuildField();
 }
 
 /**
@@ -326,27 +325,15 @@ bool FGClouds::get_3dClouds() const
  */
  bool FGClouds::add3DCloud(const SGPropertyNode *arg, SGPropertyNode * root)
  {
-   int l = arg->getIntValue("layer", 0);
    int index = arg->getIntValue("index", 0);
-
-   SGPath texture_root = globals->get_fg_root();
-   texture_root.append("Textures");
-   texture_root.append("Sky");
-
    float lon = arg->getFloatValue("lon-deg", 0.0f);
    float lat = arg->getFloatValue("lat-deg", 0.0f);
    float alt = arg->getFloatValue("alt-ft", 0.0f);
    float x = arg->getFloatValue("x-offset-m", 0.0f);
    float y = arg->getFloatValue("y-offset-m", 0.0f);
 
-   SGSky* thesky = globals->get_renderer()->getSky();
-   SGCloudField *layer = thesky->get_cloud_layer(l)->get_layer3D();
-   SGNewCloud cld(texture_root, arg, &seed);
-   bool success = layer->addCloud(lon, lat, alt, x, y, index, cld.genCloud());
-
-   // Adding a 3D cloud immediately makes this layer 3D.
-   thesky->get_cloud_layer(l)->set_enable3dClouds(true);
-
+   SGNewCloud cld(arg, &seed);
+   bool success = addCloud(cld, index, lon, lat, alt, x, y);
    return success;
  }
 
@@ -361,12 +348,8 @@ bool FGClouds::get_3dClouds() const
   */
  bool FGClouds::delete3DCloud(const SGPropertyNode *arg, SGPropertyNode * root)
  {
-   int l = arg->getIntValue("layer", 0);
    int i = arg->getIntValue("index", 0);
-
-   SGSky* thesky = globals->get_renderer()->getSky();
-   SGCloudField *layer = thesky->get_cloud_layer(l)->get_layer3D();
-   return layer->deleteCloud(i);
+   return removeCloud(i);
  }
 
 /**
@@ -380,16 +363,278 @@ bool FGClouds::get_3dClouds() const
  */
 bool FGClouds::move3DCloud(const SGPropertyNode *arg, SGPropertyNode * root)
  {
-   int l = arg->getIntValue("layer", 0);
-   int i = arg->getIntValue("index", 0);
-   SGSky* thesky = globals->get_renderer()->getSky();
-
-   float lon = arg->getFloatValue("lon-deg", 0.0f);
-   float lat = arg->getFloatValue("lat-deg", 0.0f);
-   float alt = arg->getFloatValue("alt-ft", 0.0f);
-   float x = arg->getFloatValue("x-offset-m", 0.0f);
-   float y = arg->getFloatValue("y-offset-m", 0.0f);
-
-   SGCloudField* layer = thesky->get_cloud_layer(l)->get_layer3D();
-   return layer->repositionCloud(i, lon, lat, alt, x, y);
+    int i = arg->getIntValue("index", 0);
+    float lon = arg->getFloatValue("lon-deg", 0.0f);
+    float lat = arg->getFloatValue("lat-deg", 0.0f);
+    float alt = arg->getFloatValue("alt-ft", 0.0f);
+    float x = arg->getFloatValue("x-offset-m", 0.0f);
+    float y = arg->getFloatValue("y-offset-m", 0.0f);
+    return repositionCloud(i, lon, lat, alt, x, y);
  }
+
+ bool FGClouds::addCloud(SGNewCloud cloud, int index, float lon, float lat, float alt) {
+  return addCloud(cloud, index, lon, lat, alt, 0.0f, 0.0f);
+}
+
+bool FGClouds::addCloud(SGNewCloud cloud, int index, float lon, float lat, float alt, float x, float y) {
+    SGGeod loc = SGGeod::fromDegFt(lon, lat, alt);
+    return addCloud(cloud, index, loc, x, y);
+}
+
+bool FGClouds::removeCloud(int index)
+{
+    if (_cloudPlacementMap.erase(index) > 0) {
+        _fieldDirty = true;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool FGClouds::addCloud(SGNewCloud cloud, int index, SGGeod loc, float x, float y) {
+
+    // If this cloud index already exists, don't replace it.
+    if (_cloudPlacementMap.contains(index)) return false;
+
+    float alt = loc.getElevationFt();
+    // Determine any shift by x/y
+    if ((x != 0.0f) || (y != 0.0f)) {
+        double crs = 90.0 - SG_RADIANS_TO_DEGREES * atan2(y, x);
+        double dst = sqrt(x*x + y*y);
+        double endcrs;
+
+        SGGeod base_pos = SGGeod::fromGeodFt(loc, 0.0f);
+        SGGeodesy::direct(base_pos, crs, dst, loc, endcrs);
+    }
+
+    // The direct call provides the position at 0 alt, so adjust as required.
+    loc.setElevationFt(alt);
+
+    // Work out where this cloud should go in OSG coordinates.
+    SGVec3<double> cart;
+    SGGeodesy::SGGeodToCart(loc, cart);
+    osg::Vec3f pos = toOsg(cart);
+    CloudPlacement cl = std::make_tuple(cloud, pos);
+    _cloudPlacementMap.insert({index, cl});
+    _fieldDirty = true;
+
+    return true;
+}
+
+bool FGClouds::repositionCloud(int index, float lon, float lat, float alt) {
+    return repositionCloud(index, lon, lat, alt, 0.0f, 0.0f);
+}
+
+bool FGClouds::repositionCloud(int index, float lon, float lat, float alt, float x, float y) {
+
+    if (_cloudPlacementMap.contains(index)) {
+        CloudPlacement cp = _cloudPlacementMap.at(index);
+        SGNewCloud c = std::get<0>(cp);
+        removeCloud(index);
+        addCloud(c, index, lon, lat, alt, x, y);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// Build the cloud field centered on the current location.
+void FGClouds::rebuildField() {
+
+    if (!_fieldDirty) return;
+
+    // Save off the current location, which will be used in transforms.
+    // We will determine the altitude later, so make sure it's 0 for
+    // the various coversions between ECF and local coordinates.
+    SGGeod geod = globals->get_view_position();
+    geod.setElevationM(0);
+
+    SGGeodesy::SGGeodToCart(geod, _centerCart);    
+    _cloudPosMatrix = makeZUpFrameRelative(globals->get_view_position());
+    SG_LOG(SG_GENERAL, SG_ALERT, "Rebuilding field at " << geod.getLatitudeDeg() << " " << geod.getLongitudeDeg());
+
+    fgSetDouble("/sim/rendering/hdr/clouds/cloud-center-x",  _centerCart.x());
+    fgSetDouble("/sim/rendering/hdr/clouds/cloud-center-y",  _centerCart.y());
+    fgSetDouble("/sim/rendering/hdr/clouds/cloud-center-z",  _centerCart.z());
+
+    if (_cloudPlacementMap.empty()) {
+        // Nothing to generate.
+        //simgear::StateAttributeFactory::instance()->setCloudVoxelImage(roughVoxelData);
+        SG_LOG(SG_GENERAL, SG_ALERT, "rebuildField - No cloud data to build");
+        _fieldDirty = false;
+        return;
+    }
+
+    osg::ref_ptr<osg::Image> roughVoxelData = new osg::Image();
+    roughVoxelData->allocateImage(_roughFieldWidth, _roughFieldWidth, _roughFieldHeight, GL_RGBA, GL_FLOAT);
+
+    osg::ref_ptr<osg::Image> detailedVoxelData = new osg::Image();
+    detailedVoxelData->allocateImage(_detailedFieldWidth, _detailedFieldWidth, _detailedFieldHeight, GL_RGBA, GL_FLOAT);
+
+    osg::ref_ptr<osg::Image> voxelShadeData = new osg::Image();
+    voxelShadeData->allocateImage(_roughFieldWidth, _roughFieldWidth, _roughFieldWidth, GL_RGB, GL_FLOAT);
+
+    std::vector<CloudPlacement> roughFieldList;
+    std::vector<CloudPlacement> detailedFieldList;
+
+    for (const auto& [key, value] : _cloudPlacementMap) {
+        const CloudPlacement cl = value;
+
+        const SGNewCloud c = std::get<0>(cl);
+        osg::Vec3f p = std::get<1>(cl) - toOsg(_centerCart);
+        // Transform to Z-up coordinates
+        p = _cloudPosMatrix * p;
+
+        // Now check if any part is within the X/Y bounds for each of the voxelMaps.
+        if ((abs(p.x()) - c._maxWidth < (float) _roughFieldWidth / 2) && (abs(p.y()) - c._maxWidth < (float)_roughFieldWidth / 2)) {
+            // Local coordinate cloud placement
+            CloudPlacement localCloud = std::make_tuple(c, p);
+            if ((abs(p.x()) - c._maxWidth < (float) _detailedFieldWidth / 2) && (abs(p.y()) - c._maxWidth < (float) _detailedFieldWidth / 2)) {
+                detailedFieldList.push_back(localCloud);
+            }
+
+            roughFieldList.push_back(localCloud);
+        }
+    }
+
+    if (roughFieldList.empty() && detailedFieldList.empty()) {
+        // Nothing to display, so clean up and return early.
+        simgear::StateAttributeFactory::instance()->setCloudVoxelImage(detailedVoxelData, voxelShadeData);
+        SG_LOG(SG_GENERAL, SG_ALERT, "rebuildField - No cloud data in range");
+        _fieldDirty = false;
+        return;
+    }
+
+    // Now generate the voxelMaps suitable for these bounds.  Note that the voxel map is symmetrical on X
+
+    // The alpha value is use for a Signed Distance Field, and indicates the maximum distance that can be travelled
+    // before hitting something in UV coordinates.  We default to 1 pixel, but have to take into account that our
+    // voxel space isn't a cube.  This makes it more conservative than it needs to be.
+    const float roughSDFMin = 1.0 / (float) std::max(_roughFieldHeight, _roughFieldWidth);
+
+    for (unsigned int k = 0U; k < _roughFieldHeight; ++k) {
+        for (unsigned int j = 0U; j < _roughFieldWidth; ++j) {
+            for (unsigned int i = 0U; i < _roughFieldWidth; ++i) {
+                roughVoxelData->setColor(osg::Vec4f(0.0f,0.0f,0.0f,roughSDFMin), i,j,k);
+            }
+        }
+    }
+
+    const float detailedSDFMin = 1.0 / (float) std::max(_detailedFieldHeight, _detailedFieldWidth);
+
+    for (unsigned int k = 0U; k < _detailedFieldHeight; ++k) {
+        for (unsigned int j = 0U; j < _detailedFieldWidth; ++j) {
+            for (unsigned int i = 0U; i < _detailedFieldWidth; ++i) {
+                detailedVoxelData->setColor(osg::Vec4f(0.0f,0.0f,0.0f,detailedSDFMin), i,j,k);
+            }
+        }
+    }
+
+    SGVec3f clouds[6] = {
+        SGVec3f(float(_detailedFieldWidth * 2 / 8), float(_detailedFieldWidth * 2 / 8), 24),
+        SGVec3f(float(_detailedFieldWidth * 6 / 8), float(_detailedFieldWidth * 2 / 8), 24),
+        SGVec3f(float(_detailedFieldWidth * 2 / 8), float(_detailedFieldWidth * 6 / 8), 24),
+        SGVec3f(float(_detailedFieldWidth * 6 / 8), float(_detailedFieldWidth * 6 / 8), 24),
+        SGVec3f(float(_detailedFieldWidth * 4 / 8), float(_detailedFieldWidth * 4 / 8), 10),
+        SGVec3f(float(_detailedFieldWidth * 4 / 8), float(_detailedFieldWidth * 4 / 8), 50)
+    };
+
+    float cloudHeight = fgGetDouble("/sim/rendering/hdr/clouds/debug/height", 6.0) * 0.5;
+    float cloudWidth = fgGetDouble("/sim/rendering/hdr/clouds/debug/width", 6.0) * 0.5;
+    float cloudBottomType = fgGetDouble("/sim/rendering/hdr/clouds/debug/bottom-type", 1.0);
+    float cloudTopType = fgGetDouble("/sim/rendering/hdr/clouds/debug/bottom-type", 1.0);
+    float cloudDensity = fgGetDouble("/sim/rendering/hdr/clouds/debug/density", 1.0);
+    float erosion = fgGetDouble("/sim/rendering/hdr/clouds/debug/erosion", 0.0);
+
+    mt seed;
+    mt_init(&seed, 123);
+
+    for (unsigned int j = 0; j < _detailedFieldWidth; ++j) {
+        for (unsigned int i = 0; i < _detailedFieldWidth; ++i) {
+            for (unsigned int k = 0; k < _detailedFieldHeight; ++k) {
+                for (SGVec3f cloudCentre : clouds) {
+                    SGVec3f p = SGVec3f(i,j,k) - cloudCentre;
+                    p.z() = p.z() * cloudWidth / cloudHeight;
+
+                    float erode = erosion * float(mt_rand(&seed));
+                    float dist = length(p);
+                    float depth = p.z() / cloudHeight;
+                    float cloudType = depth < -0.5 ? cloudBottomType : cloudTopType;
+
+                    // Erode randomly by making the distance greater than calculated and therefore perhaps outside of the spheriod
+                    if (dist + erode < cloudWidth) {
+                        float cloudDimension = 1.0 - (dist / std::max(cloudHeight, cloudWidth));
+                        detailedVoxelData->setColor(osg::Vec4f(cloudDimension,cloudType,cloudDensity,-roughSDFMin), i,j,k);
+                    }
+                }
+            }
+        }
+    }
+
+    // Now build the shade image.  The R channel is the summed density towards the Sun.  The G channel the summed vertical density.
+    // We just do a single image covering both voxel spaces.
+    osg::ref_ptr<osg::Image> shadeVoxelData = new osg::Image();
+    shadeVoxelData->allocateImage(_detailedFieldWidth, _detailedFieldWidth, _detailedFieldHeight, GL_RGB, GL_FLOAT);
+
+    // Get the Sun direction and transform into the Z-up X-north coordinates
+    auto l = globals->get_subsystem<FGLight>();
+    const osg::Vec4f sunDirection(l->sun_vec()[0], l->sun_vec()[1], l->sun_vec()[2], 0.0);
+    const SGGeod cameraPosGeod = globals->get_current_view()->getPosition();
+    const osg::Matrixf cameraZUp = osg::Matrix::inverse(makeZUpFrameRelative(cameraPosGeod));
+    const osg::Vec4f s = cameraZUp.postMult(sunDirection);
+    osg::Vec3f sunDirZUp(s.x(), s.y(), s.z());
+    sunDirZUp.normalize();
+
+    for (unsigned int j = 0; j < _detailedFieldWidth; ++j) {
+        for (unsigned int i = 0; i < _detailedFieldWidth; ++i) {
+            for (unsigned int k = 0; k < _detailedFieldHeight; ++k) {
+                const osg::Vec3f start(i,j,k);
+                float d = 1.0;
+                float sunDensity = 0.0;
+
+                osg::Vec3f p = start + sunDirZUp * d;
+                while (p.x() > 0.0 && p.x() < (float) i && 
+                       p.y() > 0.0 && p.y() < (float) j && 
+                       p.z() > 0.0 && p.z() < (float) k    ) {
+                    sunDensity += detailedVoxelData->getColor(p).z();
+                    d += 1.0;
+
+                    p = start + sunDirZUp * d;
+                }
+
+                d = 1.0;
+                float verticalDensity = 0.0;
+
+                p = start + osg::Vec3f(0.0,0.0,1.0f) * d;
+                while (p.x() > 0.0 && p.x() < (float) i && 
+                       p.y() > 0.0 && p.y() < (float) j && 
+                       p.z() > 0.0 && p.z() < (float) k    ) {
+                    verticalDensity += detailedVoxelData->getColor(p).z();
+                    d += 1.0;
+                    p = start + osg::Vec3f(0.0,0.0,1.0f) * d;
+                }
+
+                if (sunDensity > 1.0) sunDensity = 1.0;
+                if (verticalDensity > 1.0) verticalDensity = 1.0;
+                shadeVoxelData->setColor(osg::Vec4f(sunDensity, verticalDensity, 0.0f, 0.0f), i, j, k);
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    simgear::StateAttributeFactory::instance()->setCloudVoxelImage(detailedVoxelData, shadeVoxelData);
+    _fieldDirty = false;
+}
