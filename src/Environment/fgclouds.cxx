@@ -16,6 +16,7 @@
 #include <osg/Image>
 
 #include <simgear/constants.h>
+#include <simgear/math/sg_geodesy.hxx>
 #include <simgear/sound/soundmgr.hxx>
 #include <simgear/scene/sky/newcloud.hxx>
 #include <simgear/scene/sky/sky.hxx>
@@ -574,63 +575,68 @@ void FGClouds::rebuildField() {
     // Now build the shade image.  The R channel is the summed density towards the Sun.  The G channel the summed vertical density.
     // We just do a single image covering both voxel spaces.
     osg::ref_ptr<osg::Image> shadeVoxelData = new osg::Image();
-    shadeVoxelData->allocateImage(_detailedFieldWidth, _detailedFieldWidth, _detailedFieldHeight, GL_RGB, GL_FLOAT);
+    shadeVoxelData->allocateImage(_detailedFieldWidth, _detailedFieldWidth, _detailedFieldHeight, GL_RGBA, GL_FLOAT);
 
     // Get the Sun direction and transform into the Z-up X-north coordinates
     auto l = globals->get_subsystem<FGLight>();
-    const osg::Vec4f sunDirection(l->sun_vec()[0], l->sun_vec()[1], l->sun_vec()[2], 0.0);
-    const SGGeod cameraPosGeod = globals->get_current_view()->getPosition();
-    const osg::Matrixf cameraZUp = osg::Matrix::inverse(makeZUpFrameRelative(cameraPosGeod));
-    const osg::Vec4f s = cameraZUp.postMult(sunDirection);
-    osg::Vec3f sunDirZUp(s.x(), s.y(), s.z());
-    sunDirZUp.normalize();
+    const osg::Vec4f sunDirection(l->sun_vec_inv()[0], l->sun_vec_inv()[1], l->sun_vec_inv()[2], 0.0);
 
-    for (unsigned int j = 0; j < _detailedFieldWidth; ++j) {
+    const SGGeod cameraPosGeod = globals->get_current_view()->getPosition();
+    const osg::Matrixf cameraZUp = makeZUpFrameRelative(cameraPosGeod);
+    osg::Vec4f s = cameraZUp * (- sunDirection);
+    s.normalize();
+    const osg::Vec3f sunDirZUp(s.x() / _detailedFieldWidth, s.y() / _detailedFieldWidth, s.z() / _detailedFieldHeight);
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Sun Direction Z-Up: " << sunDirZUp.x() << ", " << sunDirZUp.y() << ", " << sunDirZUp.z());
+
+    // Build up the shadow space.  By starting from the top we can make some efficiencies by using previously calculated values
+    // from further up the stack.
+    for (unsigned int k = _detailedFieldHeight - 1; k > 0; --k) {
         for (unsigned int i = 0; i < _detailedFieldWidth; ++i) {
-            for (unsigned int k = 0; k < _detailedFieldHeight; ++k) {
-                const osg::Vec3f start(i,j,k);
-                float d = 1.0;
-                float sunDensity = 0.0;
+            for (unsigned int j = 0; j < _detailedFieldWidth; ++j) {
+                const osg::Vec3f start((float) i / _detailedFieldWidth, (float) j / _detailedFieldWidth, (float) k / _detailedFieldHeight);
+                float d = 1.0f;
+                float sunDensity = 0.0f;
 
                 osg::Vec3f p = start + sunDirZUp * d;
-                while (p.x() > 0.0 && p.x() < (float) i && 
-                       p.y() > 0.0 && p.y() < (float) j && 
-                       p.z() > 0.0 && p.z() < (float) k    ) {
-                    sunDensity += detailedVoxelData->getColor(p).z();
-                    d += 1.0;
+                while (p.x() > 0.0f && p.x() < 1.0f && 
+                       p.y() > 0.0f && p.y() < 1.0f && 
+                       p.z() > 0.0f && p.z() < 1.0f    ) {                        
 
-                    p = start + sunDirZUp * d;
+                    if (p.z() > (float) (k + 1) / _detailedFieldHeight) {
+                        // Use the pre-calculated for the voxel above
+                        sunDensity += shadeVoxelData->getColor(p).r();
+                        break;
+                    } else {
+                        sunDensity += detailedVoxelData->getColor(p).z();
+                        d += 1.0f;
+                        p = start + sunDirZUp * d;
+                    }
                 }
 
                 d = 1.0;
                 float verticalDensity = 0.0;
 
-                p = start + osg::Vec3f(0.0,0.0,1.0f) * d;
-                while (p.x() > 0.0 && p.x() < (float) i && 
-                       p.y() > 0.0 && p.y() < (float) j && 
-                       p.z() > 0.0 && p.z() < (float) k    ) {
-                    verticalDensity += detailedVoxelData->getColor(p).z();
-                    d += 1.0;
-                    p = start + osg::Vec3f(0.0,0.0,1.0f) * d;
+                p = start + osg::Vec3f(0.0, 0.0, 1.0f / _detailedFieldHeight) * d;
+                while (p.x() > 0.0 && p.x() < 1.0 && 
+                       p.y() > 0.0 && p.y() < 1.0 && 
+                       p.z() > 0.0 && p.z() < 1.0    ) {
+
+                    if (p.z() > (float) (k + 1) / _detailedFieldHeight) {
+                        // Use the pre-calculated for the voxel above
+                        verticalDensity += shadeVoxelData->getColor(p).g();
+                        break;
+                    } else {
+                        verticalDensity += detailedVoxelData->getColor(p).z();
+                        d += 1.0;
+                        p = start + osg::Vec3f(0.0,0.0,1.0f / _detailedFieldHeight) * d;
+                    }
                 }
 
-                if (sunDensity > 1.0) sunDensity = 1.0;
-                if (verticalDensity > 1.0) verticalDensity = 1.0;
                 shadeVoxelData->setColor(osg::Vec4f(sunDensity, verticalDensity, 0.0f, 0.0f), i, j, k);
             }
         }
     }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
