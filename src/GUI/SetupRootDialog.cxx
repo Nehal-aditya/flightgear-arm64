@@ -820,7 +820,7 @@ bool SetupRootDialog::locationIsWritable(QString path)
     // we don't use QFileInfo::isWriteable here because of complexity around
     // NTFS ACL checks (needs Qt 6.6 for QNtfsPermissionCheckGuard)
     QFile f(path + "/_check_write");
-    if (!f.open(QIODeviceBase::NewOnly | QIODevice::WriteOnly)) {
+    if (!f.open(QIODevice::NewOnly | QIODevice::WriteOnly)) {
         return false;
     }
     f.remove(); // closes
