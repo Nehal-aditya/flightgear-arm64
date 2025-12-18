@@ -26,12 +26,15 @@
 #include <simgear/structure/commands.hxx>
 #include <simgear/props/props_io.hxx>
 
+#include <fast_marching_method.hpp>
 #include <Main/globals.hxx>
 #include <Main/util.hxx>
 #include <Viewer/renderer.hxx>
 #include <Viewer/view.hxx>
 #include <Airports/airport.hxx>
 #include <Time/light.hxx>
+
+namespace fmm = thinks::fast_marching_method;
 
 // RNG seed to ensure cloud synchronization across multi-process
 // deployments
@@ -75,7 +78,7 @@ void FGClouds::Init(void)
     _roughFieldVoxelSize    = cloudsProp->getIntValue("rough-voxel-size-m", 800);
     _detailedFieldWidth     = cloudsProp->getIntValue("detailed-voxel-field-width", 128);
     _detailedFieldHeight    = cloudsProp->getIntValue("detailed-voxel-field-height", 128);
-    _detailedFieldVoxelSize = cloudsProp->getIntValue("detailed-voxel-size-m", 200);
+    _detailedFieldVoxelSize = cloudsProp->getIntValue("detailed-voxel-size-m", 200);  
 
     _fieldDirty = true;
     rebuildField();
@@ -473,7 +476,7 @@ void FGClouds::rebuildField() {
     detailedVoxelData->allocateImage(_detailedFieldWidth, _detailedFieldWidth, _detailedFieldHeight, GL_RGBA, GL_FLOAT);
 
     osg::ref_ptr<osg::Image> voxelShadeData = new osg::Image();
-    voxelShadeData->allocateImage(_roughFieldWidth, _roughFieldWidth, _roughFieldWidth, GL_RGB, GL_FLOAT);
+    voxelShadeData->allocateImage(_detailedFieldWidth, _detailedFieldWidth, _detailedFieldHeight, GL_RGBA, GL_FLOAT);
 
     std::vector<CloudPlacement> roughFieldList;
     std::vector<CloudPlacement> detailedFieldList;
@@ -512,21 +515,21 @@ void FGClouds::rebuildField() {
     // before hitting something in UV coordinates.  We default to 1 pixel, but have to take into account that our
     // voxel space isn't a cube.  This makes it more conservative than it needs to be.
     const float roughSDFMin = 1.0 / (float) std::max(_roughFieldHeight, _roughFieldWidth);
+    const float detailedSDFMin = 1.0 / (float) std::max(_detailedFieldHeight, _detailedFieldWidth);
 
-    for (unsigned int k = 0U; k < _roughFieldHeight; ++k) {
-        for (unsigned int j = 0U; j < _roughFieldWidth; ++j) {
-            for (unsigned int i = 0U; i < _roughFieldWidth; ++i) {
+    for (size_t k = 0U; k < _roughFieldHeight; ++k) {
+        for (size_t j = 0U; j < _roughFieldWidth; ++j) {
+            for (size_t i = 0U; i < _roughFieldWidth; ++i) {
                 roughVoxelData->setColor(osg::Vec4f(0.0f,0.0f,0.0f,roughSDFMin), i,j,k);
             }
         }
     }
 
-    const float detailedSDFMin = 1.0 / (float) std::max(_detailedFieldHeight, _detailedFieldWidth);
-
-    for (unsigned int k = 0U; k < _detailedFieldHeight; ++k) {
-        for (unsigned int j = 0U; j < _detailedFieldWidth; ++j) {
-            for (unsigned int i = 0U; i < _detailedFieldWidth; ++i) {
+    for (size_t k = 0U; k < _detailedFieldHeight; ++k) {
+        for (size_t j = 0U; j < _detailedFieldWidth; ++j) {
+            for (size_t i = 0U; i < _detailedFieldWidth; ++i) {
                 detailedVoxelData->setColor(osg::Vec4f(0.0f,0.0f,0.0f,detailedSDFMin), i,j,k);
+                voxelShadeData->setColor(osg::Vec4f(0.0f,0.0f,0.0f,0.0f), i,j,k);
             }
         }
     }
@@ -547,12 +550,18 @@ void FGClouds::rebuildField() {
     float cloudDensity = fgGetDouble("/sim/rendering/hdr/clouds/debug/density", 1.0);
     float erosion = fgGetDouble("/sim/rendering/hdr/clouds/debug/erosion", 0.0);
 
+    vector<std::array<int, 3>> cloudBoundaryIndices;
+    vector<float> cloudBoundaryDistances;
+
+
     mt seed;
     mt_init(&seed, 123);
 
-    for (unsigned int j = 0; j < _detailedFieldWidth; ++j) {
-        for (unsigned int i = 0; i < _detailedFieldWidth; ++i) {
-            for (unsigned int k = 0; k < _detailedFieldHeight; ++k) {
+    for (size_t j = 0; j < _detailedFieldWidth; ++j) {
+        for (size_t i = 0; i < _detailedFieldWidth; ++i) {
+            for (size_t k = 0; k < _detailedFieldHeight; ++k) {
+
+                bool cloud = false;
                 for (SGVec3f cloudCentre : clouds) {
                     SGVec3f p = SGVec3f(i,j,k) - cloudCentre;
                     p.z() = p.z() * cloudWidth / cloudHeight;
@@ -565,17 +574,52 @@ void FGClouds::rebuildField() {
                     // Erode randomly by making the distance greater than calculated and therefore perhaps outside of the spheriod
                     if (dist + erode < cloudWidth) {
                         float cloudDimension = 1.0 - (dist / std::max(cloudHeight, cloudWidth));
-                        detailedVoxelData->setColor(osg::Vec4f(cloudDimension,cloudType,cloudDensity,-roughSDFMin), i,j,k);
+                        detailedVoxelData->setColor(osg::Vec4f(cloudDimension,cloudType,cloudDensity,-detailedSDFMin), i,j,k);
+                        cloud = true;
                     }
+                }
+
+                if (cloud) {
+                    cloudBoundaryIndices.push_back(std::array<int, 3>{{(int)i, (int)j,(int)k}});
+                    //cloudBoundaryDistances.push_back(- detailedVoxelData->getColor(i,j,k).r());
+                    cloudBoundaryDistances.push_back(0.0f);
                 }
             }
         }
     }
 
+    auto gridSize = std::array<size_t, 3>{{_detailedFieldWidth, _detailedFieldWidth, _detailedFieldHeight}};
+    auto gridSpacing = std::array<float, 3>{{1.f/_detailedFieldWidth, 1.f/_detailedFieldWidth, 1.f/_detailedFieldHeight}};
+    auto uniformSpeed = 1.f;
+
+    SG_LOG(SG_GENERAL, SG_ALERT, "SDF calculation started.");
+
+    auto sdf = fmm::SignedArrivalTime(
+        gridSize,
+        cloudBoundaryIndices,
+        cloudBoundaryDistances,
+        fmm::UniformSpeedEikonalSolver<float, 3>(gridSpacing, uniformSpeed));
+
+        
+    // The SDF is now calculated, so write it back to the voxel data.
+    std::size_t idx = 0;
+    for (std::size_t k = 0; k < _detailedFieldHeight; ++k) {
+        for (std::size_t j = 0; j < _detailedFieldWidth; ++j) {
+            for (std::size_t i = 0; i < _detailedFieldWidth; ++i) {
+                float distance = sdf[idx++];
+                osg::Vec4f c = detailedVoxelData->getColor(i,j,k);
+                if (c[3] > 0.0) {
+                    c[3] = distance;
+                    detailedVoxelData->setColor(c, i,j,k);
+                }
+            }
+        }
+    }  
+
+    SG_LOG(SG_GENERAL, SG_ALERT, "SDF calculation complete.");
+
     // Now build the shade image.  The R channel is the summed density towards the Sun.  The G channel the summed vertical density.
     // We just do a single image covering both voxel spaces.
-    osg::ref_ptr<osg::Image> shadeVoxelData = new osg::Image();
-    shadeVoxelData->allocateImage(_detailedFieldWidth, _detailedFieldWidth, _detailedFieldHeight, GL_RGBA, GL_FLOAT);
 
     // Get the Sun direction and transform into the Z-up X-north coordinates
     auto l = globals->get_subsystem<FGLight>();
@@ -583,64 +627,73 @@ void FGClouds::rebuildField() {
 
     const SGGeod cameraPosGeod = globals->get_current_view()->getPosition();
     const osg::Matrixf cameraZUp = makeZUpFrameRelative(cameraPosGeod);
-    osg::Vec4f s = cameraZUp * (- sunDirection);
+    osg::Vec4f s = cameraZUp * (-sunDirection);
     s.normalize();
     const osg::Vec3f sunDirZUp(s.x() / _detailedFieldWidth, s.y() / _detailedFieldWidth, s.z() / _detailedFieldHeight);
+    //const osg::Vec3f sunDirZUp(0.0f, 0.0f, 1.0f / _detailedFieldHeight);
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Sun Direction Z-Up: " << sunDirZUp.x() << ", " << sunDirZUp.y() << ", " << sunDirZUp.z());
+    SG_LOG(SG_GENERAL, SG_ALERT, "Sun Direction Z-Up: " << sunDirZUp.x() << ", " << sunDirZUp.y() << ", " << sunDirZUp.z());
 
-    // Build up the shadow space.  By starting from the top we can make some efficiencies by using previously calculated values
-    // from further up the stack.
-    for (unsigned int k = _detailedFieldHeight - 1; k > 0; --k) {
-        for (unsigned int i = 0; i < _detailedFieldWidth; ++i) {
-            for (unsigned int j = 0; j < _detailedFieldWidth; ++j) {
-                const osg::Vec3f start((float) i / _detailedFieldWidth, (float) j / _detailedFieldWidth, (float) k / _detailedFieldHeight);
+    // Build up the shadow space. 
+
+    // Note that the height value uses a reverse iteration, and due to using unsigned int we have to do something slightly odd for the limit check.
+    // By starting from the top we can make some efficiencies by using previously calculated values from further up the voxel space.
+    for (size_t k = _detailedFieldHeight-1; k < _detailedFieldHeight; --k) {
+        for (size_t j = 0; j < 128U; ++j) {
+            for (size_t i = 0; i < 128U; ++i) {
+                const osg::Vec3f start( (float) i / (float) _detailedFieldWidth, (float) j / (float) _detailedFieldWidth, (float) k / (float) _detailedFieldHeight);
                 float d = 1.0f;
                 float sunDensity = 0.0f;
 
                 osg::Vec3f p = start + sunDirZUp * d;
-                while (p.x() > 0.0f && p.x() < 1.0f && 
-                       p.y() > 0.0f && p.y() < 1.0f && 
-                       p.z() > 0.0f && p.z() < 1.0f    ) {                        
+                //SG_LOG(SG_GENERAL, SG_ALERT, "p " << p.x() << " " << p.y() <<  " " << p.z());
+                while (sunDensity < 0.99f &&
+                       p.x() >= 0.0f && p.x() < 1.0f && 
+                       p.y() >= 0.0f && p.y() < 1.0f && 
+                       p.z() >= 0.0f && p.z() < 1.0f    ) {                        
 
-                    if (p.z() > (float) (k + 1) / _detailedFieldHeight) {
-                        // Use the pre-calculated for the voxel above
-                        sunDensity += shadeVoxelData->getColor(p).r();
+                    if (p.z() > (float) (k + 1U) / (float) _detailedFieldHeight) {
+                        // Use the pre-calculated for the voxel above then stop
+                        sunDensity += voxelShadeData->getColor(p).r();
                         break;
-                    } else {
-                        sunDensity += detailedVoxelData->getColor(p).z();
-                        d += 1.0f;
-                        p = start + sunDirZUp * d;
                     }
+
+                    sunDensity += detailedVoxelData->getColor(p).z();
+                    d += 1.0f;
+                    p = start + sunDirZUp * d;
                 }
 
                 d = 1.0;
-                float verticalDensity = 0.0;
+                float verticalDensity = 0.0f;
 
-                p = start + osg::Vec3f(0.0, 0.0, 1.0f / _detailedFieldHeight) * d;
-                while (p.x() > 0.0 && p.x() < 1.0 && 
-                       p.y() > 0.0 && p.y() < 1.0 && 
-                       p.z() > 0.0 && p.z() < 1.0    ) {
+                p = start + osg::Vec3f(0.0f, 0.0f, 1.0f / (float) _detailedFieldHeight);
+                while (verticalDensity < 0.99f &&
+                       p.x() >= 0.0f && p.x() < 1.0f && 
+                       p.y() >= 0.0f && p.y() < 1.0f && 
+                       p.z() >= 0.0f && p.z() < 1.0f    ) {
 
-                    if (p.z() > (float) (k + 1) / _detailedFieldHeight) {
+                    if (p.z() > (float) (k + 1U) / (float) _detailedFieldHeight) {
                         // Use the pre-calculated for the voxel above
-                        verticalDensity += shadeVoxelData->getColor(p).g();
+                        verticalDensity += voxelShadeData->getColor(p).g();
                         break;
-                    } else {
-                        verticalDensity += detailedVoxelData->getColor(p).z();
-                        d += 1.0;
-                        p = start + osg::Vec3f(0.0,0.0,1.0f / _detailedFieldHeight) * d;
                     }
+
+                    verticalDensity += detailedVoxelData->getColor(p).z();
+                    d += 1.0;
+                    p = start + osg::Vec3f(0.0,0.0, 1.0f / (float) _detailedFieldHeight) * d;
                 }
 
-                shadeVoxelData->setColor(osg::Vec4f(sunDensity, verticalDensity, 0.0f, 0.0f), i, j, k);
+                osg::Vec4f c = osg::Vec4f(std::clamp(sunDensity, 0.0f, 1.0f), std::clamp(verticalDensity, 0.0f, 1.0f), 0.0f, 0.0f);
+                //std::cout << c.r();
+                voxelShadeData->setColor(c, i, j, k);
             }
+
+            //std::cout << "\n";
         }
+
+        //std::cout << "\n\n\n";
     }
 
-
-
-
-    simgear::StateAttributeFactory::instance()->setCloudVoxelImage(detailedVoxelData, shadeVoxelData);
+    simgear::StateAttributeFactory::instance()->setCloudVoxelImage(detailedVoxelData, voxelShadeData);
     _fieldDirty = false;
 }

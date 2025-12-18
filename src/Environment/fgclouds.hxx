@@ -41,12 +41,12 @@ private:
     osg::ref_ptr<osg::Image> _detailedVoxelData;
     osg::ref_ptr<osg::Image> _noiseData;
 
-    unsigned int _roughFieldWidth;
-    unsigned int _roughFieldHeight;
-    unsigned int _roughFieldVoxelSize;
-    unsigned int _detailedFieldWidth;
-    unsigned int _detailedFieldHeight;
-    unsigned int _detailedFieldVoxelSize;
+    size_t _roughFieldWidth;
+    size_t _roughFieldHeight;
+    size_t _roughFieldVoxelSize;
+    size_t _detailedFieldWidth;
+    size_t _detailedFieldHeight;
+    size_t _detailedFieldVoxelSize;
 
     CloudPlacementMap _cloudPlacementMap;
 
