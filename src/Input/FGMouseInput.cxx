@@ -64,10 +64,9 @@ void ActivePickCallbacks::init(int button, const osgGA::GUIEventAdapter* ea)
         return;
     }
 
-    SGSceneryPicks::const_iterator i;
-    for (i = pickList.begin(); i != pickList.end(); ++i) {
-        if (i->callback->buttonPressed(button, *ea, i->info)) {
-            (*this)[button].push_back(i->callback);
+    for (const SGSceneryPick& pick : pickList) {
+        if (pick.callback->buttonPressed(button, *ea, pick.info)) {
+            (*this)[button].push_back(pick.callback);
             return;
         }
     }
@@ -209,10 +208,9 @@ public:
         SGPickCallback::Priority priority = SGPickCallback::PriorityScenery;
         SGSceneryPicks pickList = globals->get_renderer()->pick(windowPos);
 
-        SGSceneryPicks::const_iterator i;
-        for (i = pickList.begin(); i != pickList.end(); ++i) {
-            bool done = i->callback->hover(windowPos, i->info);
-            std::string curName(i->callback->getCursor());
+        for (const SGSceneryPick& pick : pickList) {
+            bool done = pick.callback->hover(windowPos, pick.info);
+            std::string curName(pick.callback->getCursor());
             if (!curName.empty()) {
                 explicitCursor = true;
                 cur = FGMouseCursor::cursorFromString(curName.c_str());
@@ -220,8 +218,8 @@ public:
 
             // if the callback is of higher priority (lower enum index),
             // record that.
-            if (i->callback->getPriority() < priority) {
-                priority = i->callback->getPriority();
+            if (pick.callback->getPriority() < priority) {
+                priority = pick.callback->getPriority();
             }
 
             if (done) {
@@ -232,9 +230,9 @@ public:
 
         // Check if any pick from the previous iteration has disappeared. If so
         // notify the callback that the mouse has left its element.
-        for (i = _previous_picks.begin(); i != _previous_picks.end(); ++i) {
-            if (!getPick(pickList, i->callback))
-                i->callback->mouseLeave(windowPos);
+        for (const SGSceneryPick& pick : _previous_picks) {
+            if (!getPick(pickList, pick.callback))
+                pick.callback->mouseLeave(windowPos);
         }
         _previous_picks = pickList;
 
