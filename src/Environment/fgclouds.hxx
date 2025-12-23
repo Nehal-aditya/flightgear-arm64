@@ -12,6 +12,8 @@
 #include <vector>
 #include <map>
 
+#include <simgear/scene/util/SGReaderWriterOptions.hxx>
+
 using std::vector;
 
 // forward decls
@@ -27,8 +29,8 @@ private:
     typedef std::unordered_map<int, CloudPlacement> CloudPlacementMap;
 
     double buildCloud(SGPropertyNode* cloud_def_root, SGPropertyNode* box_def_root,
-                      const std::string& name, double grid_z_rand, SGCloudField* layer);
-    void buildLayer(int iLayer, const std::string& name, double coverage);
+                      const std::string& name, double altM, double grid_z_rand, SGCloudField* layer);
+    void buildLayer(int iLayer, const std::string& name, double coverage, double altM);
 
     void buildCloudLayers(void);
 
@@ -56,8 +58,8 @@ private:
     
     // Whether the cloud field requires regeneration.
     bool _fieldDirty;
-
-    void copySubImage(const osg::Image* srcImage, int src_s, int src_t, int width, int height, osg::Image* destImage, int dest_s, int dest_t);
+    
+    osg::ref_ptr<simgear::SGReaderWriterOptions> _options;
 
     bool add3DCloud(const SGPropertyNode *arg, SGPropertyNode * root);
     bool delete3DCloud(const SGPropertyNode *arg, SGPropertyNode * root);
@@ -80,6 +82,10 @@ private:
     bool repositionCloud(int index, float lon, float lat, float alt, float x, float y);
 
     void rebuildField(void);
+
+    // Utility functions
+    float getDetailedFieldRadiusM() { return (float) 0.5f * _detailedFieldWidth * _detailedFieldVoxelSize; }
+    float getRoughFieldRadiusM()    { return (float) 0.5f * _roughFieldWidth * _roughFieldVoxelSize; }
 
 public:
     FGClouds();

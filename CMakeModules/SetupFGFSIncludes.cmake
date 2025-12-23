@@ -8,7 +8,4 @@ function(setup_fgfs_includes target)
     target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/3rdparty/cjson)
     # only actually needed for httpd.cxx
     target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/3rdparty/mongoose)
-
-    # only actually needed for fgclouds.cxx
-    target_include_directories(${target} PRIVATE ${PROJECT_SOURCE_DIR}/3rdparty/thinks_fmm)
 endfunction()
