@@ -459,7 +459,7 @@ void FGClouds::rebuildField() {
 
     SGGeodesy::SGGeodToCart(geod, _centerCart);    
     _cloudPosMatrix = makeZUpFrameRelative(geod);
-    SG_LOG(SG_GENERAL, SG_ALERT, "Rebuilding field at " << geod.getLatitudeDeg() << " " << geod.getLongitudeDeg());
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Rebuilding field at " << geod.getLatitudeDeg() << " " << geod.getLongitudeDeg());
 
     fgSetDouble("/sim/rendering/hdr/clouds/cloud-center-x",  _centerCart.x());
     fgSetDouble("/sim/rendering/hdr/clouds/cloud-center-y",  _centerCart.y());
@@ -468,7 +468,7 @@ void FGClouds::rebuildField() {
     if (_cloudPlacementMap.empty()) {
         // Nothing to generate.
         //simgear::StateAttributeFactory::instance()->setCloudVoxelImage(roughVoxelData);
-        SG_LOG(SG_GENERAL, SG_ALERT, "rebuildField - No cloud data to build");
+        SG_LOG(SG_GENERAL, SG_DEBUG, "rebuildField - No cloud data to build");
         _fieldDirty = false;
         return;
     }
@@ -497,13 +497,13 @@ void FGClouds::rebuildField() {
             p.y() > -getRoughFieldRadiusM() && p.y() < getRoughFieldRadiusM()) {
             // Local coordinate cloud placement
 
-            //SG_LOG(SG_GENERAL, SG_ALERT, "Adding rough cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
+            //SG_LOG(SG_GENERAL, SG_DEBUG, "Adding rough cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
             CloudPlacement localCloud = std::make_tuple(c, p);
             roughFieldList.push_back(localCloud);
 
             if (p.x() > -getDetailedFieldRadiusM() && p.x() < getDetailedFieldRadiusM() && 
                 p.y() > -getDetailedFieldRadiusM() && p.y() < getDetailedFieldRadiusM()) {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Adding detailed cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
+                SG_LOG(SG_GENERAL, SG_DEBUG, "Adding detailed cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
                 detailedFieldList.push_back(localCloud);
             }
         }
@@ -512,7 +512,7 @@ void FGClouds::rebuildField() {
     if (detailedFieldList.empty()) {
         // Nothing to display, so clean up and return early.
         simgear::StateAttributeFactory::instance()->setCloudVoxelImage(detailedVoxelData, voxelShadeData);
-        SG_LOG(SG_GENERAL, SG_ALERT, "rebuildField - No cloud data in range");
+        SG_LOG(SG_GENERAL, SG_DEBUG, "rebuildField - No cloud data in range");
         _fieldDirty = false;
         return;
     }
@@ -590,7 +590,6 @@ void FGClouds::rebuildField() {
 
                 if (detailedVoxelData->getColor(i,j,k).b() > 0.0f) {
                     cloudBoundaryIndices.push_back(std::array<int, 3>{{(int)i, (int)j,(int)k}});
-                    //cloudBoundaryDistances.push_back(- detailedVoxelData->getColor(i,j,k).r());
                     cloudBoundaryDistances.push_back(0.0f);
                 }
             }
@@ -604,10 +603,10 @@ void FGClouds::rebuildField() {
     }
 
     auto gridSize = std::array<size_t, 3>{{_detailedFieldWidth, _detailedFieldWidth, _detailedFieldHeight}};
-    auto gridSpacing = std::array<float, 3>{{1.f/_detailedFieldWidth, 1.f/_detailedFieldWidth, 1.f/_detailedFieldHeight}};
-    auto uniformSpeed = 1.f;
+    auto gridSpacing = std::array<float, 3>{{1.0f, 1.0f, 1.0f}};
+    auto uniformSpeed = float(_detailedFieldWidth);
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "SDF calculation started.");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "SDF calculation started.");
 
     auto sdf = fmm::SignedArrivalTime(
         gridSize,
@@ -631,7 +630,7 @@ void FGClouds::rebuildField() {
         }
     }  
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "SDF calculation complete.");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "SDF calculation complete.");
 
     // Now build the shade image.  The R channel is the summed density towards the Sun.  The G channel the summed vertical density.
     // We just do a single image covering both voxel spaces.
@@ -647,7 +646,7 @@ void FGClouds::rebuildField() {
     const osg::Vec3f sunDirZUp(s.x() / _detailedFieldWidth, s.y() / _detailedFieldWidth, s.z() / _detailedFieldHeight);
     //const osg::Vec3f sunDirZUp(0.0f, 0.0f, 1.0f / _detailedFieldHeight);
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "Sun Direction Z-Up: " << sunDirZUp.x() << ", " << sunDirZUp.y() << ", " << sunDirZUp.z());
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Sun Direction Z-Up: " << sunDirZUp.x() << ", " << sunDirZUp.y() << ", " << sunDirZUp.z());
 
     // Build up the shadow space. 
 
