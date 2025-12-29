@@ -1,14 +1,27 @@
 {
-    "version": 9,
+    "version": 6,
     "configurePresets": [
         {
             "name": "configure-base",
-            "hidden": true,
+            "hidden": false,
             "generator": "Ninja Multi-Config",
             "cacheVariables": {
-                "ENABLE_PUICOMPAT":"ON"
+                "ENABLE_PUICOMPAT": "ON",
+                "FG_DATA_DIR": "/home/stuart/FlightGear/stuart131/fgdata" 
             },
-            "installDir":"${sourceParentDir}/dist",
+            "installDir": "${sourceParentDir}/dist",
+            "binaryDir": "${sourceParentDir}/fgbuild"
+        },
+        {
+            "name": "configure-debug",
+            "hidden": false,
+            "generator": "Ninja Multi-Config",
+            "cacheVariables": {
+                "ENABLE_PUICOMPAT": "ON",
+                "CMAKE_DEBUG_POSTFIX": "d",
+                "FG_DATA_DIR": "/home/stuart/FlightGear/stuart131/fgdata" 
+            },
+            "installDir": "${sourceParentDir}/dist",
             "binaryDir": "${sourceParentDir}/fgbuild"
         }
     ],
@@ -16,14 +29,14 @@
         {
             "name": "build-debug",
             "displayName": "Debug",
-            "configurePreset": "configure-base",
-            "configuration":"Debug"
+            "configurePreset": "configure-debug",
+            "configuration": "Debug"
         },
         {
             "name": "build-release",
             "displayName": "Release (with symbols)",
             "configurePreset": "configure-base",
-            "configuration":"RelWithDebInfo"
+            "configuration": "RelWithDebInfo"
         }
     ],
     "testPresets": []

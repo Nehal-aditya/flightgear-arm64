@@ -43,6 +43,7 @@ private:
     osg::ref_ptr<osg::Image> _detailedVoxelData;
     osg::ref_ptr<osg::Image> _noiseData;
 
+    size_t _roughVoxelSizeFactor;
     size_t _roughFieldWidth;
     size_t _roughFieldHeight;
     size_t _roughFieldVoxelSize;
@@ -86,6 +87,7 @@ private:
     // Utility functions
     float getDetailedFieldRadiusM() { return (float) 0.5f * _detailedFieldWidth * _detailedFieldVoxelSize; }
     float getRoughFieldRadiusM()    { return (float) 0.5f * _roughFieldWidth * _roughFieldVoxelSize; }
+    void generateSDF(osg::ref_ptr<osg::Image>);
 
 public:
     FGClouds();

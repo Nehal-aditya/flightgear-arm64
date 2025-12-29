@@ -73,14 +73,27 @@ void FGClouds::Init(void)
     globals->get_commands()->addCommand("move-cloud", this, &FGClouds::move3DCloud);
 
     // Build and assign the voxel fields
-    auto cloudsProp = globals->get_props()->getChild("/sim/rendering/hdr/clouds/");
+    auto cloudsProp = globals->get_props()->getNode("/sim/rendering/hdr/clouds/");
 
-    _roughFieldWidth        = cloudsProp->getIntValue("rough-voxel-field-width", 128);
-    _roughFieldHeight       = cloudsProp->getIntValue("rough-voxel-field-height", 128);
-    _roughFieldVoxelSize    = cloudsProp->getIntValue("rough-voxel-size-m", 800);
-    _detailedFieldWidth     = cloudsProp->getIntValue("detailed-voxel-field-width", 128);
+    _detailedFieldWidth     = cloudsProp->getIntValue("detailed-voxel-field-width", 512);
     _detailedFieldHeight    = cloudsProp->getIntValue("detailed-voxel-field-height", 128);
     _detailedFieldVoxelSize = cloudsProp->getIntValue("detailed-voxel-size-m", 200);  
+    
+    // This is the size factor for the rough field.  Note that as this is in each dimension
+    // the occupany is 1/8th
+    _roughVoxelSizeFactor = cloudsProp->getIntValue("rough-voxel-size-factor", 2);
+    _roughFieldVoxelSize = _detailedFieldVoxelSize * _roughVoxelSizeFactor;
+
+    // The rough field width is a factor of the detailed field width
+    _roughFieldWidth  = _detailedFieldWidth * cloudsProp->getIntValue("rough-voxel-field-factor", 2);
+
+    // As the atmosphere is thin, we assume the detailed field is sufficiently
+    // high to include the entire troposphere, so therefore the rough field height is
+    // calculated automatically.
+    _roughFieldHeight = _detailedFieldHeight / _roughVoxelSizeFactor;
+
+    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "FGClouds Init.  Detailed Voxel space: " << _detailedFieldWidth << "x" << _detailedFieldWidth << "x" << _detailedFieldHeight << " voxel size: " << _detailedFieldVoxelSize);
+    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "FGClouds Init.  Rough Voxel space: " << _roughFieldWidth << "x" << _roughFieldWidth << "x" << _roughFieldHeight << " voxel size: " << _roughFieldVoxelSize);
 
     _fieldDirty = true;
     rebuildField();
@@ -253,6 +266,10 @@ void FGClouds::buildLayer(int iLayer, const string& name, double coverage, doubl
 }
 
 void FGClouds::buildCloudLayers(void) {
+
+    // Clear out the existing clouds;
+    _cloudPlacementMap.clear();
+
     SGPropertyNode* metar_root = fgGetNode("/environment", true);
 
     //double wind_speed_kt	 = metar_root->getDoubleValue("wind-speed-kt");
@@ -459,24 +476,18 @@ void FGClouds::rebuildField() {
 
     SGGeodesy::SGGeodToCart(geod, _centerCart);    
     _cloudPosMatrix = makeZUpFrameRelative(geod);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Rebuilding field at " << geod.getLatitudeDeg() << " " << geod.getLongitudeDeg());
+    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Rebuilding field at " << geod.getLatitudeDeg() << " " << geod.getLongitudeDeg() << " " << geod.getElevationFt());
 
-    fgSetDouble("/sim/rendering/hdr/clouds/cloud-center-x",  _centerCart.x());
-    fgSetDouble("/sim/rendering/hdr/clouds/cloud-center-y",  _centerCart.y());
-    fgSetDouble("/sim/rendering/hdr/clouds/cloud-center-z",  _centerCart.z());
-
-    if (_cloudPlacementMap.empty()) {
-        // Nothing to generate.
-        //simgear::StateAttributeFactory::instance()->setCloudVoxelImage(roughVoxelData);
-        SG_LOG(SG_GENERAL, SG_DEBUG, "rebuildField - No cloud data to build");
-        _fieldDirty = false;
-        return;
-    }
+    fgSetFloat("/sim/rendering/hdr/clouds/cloud-center-x", (float) _centerCart.x());
+    fgSetFloat("/sim/rendering/hdr/clouds/cloud-center-y", (float) _centerCart.y());
+    fgSetFloat("/sim/rendering/hdr/clouds/cloud-center-z", (float) _centerCart.z());
 
     osg::ref_ptr<osg::Image> roughVoxelData = new osg::Image();
+    roughVoxelData->setName("Rough Cloud Voxel Data");
     roughVoxelData->allocateImage(_roughFieldWidth, _roughFieldWidth, _roughFieldHeight, GL_RGBA, GL_FLOAT);
 
     osg::ref_ptr<osg::Image> detailedVoxelData = new osg::Image();
+    detailedVoxelData->setName("Detailed Cloud Voxel Data");
     detailedVoxelData->allocateImage(_detailedFieldWidth, _detailedFieldWidth, _detailedFieldHeight, GL_RGBA, GL_FLOAT);
 
     osg::ref_ptr<osg::Image> voxelShadeData = new osg::Image();
@@ -497,13 +508,13 @@ void FGClouds::rebuildField() {
             p.y() > -getRoughFieldRadiusM() && p.y() < getRoughFieldRadiusM()) {
             // Local coordinate cloud placement
 
-            //SG_LOG(SG_GENERAL, SG_DEBUG, "Adding rough cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
+            SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Adding rough cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
             CloudPlacement localCloud = std::make_tuple(c, p);
             roughFieldList.push_back(localCloud);
 
             if (p.x() > -getDetailedFieldRadiusM() && p.x() < getDetailedFieldRadiusM() && 
                 p.y() > -getDetailedFieldRadiusM() && p.y() < getDetailedFieldRadiusM()) {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "Adding detailed cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
+                SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Adding detailed cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
                 detailedFieldList.push_back(localCloud);
             }
         }
@@ -511,8 +522,8 @@ void FGClouds::rebuildField() {
 
     if (detailedFieldList.empty()) {
         // Nothing to display, so clean up and return early.
-        simgear::StateAttributeFactory::instance()->setCloudVoxelImage(detailedVoxelData, voxelShadeData);
-        SG_LOG(SG_GENERAL, SG_DEBUG, "rebuildField - No cloud data in range");
+        simgear::StateAttributeFactory::instance()->setCloudVoxelImages(detailedVoxelData, roughVoxelData, voxelShadeData);
+        SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "rebuildField - No cloud data in range");
         _fieldDirty = false;
         return;
     }
@@ -543,12 +554,14 @@ void FGClouds::rebuildField() {
         SGNewCloud c = std::get<0>(cl);
         osg::Vec3f p = std::get<1>(cl);
 
-        osg::ref_ptr<osg::Image> cloudVoxels = c.getCloud(_options);
+        osg::ref_ptr<osg::Image> cloudVoxels = c.getDetailedCloud(_options);
+
+        if (cloudVoxels == nullptr) continue;
 
         // Now determine where to place the origin in the voxel space.
-        int x = (int) (p.x() + getDetailedFieldRadiusM()) / (int) _detailedFieldVoxelSize - cloudVoxels->s() / 2;
-        int y = (int) (p.y() + getDetailedFieldRadiusM()) / (int) _detailedFieldVoxelSize - cloudVoxels->t() / 2;
-        int z = (int) (p.z()) / (int) _detailedFieldVoxelSize - cloudVoxels->r() / 2;
+        int x = (int) ((p.x() + getDetailedFieldRadiusM()) / (float) _detailedFieldVoxelSize) - cloudVoxels->s() / 2;
+        int y = (int) ((p.y() + getDetailedFieldRadiusM()) / (float) _detailedFieldVoxelSize) - cloudVoxels->t() / 2;
+        int z = (int) (p.z() / (float) _detailedFieldVoxelSize);// - cloudVoxels->r() / 2;
 
         int source_x = 0;
         int source_y = 0;
@@ -556,6 +569,8 @@ void FGClouds::rebuildField() {
         int w = cloudVoxels->s();
         int d = cloudVoxels->t();
         int h = cloudVoxels->r();
+
+        SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Cloud " << cloudVoxels->getName() << " : " << cloudVoxels->s() << "x" << cloudVoxels->t() << "x" << cloudVoxels->r() << " - " << p.z() << "," << z);
 
         // If this cloud falls outside the edges of the voxel space, then resize the area to be copied appropriately
         if (x < 0) { source_x = w + x; w = w - source_x; x = 0; }
@@ -569,8 +584,11 @@ void FGClouds::rebuildField() {
         for (int k = source_z; k < h; ++k) {
             for (int j = source_y; j < d; ++j) {
                 for (int i = source_x; i < w; ++i) {
-                    if ((i + x) < detailedVoxelData->s() && (j + y) < detailedVoxelData->t() && (k + z) < detailedVoxelData->r()) {
-                        const osg::Vec4f cloudV = cloudVoxels->getColor(i, j, k);
+                    if ((i + x) < 0 || (j + y) < 0 || (k + z) < 0) continue;
+                    if ((i + x) > detailedVoxelData->s() - 1 || (j + y) > detailedVoxelData->t() - 1 || (k + z) > detailedVoxelData->r() - 1) continue;
+
+                    const osg::Vec4f cloudV = cloudVoxels->getColor(i, j, k);
+                    if (cloudV[1] > 0.0f) {
                         const osg::Vec4f currentV = detailedVoxelData->getColor(i + x, j + y, k + z);
                         const osg::Vec4f newV = std::max(cloudV, currentV);
                         detailedVoxelData->setColor(newV, i + x, j + y, k + z);
@@ -579,58 +597,55 @@ void FGClouds::rebuildField() {
             }
         }
     }
+    
+    // Now generate the rough voxel space in a similar manner
+    for (auto cl  : roughFieldList) {
+        SGNewCloud c = std::get<0>(cl);
+        osg::Vec3f p = std::get<1>(cl);
 
-    // Build the SDF from the voxel data.
-    vector<std::array<int, 3>> cloudBoundaryIndices;
-    vector<float> cloudBoundaryDistances;
+        osg::ref_ptr<osg::Image> cloudVoxels = c.getRoughCloud(_options, _roughVoxelSizeFactor);
 
-    for (size_t j = 0; j < _detailedFieldWidth; ++j) {
-        for (size_t i = 0; i < _detailedFieldWidth; ++i) {
-            for (size_t k = 0; k < _detailedFieldHeight; ++k) {
+        // Now determine where to place the origin in the voxel space.
+        int x = (int) (p.x() + getRoughFieldRadiusM()) / (int) _roughFieldVoxelSize - cloudVoxels->s() / 2;
+        int y = (int) (p.y() + getRoughFieldRadiusM()) / (int) _roughFieldVoxelSize - cloudVoxels->t() / 2;
+        int z = (int) (p.z()) / (int) _roughFieldVoxelSize - cloudVoxels->r() / 2;
 
-                if (detailedVoxelData->getColor(i,j,k).b() > 0.0f) {
-                    cloudBoundaryIndices.push_back(std::array<int, 3>{{(int)i, (int)j,(int)k}});
-                    cloudBoundaryDistances.push_back(0.0f);
+        int source_x = 0;
+        int source_y = 0;
+        int source_z = 0;
+        int w = cloudVoxels->s();
+        int d = cloudVoxels->t();
+        int h = cloudVoxels->r();
+
+        // If this cloud falls outside the edges of the voxel space, then resize the area to be copied appropriately
+        if (x < 0) { source_x = w + x; w = w - source_x; x = 0; }
+        if (y < 0) { source_y = d + y; d = d - source_y; y = 0; }
+        if (z < 0) { source_z = h + z; h = h - source_z; z = 0; }
+
+        if (x + w > (int) _roughFieldWidth)  { w = (int) _roughFieldWidth - x; }
+        if (y + d > (int) _roughFieldWidth)  { d = (int) _roughFieldWidth - y; }
+        if (z + h > (int) _roughFieldHeight) { h = (int) _roughFieldHeight - z; }
+
+        for (int k = source_z; k < h; ++k) {
+            for (int j = source_y; j < d; ++j) {
+                for (int i = source_x; i < w; ++i) {
+                    if ((i + x) < 0 || (j + y) < 0 || (k +z) < 0) continue;
+                    if ((i + x) > roughVoxelData->s() - 1 || (j + y) > roughVoxelData->t() - 1 || (k + z) > roughVoxelData->r() - 1) continue;
+
+                    const osg::Vec4f cloudV = cloudVoxels->getColor(i, j, k);
+                    if (cloudV[1] > 0.0f) {
+                        const osg::Vec4f currentV = roughVoxelData->getColor(i + x, j + y, k + z);
+                        const osg::Vec4f newV = std::max(cloudV, currentV);
+                        roughVoxelData->setColor(newV, i + x, j + y, k + z);
+                    }
                 }
             }
         }
     }
 
-    if (cloudBoundaryDistances.empty()) {
-        // This is an error condition 
-        SG_LOG(SG_GENERAL, SG_ALERT, "No clouds in detailedVoxelData.");
-        return;   
-    }
-
-    auto gridSize = std::array<size_t, 3>{{_detailedFieldWidth, _detailedFieldWidth, _detailedFieldHeight}};
-    auto gridSpacing = std::array<float, 3>{{1.0f, 1.0f, 1.0f}};
-    auto uniformSpeed = float(_detailedFieldWidth);
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "SDF calculation started.");
-
-    auto sdf = fmm::SignedArrivalTime(
-        gridSize,
-        cloudBoundaryIndices,
-        cloudBoundaryDistances,
-        fmm::UniformSpeedEikonalSolver<float, 3>(gridSpacing, uniformSpeed));
-
-        
-    // The SDF is now calculated, so write it back to the voxel data.
-    std::size_t idx = 0;
-    for (std::size_t k = 0; k < _detailedFieldHeight; ++k) {
-        for (std::size_t j = 0; j < _detailedFieldWidth; ++j) {
-            for (std::size_t i = 0; i < _detailedFieldWidth; ++i) {
-                float distance = sdf[idx++];
-                osg::Vec4f c = detailedVoxelData->getColor(i,j,k);
-                if (c[3] > 0.0) {
-                    c[3] = distance;
-                    detailedVoxelData->setColor(c, i,j,k);
-                }
-            }
-        }
-    }  
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "SDF calculation complete.");
+    // Generate SDFs
+    generateSDF(detailedVoxelData);
+    generateSDF(roughVoxelData);
 
     // Now build the shade image.  The R channel is the summed density towards the Sun.  The G channel the summed vertical density.
     // We just do a single image covering both voxel spaces.
@@ -646,7 +661,7 @@ void FGClouds::rebuildField() {
     const osg::Vec3f sunDirZUp(s.x() / _detailedFieldWidth, s.y() / _detailedFieldWidth, s.z() / _detailedFieldHeight);
     //const osg::Vec3f sunDirZUp(0.0f, 0.0f, 1.0f / _detailedFieldHeight);
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Sun Direction Z-Up: " << sunDirZUp.x() << ", " << sunDirZUp.y() << ", " << sunDirZUp.z());
+    SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Sun Direction Z-Up: " << sunDirZUp.x() << ", " << sunDirZUp.y() << ", " << sunDirZUp.z());
 
     // Build up the shadow space. 
 
@@ -660,7 +675,7 @@ void FGClouds::rebuildField() {
                 float sunDensity = 0.0f;
 
                 osg::Vec3f p = start + sunDirZUp * d;
-                //SG_LOG(SG_GENERAL, SG_ALERT, "p " << p.x() << " " << p.y() <<  " " << p.z());
+                //SG_LOG(SG_ENVIRONMENT, SG_ALERT, "p " << p.x() << " " << p.y() <<  " " << p.z());
                 while (sunDensity < 0.99f &&
                        p.x() >= 0.0f && p.x() < 1.0f && 
                        p.y() >= 0.0f && p.y() < 1.0f && 
@@ -708,6 +723,68 @@ void FGClouds::rebuildField() {
         //std::cout << "\n\n\n";
     }
 
-    simgear::StateAttributeFactory::instance()->setCloudVoxelImage(detailedVoxelData, voxelShadeData);
+    simgear::StateAttributeFactory::instance()->setCloudVoxelImages(detailedVoxelData, roughVoxelData, voxelShadeData);
     _fieldDirty = false;
+}
+
+void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage) {
+    // Build the SDF from a set of voxel data.
+    vector<std::array<int, 3>> cloudBoundaryIndices;
+    vector<float> cloudBoundaryDistances;
+
+    assert(voxelImage->s() == voxelImage->t());
+    size_t width = (size_t) voxelImage->s();
+    size_t height = (size_t) voxelImage->r();
+
+    for (size_t j = 0; j < width; ++j) {
+        for (size_t i = 0; i < width; ++i) {
+            for (size_t k = 0; k < height; ++k) {
+
+                if (voxelImage->getColor(i,j,k).b() > 0.0f) {
+                    cloudBoundaryIndices.push_back(std::array<int, 3>{{(int)i, (int)j,(int)k}});
+                    cloudBoundaryDistances.push_back(0.0f);
+                }
+            }
+        }
+    }
+
+    if (cloudBoundaryDistances.empty()) {
+        // This is an error condition 
+        SG_LOG(SG_ENVIRONMENT, SG_ALERT, "No clouds in voxel data for image " << voxelImage->getName());
+        return;   
+    }
+
+    auto gridSize = std::array<size_t, 3>{{width, width, height}};
+    //auto gridSpacing = std::array<float, 3>{{1.0f, 1.0f, 1.0f}};
+    //auto uniformSpeed = float(voxelImage->s());
+
+    auto gridSpacing = std::array<float, 3>{{1.0f / (float) voxelImage->s(), 1.0f / (float) voxelImage->t(), 1.0f / (float) voxelImage->r()}};
+    auto uniformSpeed = 1.0f;
+
+
+    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "SDF calculation started for " << voxelImage->getName());
+
+    auto sdf = fmm::SignedArrivalTime(
+        gridSize,
+        cloudBoundaryIndices,
+        cloudBoundaryDistances,
+        fmm::UniformSpeedEikonalSolver<float, 3>(gridSpacing, uniformSpeed));
+
+        
+    // The SDF is now calculated, so write it back to the voxel data.
+    std::size_t idx = 0;
+    for (std::size_t k = 0; k < height; ++k) {
+        for (std::size_t j = 0; j < width; ++j) {
+            for (std::size_t i = 0; i < width; ++i) {
+                float distance = sdf[idx++];
+                osg::Vec4f c = voxelImage->getColor(i,j,k);
+                if (c[3] > 0.0) {
+                    c[3] = distance;
+                    voxelImage->setColor(c, i,j,k);
+                }
+            }
+        }
+    }  
+
+    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "SDF calculation complete.");
 }
