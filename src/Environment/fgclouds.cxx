@@ -73,6 +73,7 @@ void FGClouds::Init(void)
     globals->get_commands()->addCommand("move-cloud", this, &FGClouds::move3DCloud);
 
     _fieldDirty = true;
+    _fieldRepeating = true;
     rebuildField();
 }
 
@@ -99,11 +100,11 @@ double FGClouds::buildCloud(SGPropertyNode *cloud_def_root, SGPropertyNode *box_
             return 0.0;
     }
 
-    float roughFieldWidthM = (float) _roughFieldWidth * (float) _roughFieldVoxelSize;
+    float detailedFieldWidthM = (float) _detailedFieldWidth* (float) _detailedFieldVoxelSize;
 
     // Note that these are all in metres
-    float x = mt_rand(&seed) * roughFieldWidthM - (roughFieldWidthM / 2.0);
-    float y = mt_rand(&seed) * roughFieldWidthM - (roughFieldWidthM / 2.0);
+    float x = mt_rand(&seed) * detailedFieldWidthM - (detailedFieldWidthM / 2.0);
+    float y = mt_rand(&seed) * detailedFieldWidthM - (detailedFieldWidthM / 2.0);
     float z = (float) altFt * SG_FEET_TO_METER + (float) grid_z_rand * (mt_rand(&seed) - 0.5);
     SGVec3f pos(x, y, z);
 
@@ -221,8 +222,8 @@ void FGClouds::buildLayer(int iLayer, const string& name, double coverage, doubl
     totalCount = 1.0 / totalCount;
 
     // Determine how much cloud coverage we need in m^2.
-    float roughFieldWidthM = (float) _roughFieldWidth * (float) _roughFieldVoxelSize;
-    double cov = coverage * roughFieldWidthM * roughFieldWidthM;
+    float fieldWidthM = (float) _detailedFieldWidth * (float) _detailedFieldVoxelSize;
+    double cov = coverage * fieldWidthM * fieldWidthM;
 
     while (cov > 0.0f) {
         double choice = mt_rand(&seed);
@@ -246,6 +247,9 @@ void FGClouds::buildCloudLayers(void) {
 
     // Clear out the existing clouds;
     _cloudPlacementMap.clear();
+
+    // Enable repeating of the voxel space as the clouds we generate should be global
+    setCloudsRepeating(true);
 
     SGPropertyNode* metar_root = fgGetNode("/environment", true);
 
@@ -451,30 +455,39 @@ void FGClouds::rebuildField() {
     _detailedFieldWidth     = cloudsProp->getIntValue("detailed-voxel-field-width", 512);
     _detailedFieldHeight    = cloudsProp->getIntValue("detailed-voxel-field-height", 128);
     _detailedFieldVoxelSize = cloudsProp->getIntValue("detailed-voxel-size-m", 200);  
-    
-    // This is the size factor for the rough field.  Note that as this is in each dimension
-    // the occupany is 1/8th
-    _roughVoxelSizeFactor = cloudsProp->getIntValue("rough-voxel-size-factor", 2);
-    _roughFieldVoxelSize = _detailedFieldVoxelSize * _roughVoxelSizeFactor;
-
-    // The rough field width is a factor of the detailed field width
-    _roughFieldWidth  = _detailedFieldWidth * cloudsProp->getIntValue("rough-voxel-field-factor", 2);
-
-    // As the atmosphere is thin, we assume the detailed field is sufficiently
-    // high to include the entire troposphere, so therefore the rough field height is
-    // calculated automatically.
-    _roughFieldHeight = _detailedFieldHeight / _roughVoxelSizeFactor;
-
     const int detailedVoxelSpaceSizeMBytes = _detailedFieldWidth * _detailedFieldWidth * _detailedFieldHeight * 12 / 1024 / 1024;
-    const int roughVoxelSpaceSizeMBytes = _roughFieldWidth * _roughFieldWidth * _roughFieldHeight * 12 / 1024 / 1024;
 
     SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Rebuilding Cloud voxel field");
     SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Detailed Voxel size: " << _detailedFieldVoxelSize << "m");
     SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Detailed Voxel space: " << _detailedFieldWidth << " x " << _detailedFieldWidth << " x " << _detailedFieldHeight << " total size: " << detailedVoxelSpaceSizeMBytes << " MB");
     SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Detailed Voxel space: " << (_detailedFieldWidth*_detailedFieldVoxelSize/1000.0) << "x" << (_detailedFieldWidth*_detailedFieldVoxelSize/1000.0)  << "x" << (_detailedFieldHeight*_detailedFieldVoxelSize/1000.0) << " km");
-    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Rough Voxel size: " << _roughFieldVoxelSize << "m");
-    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Rough Voxel space" << _roughFieldWidth << "x" << _roughFieldWidth << "x" << _roughFieldHeight << " total size: " << roughVoxelSpaceSizeMBytes << " MB");
-    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Rough Voxel space: " << (_roughFieldWidth*_roughFieldVoxelSize/1000.0) << "x" << (_roughFieldWidth*_roughFieldVoxelSize/1000.0)  << "x" << (_roughFieldHeight*_roughFieldVoxelSize/1000.0) << " km");
+
+    if (_fieldRepeating) {
+        _roughVoxelSizeFactor = 1;
+        _roughFieldVoxelSize = 1;
+        _roughFieldWidth = 1;
+        _roughFieldHeight = 1;
+        SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Repeating detailed field being used - Rough Voxel field not in use.");
+    } else {
+
+        // This is the size factor for the rough field.  Note that as this is in each dimension
+        // the occupany is 1/8th
+        _roughVoxelSizeFactor = cloudsProp->getIntValue("rough-voxel-size-factor", 2);
+        _roughFieldVoxelSize = _detailedFieldVoxelSize * _roughVoxelSizeFactor;
+
+        // The rough field width is a factor of the detailed field width
+        _roughFieldWidth  = _detailedFieldWidth * cloudsProp->getIntValue("rough-voxel-field-factor", 2);
+
+        // As the atmosphere is thin, we assume the detailed field is sufficiently
+        // high to include the entire troposphere, so therefore the rough field height is
+        // calculated automatically.
+        _roughFieldHeight = _detailedFieldHeight / _roughVoxelSizeFactor;
+        const int roughVoxelSpaceSizeMBytes = _roughFieldWidth * _roughFieldWidth * _roughFieldHeight * 12 / 1024 / 1024;
+
+        SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Rough Voxel size: " << _roughFieldVoxelSize << "m");
+        SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Rough Voxel space" << _roughFieldWidth << "x" << _roughFieldWidth << "x" << _roughFieldHeight << " total size: " << roughVoxelSpaceSizeMBytes << " MB");
+        SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Rough Voxel space: " << (_roughFieldWidth*_roughFieldVoxelSize/1000.0) << "x" << (_roughFieldWidth*_roughFieldVoxelSize/1000.0)  << "x" << (_roughFieldHeight*_roughFieldVoxelSize/1000.0) << " km");
+    }
 
     // Save off the current location, which will be used in transforms.
     // We will determine the altitude later, so make sure it's 0 for
@@ -489,6 +502,7 @@ void FGClouds::rebuildField() {
     fgSetFloat("/sim/rendering/hdr/clouds/cloud-center-x", (float) _centerCart.x());
     fgSetFloat("/sim/rendering/hdr/clouds/cloud-center-y", (float) _centerCart.y());
     fgSetFloat("/sim/rendering/hdr/clouds/cloud-center-z", (float) _centerCart.z());
+    fgSetBool("/sim/rendering/hdr/clouds/cloud-field-repeating", _fieldRepeating);
 
     osg::ref_ptr<osg::Image> roughVoxelData = new osg::Image();
     roughVoxelData->setName("Rough Cloud Voxel Data");
@@ -512,25 +526,29 @@ void FGClouds::rebuildField() {
         osg::Vec3f p = _cloudPosMatrix * q;
 
         // Now check if any part is within the X/Y bounds for each of the voxelMaps.
-        if (p.x() > -getRoughFieldRadiusM() && p.x() < getRoughFieldRadiusM() && 
+        if (p.x() > -getDetailedFieldRadiusM() && p.x() < getDetailedFieldRadiusM() && 
+            p.y() > -getDetailedFieldRadiusM() && p.y() < getDetailedFieldRadiusM()) {
+            SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Adding detailed cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
+            CloudPlacement localCloud = std::make_tuple(c, p);
+            detailedFieldList.push_back(localCloud);
+        }
+
+        
+        // Only use the rough field map if we aren't using a repeating (detailed) field)
+        if (! _fieldRepeating &&
+            p.x() > -getRoughFieldRadiusM() && p.x() < getRoughFieldRadiusM() && 
             p.y() > -getRoughFieldRadiusM() && p.y() < getRoughFieldRadiusM()) {
             // Local coordinate cloud placement
-
             SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Adding rough cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
             CloudPlacement localCloud = std::make_tuple(c, p);
             roughFieldList.push_back(localCloud);
-
-            if (p.x() > -getDetailedFieldRadiusM() && p.x() < getDetailedFieldRadiusM() && 
-                p.y() > -getDetailedFieldRadiusM() && p.y() < getDetailedFieldRadiusM()) {
-                SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Adding detailed cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
-                detailedFieldList.push_back(localCloud);
-            }
         }
     }
 
-    if (detailedFieldList.empty()) {
+    if ((  _fieldRepeating && detailedFieldList.empty()) ||
+        (! _fieldRepeating && roughFieldList.empty()   )   ){
         // Nothing to display, so clean up and return early.
-        simgear::StateAttributeFactory::instance()->setCloudVoxelImages(detailedVoxelData, roughVoxelData, voxelShadeData);
+        simgear::StateAttributeFactory::instance()->setCloudVoxelImages(detailedVoxelData, roughVoxelData, voxelShadeData, _fieldRepeating);
         SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "rebuildField - No cloud data in range");
         _fieldDirty = false;
         return;
@@ -623,64 +641,69 @@ void FGClouds::rebuildField() {
             }
         }
     }
-    
-    // Now generate the rough voxel space in a similar manner
-    for (auto cl  : roughFieldList) {
-        SGNewCloud c = std::get<0>(cl);
-        osg::Vec3f p = std::get<1>(cl);
 
-        osg::ref_ptr<osg::Image> cloudVoxels = c.getRoughCloud(_options, _roughVoxelSizeFactor);
+    // Generate SDF
+    generateSDF(detailedVoxelData);
 
-        // Now determine where to place the origin in the voxel space.
-        int x = (int) (p.x() + getRoughFieldRadiusM()) / (float) _roughFieldVoxelSize - cloudVoxels->s() / 2;
-        int y = (int) (p.y() + getRoughFieldRadiusM()) / (float) _roughFieldVoxelSize - cloudVoxels->t() / 2;
-        int z = (int) (p.z()) / (float) _roughFieldVoxelSize;
+    if (! _fieldRepeating) {    
+        // Now generate the rough voxel space in a similar manner
+        for (auto cl  : roughFieldList) {
+            SGNewCloud c = std::get<0>(cl);
+            osg::Vec3f p = std::get<1>(cl);
+
+            osg::ref_ptr<osg::Image> cloudVoxels = c.getRoughCloud(_options, _roughVoxelSizeFactor);
+
+            // Now determine where to place the origin in the voxel space.
+            int x = (int) (p.x() + getRoughFieldRadiusM()) / (float) _roughFieldVoxelSize - cloudVoxels->s() / 2;
+            int y = (int) (p.y() + getRoughFieldRadiusM()) / (float) _roughFieldVoxelSize - cloudVoxels->t() / 2;
+            int z = (int) (p.z()) / (float) _roughFieldVoxelSize;
 
 
-        int source_x = 0;
-        int source_y = 0;
-        int source_z = 0;
-        int w = cloudVoxels->s();
-        int d = cloudVoxels->t();
-        int h = cloudVoxels->r();
+            int source_x = 0;
+            int source_y = 0;
+            int source_z = 0;
+            int w = cloudVoxels->s();
+            int d = cloudVoxels->t();
+            int h = cloudVoxels->r();
 
-        // If this cloud falls outside the edges of the voxel space, then resize the area to be copied appropriately
-        if (x < 0) { source_x = w + x; w = w - source_x; x = 0; }
-        if (y < 0) { source_y = d + y; d = d - source_y; y = 0; }
-        if (z < 0) { source_z = h + z; h = h - source_z; z = 0; }
+            // If this cloud falls outside the edges of the voxel space, then resize the area to be copied appropriately
+            if (x < 0) { source_x = w + x; w = w - source_x; x = 0; }
+            if (y < 0) { source_y = d + y; d = d - source_y; y = 0; }
+            if (z < 0) { source_z = h + z; h = h - source_z; z = 0; }
 
-        if (x + w > (int) _roughFieldWidth)  { w = (int) _roughFieldWidth - x; }
-        if (y + d > (int) _roughFieldWidth)  { d = (int) _roughFieldWidth - y; }
-        if (z + h > (int) _roughFieldHeight) { h = (int) _roughFieldHeight - z; }
+            if (x + w > (int) _roughFieldWidth)  { w = (int) _roughFieldWidth - x; }
+            if (y + d > (int) _roughFieldWidth)  { d = (int) _roughFieldWidth - y; }
+            if (z + h > (int) _roughFieldHeight) { h = (int) _roughFieldHeight - z; }
 
-        for (int k = source_z; k < h; ++k) {
-            for (int j = source_y; j < d; ++j) {
-                for (int i = source_x; i < w; ++i) {
-                    int px = i + x;
-                    int py = j + y;
-                    int pz = k + z;
-                    if (px < 0 || py < 0 || pz < 0) continue;
-                    if (px > roughVoxelData->s() - 1 || py > roughVoxelData->t() - 1 || pz > roughVoxelData->r() - 1) continue;
+            for (int k = source_z; k < h; ++k) {
+                for (int j = source_y; j < d; ++j) {
+                    for (int i = source_x; i < w; ++i) {
+                        int px = i + x;
+                        int py = j + y;
+                        int pz = k + z;
+                        if (px < 0 || py < 0 || pz < 0) continue;
+                        if (px > roughVoxelData->s() - 1 || py > roughVoxelData->t() - 1 || pz > roughVoxelData->r() - 1) continue;
 
-                    const osg::Vec4f cloudV = cloudVoxels->getColor(i, j, k);
-                    if (cloudV[2] > 0.0f) {
-                        const osg::Vec4f currentV = roughVoxelData->getColor(px, py, pz);
-                        // When merging with the existing voxel data we want to take the 
-                        // maximum Dimension, maximum Type, maximum density and minimum SDF (as the SDF in clouds is negative).
-                        const osg::Vec4f newV = osg::Vec4f(std::max(cloudV[0], currentV[0]),
-                                                           std::max(cloudV[1], currentV[1]),
-                                                           std::max(cloudV[2], currentV[2]),
-                                                           -roughSDFMin);
-                        roughVoxelData->setColor(newV, px, py, pz);
+                        const osg::Vec4f cloudV = cloudVoxels->getColor(i, j, k);
+                        if (cloudV[2] > 0.0f) {
+                            const osg::Vec4f currentV = roughVoxelData->getColor(px, py, pz);
+                            // When merging with the existing voxel data we want to take the 
+                            // maximum Dimension, maximum Type, maximum density and minimum SDF (as the SDF in clouds is negative).
+                            const osg::Vec4f newV = osg::Vec4f(std::max(cloudV[0], currentV[0]),
+                                                            std::max(cloudV[1], currentV[1]),
+                                                            std::max(cloudV[2], currentV[2]),
+                                                            -roughSDFMin);
+                            roughVoxelData->setColor(newV, px, py, pz);
+                        }
                     }
                 }
             }
         }
-    }
 
-    // Generate SDFs
-    generateSDF(detailedVoxelData);
-    generateSDF(roughVoxelData);
+        // Generate an SDF
+        generateSDF(roughVoxelData);
+    }
+    
 
     // Now build the shade image.  The R channel is the summed density towards the Sun.  The G channel the summed vertical density.
     // We just do a single image covering both voxel spaces.
@@ -715,7 +738,7 @@ void FGClouds::rebuildField() {
                        p.z() >= 0.0f && p.z() < 1.0f    ) {                        
 
                     if (p.z() > (float) (k + 1U) / (float) _detailedFieldHeight) {
-                        // Use the pre-calculated vakue for the voxel in the layer above
+                        // Use the pre-calculated value for the voxel in the layer above
                         sunDensity += voxelShadeData->getColor(p).r();
                         break;
                     }
@@ -756,7 +779,7 @@ void FGClouds::rebuildField() {
         //std::cout << "\n\n\n";
     }
 
-    simgear::StateAttributeFactory::instance()->setCloudVoxelImages(detailedVoxelData, roughVoxelData, voxelShadeData);
+    simgear::StateAttributeFactory::instance()->setCloudVoxelImages(detailedVoxelData, roughVoxelData, voxelShadeData, _fieldRepeating);
     _fieldDirty = false;
 }
 

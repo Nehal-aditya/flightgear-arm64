@@ -59,6 +59,9 @@ private:
     
     // Whether the cloud field requires regeneration.
     bool _fieldDirty;
+
+    // Whether the cloud field is repeating (by simply mirrorig the voxel space texture)
+    bool _fieldRepeating;
     
     osg::ref_ptr<simgear::SGReaderWriterOptions> _options;
 
@@ -99,4 +102,7 @@ public:
     void set_update_event(int count);
     bool get_3dClouds() const;
     void set_3dClouds(bool enable);
+
+    bool isCloudsRepeating(void) const { return _fieldRepeating; }
+    void setCloudsRepeating(bool repeat) { _fieldRepeating = repeat; }
 };
