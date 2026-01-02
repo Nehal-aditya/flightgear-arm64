@@ -465,11 +465,16 @@ void FGClouds::rebuildField() {
     // calculated automatically.
     _roughFieldHeight = _detailedFieldHeight / _roughVoxelSizeFactor;
 
-    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "FGClouds Init.  Detailed Voxel space (vx): " << _detailedFieldWidth << "x" << _detailedFieldWidth << "x" << _detailedFieldHeight << " voxel size: " << _detailedFieldVoxelSize);
-    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "FGClouds Init.  Detailed Voxel space (km): " << (_detailedFieldWidth*_detailedFieldVoxelSize/1000.0) << "x" << (_detailedFieldWidth*_detailedFieldVoxelSize/1000.0)  << "x" << (_detailedFieldHeight*_detailedFieldVoxelSize/1000.0));
-    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "FGClouds Init.  Rough Voxel space: " << _roughFieldWidth << "x" << _roughFieldWidth << "x" << _roughFieldHeight << " voxel size: " << _roughFieldVoxelSize);
-    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "FGClouds Init.  Rough Voxel space (km): " << (_roughFieldWidth*_roughFieldVoxelSize/1000.0) << "x" << (_roughFieldWidth*_roughFieldVoxelSize/1000.0)  << "x" << (_roughFieldHeight*_roughFieldVoxelSize/1000.0));
+    const int detailedVoxelSpaceSizeMBytes = _detailedFieldWidth * _detailedFieldWidth * _detailedFieldHeight * 12 / 1024 / 1024;
+    const int roughVoxelSpaceSizeMBytes = _roughFieldWidth * _roughFieldWidth * _roughFieldHeight * 12 / 1024 / 1024;
 
+    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Rebuilding Cloud voxel field");
+    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Detailed Voxel size: " << _detailedFieldVoxelSize << "m");
+    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Detailed Voxel space: " << _detailedFieldWidth << " x " << _detailedFieldWidth << " x " << _detailedFieldHeight << " total size: " << detailedVoxelSpaceSizeMBytes << " MB");
+    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Detailed Voxel space: " << (_detailedFieldWidth*_detailedFieldVoxelSize/1000.0) << "x" << (_detailedFieldWidth*_detailedFieldVoxelSize/1000.0)  << "x" << (_detailedFieldHeight*_detailedFieldVoxelSize/1000.0) << " km");
+    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Rough Voxel size: " << _roughFieldVoxelSize << "m");
+    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Rough Voxel space" << _roughFieldWidth << "x" << _roughFieldWidth << "x" << _roughFieldHeight << " total size: " << roughVoxelSpaceSizeMBytes << " MB");
+    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Rough Voxel space: " << (_roughFieldWidth*_roughFieldVoxelSize/1000.0) << "x" << (_roughFieldWidth*_roughFieldVoxelSize/1000.0)  << "x" << (_roughFieldHeight*_roughFieldVoxelSize/1000.0) << " km");
 
     // Save off the current location, which will be used in transforms.
     // We will determine the altitude later, so make sure it's 0 for
@@ -557,10 +562,10 @@ void FGClouds::rebuildField() {
     // Now write the detailed clouds into the voxel space.
     //
     // The Voxel layout is as follows
-    //   .x - Dimension.  This is a positive gradient with 1.0 at the center of the cloud, and 0.0 at the edge
-    //   .y - Type.  From wispy (0.0) to billowy (1.0)
-    //   .z - Density.  0.0 is no cloud density, 1.0 is fully opaque density.  Use this to determine if there is any cloud at this location.
-    //   .a - Signed Distance Field in UV space.  The maximum radius sphere centered on this point that doesn't contain any cloud density.  Used for adaptive ray marching.
+    // [0] .x - Dimension.  This is a positive gradient with 1.0 at the center of the cloud, and 0.0 at the edge
+    // [1] .y - Type.  From wispy (0.0) to billowy (1.0)
+    // [2] .z - Density.  0.0 is no cloud density, 1.0 is fully opaque density.  Use this to determine if there is any cloud at this location.
+    // [3] .a - Signed Distance Field in UV space.  The maximum radius sphere centered on this point that doesn't contain any cloud density.  Used for adaptive ray marching.
 
     for (auto cl  : detailedFieldList) {
         SGNewCloud c = std::get<0>(cl);
@@ -573,7 +578,7 @@ void FGClouds::rebuildField() {
         // Now determine where to place the origin in the voxel space.
         int x = (int) ((p.x() + getDetailedFieldRadiusM()) / (float) _detailedFieldVoxelSize) - cloudVoxels->s() / 2;
         int y = (int) ((p.y() + getDetailedFieldRadiusM()) / (float) _detailedFieldVoxelSize) - cloudVoxels->t() / 2;
-        int z = (int) (p.z() / (float) _detailedFieldVoxelSize);// - cloudVoxels->r() / 2;
+        int z = (int) (p.z() / (float) _detailedFieldVoxelSize);
 
         int source_x = 0;
         int source_y = 0;
@@ -627,9 +632,10 @@ void FGClouds::rebuildField() {
         osg::ref_ptr<osg::Image> cloudVoxels = c.getRoughCloud(_options, _roughVoxelSizeFactor);
 
         // Now determine where to place the origin in the voxel space.
-        int x = (int) (p.x() + getRoughFieldRadiusM()) / (int) _roughFieldVoxelSize - cloudVoxels->s() / 2;
-        int y = (int) (p.y() + getRoughFieldRadiusM()) / (int) _roughFieldVoxelSize - cloudVoxels->t() / 2;
-        int z = (int) (p.z()) / (int) _roughFieldVoxelSize - cloudVoxels->r() / 2;
+        int x = (int) (p.x() + getRoughFieldRadiusM()) / (float) _roughFieldVoxelSize - cloudVoxels->s() / 2;
+        int y = (int) (p.y() + getRoughFieldRadiusM()) / (float) _roughFieldVoxelSize - cloudVoxels->t() / 2;
+        int z = (int) (p.z()) / (float) _roughFieldVoxelSize;
+
 
         int source_x = 0;
         int source_y = 0;
@@ -674,7 +680,7 @@ void FGClouds::rebuildField() {
 
     // Generate SDFs
     generateSDF(detailedVoxelData);
-    //generateSDF(roughVoxelData);
+    generateSDF(roughVoxelData);
 
     // Now build the shade image.  The R channel is the summed density towards the Sun.  The G channel the summed vertical density.
     // We just do a single image covering both voxel spaces.
@@ -709,7 +715,7 @@ void FGClouds::rebuildField() {
                        p.z() >= 0.0f && p.z() < 1.0f    ) {                        
 
                     if (p.z() > (float) (k + 1U) / (float) _detailedFieldHeight) {
-                        // Use the pre-calculated for the voxel above then stop
+                        // Use the pre-calculated vakue for the voxel in the layer above
                         sunDensity += voxelShadeData->getColor(p).r();
                         break;
                     }
@@ -787,7 +793,6 @@ void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage) {
 
     auto gridSpacing = std::array<float, 3>{{1.0f / (float) voxelImage->s(), 1.0f / (float) voxelImage->t(), 1.0f / (float) voxelImage->r()}};
     auto uniformSpeed = 1.0f;
-
 
     SG_LOG(SG_ENVIRONMENT, SG_ALERT, "SDF calculation started for " << voxelImage->getName());
 
