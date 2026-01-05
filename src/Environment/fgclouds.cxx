@@ -584,12 +584,13 @@ void FGClouds::rebuildField() {
     // [1] .y - Type.  From wispy (0.0) to billowy (1.0)
     // [2] .z - Density.  0.0 is no cloud density, 1.0 is fully opaque density.  Use this to determine if there is any cloud at this location.
     // [3] .a - Signed Distance Field in UV space.  The maximum radius sphere centered on this point that doesn't contain any cloud density.  Used for adaptive ray marching.
+    SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Creating detailed field of " << detailedFieldList.size() << " clouds");
 
     for (auto cl  : detailedFieldList) {
         SGNewCloud c = std::get<0>(cl);
         osg::Vec3f p = std::get<1>(cl);
 
-        osg::ref_ptr<osg::Image> cloudVoxels = c.getDetailedCloud(_options);
+        const osg::ref_ptr<osg::Image> cloudVoxels = c.getDetailedCloud(_options);
 
         if (cloudVoxels == nullptr) continue;
 
