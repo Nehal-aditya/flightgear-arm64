@@ -294,7 +294,7 @@ public:
         }
 
         // log it once we know it's not a duplicate
-        SG_LOG(SG_GENERAL, SG_WARN, "Error:" << static_errorTypeIds.at(static_cast<int>(type)) << " from " << static_errorIds.at(static_cast<int>(code)) << "::" << details << "\n\t" << location.asString());
+        SG_LOG(SG_GENERAL, SG_ALERT, "Error:" << static_errorTypeIds.at(static_cast<int>(type)) << " from " << static_errorIds.at(static_cast<int>(code)) << "::" << details << "\n\t" << location.asString());
 
         if (!_enabled) {
             return;
