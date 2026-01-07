@@ -38,6 +38,9 @@ private:
 
     int index;
 
+    // Exception count from the fmm library
+    unsigned int _FMMExceptionCount;
+
     // Voxel-based clouds
     osg::ref_ptr<osg::Image> _roughVoxelData;
     osg::ref_ptr<osg::Image> _detailedVoxelData;

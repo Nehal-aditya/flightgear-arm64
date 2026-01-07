@@ -41,7 +41,8 @@ namespace fmm = thinks::fast_marching_method;
 static mt seed;
 
 FGClouds::FGClouds() :
-    index(0)
+    index(0),
+    _FMMExceptionCount(0)
 {
     update_event = 0;
     _options = new simgear::SGReaderWriterOptions;
@@ -532,7 +533,6 @@ void FGClouds::rebuildField() {
             CloudPlacement localCloud = std::make_tuple(c, p);
             detailedFieldList.push_back(localCloud);
         }
-
         
         // Only use the rough field map if we aren't using a repeating (detailed) field)
         if (! _fieldRepeating &&
@@ -599,27 +599,11 @@ void FGClouds::rebuildField() {
         int y = (int) ((p.y() + getDetailedFieldRadiusM()) / (float) _detailedFieldVoxelSize) - cloudVoxels->t() / 2;
         int z = (int) (p.z() / (float) _detailedFieldVoxelSize);
 
-        int source_x = 0;
-        int source_y = 0;
-        int source_z = 0;
-        int w = cloudVoxels->s();
-        int d = cloudVoxels->t();
-        int h = cloudVoxels->r();
-
         SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Cloud " << cloudVoxels->getName() << " : " << cloudVoxels->s() << "x" << cloudVoxels->t() << "x" << cloudVoxels->r() << " - " << p.z() << "," << z);
 
-        // If this cloud falls outside the edges of the voxel space, then resize the area to be copied appropriately
-        if (x < 0) { source_x = w + x; w = w - source_x; x = 0; }
-        if (y < 0) { source_y = d + y; d = d - source_y; y = 0; }
-        if (z < 0) { source_z = h + z; h = h - source_z; z = 0; }
-
-        if (x + w > (int) _detailedFieldWidth)  { w = (int) _detailedFieldWidth - x; }
-        if (y + d > (int) _detailedFieldWidth)  { d = (int) _detailedFieldWidth - y; }
-        if (z + h > (int) _detailedFieldHeight) { h = (int) _detailedFieldHeight - z; }
-
-        for (int k = source_z; k < h; ++k) {
-            for (int j = source_y; j < d; ++j) {
-                for (int i = source_x; i < w; ++i) {
+        for (int k = 0; k < cloudVoxels->r(); ++k) {
+            for (int j = 0; j < cloudVoxels->t(); ++j) {
+                for (int i = 0; i < cloudVoxels->s(); ++i) {
                     int px = i + x;
                     int py = j + y;
                     int pz = k + z;
@@ -627,7 +611,12 @@ void FGClouds::rebuildField() {
                     if (px < 0 || py < 0 || pz < 0) continue;
                     if (px > detailedVoxelData->s() - 1 || py > detailedVoxelData->t() - 1 || pz > detailedVoxelData->r() - 1) continue;
 
-                    const osg::Vec4f cloudV = cloudVoxels->getColor(i, j, k);
+                    // Produce variant clouds by optionally reflecting the cloud in the X and/or Y axis.  For simplicity we can just
+                    // do this with a simple coordinate transformation.
+                    int ii = c.reflectX() ? cloudVoxels->s() - i - 1 : i;
+                    int jj = c.reflectY() ? cloudVoxels->t() - j - 1 : j;
+
+                    const osg::Vec4f cloudV = cloudVoxels->getColor(ii, jj, k);
                     if (cloudV[2] > 0.0f) {
                         const osg::Vec4f currentV = detailedVoxelData->getColor(px, py, pz);
                         // When merging with the existing voxel data we want to take the 
@@ -820,27 +809,37 @@ void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage) {
 
     SG_LOG(SG_ENVIRONMENT, SG_ALERT, "SDF calculation started for " << voxelImage->getName());
 
-    auto sdf = fmm::SignedArrivalTime(
-        gridSize,
-        cloudBoundaryIndices,
-        cloudBoundaryDistances,
-        fmm::UniformSpeedEikonalSolver<float, 3>(gridSpacing, uniformSpeed));
+    try {
+        auto sdf = fmm::SignedArrivalTime(
+            gridSize,
+            cloudBoundaryIndices,
+            cloudBoundaryDistances,
+            fmm::UniformSpeedEikonalSolver<float, 3>(gridSpacing, uniformSpeed));
 
         
-    // The SDF is now calculated, so write it back to the voxel data.
-    std::size_t idx = 0;
-    for (std::size_t k = 0; k < height; ++k) {
-        for (std::size_t j = 0; j < width; ++j) {
-            for (std::size_t i = 0; i < width; ++i) {
-                float distance = sdf[idx++];
-                osg::Vec4f c = voxelImage->getColor(i,j,k);
-                if (c[3] > 0.0f) {
-                    c[3] = distance;
-                    voxelImage->setColor(c, i,j,k);
+        // The SDF is now calculated, so write it back to the voxel data.
+        std::size_t idx = 0;
+        for (std::size_t k = 0; k < height; ++k) {
+            for (std::size_t j = 0; j < width; ++j) {
+                for (std::size_t i = 0; i < width; ++i) {
+                    float distance = sdf[idx++];
+                    osg::Vec4f c = voxelImage->getColor(i,j,k);
+                    if (c[3] > 0.0f) {
+                        c[3] = distance;
+                        voxelImage->setColor(c, i,j,k);
+                    }
                 }
             }
-        }
-    }  
+        }  
 
-    SG_LOG(SG_ENVIRONMENT, SG_ALERT, "SDF calculation complete.");
+        SG_LOG(SG_ENVIRONMENT, SG_ALERT, "SDF calculation complete.");
+    } 
+    catch (const std::exception& e) {
+        // The fmm may through exceptions if it is unable to generate an SDF.  Given that 
+        // our data has a random element, this is insufficient reason to terminate FlightGear,
+        // so we will simply log this.
+        _FMMExceptionCount++;
+        SG_LOG(SG_ENVIRONMENT, SG_DEV_ALERT, "Cloud Fast Marching Method to generate SDF threw exception - ignoring.  Cloud ray-marching will be inefficient Total exceptions: " << _FMMExceptionCount);
+    } 
+
 }
