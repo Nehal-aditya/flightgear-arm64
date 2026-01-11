@@ -780,10 +780,8 @@ void FGClouds::rebuildField() {
                 //std::cout << c.r();
                 voxelShadeData->setColor(c, i, j, k);
             }
-
             //std::cout << "\n";
         }
-
         //std::cout << "\n\n\n";
     }
 
@@ -822,14 +820,12 @@ void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage) {
     SG_LOG(SG_ENVIRONMENT, SG_ALERT, "SDF calculation started for " << voxelImage->getName());
 
     try {
-
         float maxDistance = 0.0f;
         auto sdf = fmm::SignedArrivalTime(
             gridSize,
             cloudBoundaryIndices,
             cloudBoundaryDistances,
             fmm::DistanceSolver<float, 3>(1.0));
-
         
         // The SDF is now calculated, so write it back to the voxel data.
         std::size_t idx = 0;
