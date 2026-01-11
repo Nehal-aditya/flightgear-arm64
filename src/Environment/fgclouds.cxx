@@ -150,7 +150,7 @@ double FGClouds::buildCloud(SGPropertyNode *cloud_def_root, SGPropertyNode *box_
                 y = w * (y - 0.5) + pos[1]; // E/W
                 z = h * z + pos[2];         // Up/Down. pos[2] is the cloudbase
 
-                SGNewCloud cld(cld_def, &seed);
+                SGNewCloud cld(cld_def, &seed, _options);
                 addCloud(cld, index++, lon, lat, z * SG_METER_TO_FEET, x, y);
             }
         }
@@ -339,7 +339,7 @@ void FGClouds::buildCloudLayers(void) {
    float x = arg->getFloatValue("x-offset-m", 0.0f);
    float y = arg->getFloatValue("y-offset-m", 0.0f);
 
-   SGNewCloud cld(arg, &seed);
+   SGNewCloud cld(arg, &seed, _options);
    bool success = addCloud(cld, index, lon, lat, alt, x, y);
    return success;
  }
@@ -612,7 +612,7 @@ void FGClouds::rebuildField() {
         SGNewCloud c = std::get<0>(cl);
         osg::Vec3f p = std::get<1>(cl);
 
-        const osg::ref_ptr<osg::Image> cloudVoxels = c.getDetailedCloud(_options);
+        const osg::ref_ptr<osg::Image> cloudVoxels = c.getDetailedCloud();
 
         if (cloudVoxels == nullptr) continue;
 
@@ -621,37 +621,7 @@ void FGClouds::rebuildField() {
         int y = (int) ((p.y() + getDetailedFieldRadiusM()) / (float) _detailedFieldVoxelSize) - cloudVoxels->t() / 2;
         int z = (int) (p.z() / (float) _detailedFieldVoxelSize);
 
-        SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Cloud " << cloudVoxels->getName() << " : " << cloudVoxels->s() << "x" << cloudVoxels->t() << "x" << cloudVoxels->r() << " - " << p.z() << "," << z);
-
-        for (int k = 0; k < cloudVoxels->r(); ++k) {
-            for (int j = 0; j < cloudVoxels->t(); ++j) {
-                for (int i = 0; i < cloudVoxels->s(); ++i) {
-                    int px = i + x;
-                    int py = j + y;
-                    int pz = k + z;
-
-                    if (px < 0 || py < 0 || pz < 0) continue;
-                    if (px > detailedVoxelData->s() - 1 || py > detailedVoxelData->t() - 1 || pz > detailedVoxelData->r() - 1) continue;
-
-                    // Produce variant clouds by optionally reflecting the cloud in the X and/or Y axis.  For simplicity we can just
-                    // do this with a simple coordinate transformation.
-                    int ii = c.reflectX() ? cloudVoxels->s() - i - 1 : i;
-                    int jj = c.reflectY() ? cloudVoxels->t() - j - 1 : j;
-
-                    const osg::Vec4f cloudV = cloudVoxels->getColor(ii, jj, k);
-                    if (cloudV[2] > 0.0f) {
-                        const osg::Vec4f currentV = detailedVoxelData->getColor(px, py, pz);
-                        // When merging with the existing voxel data we want to take the 
-                        // maximum Dimension, maximum Type, maximum density and minimum SDF (as the SDF in clouds is negative).
-                        const osg::Vec4f newV = osg::Vec4f(std::max(cloudV[0], currentV[0]),
-                                                           std::max(cloudV[1], currentV[1]),
-                                                           std::max(cloudV[2], currentV[2]),
-                                                           -detailedSDFMin);
-                        detailedVoxelData->setColor(newV, px, py, pz);
-                    }
-                }
-            }
-        }
+        c.addCloudToDetailedVoxelField(detailedVoxelData, x, y, z);
     }
 
     // Generate SDF
@@ -663,42 +633,14 @@ void FGClouds::rebuildField() {
             SGNewCloud c = std::get<0>(cl);
             osg::Vec3f p = std::get<1>(cl);
 
-            osg::ref_ptr<osg::Image> cloudVoxels = c.getRoughCloud(_options);
+            osg::ref_ptr<osg::Image> cloudVoxels = c.getRoughCloud();
 
             // Now determine where to place the origin in the voxel space.
             int x = (int) (p.x() + getRoughFieldRadiusM()) / (float) _roughFieldVoxelSize - cloudVoxels->s() / 2;
             int y = (int) (p.y() + getRoughFieldRadiusM()) / (float) _roughFieldVoxelSize - cloudVoxels->t() / 2;
             int z = (int) (p.z()) / (float) _roughFieldVoxelSize;
 
-            for (int k = 0; k < cloudVoxels->r(); ++k) {
-                for (int j = 0; j < cloudVoxels->t(); ++j) {
-                    for (int i = 0; i < cloudVoxels->s(); ++i) {
-                        int px = i + x;
-                        int py = j + y;
-                        int pz = k + z;
-
-                        if (px < 0 || py < 0 || pz < 0) continue;
-                        if (px > roughVoxelData->s() - 1 || py > roughVoxelData->t() - 1 || pz > roughVoxelData->r() - 1) continue;
-
-                        // Produce variant clouds by optionally reflecting the cloud in the X and/or Y axis.  For simplicity we can just
-                        // do this with a simple coordinate transformation.
-                        int ii = c.reflectX() ? cloudVoxels->s() - i - 1 : i;
-                        int jj = c.reflectY() ? cloudVoxels->t() - j - 1 : j;
-
-                        const osg::Vec4f cloudV = cloudVoxels->getColor(ii, jj, k);
-                        if (cloudV[2] > 0.0f) {
-                            const osg::Vec4f currentV = roughVoxelData->getColor(px, py, pz);
-                            // When merging with the existing voxel data we want to take the 
-                            // maximum Dimension, maximum Type, maximum density and minimum SDF (as the SDF in clouds is negative).
-                            const osg::Vec4f newV = osg::Vec4f(std::max(cloudV[0], currentV[0]),
-                                                            std::max(cloudV[1], currentV[1]),
-                                                            std::max(cloudV[2], currentV[2]),
-                                                            -roughSDFMin);
-                            roughVoxelData->setColor(newV, px, py, pz);
-                        }
-                    }
-                }
-            }
+            c.addCloudToRoughVoxelField(roughVoxelData, x, y, z);
         }
 
         // Generate an SDF
