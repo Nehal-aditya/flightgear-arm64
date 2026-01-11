@@ -469,6 +469,7 @@ void FGClouds::rebuildField() {
         // the occupany is 1/8th
         _roughVoxelSizeFactor = cloudsProp->getIntValue("rough-voxel-size-factor", 2);
         _roughFieldVoxelSize = _detailedFieldVoxelSize * _roughVoxelSizeFactor;
+        SGNewCloud::setRoughVoxelScale(_roughVoxelSizeFactor);
 
         // The rough field width is a factor of the detailed field width
         _roughFieldWidth  = _detailedFieldWidth * cloudsProp->getIntValue("rough-voxel-field-factor", 2);
@@ -662,40 +663,29 @@ void FGClouds::rebuildField() {
             SGNewCloud c = std::get<0>(cl);
             osg::Vec3f p = std::get<1>(cl);
 
-            osg::ref_ptr<osg::Image> cloudVoxels = c.getRoughCloud(_options, _roughVoxelSizeFactor);
+            osg::ref_ptr<osg::Image> cloudVoxels = c.getRoughCloud(_options);
 
             // Now determine where to place the origin in the voxel space.
             int x = (int) (p.x() + getRoughFieldRadiusM()) / (float) _roughFieldVoxelSize - cloudVoxels->s() / 2;
             int y = (int) (p.y() + getRoughFieldRadiusM()) / (float) _roughFieldVoxelSize - cloudVoxels->t() / 2;
             int z = (int) (p.z()) / (float) _roughFieldVoxelSize;
 
-
-            int source_x = 0;
-            int source_y = 0;
-            int source_z = 0;
-            int w = cloudVoxels->s();
-            int d = cloudVoxels->t();
-            int h = cloudVoxels->r();
-
-            // If this cloud falls outside the edges of the voxel space, then resize the area to be copied appropriately
-            if (x < 0) { source_x = w + x; w = w - source_x; x = 0; }
-            if (y < 0) { source_y = d + y; d = d - source_y; y = 0; }
-            if (z < 0) { source_z = h + z; h = h - source_z; z = 0; }
-
-            if (x + w > (int) _roughFieldWidth)  { w = (int) _roughFieldWidth - x; }
-            if (y + d > (int) _roughFieldWidth)  { d = (int) _roughFieldWidth - y; }
-            if (z + h > (int) _roughFieldHeight) { h = (int) _roughFieldHeight - z; }
-
-            for (int k = source_z; k < h; ++k) {
-                for (int j = source_y; j < d; ++j) {
-                    for (int i = source_x; i < w; ++i) {
+            for (int k = 0; k < cloudVoxels->r(); ++k) {
+                for (int j = 0; j < cloudVoxels->t(); ++j) {
+                    for (int i = 0; i < cloudVoxels->s(); ++i) {
                         int px = i + x;
                         int py = j + y;
                         int pz = k + z;
+
                         if (px < 0 || py < 0 || pz < 0) continue;
                         if (px > roughVoxelData->s() - 1 || py > roughVoxelData->t() - 1 || pz > roughVoxelData->r() - 1) continue;
 
-                        const osg::Vec4f cloudV = cloudVoxels->getColor(i, j, k);
+                        // Produce variant clouds by optionally reflecting the cloud in the X and/or Y axis.  For simplicity we can just
+                        // do this with a simple coordinate transformation.
+                        int ii = c.reflectX() ? cloudVoxels->s() - i - 1 : i;
+                        int jj = c.reflectY() ? cloudVoxels->t() - j - 1 : j;
+
+                        const osg::Vec4f cloudV = cloudVoxels->getColor(ii, jj, k);
                         if (cloudV[2] > 0.0f) {
                             const osg::Vec4f currentV = roughVoxelData->getColor(px, py, pz);
                             // When merging with the existing voxel data we want to take the 
