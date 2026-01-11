@@ -208,10 +208,8 @@ FGEnvironmentMgr::update (double dt)
                                 _environment->get_wind_speed_kt());
   particlesManager->update(dt, globals->get_aircraft_position());
 
-  if( _cloudLayersDirty ) {
-    _cloudLayersDirty = false;
-    fgClouds->set_update_event( fgClouds->get_update_event()+1 );
-  }
+  fgClouds->set_update_event( fgClouds->get_update_event()+1 );
+
   updateTowerPosition();
 
   fgSetDouble( "/environment/gravitational-acceleration-mps2",
@@ -464,7 +462,7 @@ FGEnvironmentMgr::set_cloud_layer_coverage (int index,
     return;
 
   _sky->get_cloud_layer(index)->setCoverageString(coverage_name);
-  _cloudLayersDirty = true;
+  fgClouds->setDirty(true);
 }
 
 int
@@ -509,7 +507,7 @@ FGEnvironmentMgr::set_cloud_layer_coverage_type (int index, int type )
     return;
 
   _sky->get_cloud_layer(index)->setCoverage(static_cast<SGCloudLayer::Coverage>(type));
-  _cloudLayersDirty = true;
+  fgClouds->setDirty(true);
 }
 
 

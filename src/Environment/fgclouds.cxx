@@ -62,7 +62,7 @@ int FGClouds::get_update_event(void) const {
 
 void FGClouds::set_update_event(int count) {
     update_event = count;
-    buildCloudLayers();
+    if (_fieldDirty) buildCloudLayers();
 }
 
 void FGClouds::Init(void)
@@ -455,6 +455,7 @@ void FGClouds::rebuildField() {
 
     _detailedFieldWidth     = cloudsProp->getIntValue("detailed-voxel-field-width", 512);
     _detailedFieldVoxelSize = cloudsProp->getIntValue("detailed-voxel-size-m", 200);  
+    size_t maxDetailedFieldHeight = cloudsProp->getIntValue("detailed-voxel-field-height", 64);
 
     if (_fieldRepeating) {
         _roughVoxelSizeFactor = 1;
@@ -541,6 +542,8 @@ void FGClouds::rebuildField() {
     // At this point we do not have information about individual cloud heights, so we make a guess that there
     // aren't any clouds more than 1000m tall.  This should cover just about everything apart from CuNb.
     _detailedFieldHeight = (size_t) std::ceil((maxCloudAlt + 1000.0f) / _detailedFieldVoxelSize);
+    if (_detailedFieldHeight > maxDetailedFieldHeight) _detailedFieldHeight = maxDetailedFieldHeight;
+
     cloudsProp->setIntValue("detailed-voxel-field-height", _detailedFieldHeight);
 
     const int detailedVoxelSpaceSizeMBytes = _detailedFieldWidth * _detailedFieldWidth * _detailedFieldHeight * 12 / 1024 / 1024;

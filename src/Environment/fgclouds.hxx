@@ -105,6 +105,9 @@ public:
     void set_update_event(int count);
     bool get_3dClouds() const;
     void set_3dClouds(bool enable);
+    
+    bool isDirty(void) const { return _fieldDirty; }
+    void setDirty(bool dirty)  { _fieldDirty = dirty; }
 
     bool isCloudsRepeating(void) const { return _fieldRepeating; }
     void setCloudsRepeating(bool repeat) { _fieldRepeating = repeat; }

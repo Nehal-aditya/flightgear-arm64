@@ -79,7 +79,6 @@ private:
     FGClimate * _climate = nullptr;
     FGEnvironment * _environment = nullptr; // always the same, for now
     FGClouds *fgClouds = nullptr;
-    bool _cloudLayersDirty = true;
     int max_tower_height_feet;
     int min_tower_height_feet;
     int default_tower_height_feet;
