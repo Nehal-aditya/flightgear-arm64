@@ -62,7 +62,7 @@ FGStandardAtmosphere::FGStandardAtmosphere(FGFDMExec* fdmex)
   : FGAtmosphere(fdmex), StdSLpressure(StdDaySLpressure), TemperatureBias(0.0),
     TemperatureDeltaGradient(0.0), VaporMassFraction(0.0),
     SaturatedVaporPressure(StdDaySLpressure), StdAtmosTemperatureTable(9),
-    MaxVaporMassFraction(10)
+    MaxVaporMassFraction(11)
 {
   Name = "FGStandardAtmosphere";
 
@@ -114,8 +114,9 @@ FGStandardAtmosphere::FGStandardAtmosphere(FGFDMExec* fdmex)
                        << 32808.3990 <<  1300.  // 10.0000 - 1% high
                        << 39370.0787 <<   230.  // 12.0000
                        << 45931.7585 <<    48.  // 14.0000
-                       << 52493.4383 <<    38.; // 16.0000 - 1% high
-
+                       << 52493.4383 <<    38.  // 16.0000 - 1% high
+                       << 157480.3149 <<    0;  // 48.0 km : force to zero (see https://gitlab.com/flightgear/flightgear/-/issues/3267 )
+                       
   unsigned int numRows = StdAtmosTemperatureTable.GetNumRows();
 
   // Initialize the standard atmosphere lapse rates.
