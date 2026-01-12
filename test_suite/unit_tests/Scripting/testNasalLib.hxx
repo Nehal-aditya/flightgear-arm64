@@ -13,6 +13,7 @@ class NasalLibTests : public CppUnit::TestFixture
     // Set up the test suite.
     CPPUNIT_TEST_SUITE(NasalLibTests);
     CPPUNIT_TEST(testVector);
+    CPPUNIT_TEST(testMember);
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -24,4 +25,5 @@ public:
 
     // The tests.
     void testVector();
+    void testMember();
 };
