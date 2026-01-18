@@ -19,12 +19,12 @@ using std::vector;
 // forward decls
 class SGPropertyNode;
 class SGCloudField;
-class SGNewCloud;
+class SGVoxelCloud;
 
 class FGClouds {
 
 private:
-    typedef std::tuple<SGNewCloud, osg::Vec3f> CloudPlacement;
+    typedef std::pair<const SGVoxelCloud*, osg::Vec3f> CloudPlacement;
 
     typedef std::unordered_map<int, CloudPlacement> CloudPlacementMap;
 
@@ -75,13 +75,13 @@ private:
     /**
      * Add a new cloud with a given index at a specific point defined by lon/lat and an x/y offset
      */
-    bool addCloud(SGNewCloud cloud, int index, float lon, float lat, float alt, float x, float y);
-    bool addCloud(SGNewCloud cloud, int index, SGGeod loc, float x, float y);
-    bool addCloud(SGNewCloud cloud, int index, float lon, float lat, float alt);
-    bool addCloud(SGNewCloud cloud, int index, SGGeod loc);
+    bool addCloud(const SGVoxelCloud* cloud, int index, float lon, float lat, float alt, float x, float y);
+    bool addCloud(const SGVoxelCloud* cloud, int index, SGGeod loc, float x, float y);
+    bool addCloud(const SGVoxelCloud* cloud, int index, float lon, float lat, float alt);
+    bool addCloud(const SGVoxelCloud* cloud, int index, SGGeod loc);
 
     // add one cloud, data is not copied, ownership given
-    void addCloud( SGVec3f& pos, SGNewCloud cloud);
+    void addCloud( SGVec3f& pos, const SGVoxelCloud* cloud);
     
     // Cloud handling functions.
     bool removeCloud(int index);
