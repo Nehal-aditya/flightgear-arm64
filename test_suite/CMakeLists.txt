@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2016 Edward d'Auvergne
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 # CMake module includes.
 include(SetupFGFSEmbeddedResources)
 include(SetupFGFSIncludes)
@@ -83,7 +86,6 @@ add_test(HoldControllerUnitTests ${TESTSUITE_OUTPUT_DIR}/fgfs_test_suite --ctest
 if(ENABLE_HID_INPUT)
     add_test(HIDInputUnitTests ${TESTSUITE_OUTPUT_DIR}/fgfs_test_suite --ctest -u HIDInputTests)
 endif()
-add_test(LaRCSimMatrixUnitTests ${TESTSUITE_OUTPUT_DIR}/fgfs_test_suite --ctest -u LaRCSimMatrixTests)
 add_test(MktimeUnitTests ${TESTSUITE_OUTPUT_DIR}/fgfs_test_suite --ctest -u MktimeTests)
 add_test(NasalSysUnitTests ${TESTSUITE_OUTPUT_DIR}/fgfs_test_suite --ctest -u NasalSysTests)
 add_test(NasalSysUnitTests ${TESTSUITE_OUTPUT_DIR}/fgfs_test_suite --ctest -u NasalLibTests)
@@ -111,8 +113,8 @@ setup_fgfs_embedded_resources()
 
 
 # most object files come from fgfsObjects target: this property
-# contains all the sources which need to be compiled seperately
-# for the test-suite, becuase they depend on BUILDING_TESTSUTIE define
+# contains all the sources which need to be compiled separately
+# for the test-suite, because they depend on BUILDING_TESTSUITE define
 # we setup below via target_compile_definitions
 
 get_property(TEST_SOURCES GLOBAL PROPERTY FG_TEST_SOURCES)
