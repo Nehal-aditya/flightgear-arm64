@@ -221,10 +221,6 @@ option(ENABLE_AUTOTESTING "Set to ON to execute the test suite after building th
 
 include (DetectArch)
 
-# when building an OSG with commit 15ec7e2ae7a8b983ecc44e1ce7363a9a9fa7da95
-# applied, we can use better link options
-option(OSG_FSTREAM_EXPORT_FIXED "Set to ON if the osgDB fstream export patch is applied" OFF)
-
 if(LOGGING)
     # nothing
 else()
@@ -535,13 +531,6 @@ if(WIN32)
         if (X86)
             set(SIMD_COMPILER_FLAGS "/arch:SSE /arch:SSE2")
         endif()
-
-        if (NOT OSG_FSTREAM_EXPORT_FIXED AND ${MSVC_VERSION} GREATER 1599)
-          message(STATUS "For better linking performance, use OSG with fixed fstream header")
-          # needed to avoid link errors on multiply-defined standard C++
-          # symbols. This issue was fixed in OSG commit 15ec7e2ae7a8b983ecc44e1ce7363a9a9fa7da95
-          set( MSVC_LD_FLAGS "/FORCE:MULTIPLE" )
-        endif ()
     endif(MSVC)
 
     set(NOMINMAX 1)
