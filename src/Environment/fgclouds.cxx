@@ -599,14 +599,17 @@ void FGClouds::rebuildField() {
 
     osg::ref_ptr<osg::Image> roughVoxelData = new osg::Image();
     roughVoxelData->setName("Rough Cloud Voxel Data");
+    roughVoxelData->setFileName("Rough Cloud Voxel Data");
     roughVoxelData->allocateImage(_roughFieldWidth, _roughFieldWidth, _roughFieldHeight, GL_RGBA, GL_FLOAT);
 
     osg::ref_ptr<osg::Image> detailedVoxelData = new osg::Image();
     detailedVoxelData->setName("Detailed Cloud Voxel Data");
+    detailedVoxelData->setFileName("Detailed Cloud Voxel Data");
     detailedVoxelData->allocateImage(_detailedFieldWidth, _detailedFieldWidth, _detailedFieldHeight, GL_RGBA, GL_FLOAT);
 
     osg::ref_ptr<osg::Image> voxelShadeData = new osg::Image();
     voxelShadeData->setName("Voxel Shade Data");
+    voxelShadeData->setFileName("Voxel Shade Data");
     voxelShadeData->allocateImage(_detailedFieldWidth, _detailedFieldWidth, _detailedFieldHeight, GL_RGBA, GL_FLOAT);
 
     // The alpha value is use for a Signed Distance Field, and indicates the maximum distance that can be travelled
@@ -766,12 +769,10 @@ void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage) {
         return;   
     }
 
-    auto gridSize = std::array<size_t, 3>{{width, width, height}};
-
-    SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "SDF calculation started for " << voxelImage->getName());
-
     try {
+        SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "SDF calculation started for " << voxelImage->getName());
         float maxDistance = 0.0f;
+        auto gridSize = std::array<size_t, 3>{{width, width, height}};
         auto sdf = fmm::SignedArrivalTime(
             gridSize,
             cloudBoundaryIndices,
