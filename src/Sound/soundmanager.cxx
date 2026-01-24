@@ -72,6 +72,8 @@ void FGSoundManager::init()
 
     globals->get_commands()->addCommand("play-audio-sample", this, &FGSoundManager::playAudioSampleCommand);
 
+    // ensure PropertyObject properties exist.
+    _headTracked.node(true);
 
     reinit();
 }
