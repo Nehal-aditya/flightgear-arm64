@@ -41,11 +41,6 @@ private:
     // Exception count from the fmm library
     unsigned int _FMMExceptionCount;
 
-    // Voxel-based clouds
-    osg::ref_ptr<osg::Image> _roughVoxelData;
-    osg::ref_ptr<osg::Image> _detailedVoxelData;
-    osg::ref_ptr<osg::Image> _noiseData;
-
     size_t _roughVoxelSizeFactor;
     size_t _roughFieldWidth;
     size_t _roughFieldHeight;
