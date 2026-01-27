@@ -455,6 +455,11 @@ void FGMouseInput::init()
             m.modes[j].pass_through = mode_node->getBoolValue("pass-through", false);
             m.modes[j]._passThrough3D = mode_node->getBoolValue("vr-cursor/pass-through", false);
 
+            // 3D pass-through needs similar code paths to 2D pass-through in
+            // this class
+            if (m.modes[j]._passThrough3D)
+                m.modes[j].pass_through = true;
+
             // Read the 3D mouse cursor condition
             SGPropertyNode* cursor3DCondition = mode_node->getNode("vr-cursor/condition");
             if (cursor3DCondition)
