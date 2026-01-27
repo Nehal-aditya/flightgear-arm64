@@ -782,7 +782,10 @@ void FGRouteMgr::InputListener::valueChanged(SGPropertyNode *prop)
         mgr->activate();
     } else if (input == "@LOAD") {
         SGPath path = SGPath::fromUtf8(mgr->_pathNode->getStringValue());
-        mgr->loadRoute(path);
+        bool ok = mgr->loadRoute(path);
+        if (!ok) {
+            modalMessageBox("FlightGear", "Unable to load flight plan (from '" + path.utf8Str() + "')");
+        }
     } else if (input == "@SAVE") {
         SGPath path = SGPath::fromUtf8(mgr->_pathNode->getStringValue());
         const SGPath authorizedPath = SGPath(path).validate(true /* write */);
