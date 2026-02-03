@@ -215,7 +215,9 @@ DesktopGroup::DesktopGroup(osg::Camera* camera) : Group(sc::CanvasPtr(), fgGetNo
     stateSet->setMode(GL_BLEND, osg::StateAttribute::ON);
     stateSet->setAttribute(new osg::BlendFunc(
         osg::BlendFunc::SRC_ALPHA,
-        osg::BlendFunc::ONE_MINUS_SRC_ALPHA));
+        osg::BlendFunc::ONE_MINUS_SRC_ALPHA,
+        osg::BlendFunc::ONE_MINUS_DST_ALPHA,
+        osg::BlendFunc::ONE));
 #endif
 
     _width = _height = -1;
