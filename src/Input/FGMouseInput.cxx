@@ -720,37 +720,38 @@ void FGMouseInput::doMouseClick(int b, int updown, int x, int y, bool mainWindow
 
 void FGMouseInput::processMotion(int x, int y, const osgGA::GUIEventAdapter* ea)
 {
-    if (!d->activePickCallbacks[0].empty()) {
-        d->doMouseMoveWithCallbacks(ea);
-        return;
-    }
-
-    if (SviewMouseMotion(x, y, *ea)) {
-        return;
-    }
-
     mouse& m = d->mice[0];
     int modeIndex = m.current_mode;
+    bool pickCallbacks = !d->activePickCallbacks[0].empty();
 
-    if (isRightDragLookActive()) {
-        // right mouse is down, force look mode
+    if (isRightDragLookActive() && !pickCallbacks) {
+        // right mouse is down, force look mode (unless already picking)
         modeIndex = 3;
     }
 
     mouse_mode& mode = m.modes[modeIndex];
 
-    if (mode.pass_through) {
-        osg::Vec2d windowPos;
-        flightgear::eventToWindowCoords(ea, windowPos.x(), windowPos.y());
-
-        // omly do hover picks if no buttons are down
-        if (ea->getButtonMask() == 0) {
-            d->scheduleHoverPick(windowPos);
+    if (!pickCallbacks) {
+        if (SviewMouseMotion(x, y, *ea)) {
+            return;
         }
 
-        // mouse has moved, so we may need to issue tooltip-timeout command again
-        d->tooltipTimeoutDone = false;
+        if (mode.pass_through) {
+            osg::Vec2d windowPos;
+            flightgear::eventToWindowCoords(ea, windowPos.x(), windowPos.y());
+
+            // only do hover picks if no buttons are down
+            if (ea->getButtonMask() == 0) {
+                d->scheduleHoverPick(windowPos);
+            }
+
+            // mouse has moved, so we may need to issue tooltip-timeout command again
+            d->tooltipTimeoutDone = false;
+        }
     }
+
+    // We need to handle bindings even if pickCallbacks, to allow 360 mouse
+    // motion to move the 3D cursor before doMouseMoveWithCallbacks()
 
     if (d->haveWarped) {
         // don't fire mouse-movement events at the first update after warping
@@ -780,6 +781,10 @@ void FGMouseInput::processMotion(int x, int y, const osgGA::GUIEventAdapter* ea)
     // Constrain the mouse if requested
     if (mode.constrained) {
         d->constrainMouse(x, y);
+    }
+
+    if (pickCallbacks) {
+        d->doMouseMoveWithCallbacks(ea);
     }
 }
 
