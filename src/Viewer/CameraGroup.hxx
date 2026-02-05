@@ -117,6 +117,8 @@ struct CameraInfo : public osg::Referenced
     };
     osg::ref_ptr<ReloadCompositorCallback> reloadCompositorCallback;
 
+    /// Compositor GUI pass number (-1 if none found).
+    int guiPass = -1;
 };
 
 class CameraGroup : public osg::Referenced
