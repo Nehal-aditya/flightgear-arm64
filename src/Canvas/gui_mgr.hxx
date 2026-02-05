@@ -23,6 +23,7 @@ namespace osgGA
 }
 
 class GUIEventHandler;
+class GUIPickCallback;
 class GUIMgr : public SGSubsystem
 {
 public:
@@ -66,6 +67,7 @@ public:
 protected:
     simgear::canvas::GroupPtr           _desktop;
     osg::ref_ptr<GUIEventHandler>       _event_handler;
+    SGSharedPtr<GUIPickCallback> _pickCallback;
     osg::ref_ptr<osgViewer::View>       _viewerView;
     osg::ref_ptr<osg::Camera>           _camera;
 

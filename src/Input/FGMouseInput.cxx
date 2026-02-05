@@ -251,7 +251,11 @@ public:
             std::string curName(pick.callback->getCursor());
             if (!curName.empty()) {
                 explicitCursor = true;
-                cur = FGMouseCursor::cursorFromString(curName.c_str());
+                if (curName == "explicit") {
+                    cur = FGMouseCursor::instance()->getCursor();
+                } else {
+                    cur = FGMouseCursor::cursorFromString(curName.c_str());
+                }
             }
 
             // if the callback is of higher priority (lower enum index),
@@ -320,8 +324,13 @@ public:
                 (*li)->mouseMoved(*ea, pick ? &pick->info : 0);
 
                 std::string curName((*li)->getCursor());
-                if (!curName.empty())
-                    cur = FGMouseCursor::cursorFromString(curName.c_str());
+                if (!curName.empty()) {
+                    if (curName == "explicit") {
+                        cur = FGMouseCursor::instance()->getCursor();
+                    } else {
+                        cur = FGMouseCursor::cursorFromString(curName.c_str());
+                    }
+                }
             }
         }
 
