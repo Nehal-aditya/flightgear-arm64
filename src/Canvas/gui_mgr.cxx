@@ -13,7 +13,9 @@
 #include <simgear/canvas/CanvasPlacement.hxx>
 #include <simgear/canvas/CanvasWindow.hxx>
 #include <simgear/canvas/events/KeyboardEvent.hxx>
+#include <simgear/scene/model/SGPickAnimation.hxx>
 #include <simgear/scene/util/OsgMath.hxx>
+#include <simgear/scene/util/SGPickCallback.hxx>
 
 #include <osg/BlendFunc>
 #include <osgViewer/Viewer>
@@ -118,6 +120,7 @@ class DesktopGroup:
   protected:
 
     friend class GUIMgr;
+    friend class GUIPickCallback;
 
     SGPropertyChangeCallback<DesktopGroup> _cb_mouse_mode;
     bool _handleMouseEvents = true;
@@ -144,7 +147,7 @@ class DesktopGroup:
     uint32_t _last_key_down_no_mod {~0u}; // Key repeat for non modifier keys
 
     bool canHandleInput() const;
-    bool handleMouse(const osgEA& ea);
+    bool handleMouse(const osgEA& ea, bool fromVR = false);
     bool handleKeyboard(const osgEA& ea);
 
     bool propagateEvent( const sc::EventPtr& event,
@@ -168,6 +171,175 @@ class DesktopGroup:
       return Group::getChildFactory(type);
     }
 };
+
+/**
+ * 3D GUI pick callback.
+ * This handles all pick events on objects with the "gui" animation, such as the
+ * 3D GUI for VR.
+ */
+class GUIPickCallback : public SGPickCallback
+{
+public:
+    GUIPickCallback(GUIMgr* mgr)
+        : _mgr(mgr)
+    {
+    }
+
+    void clear()
+    {
+        _mgr = nullptr;
+    }
+
+    bool buttonPressed(int button,
+                       const osgGA::GUIEventAdapter& ea,
+                       const Info& info) override
+    {
+        if (_mgr) {
+            // Use the UV coordinates as the mouse position
+            osg::ref_ptr<osgEA> ev = new osgEA(ea);
+
+            ev->setX(info.uv[0]);
+            ev->setXmin(0.0);
+            ev->setXmax(1.0);
+
+            ev->setY(info.uv[1]);
+            ev->setYmin(0.0);
+            ev->setYmax(1.0);
+
+            ev->setMouseYOrientation(osgEA::Y_INCREASING_UPWARDS);
+
+            bool handled = static_cast<DesktopGroup*>(_mgr->getDesktop().get())->handleMouse(*ev, true);
+            if (handled)
+                _buttonMask = ea.getButtonMask();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    void buttonReleased(int keyModState,
+                        const osgGA::GUIEventAdapter& ea,
+                        const Info* info) override
+    {
+        _buttonMask = ea.getButtonMask();
+        if (_mgr) {
+            osg::ref_ptr<osgEA> ev = new osgEA(ea);
+
+            // Use the UV coordinates as the mouse position if available
+            if (info) {
+                ev->setX(info->uv[0]);
+                ev->setXmin(0.0);
+                ev->setXmax(1.0);
+
+                ev->setY(info->uv[1]);
+                ev->setYmin(0.0);
+                ev->setYmax(1.0);
+
+                ev->setMouseYOrientation(osgEA::Y_INCREASING_UPWARDS);
+            }
+
+            static_cast<DesktopGroup*>(_mgr->getDesktop().get())->handleMouse(*ev, true);
+        }
+    }
+
+    void mouseMoved(const osgGA::GUIEventAdapter& ea,
+                    const Info* info) override
+    {
+        if (_mgr && info) {
+            // Use the UV coordinates as the mouse position if available
+            osg::ref_ptr<osgEA> ev = new osgEA(ea);
+
+            ev->setX(info->uv[0]);
+            ev->setXmin(0.0);
+            ev->setXmax(1.0);
+
+            ev->setY(info->uv[1]);
+            ev->setYmin(0.0);
+            ev->setYmax(1.0);
+
+            ev->setMouseYOrientation(osgEA::Y_INCREASING_UPWARDS);
+
+            static_cast<DesktopGroup*>(_mgr->getDesktop().get())->handleMouse(*ev, true);
+        }
+    }
+
+    bool hover(const osg::Vec2d& windowPos,
+               const Info& info) override
+    {
+        if (_mgr) {
+            // Use the UV coordinates as the mouse position
+            osg::ref_ptr<osgEA> ev = new osgEA();
+            ev->setEventType(osgEA::MOVE);
+
+            ev->setX(info.uv[0]);
+            ev->setXmin(0.0);
+            ev->setXmax(1.0);
+
+            ev->setY(info.uv[1]);
+            ev->setYmin(0.0);
+            ev->setYmax(1.0);
+
+            ev->setMouseYOrientation(osgEA::Y_INCREASING_UPWARDS);
+
+            bool handled = static_cast<DesktopGroup*>(_mgr->getDesktop().get())->handleMouse(*ev, true);
+            // FGMouseInput will assume we've set the mouse cursor
+            if (!handled)
+                fgSetMouseCursor(FGMouseCursor::CURSOR_ARROW);
+            return handled;
+        } else {
+            return false;
+        }
+    }
+
+    std::string getCursor() const override
+    {
+        // We set the mouse cursor on hover with fgSetMouseCursor()
+        return "explicit";
+    }
+
+    bool needsDragPosition() const override
+    {
+        return true;
+    }
+
+    bool needsUV() const override
+    {
+        return true;
+    }
+
+    bool hitTest(const Info& info) const override
+    {
+        if (_mgr) {
+            // If dragging, always hit
+            if (_buttonMask)
+                return true;
+
+            // Otherwise, hit if a window is present at the UV coordinates
+            osg::ref_ptr<osgEA> ev = new osgEA();
+            ev->setEventType(osgEA::MOVE);
+
+            ev->setX(info.uv[0]);
+            ev->setXmin(0.0);
+            ev->setXmax(1.0);
+
+            ev->setY(info.uv[1]);
+            ev->setYmin(0.0);
+            ev->setYmax(1.0);
+
+            ev->setMouseYOrientation(osgEA::Y_INCREASING_UPWARDS);
+
+            DesktopGroup* desktop = static_cast<DesktopGroup*>(_mgr->getDesktop().get());
+            return (bool)desktop->windowAtPosition(desktop->toScreenPos(*ev));
+        } else {
+            return false;
+        }
+    }
+
+protected:
+    int _buttonMask = 0;
+    GUIMgr* _mgr;
+};
+
 
 //------------------------------------------------------------------------------
 GUIEventHandler::GUIEventHandler(const DesktopWeakPtr& desktop_group):
@@ -330,9 +502,9 @@ bool DesktopGroup::canHandleInput() const
 }
 
 //------------------------------------------------------------------------------
-bool DesktopGroup::handleMouse(const osgEA& ea)
+bool DesktopGroup::handleMouse(const osgEA& ea, bool fromVR)
 {
-    if (!_handleMouseEvents || !canHandleInput())
+    if (_handleMouseEvents == fromVR || !canHandleInput())
         return false;
 
     osg::Vec2f mouse_pos = toScreenPos(ea),
@@ -665,6 +837,11 @@ void GUIMgr::init()
         "window",
         std::bind(&GUIMgr::addWindowPlacement, this, std::placeholders::_1, std::placeholders::_2));
 
+    // Set the GUI pick callback for use by "gui" animations to pass 3D mouse
+    // events back to the GUI
+    _pickCallback = new GUIPickCallback(this);
+    SGGUIAnimation::setPickCallback(_pickCallback);
+
     _desktop->getProps()->fireCreatedRecursive();
 }
 
@@ -676,6 +853,9 @@ void GUIMgr::shutdown()
     SG_LOG(SG_GUI, SG_WARN, "GUIMgr::shutdown() not running.");
     return;
   }
+
+  _pickCallback->clear();
+  SGGUIAnimation::setPickCallback(nullptr);
 
   sc::Canvas::removePlacementFactory("window");
 
