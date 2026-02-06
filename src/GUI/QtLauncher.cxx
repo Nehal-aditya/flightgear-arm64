@@ -803,14 +803,14 @@ LockFileDialogResult showLockFileDialog()
     return LockFileContinue;
 }
 
-bool showSetupRootDialog(bool usingDefaultRoot)
+bool showSetupRootDialog(SetupRootReason r)
 {
-    return SetupRootDialog::runDialog(usingDefaultRoot);
+    return SetupRootDialog::runDialog(r);
 }
 
-bool showUpdateRootDialog(bool usingDefaultRoot)
+bool showUpdateRootDialog(SetupRootReason r)
 {
-    return SetupRootDialog::runUpdateDialog(usingDefaultRoot);
+    return SetupRootDialog::runUpdateDialog(r);
 }
 
 

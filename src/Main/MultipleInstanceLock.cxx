@@ -272,6 +272,7 @@ ExclusiveInstanceLock::ExclusiveInstanceLock(std::string reason)
     _lockPath = SGPath(globals->get_fg_home(), static_multiInstanceLockFile);
 #endif
     writeLockReason(_reason);
+    addSentryBreadcrumb("created ExclusiveInstanceLock:" + reason, "info");
 }
 
 ExclusiveInstanceLock::~ExclusiveInstanceLock()
@@ -279,6 +280,7 @@ ExclusiveInstanceLock::~ExclusiveInstanceLock()
     // depending on C++ destruction order, we can't access globals here,
     // so we save the path at constructor time
     releaseLock(_lockPath);
+    addSentryBreadcrumb("released ExclusiveInstanceLock", "info");
 }
 
 std::optional<std::string> ExclusiveInstanceLock::isLocked()

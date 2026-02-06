@@ -42,9 +42,9 @@ public:
 
     ~SetupRootDialog();
 
-    static bool runDialog(bool usingDefaultRoot);
+    static bool runDialog(flightgear::SetupRootReason r);
 
-    static bool runUpdateDialog(bool usingDefaultRoot);
+    static bool runUpdateDialog(flightgear::SetupRootReason r);
 
     static flightgear::SetupRootResult restoreUserSelectedRoot(SGPath& path);
 

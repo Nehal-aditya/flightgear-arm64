@@ -3574,36 +3574,51 @@ OptionResult Options::setupRoot(int argc, char** argv)
     }
 
   if (isOptionSet("fg-root")) {
-      root = SGPath::fromUtf8(valueForOption("fg-root")); // easy!
-      SG_LOG(SG_GENERAL, SG_INFO, "set from command-line argument: fg_root = " << root );
-  } else {
-  // Next check if fg-root is set as an env variable
-    char *envp = ::getenv( "FG_ROOT" );
-    if ( envp != nullptr ) {
-        root = SGPath::fromEnv("FG_ROOT");
-        SG_LOG(SG_GENERAL, SG_INFO, "set from FG_ROOT env var: fg_root = " << root );
-    } else {
+      const auto v = valueForOption("fg-root");
+      if (v == "!ask") {
 #if defined(HAVE_QT)
-        auto restoreResult = restoreUserSelectedRoot(root);
-        if (restoreResult == SetupRootResult::UserExit) {
+        bool ok = flightgear::showSetupRootDialog(flightgear::SetupRootReason::ManualChoiceRequested);
+        if (!ok) {
             return FG_OPTIONS_EXIT;
-        } else if (restoreResult == SetupRootResult::UseDefault) {
-            root = SGPath{}; // clear any value, so we fall through in root.isNull() below
         }
-#endif
 
-        if (root.isNull()) {
-            usingDefaultRoot = true;
-            root = platformDefaultRoot();
-            if (!isFGData(root)) {
-                root = downloadedDataRoot();
-            }
-            SG_LOG(SG_GENERAL, SG_INFO, "platform default fg_root = " << root );
+        root = globals->get_fg_root();
+#else
+        SG_LOG(SG_GENERAL, SG_ALERT, "interactively asking for fg-root requires a build with Qt GUI support.");
+        return FG_OPTIONS_EXIT;
+#endif
+      } else {
+          root = SGPath::fromUtf8(v); // easy!
+          SG_LOG(SG_GENERAL, SG_INFO, "set from command-line argument: fg_root = " << root);
+      }
+    } else {
+        // Next check if fg-root is set as an env variable
+        char *envp = ::getenv( "FG_ROOT" );
+        if ( envp != nullptr ) {
+            root = SGPath::fromEnv("FG_ROOT");
+            SG_LOG(SG_GENERAL, SG_INFO, "set from FG_ROOT env var: fg_root = " << root );
         } else {
-            SG_LOG(SG_GENERAL, SG_INFO, "Qt launcher set fg_root = " << root );
+    #if defined(HAVE_QT)
+            auto restoreResult = restoreUserSelectedRoot(root);
+            if (restoreResult == SetupRootResult::UserExit) {
+                return FG_OPTIONS_EXIT;
+            } else if (restoreResult == SetupRootResult::UseDefault) {
+                root = SGPath{}; // clear any value, so we use the default location
+            } else {
+                SG_LOG(SG_GENERAL, SG_INFO, "Qt launcher set fg_root = " << root );
+            }
+    #endif
         }
     }
-  }
+
+    if (root.isNull()) {
+        usingDefaultRoot = true;
+        root = platformDefaultRoot();
+        if (!isFGData(root)) {
+            root = downloadedDataRoot();
+        }
+        SG_LOG(SG_GENERAL, SG_INFO, "Using default fg_root = " << root );
+    }
 
   globals->set_fg_root(root);
   string base_version = fgBasePackageVersion(root);
@@ -3629,8 +3644,9 @@ OptionResult Options::setupRoot(int argc, char** argv)
             return FG_OPTIONS_EXIT;
         }
 
-        flightgear::initApp(argc, argv);
-        bool ok = flightgear::showSetupRootDialog(usingDefaultRoot);
+        const auto r = usingDefaultRoot ? flightgear::SetupRootReason::DefaultRootInvalid
+                                        : flightgear::SetupRootReason::ExplicitRootInvalid;
+        bool ok = flightgear::showSetupRootDialog(r);
         if (!ok) {
             return FG_OPTIONS_EXIT;
         }

@@ -18,7 +18,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-#include "LaunchConfig.hxx"
 #include "config.h"
 
 #include "SetupRootDialog.hxx"
@@ -41,7 +40,7 @@
 #include <QThread>
 #include <QUrl>
 
-#include "simgear/debug/debug_types.h"
+
 #include "ui_SetupRootDialog.h"
 
 #include <Main/fg_init.hxx>
@@ -50,12 +49,14 @@
 #include <Main/options.hxx>
 #include <Viewer/WindowBuilder.hxx>
 
+#include "DownloadTerrasyncSharedData.hxx"
+#include "LaunchConfig.hxx"
 #include "QtLauncher.hxx"
 #include "SettingsWrapper.hxx"
 #include "UpdateDownloadedFGData.hxx"
-#include "DownloadTerrasyncSharedData.hxx"
 #include <GUI/QtDNSClient.hxx>
 #include <Main/MultipleInstanceLock.hxx>
+#include <Main/sentryIntegration.hxx>
 
 #include <simgear/io/iostreams/sgstream.hxx>
 #include <simgear/io/untar.hxx>
@@ -103,15 +104,18 @@ public:
         // ensure we remove any existing data, since it failed validation
         if (rp.exists()) {
             simgear::Dir ed(rp);
-            ed.remove(true);
+            const bool ok = ed.remove(true);
+            if (!ok) {
+                m_error = true;
+                QTimer::singleShot(1s, this, [this]() {
+                    emit failed(tr("Unable to remove existing data before downloading."));
+                });
+                return;
+            }
         }
 
         m_downloadPath = rp.dirPath() / ("_download_data_" + std::to_string(FLIGHTGEAR_MAJOR_VERSION) + "_" + std::to_string(FLIGHTGEAR_MINOR_VERSION));
         m_downloadPath.set_cached(false);
-        if (m_downloadPath.exists()) {
-            simgear::Dir ed(m_downloadPath);
-            ed.remove(true);
-        }
 
         const auto resumeDataPath = rp.dirPath() / std::string{"_fgdata_downloading.temp"};
         // FIXME: convert via std::filesystem::path
@@ -192,27 +196,35 @@ public:
 
         req.setRawHeader("Range", QString("bytes=%1-").arg(resumeBytes).toUtf8());
         m_readResumeFile = true;
-    
-        // finally, open the file for reading *and* writing, since once we release our
-        // mutex, the running thread will start pulling data out now m_readResumeFile is set
-        m_resumeData.open(QIODevice::ReadWrite);
 
         return fourMB;
     }
 
     void startRequest()
     {
-        // must do this before we start any resume
-        {
-            std::unique_lock g(m_mutex);
-            m_haveFirstMByte = false;
-            m_buffer.clear();
+        if (isRunning()) {
+            m_error = true; // force the thread to exit
+            wait();
+            m_error = false;
+            flightgear::addSentryBreadcrumb("InstallFGDataThread: did stop running thead", "info");
         }
 
-        // reset the archive
-        m_archive.reset(new simgear::ArchiveExtractor(m_downloadPath));
-        m_archive->setRemoveTopmostDirectory(true);
-        m_archive->setCreateDirHashEntries(true);
+        // clean-up from any previous failed / abandoned request
+        if (m_downloadPath.exists()) {
+            simgear::Dir ed(m_downloadPath);
+            bool ok = ed.remove(true);
+            if (!ok) {
+                m_error = true;
+                flightgear::addSentryBreadcrumb("InstallFGDataThread: removing old download dir failed", "error");
+                emit failed(tr("Unable to remove previous download."));
+                return;
+            }
+        }
+
+        // must do this before we start any resume
+        m_haveFirstMByte = false;
+        m_extractedBytes = 0;
+        m_buffer.clear();
 
         // SF doesn't support resuming, hard-code this for now. To be more generic we would
         // encode this in the server data somehow.
@@ -261,6 +273,9 @@ public:
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
         connect(m_download, &QNetworkReply::errorOccurred, this, &InstallFGDataThread::onNetworkError);
 #endif
+
+        // start our thread loop
+        start();
     }
 
     ~InstallFGDataThread()
@@ -302,6 +317,13 @@ public:
     void run() override
     {
         while (!m_error & !m_done) {
+            if (!m_archive) {
+                // reset the archive
+                m_archive.reset(new simgear::ArchiveExtractor(m_downloadPath));
+                m_archive->setRemoveTopmostDirectory(true);
+                m_archive->setCreateDirHashEntries(true);
+            }
+
             // do the resume read first, as fast as the disk IO will allow
             if (m_readResumeFile) {
                 QByteArray resumeBytes;
@@ -313,8 +335,8 @@ public:
                 m_archive->extractBytes((const uint8_t*)resumeBytes.constData(), resumeBytes.size());
                 m_extractedBytes += resumeBytes.size();
                 if (m_resumeData.pos() >= static_cast<qint64>(m_resumedBytesSize)) {
-                    qInfo() << "done reading resume file bytes";
                     m_readResumeFile = false;
+                    flightgear::addSentryBreadcrumb("InstallFGDataThread: done reading resume bytes", "info");
                 }
                 updateProgress();
                 continue;
@@ -373,6 +395,7 @@ public:
             // ensure the archive is cleaned up, including any files,
             // since we will likely attempt to remove it.
             m_archive.reset();
+            qInfo() << "InstallFGData ending with error, deleting ArchiveExtractor";
         } else {
             // create marker file for future updates
             {
@@ -390,6 +413,9 @@ public:
 
             // remove the resume-data file from disk, now we succeeded.
             m_resumeData.remove();
+            flightgear::addSentryBreadcrumb("InstallFGData finshed successfully", "info");
+
+            emit completed();
         }
     }
 
@@ -463,10 +489,6 @@ public:
                     return;
                 }
 
-                if (m_resumeOverlapBytes == 0) {
-                    qInfo() << "resumed download correctly";
-                }
-
                 // if all available bytes were consumed,
                 // don't bother waking up the thread
                 if (bytes.isEmpty()) {
@@ -505,6 +527,8 @@ signals:
     void downloadProgress(quint64 cur, quint64 total);
 
     void failed(QString message);
+
+    void completed();
 
 private:
     QNetworkAccessManager* m_networkManager = nullptr;
@@ -549,7 +573,9 @@ SetupRootDialog::SetupRootDialog(PromptState prompt, const SGPath& checked) :
     m_checkedPath(checked)
 {
     auto exLock = flightgear::ExclusiveInstanceLock::instance();
-    exLock->updateReason("setup-fgdata");
+    if (exLock) {
+        exLock->updateReason("setup-fgdata");
+    }
 
     m_ui.reset(new Ui::SetupRootDialog);
     m_ui->setupUi(this);
@@ -588,19 +614,29 @@ SetupRootDialog::SetupRootDialog(PromptState prompt, const SGPath& checked) :
     m_networkManager->setRedirectPolicy(QNetworkRequest::NoLessSafeRedirectPolicy);
 }
 
-bool SetupRootDialog::runDialog(bool usingDefaultRoot)
+bool SetupRootDialog::runDialog(flightgear::SetupRootReason r)
 {
     // this code path is only used if have Qt enabled, but didn't use the launcher.
     // in that case, we're coming from Options::setupRoot, which stores the path
     // it checked in gloabls::get_fg_root() *before* it calls us here.
-    SetupRootDialog::PromptState prompt =
-        usingDefaultRoot ? DefaultPathCheckFailed : ExplicitPathCheckFailed;
+    SetupRootDialog::PromptState prompt = ManualChoiceRequested;
+    switch (r) {
+    case flightgear::SetupRootReason::DefaultRootInvalid:
+        prompt = DefaultPathCheckFailed;
+        break;
+    case flightgear::SetupRootReason::ExplicitRootInvalid:
+        prompt = ExplicitPathCheckFailed;
+        break;
+    default:
+        break; // use 'manual choice'
+    };
+
     return runDialog(prompt, globals->get_fg_root());
 }
 
-bool SetupRootDialog::runUpdateDialog(bool usingDefaultRoot)
+bool SetupRootDialog::runUpdateDialog(flightgear::SetupRootReason r)
 {
-    SG_UNUSED(usingDefaultRoot);
+    SG_UNUSED(r);
     return runDialog(SetupRootDialog::PromptState::NeedToUpdateDownloadedData, SGPath{});
 }
 
@@ -610,12 +646,15 @@ bool SetupRootDialog::runDialog(PromptState prompt, const SGPath& checkedPath)
     // try to initialise various Cocoa structures.
     flightgear::WindowBuilder::setPoseAsStandaloneApp(false);
 
+    flightgear::addSentryBreadcrumb("running SetupRootDialog", "info");
     SetupRootDialog dlg(prompt, checkedPath);
     dlg.exec();
     if (dlg.result() != QDialog::Accepted) {
+        flightgear::addSentryBreadcrumb("SetupRootDialog rejected", "info");
         return false;
     }
 
+    flightgear::addSentryBreadcrumb("SetupRootDialog accepted", "info");
     return true;
 }
 
@@ -915,7 +954,7 @@ void SetupRootDialog::onDownload()
         m_promptState = DownloadFailed;
     });
 
-    connect(installThread, &InstallFGDataThread::finished, this, [this, installThread]() {
+    connect(installThread, &InstallFGDataThread::completed, this, [this, installThread]() {
         if (installThread->hasError()) {
             // go back to the first page
             m_promptState = DownloadFailed;
@@ -926,7 +965,7 @@ void SetupRootDialog::onDownload()
         }
     });
 
-    installThread->start();
+    // we don't start the thread here, that happens automatically
 }
 
 void SetupRootDialog::startSharedDataDownload()

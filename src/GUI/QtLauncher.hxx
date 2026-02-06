@@ -55,19 +55,25 @@ namespace flightgear
 
   void launcherSetSceneryPaths();
 
-    bool showSetupRootDialog(bool usingDefaultRoot);
+  enum class SetupRootReason {
+      DefaultRootInvalid,
+      ExplicitRootInvalid,
+      ManualChoiceRequested
+  };
 
-    bool showUpdateRootDialog(bool usingDefaultRoot);
+  bool showSetupRootDialog(SetupRootReason r);
+
+  bool showUpdateRootDialog(SetupRootReason r);
 
 
-    enum class SetupRootResult {
-        RestoredOk,
-        UserExit,
-        UserSelected,
-        UseDefault,
-        UpdateRequired
-    };
+  enum class SetupRootResult {
+      RestoredOk,
+      UserExit,
+      UserSelected,
+      UseDefault,
+      UpdateRequired
+  };
 
-    SetupRootResult restoreUserSelectedRoot(SGPath& path);
+  SetupRootResult restoreUserSelectedRoot(SGPath& path);
 } // of namespace flightgear
 
