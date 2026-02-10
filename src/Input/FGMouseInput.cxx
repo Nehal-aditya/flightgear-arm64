@@ -299,6 +299,8 @@ public:
         // Do not compute scenery picks unless a callback requests it, as it is costly.
         SGSceneryPicks pickList;
         bool did_pick = false;
+        mouse& m = mice[0];
+        mouse_mode& mode = m.modes[m.current_mode];
 
         for (ActivePickCallbacks::iterator mi = activePickCallbacks.begin();
              mi != activePickCallbacks.end();
@@ -306,7 +308,11 @@ public:
             SGPickCallbackList::iterator li;
             for (li = mi->second.begin(); li != mi->second.end(); ++li) {
                 if (!did_pick && (*li)->needsDragPosition()) {
-                    pickList = globals->get_renderer()->pick(windowPos);
+                    if (mode._passThrough3D) {
+                        pickList = m.cursor3D->pick();
+                    } else {
+                        pickList = globals->get_renderer()->pick(windowPos);
+                    }
                     did_pick = true;
                 }
 
@@ -656,7 +662,11 @@ void FGMouseInput::doMouseClick(int b, int updown, int x, int y, bool mainWindow
             // when spring-loaded mode is active, don't do scene selection for picks
             // https://sourceforge.net/p/flightgear/codetickets/2108/
         } else {
-            pickList = globals->get_renderer()->pick(windowPos);
+            if (mode._passThrough3D) {
+                pickList = m.cursor3D->pick();
+            } else {
+                pickList = globals->get_renderer()->pick(windowPos);
+            }
         }
 
         if (updown == MOUSE_BUTTON_UP) {
