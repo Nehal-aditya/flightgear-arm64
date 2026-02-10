@@ -760,13 +760,16 @@ FGRenderer::addCanvasCamera(osg::Camera* camera)
 {
     assert(camera);
 
+    osg::Camera* guiCamera = getGUICamera(CameraGroup::getDefault());
+    if (!guiCamera)
+        return;
+
     bool should_restart_threading = getViewerBase()->areThreadsRunning();
     if (should_restart_threading) {
         getViewerBase()->stopThreading();
     }
 
     // Use the same graphics context as the GUI camera
-    osg::Camera *guiCamera = getGUICamera(CameraGroup::getDefault());
     osg::GraphicsContext *gc = guiCamera->getGraphicsContext();
     camera->setGraphicsContext(gc);
 
