@@ -47,8 +47,6 @@ FGMouseCursor3D::FGMouseCursor3D()
     // Read cursor models from /sim/vr/config/cursors/cursor[]
     for (auto cursor : cursor3DNode->getChildren("cursor")) {
         std::string path = cursor->getStringValue("model/path", "");
-        std::string cursorStr = cursor->getStringValue("cursor", "");
-        unsigned int cursorId = (int)FGMouseCursor::cursorFromString(cursorStr);
 
         simgear::ErrorReportContext ec("cursor-model", path);
 
@@ -61,9 +59,25 @@ FGMouseCursor3D::FGMouseCursor3D()
             continue;
         }
 
-        osg::Node* node = simgear::SGModelLib::loadModel(resolvedPath.utf8Str(),
-                                                         globals->get_props());
-        if (node) {
+        osg::Node* node = nullptr;
+        for (auto cursor : cursor->getChildren("cursor")) {
+            std::string cursorStr = cursor->getStringValue();
+            unsigned int cursorId = (int)FGMouseCursor::cursorFromString(cursorStr);
+
+            // If a model is already defined for this cursor ID, leave it be.
+            // Its possible cursorFromString() didn't find a match and fell back
+            // to CURSOR_ARROW.
+            if (cursorId < _modelMapping.size() && _modelMapping[cursorId] >= 0)
+                continue;
+
+            // Make sure the cursor model is loaded
+            if (!node) {
+                node = simgear::SGModelLib::loadModel(resolvedPath.utf8Str(),
+                                                      globals->get_props());
+                if (!node)
+                    break;
+            }
+
             // Add mapping from the cursor type to the model node
             if (cursorId >= _modelMapping.size())
                 _modelMapping.resize(cursorId + 1, -1);
