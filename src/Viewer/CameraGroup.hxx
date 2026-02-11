@@ -1,8 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (C) 2008  Tim Moore
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifndef CAMERAGROUP_HXX
-#define CAMERAGROUP_HXX 1
+#pragma once
 
 #include <map>
 #include <string>
@@ -285,6 +284,4 @@ void warpGUIPointer(CameraGroup* cgroup, int x, int y);
  */
 void reloadCompositors(CameraGroup *cgroup);
 
-}
-
-#endif
+} // namespace flightgear
