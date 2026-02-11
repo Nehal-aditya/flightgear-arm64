@@ -1,25 +1,24 @@
 // SPDX-FileCopyrightText: 2021 James Hogan <james@albanarts.com>
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifndef VRMANAGER_HXX
-#define VRMANAGER_HXX 1
+#pragma once
 
 #include <config.h>
 
 #ifdef ENABLE_OSGXR
 
-#include <osg/ref_ptr>
-#include <osg/observer_ptr>
+    #include <osg/observer_ptr>
+    #include <osg/ref_ptr>
 
-#include <osgXR/Manager>
-#include <osgXR/Space>
+    #include <osgXR/Manager>
+    #include <osgXR/Space>
 
-#include <simgear/props/propertyObject.hxx>
-#include <simgear/scene/viewer/CompositorPass.hxx>
+    #include <simgear/props/propertyObject.hxx>
+    #include <simgear/scene/viewer/CompositorPass.hxx>
 
-#include "CameraGroup.hxx"
+    #include "CameraGroup.hxx"
 
-#include <map>
+    #include <map>
 
 namespace flightgear
 {
@@ -203,5 +202,3 @@ class VRManager : public osgXR::Manager
 }
 
 #endif // ENABLE_OSGXR
-
-#endif
