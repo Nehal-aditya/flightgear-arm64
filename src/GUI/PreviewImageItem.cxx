@@ -132,6 +132,8 @@ void PreviewImageItem::setImage(QImage image)
 void PreviewImageItem::onFinished()
 {
     QNetworkReply* reply = qobject_cast<QNetworkReply*>(sender());
+    reply->deleteLater();
+    
     if (reply->url() != m_imageUrl) {
         // if replies arrive out of order, don't trample the correct one
         return;
