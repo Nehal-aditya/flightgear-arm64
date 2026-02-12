@@ -3598,16 +3598,22 @@ OptionResult Options::setupRoot(int argc, char** argv)
             root = SGPath::fromEnv("FG_ROOT");
             SG_LOG(SG_GENERAL, SG_INFO, "set from FG_ROOT env var: fg_root = " << root );
         } else {
-    #if defined(HAVE_QT)
+#if defined(HAVE_QT)
             auto restoreResult = restoreUserSelectedRoot(root);
             if (restoreResult == SetupRootResult::UserExit) {
+                return FG_OPTIONS_EXIT;
+            } else if (restoreResult == SetupRootResult::ExitDueToReadOnly) {
+                flightgear::fatalMessageBoxWithoutExit(
+                    "Base package not found",
+                    "The base package data files were not found, and this copy of FlightGear is running in read-only mode.", "",
+                    false);
                 return FG_OPTIONS_EXIT;
             } else if (restoreResult == SetupRootResult::UseDefault) {
                 root = SGPath{}; // clear any value, so we use the default location
             } else {
                 SG_LOG(SG_GENERAL, SG_INFO, "Qt launcher set fg_root = " << root );
             }
-    #endif
+#endif
         }
     }
 
