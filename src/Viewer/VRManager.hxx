@@ -7,6 +7,7 @@
 
 #ifdef ENABLE_OSGXR
 
+    #include <osg/MatrixTransform>
     #include <osg/observer_ptr>
     #include <osg/ref_ptr>
 
@@ -140,6 +141,14 @@ class VRManager : public osgXR::Manager
 
         osg::ref_ptr<osgXR::Space> _headSpace;
 
+        /// Wrapper around local space node for updating.
+        osg::ref_ptr<osg::Group> _localSpaceUpdater;
+        /// Local space scene graph node.
+        osg::ref_ptr<osg::MatrixTransform> _localSpace;
+
+        /// 3D GUI object.
+        osg::ref_ptr<osg::Node> _gui3D;
+
         // Properties
 
         SGPropObjBool _propXrLayersValidation;
@@ -162,6 +171,8 @@ class VRManager : public osgXR::Manager
         SGPropObjString _propSwapchainMode;
         SGPropObjBool _propMirrorEnabled;
         SGPropObjString _propMirrorMode;
+
+        SGPropObjString _propGuiPath;
 
         // Property listeners
 
