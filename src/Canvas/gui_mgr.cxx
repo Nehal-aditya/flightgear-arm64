@@ -144,7 +144,15 @@ class DesktopGroup:
                 _last_mouse_pos;
     double _last_scroll_time {0};
 
+    /**
+     * Track mouse clicks delegated to 3D pass-through.
+     * If it never reaches the pass-through we can defocus on updateImpl().
+     */
+    bool _pendingClick = false;
+
     uint32_t _last_key_down_no_mod {~0u}; // Key repeat for non modifier keys
+
+    void updateImpl(double dt) override;
 
     bool canHandleInput() const;
     bool handleMouse(const osgEA& ea, bool fromVR = false);
@@ -496,6 +504,23 @@ bool DesktopGroup::handleOsgEvent(const osgEA& ea)
 }
 
 //------------------------------------------------------------------------------
+void DesktopGroup::updateImpl(double dt)
+{
+    // If a click was delegated to the VR pass-through but never returned to the
+    // GUI, it must've missed any 3D GUI.
+    if (_pendingClick) {
+        _pendingClick = false;
+
+        // Pass a root mouse click through so Nasal can defocus
+        sc::MouseEventPtr event = new sc::MouseEvent;
+        event->type = sc::Event::MOUSE_DOWN;
+        propagateRootEvent(event);
+    }
+
+    Group::updateImpl(dt);
+}
+
+//------------------------------------------------------------------------------
 bool DesktopGroup::canHandleInput() const
 {
     return _scene_group.valid() && _scene_group->getNumChildren() > 0;
@@ -504,8 +529,16 @@ bool DesktopGroup::canHandleInput() const
 //------------------------------------------------------------------------------
 bool DesktopGroup::handleMouse(const osgEA& ea, bool fromVR)
 {
+    if (ea.getEventType() == osgEA::PUSH)
+        _pendingClick = true;
+
+    // If we delegate a pending click to VR pass-through, and it doesn't get
+    // handled, updateImpl() can perform a window defocus later
     if (_handleMouseEvents == fromVR || !canHandleInput())
         return false;
+
+    if (ea.getEventType() == osgEA::PUSH)
+        _pendingClick = false;
 
     osg::Vec2f mouse_pos = toScreenPos(ea),
                delta = mouse_pos - _last_mouse_pos;
