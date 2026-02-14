@@ -319,7 +319,9 @@ void VRManager::doDestroyView(osgXR::View *xrView)
         if (it2 != _xrViews.end())
             _xrViews.erase(it2);
 
-        cgroup->removeCamera(info.get());
+        // On quit camera group may already be gone
+        if (cgroup)
+            cgroup->removeCamera(info.get());
     }
 }
 
