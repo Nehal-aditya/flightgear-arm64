@@ -120,7 +120,8 @@ class DesktopGroup:
     friend class GUIMgr;
 
     SGPropertyChangeCallback<DesktopGroup> _cb_mouse_mode;
-    bool                                   _handle_events {true};
+    bool _handleMouseEvents = true;
+    bool _handleKeyboardEvents = true;
 
     simgear::PropertyObject<int>        _width,
                                         _height;
@@ -325,15 +326,13 @@ bool DesktopGroup::handleOsgEvent(const osgEA& ea)
 //------------------------------------------------------------------------------
 bool DesktopGroup::canHandleInput() const
 {
-  return _handle_events
-      && _scene_group.valid()
-      && _scene_group->getNumChildren() > 0;
+    return _scene_group.valid() && _scene_group->getNumChildren() > 0;
 }
 
 //------------------------------------------------------------------------------
 bool DesktopGroup::handleMouse(const osgEA& ea)
 {
-    if (!canHandleInput())
+    if (!_handleMouseEvents || !canHandleInput())
         return false;
 
     osg::Vec2f mouse_pos = toScreenPos(ea),
@@ -494,7 +493,7 @@ bool DesktopGroup::handleMouse(const osgEA& ea)
 //------------------------------------------------------------------------------
 bool DesktopGroup::handleKeyboard(const osgEA& ea)
 {
-    if (!canHandleInput())
+    if (!_handleKeyboardEvents || !canHandleInput())
         return false;
 
     sc::KeyboardEventPtr event(new sc::KeyboardEvent(ea));
@@ -601,9 +600,11 @@ void DesktopGroup::finishDrag( const sc::WindowPtr& drag_src,
 //------------------------------------------------------------------------------
 void DesktopGroup::handleMouseMode(SGPropertyNode* node)
 {
-  // pass-through indicates events should pass through to the UI
-  _handle_events = fgGetNode("/input/mice/mouse[0]/mode", node->getIntValue())
-                     ->getBoolValue("pass-through");
+    auto* mode = fgGetNode("/input/mice/mouse[0]/mode", node->getIntValue());
+    // pass-through indicates mouse events should pass through to the UI
+    _handleMouseEvents = mode->getBoolValue("pass-through");
+    // keyboard events should also pass to the UI with VR pass-through
+    _handleKeyboardEvents = _handleMouseEvents || mode->getBoolValue("vr-cursor/pass-through");
 }
 
 //------------------------------------------------------------------------------
