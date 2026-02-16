@@ -10,8 +10,7 @@
 class ApplicationProperties {
 public:
   static double getDouble (const char *name, const double def = 0.0);
-  static SGPath GetRootPath (const char *subDir = NULL);
-  static SGPath GetCwd ();
+  static SGPath GetRootPath(const char* subDir = nullptr);
   static SGPropertyNode_ptr Properties;
   static std::string root;
 };
