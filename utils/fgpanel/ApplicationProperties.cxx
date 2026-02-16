@@ -1,13 +1,9 @@
 // SPDX-FileCopyrightText: 2016 Torsten Dreyer
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-#ifdef _WIN32
-# include <direct.h> // for getcwd()
-#else // !_WIN32
-# include <unistd.h>
-#endif
-
 #include <string>
+
+#include <simgear/misc/sg_dir.hxx>
 
 #include "ApplicationProperties.hxx"
 
@@ -17,22 +13,10 @@ using namespace std::string_literals;
 double
 ApplicationProperties::getDouble (const char *name, const double def) {
   const SGPropertyNode_ptr n (ApplicationProperties::Properties->getNode (name, false));
-  if (n == NULL) {
-    return def;
+  if (n == nullptr) {
+      return def;
   }
   return n->getDoubleValue ();
-}
-
-SGPath
-ApplicationProperties::GetCwd () {
-    SGPath path("."s);
-    char buf[512];
-    char* cwd(getcwd(buf, 511));
-    buf[511] = '\0';
-    if (cwd) {
-        path = SGPath::fromLocal8Bit(cwd);
-    }
-  return path;
 }
 
 SGPath
@@ -42,8 +26,7 @@ ApplicationProperties::GetRootPath (const char *sub) {
 
         // relative path to current working dir?
         if (subpath.isRelative()) {
-            SGPath path(GetCwd());
-            path.append(sub);
+            const SGPath path = simgear::Dir::current().path() / sub;
             if (path.exists()) {
                 return path;
             }
@@ -55,8 +38,8 @@ ApplicationProperties::GetRootPath (const char *sub) {
 
   // default: relative path to FGROOT
   SGPath path (ApplicationProperties::root);
-  if (sub != NULL) {
-    path.append (sub);
+  if (sub != nullptr) {
+      path.append(sub);
   }
   return path;
 }
