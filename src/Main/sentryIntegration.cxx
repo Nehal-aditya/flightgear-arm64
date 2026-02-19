@@ -51,12 +51,16 @@ auto exception_messageWhitelist = {
     "position is invalid, NaNs", ///< avoid spam when NaNs occur
     "bad AI flight plan",        ///< adjusting logic to avoid this is tricky
     "couldn't find shader",      ///< handled separately
-    "(EMEXEC)"                   ///< Emesary log spam
-
+    "(EMEXEC)",                  ///< Emesary log spam
     /// suppress noise from user-entered METAR values : we special case
     /// when live metar fails to parse
     "metar data bogus",
     "metar data incomplete"
+};
+
+auto general_messageWhitelist = {
+    " -- Recipient",                ///< emmessary overrun message, note leading whitespace
+    "Overrun: GlobalTransmitter",   ///< emmesary overrun message
 };
 
 // we don't want sentry enabled for the test suite
@@ -121,6 +125,10 @@ public:
         }
 
         if ((e.debugClass == SG_OSG) && doesStringMatchPrefixes(e.message, OSG_messageWhitelist)) {
+            return true;
+        }
+
+        if (doesStringMatchPrefixes(e.message, general_messageWhitelist)) {
             return true;
         }
 
