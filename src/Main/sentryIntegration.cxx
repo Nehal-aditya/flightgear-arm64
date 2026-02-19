@@ -270,7 +270,7 @@ std::string sentryUserId()
     return static_sentryUUID;
 }
 
-void initSentry()
+void initSentry(bool quiet)
 {
     sentry_options_t* options = sentry_options_new();
     // API key is defined in config.h, set in an environment variable prior
@@ -288,6 +288,7 @@ void initSentry()
         // first occurs, and then bisect the commits. We could switch to using
         // year and week number, but this makes more noise in sentry.
         sentry_options_set_release(options, "flightgear-nightly@" BUILD_MONTH);
+        sentry_options_set_environment(options, "testing");
     } else if (strcmp(FG_BUILD_TYPE, "Release") == 0) {
         // RC builds are for testing
         if (strncmp(BUILD_SUFFIX, "rc", 2) == 0) {
@@ -306,7 +307,7 @@ void initSentry()
     sentry_options_set_dist(options, buildString.c_str());
 
     // for dev / nightly builds, put Sentry in debug mode
-    if (strcmp(FG_BUILD_TYPE, "Release")) {
+    if (!quiet && strcmp(FG_BUILD_TYPE, "Release")) {
         sentry_options_set_debug(options, 1);
     }
 
