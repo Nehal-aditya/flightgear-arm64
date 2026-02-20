@@ -165,6 +165,7 @@ Rectangle {
                     width: parent.width
                     previews: aircraft.previews
                     visible: aircraft.previews.length > 0
+                    packageId: aircraft.packageId
                 }
 
                 Row {
