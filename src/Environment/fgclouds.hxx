@@ -21,6 +21,7 @@ class SGPropertyNode;
 class SGCloudField;
 class SGVoxelCloud;
 
+
 class FGClouds {
 
 private:
@@ -58,10 +59,19 @@ private:
     // Whether the cloud field requires regeneration.
     bool _fieldDirty;
 
-    // Whether the cloud field is repeating (by simply mirrorig the voxel space texture)
+    // Whether the cloud field is repeating (by simply mirroring the voxel space texture)
     bool _fieldRepeating;
     
     osg::ref_ptr<simgear::SGReaderWriterOptions> _options;
+
+    // A node in the scenegraph purely used to ensure that the voxel data
+    // is modified during the update traversal.
+    osg::ref_ptr<osg::Group> _cloudUpdateNode;
+
+    // The voxel images.
+    osg::ref_ptr<osg::Image> _detailedVoxelData;
+    osg::ref_ptr<osg::Image> _roughVoxelData;
+    osg::ref_ptr<osg::Image> _voxelShadeData;
 
     bool add3DCloud(const SGPropertyNode *arg, SGPropertyNode * root);
     bool delete3DCloud(const SGPropertyNode *arg, SGPropertyNode * root);
@@ -106,4 +116,23 @@ public:
 
     bool isCloudsRepeating(void) const { return _fieldRepeating; }
     void setCloudsRepeating(bool repeat) { _fieldRepeating = repeat; }
+
+    void updateFromOsgTraversal();
+    osg::ref_ptr<osg::Group> getCloudUpdateNode() { return _cloudUpdateNode; }
+};
+
+class FGCloudUpdateCallback : public osg::NodeCallback {
+public:
+    FGCloudUpdateCallback(FGClouds* clouds)
+        : _clouds(clouds) {}
+
+    void operator()(osg::Node* node, osg::NodeVisitor* nv) override {
+        if (nv->getVisitorType() == osg::NodeVisitor::UPDATE_VISITOR) {
+            _clouds->updateFromOsgTraversal();
+        }
+        traverse(node, nv);
+    }
+
+private:
+    FGClouds* _clouds;
 };

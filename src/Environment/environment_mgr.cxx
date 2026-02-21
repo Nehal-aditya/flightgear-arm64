@@ -46,6 +46,7 @@ FGEnvironmentMgr::FGEnvironmentMgr () :
   nearestAirport(nullptr)
 {
   fgClouds = new FGClouds;
+  _sky->getPreRoot()->addChild(fgClouds->getCloudUpdateNode());
   set_subsystem("controller", Environment::LayerInterpolateController::createInstance( fgGetNode("/environment/config", true ) ));
 
   set_subsystem("climate", new FGClimate);
@@ -208,7 +209,7 @@ FGEnvironmentMgr::update (double dt)
                                 _environment->get_wind_speed_kt());
   particlesManager->update(dt, globals->get_aircraft_position());
 
-  fgClouds->set_update_event( fgClouds->get_update_event()+1 );
+  //if (fgClouds->isDirty()) fgClouds->buildCloudLayers();
 
   updateTowerPosition();
 

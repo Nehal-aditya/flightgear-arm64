@@ -47,6 +47,10 @@ FGClouds::FGClouds() :
     update_event = 0;
     _options = new simgear::SGReaderWriterOptions;
     _options->setObjectCacheHint(osgDB::Options::CACHE_ALL);
+
+    _cloudUpdateNode = new osg::Group;
+    _cloudUpdateNode->setName("Cloud Update Node");
+    _cloudUpdateNode->addUpdateCallback(new FGCloudUpdateCallback(this));    
 }
 
 FGClouds::~FGClouds()
@@ -62,7 +66,6 @@ int FGClouds::get_update_event(void) const {
 
 void FGClouds::set_update_event(int count) {
     update_event = count;
-    if (_fieldDirty) buildCloudLayers();
 }
 
 void FGClouds::Init(void)
@@ -75,7 +78,6 @@ void FGClouds::Init(void)
 
     _fieldDirty = true;
     _fieldRepeating = true;
-    rebuildField();
 }
 
 // Build an individual cloud. Returns the extents of the cloud for coverage calculations
@@ -485,9 +487,9 @@ void FGClouds::rebuildField() {
     // Build and assign the voxel fields
     auto cloudsProp = globals->get_props()->getNode("/sim/rendering/hdr/clouds/");
 
-    _detailedFieldWidth     = cloudsProp->getIntValue("detailed-voxel-field-width", 512);
+    _detailedFieldWidth     = cloudsProp->getIntValue("detailed-voxel-field-width", 256);
+    _detailedFieldHeight    = cloudsProp->getIntValue("detailed-voxel-field-height", 64);
     _detailedFieldVoxelSize = cloudsProp->getIntValue("detailed-voxel-size-m", 200);  
-    size_t maxDetailedFieldHeight = cloudsProp->getIntValue("max-detailed-voxel-field-height", 64);
 
     if (_fieldRepeating) {
         _roughVoxelSizeFactor = 1;
@@ -500,11 +502,12 @@ void FGClouds::rebuildField() {
         // This is the size factor for the rough field.  Note that as this is in each dimension
         // the occupany is 1/8th
         _roughVoxelSizeFactor = cloudsProp->getIntValue("rough-voxel-size-factor", 2);
-        _roughFieldVoxelSize = _detailedFieldVoxelSize * _roughVoxelSizeFactor;
+        _roughFieldVoxelSize  = _detailedFieldVoxelSize * _roughVoxelSizeFactor;
         SGVoxelTextureCloud::setRoughVoxelScale(_roughVoxelSizeFactor);
-
+        
         // The rough field width is a factor of the detailed field width
         _roughFieldWidth  = _detailedFieldWidth * cloudsProp->getIntValue("rough-voxel-field-factor", 2);
+        _roughFieldHeight = _detailedFieldHeight / _roughVoxelSizeFactor;
     }
 
     // Save off the current location, which will be used in transforms.
@@ -571,14 +574,6 @@ void FGClouds::rebuildField() {
         return;
     }
 
-    // We now have the minimum and maximum cloud heights, so we can calculation how tall to make the voxel field.
-    // At this point we do not have information about individual cloud heights, so we make a guess that there
-    // aren't any clouds more than 1000m tall.  This should cover just about everything apart from CuNb.
-    _detailedFieldHeight = (size_t) std::ceil((maxCloudAlt + 1000.0f) / _detailedFieldVoxelSize);
-    if (_detailedFieldHeight > maxDetailedFieldHeight) _detailedFieldHeight = maxDetailedFieldHeight;
-
-    cloudsProp->setIntValue("detailed-voxel-field-height", _detailedFieldHeight);
-
     const int detailedVoxelSpaceSizeMBytes = _detailedFieldWidth * _detailedFieldWidth * _detailedFieldHeight * 12 / 1024 / 1024;
     SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Rebuilding Cloud voxel field");
     SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Detailed Voxel size: " << _detailedFieldVoxelSize << "m");
@@ -589,7 +584,6 @@ void FGClouds::rebuildField() {
         // As the atmosphere is thin, we assume the detailed field is sufficiently
         // high to include the entire troposphere, so therefore the rough field height is
         // calculated automatically.
-        _roughFieldHeight = _detailedFieldHeight / _roughVoxelSizeFactor;
         cloudsProp->setIntValue("rough-voxel-field-height", _roughFieldHeight);
         const int roughVoxelSpaceSizeMBytes = _roughFieldWidth * _roughFieldWidth * _roughFieldHeight * 12 / 1024 / 1024;
         SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Rough Voxel size: " << _roughFieldVoxelSize << "m");
@@ -739,8 +733,13 @@ void FGClouds::rebuildField() {
         //std::cout << "\n\n\n";
     }
 
-    simgear::StateAttributeFactory::instance()->setCloudVoxelImages(detailedVoxelData, roughVoxelData, voxelShadeData, _fieldRepeating);
-    _fieldDirty = false;
+    // Keep the images alive as members of FGClouds
+    _detailedVoxelData = detailedVoxelData;
+    _roughVoxelData    = roughVoxelData;
+    _voxelShadeData    = voxelShadeData;
+
+    // Push them into the textures
+    simgear::StateAttributeFactory::instance()->setCloudVoxelImages(_detailedVoxelData, _roughVoxelData, _voxelShadeData, _fieldRepeating);
 }
 
 void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage) {
@@ -805,4 +804,14 @@ void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage) {
         SG_LOG(SG_ENVIRONMENT, SG_DEV_ALERT, "Cloud Fast Marching Method to generate SDF threw exception'" << e.what() << "'. Ignoring.  Cloud ray-marching will be inefficient. Total exceptions: " << _FMMExceptionCount);
     } 
 
+}
+
+void FGClouds::updateFromOsgTraversal()
+{
+    if (!_fieldDirty)
+        return;
+
+    buildCloudLayers();
+
+    _fieldDirty = false;
 }
