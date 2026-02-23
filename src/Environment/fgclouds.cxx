@@ -638,12 +638,18 @@ void FGClouds::rebuildField() {
     // [3] .a - Signed Distance Field in UV space.  The maximum radius sphere centered on this point that doesn't contain any cloud density.  Used for adaptive ray marching.
     SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Creating detailed field of " << detailedFieldList.size() << " clouds");
 
+    float maxZ = 0.0;
+
     for (auto cl  : detailedFieldList) {
         const SGVoxelCloud* c = cl.first;
         osg::Vec3f p = cl.second;
 
-        c->addCloudToDetailedVoxelField(detailedVoxelData, (float) _detailedFieldVoxelSize, p);
+        float z = (float) c->addCloudToDetailedVoxelField(detailedVoxelData, (float) _detailedFieldVoxelSize, p);
+        maxZ = std::max(z, maxZ);
     }
+
+    // Set the maximum height as a normalized fraction of the voxel space so we can do some early termination of ray tracing.
+    fgSetFloat("/sim/rendering/hdr/clouds/active-voxel-field-height-norm", maxZ / (float) _detailedFieldHeight);
 
     // Generate SDF
     generateSDF(detailedVoxelData);
@@ -676,61 +682,75 @@ void FGClouds::rebuildField() {
 
     SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Sun Direction Z-Up: " << sunDirZUp.x() << ", " << sunDirZUp.y() << ", " << sunDirZUp.z());
 
+    // Convert continuous UV-space sun direction into voxel index step direction
+
+    // First compute direction in voxel index space
+    osg::Vec3f sunDirVoxel(
+        sunDirZUp.x() * _detailedFieldWidth,
+        sunDirZUp.y() * _detailedFieldWidth,
+        sunDirZUp.z() * _detailedFieldHeight
+    );
+
+    // Normalize so the largest component becomes ±1
+    float maxComponent = std::max({
+        std::abs(sunDirVoxel.x()),
+        std::abs(sunDirVoxel.y()),
+        std::abs(sunDirVoxel.z())
+    });
+
+    if (maxComponent > 0.0f)
+        sunDirVoxel /= maxComponent;
+
+    // Convert to integer step direction
+    int stepX = (sunDirVoxel.x() > 0.5f) ? 1 :
+                (sunDirVoxel.x() < -0.5f) ? -1 : 0;
+
+    int stepY = (sunDirVoxel.y() > 0.5f) ? 1 :
+                (sunDirVoxel.y() < -0.5f) ? -1 : 0;
+
+    int stepZ = (sunDirVoxel.z() > 0.5f) ? 1 :
+                (sunDirVoxel.z() < -0.5f) ? -1 : 0;    
+
     // Build up the shadow space. 
 
-    // Note that the height value uses a reverse iteration, and due to using unsigned int we have to do something slightly odd for the limit check.
-    // By starting from the top we can make some efficiencies by using previously calculated values from further up the voxel space.
-    for (size_t k = _detailedFieldHeight-1; k < _detailedFieldHeight; --k) {
-        for (size_t j = 0; j < _detailedFieldWidth; ++j) {
-            for (size_t i = 0; i < _detailedFieldWidth; ++i) {
-                const osg::Vec3f start( (float) i / (float) _detailedFieldWidth, (float) j / (float) _detailedFieldWidth, (float) k / (float) _detailedFieldHeight);
-                float d = 1.0f;
-                float sunDensity = 0.0f;
+    for (int k = int(_detailedFieldHeight) - 1; k >= 0; --k) {
+        for (int j = 0; j < int(_detailedFieldWidth); ++j) {
+            for (int i = 0; i < int(_detailedFieldWidth); ++i) {
 
-                osg::Vec3f p = start + sunDirZUp * d;
-                while (sunDensity < 0.99f &&
-                       p.x() >= 0.0f && p.x() < 1.0f && 
-                       p.y() >= 0.0f && p.y() < 1.0f && 
-                       p.z() >= 0.0f && p.z() < 1.0f    ) {                        
+                // --- Current voxel density ---
+                float density = detailedVoxelData->getColor(i, j, k).z();
 
-                    if (p.z() > (float) (k + 1U) / (float) _detailedFieldHeight) {
-                        // Use the pre-calculated value for the voxel in the layer above
-                        sunDensity += voxelShadeData->getColor(p).r();
-                        break;
-                    }
-
-                    sunDensity += detailedVoxelData->getColor(p).z();
-                    d += 1.0f;
-                    p = start + sunDirZUp * d;
+                // --- Vertical accumulation (G channel) ---
+                float verticalAbove = 0.0f;
+                if (k + 1 < int(_detailedFieldHeight)) {
+                    verticalAbove = voxelShadeData->getColor(i, j, k + 1).g();
                 }
 
-                d = 1.0;
-                float verticalDensity = 0.0f;
+                float verticalAccum = std::clamp(verticalAbove + density, 0.0f, 1.0f);
 
-                p = start + osg::Vec3f(0.0f, 0.0f, 1.0f / (float) _detailedFieldHeight);
-                while (verticalDensity < 0.99f &&
-                       p.x() >= 0.0f && p.x() < 1.0f && 
-                       p.y() >= 0.0f && p.y() < 1.0f && 
-                       p.z() >= 0.0f && p.z() < 1.0f    ) {
+                // --- Sun-direction accumulation (R channel) ---
 
-                    if (p.z() > (float) (k + 1U) / (float) _detailedFieldHeight) {
-                        // Use the pre-calculated for the voxel above
-                        verticalDensity += voxelShadeData->getColor(p).g();
-                        break;
-                    }
+                int si = i + stepX;
+                int sj = j + stepY;
+                int sk = k + stepZ;
 
-                    verticalDensity += detailedVoxelData->getColor(p).z();
-                    d += 1.0;
-                    p = start + osg::Vec3f(0.0,0.0, 1.0f / (float) _detailedFieldHeight) * d;
+                float sunAbove = 0.0f;
+
+                if (si >= 0 && si < int(_detailedFieldWidth) &&
+                    sj >= 0 && sj < int(_detailedFieldWidth) &&
+                    sk >= 0 && sk < int(_detailedFieldHeight)) {
+
+                    sunAbove = voxelShadeData->getColor(si, sj, sk).r();
                 }
 
-                osg::Vec4f c = osg::Vec4f(std::clamp(sunDensity, 0.0f, 1.0f), std::clamp(verticalDensity, 0.0f, 1.0f), 0.0f, 0.0f);
-                //std::cout << c.r();
-                voxelShadeData->setColor(c, i, j, k);
+                float sunAccum = std::clamp(sunAbove + density, 0.0f, 1.0f);                
+
+                voxelShadeData->setColor(
+                    osg::Vec4f(sunAccum, verticalAccum, 0.0f, 0.0f),
+                    i, j, k
+                );
             }
-            //std::cout << "\n";
         }
-        //std::cout << "\n\n\n";
     }
 
     // Keep the images alive as members of FGClouds
