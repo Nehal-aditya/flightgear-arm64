@@ -490,6 +490,7 @@ void FGClouds::rebuildField() {
     _detailedFieldWidth     = cloudsProp->getIntValue("detailed-voxel-field-width", 256);
     _detailedFieldHeight    = cloudsProp->getIntValue("detailed-voxel-field-height", 64);
     _detailedFieldVoxelSize = cloudsProp->getIntValue("detailed-voxel-size-m", 200);  
+    float extinction = cloudsProp->getFloatValue("extinction-factor", 1.2);  ;   // Tune this later (start with 1.0)
 
     if (_fieldRepeating) {
         _roughVoxelSizeFactor = 1;
@@ -682,73 +683,58 @@ void FGClouds::rebuildField() {
 
     SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Sun Direction Z-Up: " << sunDirZUp.x() << ", " << sunDirZUp.y() << ", " << sunDirZUp.z());
 
-    // Convert continuous UV-space sun direction into voxel index step direction
+    float dz = 1.0f / float(_detailedFieldHeight);
 
-    // First compute direction in voxel index space
-    osg::Vec3f sunDirVoxel(
-        sunDirZUp.x() * _detailedFieldWidth,
-        sunDirZUp.y() * _detailedFieldWidth,
-        sunDirZUp.z() * _detailedFieldHeight
-    );
-
-    // Normalize so the largest component becomes ±1
-    float maxComponent = std::max({
-        std::abs(sunDirVoxel.x()),
-        std::abs(sunDirVoxel.y()),
-        std::abs(sunDirVoxel.z())
-    });
-
-    if (maxComponent > 0.0f)
-        sunDirVoxel /= maxComponent;
-
-    // Convert to integer step direction
-    int stepX = (sunDirVoxel.x() > 0.5f) ? 1 :
-                (sunDirVoxel.x() < -0.5f) ? -1 : 0;
-
-    int stepY = (sunDirVoxel.y() > 0.5f) ? 1 :
-                (sunDirVoxel.y() < -0.5f) ? -1 : 0;
-
-    int stepZ = (sunDirVoxel.z() > 0.5f) ? 1 :
-                (sunDirVoxel.z() < -0.5f) ? -1 : 0;    
-
-    // Build up the shadow space. 
-
-    for (int k = int(_detailedFieldHeight) - 1; k >= 0; --k) {
-        for (int j = 0; j < int(_detailedFieldWidth); ++j) {
-            for (int i = 0; i < int(_detailedFieldWidth); ++i) {
-
-                // --- Current voxel density ---
-                float density = detailedVoxelData->getColor(i, j, k).z();
-
-                // --- Vertical accumulation (G channel) ---
-                float verticalAbove = 0.0f;
-                if (k + 1 < int(_detailedFieldHeight)) {
-                    verticalAbove = voxelShadeData->getColor(i, j, k + 1).g();
-                }
-
-                float verticalAccum = std::clamp(verticalAbove + density, 0.0f, 1.0f);
-
-                // --- Sun-direction accumulation (R channel) ---
-
-                int si = i + stepX;
-                int sj = j + stepY;
-                int sk = k + stepZ;
-
-                float sunAbove = 0.0f;
-
-                if (si >= 0 && si < int(_detailedFieldWidth) &&
-                    sj >= 0 && sj < int(_detailedFieldWidth) &&
-                    sk >= 0 && sk < int(_detailedFieldHeight)) {
-
-                    sunAbove = voxelShadeData->getColor(si, sj, sk).r();
-                }
-
-                float sunAccum = std::clamp(sunAbove + density, 0.0f, 1.0f);                
-
-                voxelShadeData->setColor(
-                    osg::Vec4f(sunAccum, verticalAccum, 0.0f, 0.0f),
-                    i, j, k
+    for (int k = int(_detailedFieldHeight) - 1; k >= 0; --k)
+    {
+        for (int j = 0; j < int(_detailedFieldWidth); ++j)
+        {
+            for (int i = 0; i < int(_detailedFieldWidth); ++i)
+            {
+                osg::Vec3f uv(
+                    float(i) / float(_detailedFieldWidth),
+                    float(j) / float(_detailedFieldWidth),
+                    float(k) / float(_detailedFieldHeight)
                 );
+
+                float density = detailedVoxelData->getColor(uv).z();
+
+                // --- SUN OPTICAL DEPTH ---
+                float sunOpticalDepth = 0.0f;
+
+                if (k < int(_detailedFieldHeight) - 1)
+                {
+                    osg::Vec4f above = voxelShadeData->getColor(i, j, k + 1);
+                    float aboveTransmittance = above.r();
+                    sunOpticalDepth = -log(std::max(aboveTransmittance, 0.0001f));
+                }
+
+                sunOpticalDepth += density * extinction * dz;
+
+                float sunTransmittance = std::exp(-sunOpticalDepth);
+
+                // --- VERTICAL (SKY) OPTICAL DEPTH ---
+                float verticalOpticalDepth = 0.0f;
+
+                if (k < int(_detailedFieldHeight) - 1)
+                {
+                    osg::Vec4f above = voxelShadeData->getColor(i, j, k + 1);
+                    float aboveTransmittance = above.g();
+                    verticalOpticalDepth = -log(std::max(aboveTransmittance, 0.0001f));
+                }
+
+                verticalOpticalDepth += density * extinction * dz;
+
+                float verticalTransmittance = std::exp(-verticalOpticalDepth);
+
+                osg::Vec4f shade(
+                    sunTransmittance,
+                    verticalTransmittance,
+                    0.0f,
+                    0.0f
+                );
+
+                voxelShadeData->setColor(shade, i, j, k);
             }
         }
     }
