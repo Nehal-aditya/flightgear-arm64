@@ -69,7 +69,7 @@ bool FGBeacon::init() {
     }
 
     try {
-        inner = new SGSoundSample( std::move(inner_buf),
+        inner = new SGSoundSample( "beacon-inner", std::move(inner_buf),
                                    INNER_SIZE, BYTES_PER_SECOND );
         inner->set_reference_dist( 10.0 );
         inner->set_max_dist( 20.0 );
@@ -90,7 +90,7 @@ bool FGBeacon::init() {
         ptr += MIDDLE_DIT_LEN;
         memcpy( ptr, middle_dah, MIDDLE_DAH_LEN );
 
-        middle = new SGSoundSample( std::move(middle_buf),
+        middle = new SGSoundSample( "beacon-middle", std::move(middle_buf),
                                     MIDDLE_SIZE, BYTES_PER_SECOND );
         middle->set_reference_dist( 10.0 );
         middle->set_max_dist( 20.0 );
@@ -106,7 +106,7 @@ bool FGBeacon::init() {
         ptr += OUTER_DAH_LEN;
         memcpy( ptr, outer_dah, OUTER_DAH_LEN );
 
-        outer = new SGSoundSample( std::move(outer_buf), OUTER_SIZE,
+        outer = new SGSoundSample( "beacon-outer", std::move(outer_buf), OUTER_SIZE,
                                    BYTES_PER_SECOND );
         outer->set_reference_dist( 10.0 );
         outer->set_max_dist( 20.0 );
