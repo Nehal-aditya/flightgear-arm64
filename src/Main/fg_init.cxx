@@ -886,6 +886,7 @@ int fgInitAircraft(bool reinit, bool didUseLauncher)
                 aircraftId = aircraftId.substr(lastDot + 1);
             }
             aircraftProp->setStringValue(aircraftId);
+            fgSetBool("/sim/aircraft-from-package", true);
 
             // run the traditional-code path below
         } else {

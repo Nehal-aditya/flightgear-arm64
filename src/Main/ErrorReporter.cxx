@@ -442,7 +442,9 @@ auto ErrorReporter::ErrorReporterPrivate::mainAircraftAggregate()
     // we use the dir name so we combine reports from different variants, on Sentry
     const auto aircraftDirName = lastPathComponent(fgGetString("/sim/aircraft-dir"));
 
-    if (fullId != fgGetString("/sim/aircraft")) {
+    const auto isFromPackage = fgGetBool("/sim/aircraft-from-package");
+
+    if (!isFromPackage) {
         return getAggregate(Aggregation::MainAircraft, aircraftDirName);
     }
 
