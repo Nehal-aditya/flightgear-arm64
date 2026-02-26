@@ -34,6 +34,7 @@
 #include <simgear/canvas/Canvas.hxx>
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/debug/LogCallback.hxx>
 #include <simgear/structure/exception.hxx>
 #include <simgear/structure/event_mgr.hxx>
 #include <simgear/structure/SGPerfMon.hxx>
@@ -543,6 +544,68 @@ static SGPath platformDefaultDataPath()
 static HANDLE static_fgHomeWriteMutex = nullptr;
 #endif
 
+///////////////////////////////////////////////////////////////////////////////
+
+static simgear::LogCallback* static_logToHomeCallback = nullptr;
+
+static void rotateOldLogFiles()
+{
+    const int maxLogCount = 10;
+    const auto homePath = globals->get_fg_home();
+
+    for (int i = maxLogCount; i > 0; --i) {
+        const auto name = "fgfs_" + std::to_string(i - 1) + ".log";
+        SGPath curLogFile = homePath / name;
+        if (curLogFile.exists()) {
+            auto newName = "fgfs_" + std::to_string(i) + ".log";
+            curLogFile.rename(homePath / newName);
+        }
+    }
+
+    SGPath p = homePath / "fgfs.log";
+    if (!p.exists())
+        return;
+    SGPath log0Path = homePath / "fgfs_0.log";
+    if (!p.rename(log0Path)) {
+        std::cerr << "Failed to rename " << p.str() << " to " << log0Path.str() << std::endl;
+    }
+}
+
+static void closeHomeDirLogFile()
+{
+    if (static_logToHomeCallback) {
+        sglog().removeCallback(static_logToHomeCallback);
+        delete static_logToHomeCallback;
+        static_logToHomeCallback = nullptr;
+    }
+}
+
+void fgInitLogging(const std::string& pri)
+{
+    const bool readOnlyFGHome = fgGetBool("/sim/fghome-readonly");
+    if (readOnlyFGHome) {
+        return;
+    }
+
+    sgDebugPriority fileLogLevel = SG_INFO;
+    // https://sourceforge.net/p/flightgear/codetickets/2100/
+    if (!pri.empty()) {
+        try {
+            fileLogLevel = std::min(fileLogLevel, logstream::priorityFromString(pri));
+        } catch (std::exception& ) {
+            // let's not worry about this, and just log at INFO
+        }
+    }
+
+    SGPath logPath = globals->get_fg_home() / "fgfs.log";
+    if (logPath.exists()) {
+        rotateOldLogFiles();
+    }
+
+    static_logToHomeCallback = sglog().logToFile(logPath, SG_ALL, fileLogLevel);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 SGPath fgHomePath()
 {
     return SGPath::fromEnv("FG_HOME", platformDefaultDataPath());
@@ -676,6 +739,7 @@ void fgShutdownHome()
         pidPath.remove();
     }
 #endif
+    closeHomeDirLogFile();
 }
 
 void fgDeleteLockFile()
