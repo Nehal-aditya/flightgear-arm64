@@ -484,7 +484,7 @@ void FGClouds::rebuildField() {
     _detailedFieldWidth     = cloudsProp->getIntValue("detailed-voxel-field-width", 256);
     _detailedFieldHeight    = cloudsProp->getIntValue("detailed-voxel-field-height", 64);
     _detailedFieldVoxelSize = cloudsProp->getIntValue("detailed-voxel-size-m", 200);  
-    float extinction = cloudsProp->getFloatValue("extinction-factor", 1.2);  ;   // Tune this later (start with 1.0)
+    float extinction = cloudsProp->getFloatValue("extinction-factor", 1.2);
 
     if (_fieldRepeating) {
         _roughVoxelSizeFactor = 1;
@@ -528,11 +528,13 @@ void FGClouds::rebuildField() {
     float maxCloudAlt = 0.0f;
     float minCloudAlt = 40000.0f;
 
+    const osg::Vec3f centerOsg = toOsg(_centerCart);
+
     for (const auto& [key, value] : _cloudPlacementMap) {
         const CloudPlacement& cl = value;
         const SGVoxelCloud* c = std::get<0>(cl).get();        
         // Transform to Z-up coordinates
-        osg::Vec3f q = (std::get<1>(cl) - toOsg(_centerCart));
+        osg::Vec3f q = std::get<1>(cl) - centerOsg;
         osg::Vec3f p = _cloudPosMatrix * q;
 
         // Check if any part is within the X/Y bounds for each of the voxelMaps.
@@ -609,20 +611,22 @@ void FGClouds::rebuildField() {
 
     SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "SDF Minima: detailed: " << detailedSDFMin << " rough: " << roughSDFMin);
 
-    for (size_t k = 0U; k < _roughFieldHeight; ++k) {
-        for (size_t j = 0U; j < _roughFieldWidth; ++j) {
-            for (size_t i = 0U; i < _roughFieldWidth; ++i) {
-                roughVoxelData->setColor(osg::Vec4f(0.0f,0.0f,0.0f,roughSDFMin), i,j,k);
-            }
-        }
+    float* data = reinterpret_cast<float*>(roughVoxelData->data());
+    size_t numVoxels = _roughFieldWidth * _roughFieldWidth * _roughFieldHeight;
+    for (size_t i = 0; i < numVoxels; ++i) {
+        data[i*4 + 0] = 0.0f;  // x
+        data[i*4 + 1] = 0.0f;  // y
+        data[i*4 + 2] = 0.0f;  // z (density)
+        data[i*4 + 3] = roughSDFMin;
     }
 
-    for (size_t k = 0U; k < _detailedFieldHeight; ++k) {
-        for (size_t j = 0U; j < _detailedFieldWidth; ++j) {
-            for (size_t i = 0U; i < _detailedFieldWidth; ++i) {
-                detailedVoxelData->setColor(osg::Vec4f(0.0f,0.0f,0.0f,detailedSDFMin), i,j,k);
-            }
-        }
+    data = reinterpret_cast<float*>(detailedVoxelData->data());
+    numVoxels = _detailedFieldWidth * _detailedFieldWidth * _detailedFieldHeight;
+    for (size_t i = 0; i < numVoxels; ++i) {
+        data[i*4 + 0] = 0.0f;  // x
+        data[i*4 + 1] = 0.0f;  // y
+        data[i*4 + 2] = 0.0f;  // z (density)
+        data[i*4 + 3] = detailedSDFMin;
     }
 
     // Now write the detailed clouds into the voxel space.
@@ -636,8 +640,8 @@ void FGClouds::rebuildField() {
 
     float maxZ = 0.0;
 
-    for (auto cl  : detailedFieldList) {
-        const SGVoxelCloud* c = std::get<0>(cl);
+    for (const auto& cl : detailedFieldList) {
+        const SGVoxelCloud* c = cl.first;
         osg::Vec3f p = cl.second;
 
         float z = (float) c->addCloudToDetailedVoxelField(detailedVoxelData, (float) _detailedFieldVoxelSize, p);
@@ -652,8 +656,8 @@ void FGClouds::rebuildField() {
 
     if (! _fieldRepeating) {    
         // Now generate the rough voxel space in a similar manner
-        for (auto cl  : roughFieldList) {
-            const SGVoxelCloud* c = std::get<0>(cl);
+        for (const auto&  cl  : roughFieldList) {
+            const SGVoxelCloud* c = cl.first;
             osg::Vec3f p = cl.second;
 
             c->addCloudToRoughVoxelField(roughVoxelData, (float) _roughFieldVoxelSize, p);
@@ -665,7 +669,12 @@ void FGClouds::rebuildField() {
     
 
     // Now build the shade image.  The R channel is the transmittance towards the Sun.  The G channel the transmittance density.
-    // We just do a single image covering both voxel spaces.
+    const float* voxelRaw = reinterpret_cast<const float*>(detailedVoxelData->data());
+    float* shadeRaw = reinterpret_cast<float*>(voxelShadeData->data());
+
+    auto voxelIdx = [&](int i, int j, int k) {
+        return (k * _detailedFieldWidth * _detailedFieldWidth + j * _detailedFieldWidth + i) * 4;
+    };    
 
     // Get the Sun direction and transform into the Z-up X-north coordinates
     auto l = globals->get_subsystem<FGLight>();
@@ -676,6 +685,7 @@ void FGClouds::rebuildField() {
     // Sun direction in voxel index space (not normalized UV space)
     osg::Vec3f sunDirVoxel(s.x(), s.y(), s.z() * float(_detailedFieldWidth) / float(_detailedFieldHeight));
     sunDirVoxel.normalize();
+    const float sunStepLength = sunDirVoxel.length() / float(_detailedFieldWidth);
 
     SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Sun Direction Z-Up: " << sunDirVoxel.x() << ", " << sunDirVoxel.y() << ", " << sunDirVoxel.z());
 
@@ -702,13 +712,8 @@ void FGClouds::rebuildField() {
         {
             for (int i = iStart; i != iEnd; i += iStep)
             {
-                osg::Vec3f uv(
-                    float(i) / float(_detailedFieldWidth),
-                    float(j) / float(_detailedFieldWidth),
-                    float(k) / float(_detailedFieldHeight)
-                );
-
-                float density = detailedVoxelData->getColor(uv).z();
+                const int idx = voxelIdx(i, j, k);
+                float density = voxelRaw[idx + 2];  // .z channel
 
                 // --- SUN OPTICAL DEPTH ---
                 // Step to the next voxel in the sun direction
@@ -722,15 +727,13 @@ void FGClouds::rebuildField() {
                     sj >= 0 && sj < int(_detailedFieldWidth) &&
                     sk >= 0 && sk < int(_detailedFieldHeight))
                 {
-                    osg::Vec4f sunward = voxelShadeData->getColor(si, sj, sk);
-                    float sunwardTransmittance = sunward.r();
+                    float sunwardTransmittance = shadeRaw[voxelIdx(si,sj,sk)];  // .r channel
                     sunOpticalDepth = -log(std::max(sunwardTransmittance, 0.0001f));
                 }
                 // else: at the sunward boundary, optical depth from outside is 0
 
                 // Add this voxel's contribution
                 // Use the step length in the sun direction (longer diagonal steps = more optical depth)
-                float sunStepLength = sunDirVoxel.length() / float(_detailedFieldWidth);
                 sunOpticalDepth += density * extinction * sunStepLength;
                 float sunTransmittance = std::exp(-sunOpticalDepth);
 
@@ -738,20 +741,16 @@ void FGClouds::rebuildField() {
                 float verticalOpticalDepth = 0.0f;
                 if (k < int(_detailedFieldHeight) - 1)
                 {
-                    osg::Vec4f above = voxelShadeData->getColor(i, j, k + 1);
-                    float aboveTransmittance = above.g();
+                    float aboveTransmittance = shadeRaw[voxelIdx(i,j,k + 1) + 1];  // .g channel
                     verticalOpticalDepth = -log(std::max(aboveTransmittance, 0.0001f));
                 }
                 verticalOpticalDepth += density * extinction * dz;
                 float verticalTransmittance = std::exp(-verticalOpticalDepth);
 
-                osg::Vec4f shade(
-                    sunTransmittance,
-                    verticalTransmittance,
-                    0.0f,
-                    0.0f
-                );
-                voxelShadeData->setColor(shade, i, j, k);
+                shadeRaw[idx + 0] = sunTransmittance;
+                shadeRaw[idx + 1] = verticalTransmittance;
+                shadeRaw[idx + 2] = 0.0f;
+                shadeRaw[idx + 3] = 0.0f;                
             }
         }
     }
@@ -770,20 +769,25 @@ void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage) {
     vector<std::array<int, 3>> cloudBoundaryIndices;
     vector<float> cloudBoundaryDistances;
 
+    cloudBoundaryIndices.reserve(voxelImage->s() * voxelImage->t() * voxelImage->r() / 8);  // rough estimate
+    cloudBoundaryDistances.reserve(voxelImage->s() * voxelImage->t() * voxelImage->r() / 8);    
+
     assert(voxelImage->s() == voxelImage->t());
     size_t width = (size_t) voxelImage->s();
     size_t height = (size_t) voxelImage->r();
 
-    for (size_t j = 0; j < width; ++j) {
-        for (size_t i = 0; i < width; ++i) {
-            for (size_t k = 0; k < height; ++k) {
-                if (voxelImage->getColor(i,j,k).b() > 0.0f) {
-                    cloudBoundaryIndices.push_back(std::array<int, 3>{{(int)i, (int)j,(int)k}});
+    const float* raw = reinterpret_cast<const float*>(voxelImage->data());
+    for (size_t k = 0; k < height; ++k) {
+        for (size_t j = 0; j < width; ++j) {
+            for (size_t i = 0; i < width; ++i) {
+                size_t pixIdx = (k * width * width + j * width + i) * 4;
+                if (raw[pixIdx + 2] > 0.0f) {  // density channel
+                    cloudBoundaryIndices.push_back({(int)i, (int)j, (int)k});
                     cloudBoundaryDistances.push_back(0.0f);
                 }
             }
         }
-    }
+    }    
 
     if (cloudBoundaryDistances.empty()) {
         // This is an error condition 
@@ -802,20 +806,20 @@ void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage) {
             fmm::DistanceSolver<float, 3>(1.0));
         
         // The SDF is now calculated, so write it back to the voxel data.
+        float* raw = reinterpret_cast<float*>(voxelImage->data());
         std::size_t idx = 0;
         for (std::size_t k = 0; k < height; ++k) {
             for (std::size_t j = 0; j < width; ++j) {
-                for (std::size_t i = 0; i < width; ++i) {
-                    float distance = sdf[idx++];
+                for (std::size_t i = 0; i < width; ++i, ++idx) {
+                    float distance = sdf[idx];
                     maxDistance = std::max(maxDistance, distance);
-                    osg::Vec4f c = voxelImage->getColor(i,j,k);
-                    if (c[3] > 0.0f) {
-                        c[3] = distance / voxelImage->s();
-                        voxelImage->setColor(c, i,j,k);
+                    size_t pixIdx = (k * width * width + j * width + i) * 4;
+                    if (raw[pixIdx + 3] > 0.0f) {
+                        raw[pixIdx + 3] = distance / float(width);
                     }
                 }
             }
-        }  
+        }
 
         SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "SDF calculation complete. Maximum distance " << maxDistance);
     } 
