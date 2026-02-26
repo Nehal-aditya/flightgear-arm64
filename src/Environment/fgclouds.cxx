@@ -669,27 +669,43 @@ void FGClouds::rebuildField() {
     }
     
 
-    // Now build the shade image.  The R channel is the summed density towards the Sun.  The G channel the summed vertical density.
+    // Now build the shade image.  The R channel is the transmittance towards the Sun.  The G channel the transmittance density.
     // We just do a single image covering both voxel spaces.
 
     // Get the Sun direction and transform into the Z-up X-north coordinates
     auto l = globals->get_subsystem<FGLight>();
     const osg::Vec4f sunDirection(l->sun_vec_inv()[0], l->sun_vec_inv()[1], l->sun_vec_inv()[2], 0.0);
-
     const osg::Matrixf cameraZUp = osg::Matrix::inverse(_cloudPosMatrix);
     osg::Vec4f s = cameraZUp * (-sunDirection);
-    osg::Vec3f sunDirZUp(s.x() / _detailedFieldWidth, s.y() / _detailedFieldWidth, s.z() / _detailedFieldHeight);
-    sunDirZUp.normalize();
 
-    SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Sun Direction Z-Up: " << sunDirZUp.x() << ", " << sunDirZUp.y() << ", " << sunDirZUp.z());
+    // Sun direction in voxel index space (not normalized UV space)
+    osg::Vec3f sunDirVoxel(s.x(), s.y(), s.z() * float(_detailedFieldWidth) / float(_detailedFieldHeight));
+    sunDirVoxel.normalize();
+
+    SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Sun Direction Z-Up: " << sunDirVoxel.x() << ", " << sunDirVoxel.y() << ", " << sunDirVoxel.z());
 
     float dz = 1.0f / float(_detailedFieldHeight);
 
-    for (int k = int(_detailedFieldHeight) - 1; k >= 0; --k)
+    // Determine loop order for each axis based on sun direction
+    // so that when we process voxel (i,j,k), the sunward neighbour is already computed
+    int iStart, iEnd, iStep;
+    int jStart, jEnd, jStep;
+    int kStart, kEnd, kStep;
+
+    if (sunDirVoxel.x() >= 0) { iStart = int(_detailedFieldWidth)  - 1; iEnd = -1;                        iStep = -1; }
+    else                      { iStart = 0;                             iEnd = int(_detailedFieldWidth);  iStep =  1; }
+
+    if (sunDirVoxel.y() >= 0) { jStart = int(_detailedFieldWidth)  - 1; jEnd = -1;                        jStep = -1; }
+    else                       { jStart = 0;                             jEnd = int(_detailedFieldWidth); jStep =  1; }
+
+    if (sunDirVoxel.z() >= 0) { kStart = int(_detailedFieldHeight) - 1; kEnd = -1;                         kStep = -1; }
+    else                      { kStart = 0;                             kEnd = int(_detailedFieldHeight);  kStep =  1; }
+
+    for (int k = kStart; k != kEnd; k += kStep)
     {
-        for (int j = 0; j < int(_detailedFieldWidth); ++j)
+        for (int j = jStart; j != jEnd; j += jStep)
         {
-            for (int i = 0; i < int(_detailedFieldWidth); ++i)
+            for (int i = iStart; i != iEnd; i += iStep)
             {
                 osg::Vec3f uv(
                     float(i) / float(_detailedFieldWidth),
@@ -700,31 +716,38 @@ void FGClouds::rebuildField() {
                 float density = detailedVoxelData->getColor(uv).z();
 
                 // --- SUN OPTICAL DEPTH ---
+                // Step to the next voxel in the sun direction
                 float sunOpticalDepth = 0.0f;
 
-                if (k < int(_detailedFieldHeight) - 1)
+                int si = i + int(round(sunDirVoxel.x()));
+                int sj = j + int(round(sunDirVoxel.y()));
+                int sk = k + int(round(sunDirVoxel.z()));
+
+                if (si >= 0 && si < int(_detailedFieldWidth) &&
+                    sj >= 0 && sj < int(_detailedFieldWidth) &&
+                    sk >= 0 && sk < int(_detailedFieldHeight))
                 {
-                    osg::Vec4f above = voxelShadeData->getColor(i, j, k + 1);
-                    float aboveTransmittance = above.r();
-                    sunOpticalDepth = -log(std::max(aboveTransmittance, 0.0001f));
+                    osg::Vec4f sunward = voxelShadeData->getColor(si, sj, sk);
+                    float sunwardTransmittance = sunward.r();
+                    sunOpticalDepth = -log(std::max(sunwardTransmittance, 0.0001f));
                 }
+                // else: at the sunward boundary, optical depth from outside is 0
 
-                sunOpticalDepth += density * extinction * dz;
-
+                // Add this voxel's contribution
+                // Use the step length in the sun direction (longer diagonal steps = more optical depth)
+                float sunStepLength = sunDirVoxel.length() / float(_detailedFieldWidth);
+                sunOpticalDepth += density * extinction * sunStepLength;
                 float sunTransmittance = std::exp(-sunOpticalDepth);
 
                 // --- VERTICAL (SKY) OPTICAL DEPTH ---
                 float verticalOpticalDepth = 0.0f;
-
                 if (k < int(_detailedFieldHeight) - 1)
                 {
                     osg::Vec4f above = voxelShadeData->getColor(i, j, k + 1);
                     float aboveTransmittance = above.g();
                     verticalOpticalDepth = -log(std::max(aboveTransmittance, 0.0001f));
                 }
-
                 verticalOpticalDepth += density * extinction * dz;
-
                 float verticalTransmittance = std::exp(-verticalOpticalDepth);
 
                 osg::Vec4f shade(
@@ -733,7 +756,6 @@ void FGClouds::rebuildField() {
                     0.0f,
                     0.0f
                 );
-
                 voxelShadeData->setColor(shade, i, j, k);
             }
         }
