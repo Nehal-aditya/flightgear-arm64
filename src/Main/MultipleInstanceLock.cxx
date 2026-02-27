@@ -16,6 +16,7 @@
 
 #include "MultipleInstanceLock.hxx"
 
+#include <Main/globals.hxx>
 #include <Main/sentryIntegration.hxx>
 
 #include <GUI/MessageBox.hxx>

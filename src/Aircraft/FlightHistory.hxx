@@ -7,6 +7,7 @@
 #pragma once
 
 #include <chrono>
+#include <deque>
 #include <vector>
 
 #include <simgear/math/SGMath.hxx>
