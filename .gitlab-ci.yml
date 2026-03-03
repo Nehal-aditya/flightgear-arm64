@@ -1,5 +1,4 @@
 # SPDX-FileCopyrightText: James Turner <james@flightgear.org>
-#
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 variables:
@@ -55,52 +54,87 @@ pre-commit:
   rules:
     - if: $CI_COMMIT_REF_PROTECTED == "true"
 
-linux-build:
+.ccache-variables-and-stats:
+  variables:
+    CCACHE_DIR: ${CI_PROJECT_DIR}/.cache/ccache
+    # This allows one to obtain ccache stats for a single job.
+    CCACHE_STATSLOG: ${CI_PROJECT_DIR}/ccache-stats-log
+  before_script:
+    - rm -f $CCACHE_STATSLOG
+  after_script:
+    # For the particular build recorded in ${CCACHE_STATSLOG}
+    - ccache --show-log-stats
+    # Shows how much of the configurable cache size is used
+    - ccache --show-stats
+
+linux-build-and-test:
+  extends: .ccache-variables-and-stats
   image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/flightgear:latest
   stage: build
   script:
+    # --fresh would be ideal here to avoid this line, but needs CMake 3.24
     - rm -f $BUILD_DIR/CMakeCache.txt
 
-    # --fresh would be ideal here to avoid the line above, but needs CMake 3.25
     - >
       cmake -B $BUILD_DIR -S $CI_PROJECT_DIR -G Ninja
       -D CMAKE_BUILD_TYPE=RelWithDebInfo
       -D CMAKE_INSTALL_PREFIX=$PREFIX_DIR
       -D ENABLE_FGQCANVAS=ON
       -D CMAKE_PREFIX_PATH="$CI_PROJECT_DIR/simgear-dist;$CI_PROJECT_DIR/osg-dist"
+      -D ENABLE_CCACHE=ON
 
     - cmake --build $BUILD_DIR
     - cmake --build $BUILD_DIR --target fgfs_test_suite
     - cmake --build $BUILD_DIR --target install
+
+    # Now run the tests
+    - cd $BUILD_DIR
+    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CI_PROJECT_DIR/osg-dist/lib
+    - ./test_suite/fgfs_test_suite --fg-root $CI_PROJECT_DIR/testFGData --junit
   artifacts:
+    # Note that the artifacts in artifacts:reports are _always_ uploaded,
+    # even for failed jobs (special rule).
+    when: on_success
     paths:
-      - dist
+      - $PREFIX_DIR
+      - $BUILD_DIR/FGData_tests_junit.xml
+      - $BUILD_DIR/Simgear_unit_tests_junit.xml
+      - $BUILD_DIR/System_tests_junit.xml
+      - $BUILD_DIR/Unit_tests_junit.xml
+    reports:
+      junit: $BUILD_DIR/*_junit.xml
   needs:
     - project: flightgear/simgear
-      job: linux-build
+      job: linux-build-and-test
       artifacts: true
       ref: $BRANCH_REF
     - project: flightgear/openscenegraph
       job: linux-build
       ref: $OSG_REF
       artifacts: true
+    - project: flightgear/fgdata
+      job: create-test-data
+      ref: $BRANCH_REF
+      artifacts: true
   cache:
-    key: "linux-$CI_COMMIT_REF_SLUG"
+    key: linux-amd64-$BRANCH_REF
     paths:
-      - $BUILD_DIR
+      - $CCACHE_DIR
 
 linux-qt5-build:
+  extends: .ccache-variables-and-stats
   image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/flightgear-qt5:latest
   stage: build
   script:
+    # --fresh would be ideal here to avoid this line, but needs CMake 3.24
     - rm -f $BUILD_DIR/CMakeCache.txt
 
-    # --fresh would be ideal here to avoid the line above, but needs CMake 3.25
     - >
       cmake -B $BUILD_DIR -S $CI_PROJECT_DIR -G Ninja
       -D CMAKE_BUILD_TYPE=RelWithDebInfo
       -D CMAKE_INSTALL_PREFIX=$PREFIX_DIR
       -D CMAKE_PREFIX_PATH="$CI_PROJECT_DIR/simgear-dist;$CI_PROJECT_DIR/osg-dist"
+      -D ENABLE_CCACHE=ON
 
     - cmake --build $BUILD_DIR
     - cmake --build $BUILD_DIR --target install
@@ -114,9 +148,9 @@ linux-qt5-build:
       ref: $OSG_REF
       artifacts: true
   cache:
-    key: "linux-qt5-$CI_COMMIT_REF_SLUG"
+    key: linux-amd64-qt5-$BRANCH_REF
     paths:
-      - $BUILD_DIR
+      - $CCACHE_DIR
 
 canvas-pi-build:
   image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/fgqcanvas-raspbian:latest
@@ -191,6 +225,7 @@ windows-build:
   artifacts:
     paths:
       - dist
+
 macos-build:
   stage: build
   tags:
@@ -231,37 +266,5 @@ macos-build:
     paths:
       - dist
   cache:
-    paths:
-      - $BUILD_DIR
-test:
-  image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/flightgear:latest
-  stage: test
-  script:
-    - cd $BUILD_DIR
-    - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CI_PROJECT_DIR/osg-dist/lib
-    - ./test_suite/fgfs_test_suite --fg-root $CI_PROJECT_DIR/testFGData --junit
-  needs:
-    - job: linux-build
-      artifacts: false
-    - project: flightgear/fgdata
-      job: create-test-data
-      ref: $BRANCH_REF
-      artifacts: true
-    - project: flightgear/openscenegraph
-      job: linux-build
-      ref: $OSG_REF
-      artifacts: true
-  artifacts:
-    when: always
-    paths:
-      - $BUILD_DIR/FGData_tests_junit.xml
-      - $BUILD_DIR/Simgear_unit_tests_junit.xml
-      - $BUILD_DIR/System_tests_junit.xml
-      - $BUILD_DIR/Unit_tests_junit.xml
-    reports:
-      junit: build/*_junit.xml
-  cache:
-    key: "linux-$CI_COMMIT_REF_SLUG"
-    policy: pull
     paths:
       - $BUILD_DIR
