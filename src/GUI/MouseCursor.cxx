@@ -221,7 +221,7 @@ bool FGMouseCursor::setCursorCommand(const SGPropertyNode* arg, SGPropertyNode*)
     }
 
 
-    Cursor c = cursorFromString(arg->getStringValue("cursor").c_str());
+    Cursor c = cursorFromString(arg->getStringValue("cursor"));
     setCursor(c);
     return true;
 }
@@ -258,10 +258,10 @@ const MouseCursorMap mouse_cursor_map[] = {
     {"drag-vertical", FGMouseCursor::CURSOR_UP_DOWN},
     {0, FGMouseCursor::CURSOR_ARROW}};
 
-FGMouseCursor::Cursor FGMouseCursor::cursorFromString(const char* cursor_name)
+FGMouseCursor::Cursor FGMouseCursor::cursorFromString(const std::string& cursor_name)
 {
     for (unsigned int k = 0; mouse_cursor_map[k].name != 0; k++) {
-        if (!strcmp(mouse_cursor_map[k].name, cursor_name)) {
+        if (!strcmp(mouse_cursor_map[k].name, cursor_name.c_str())) {
             return mouse_cursor_map[k].cursor;
         }
     }

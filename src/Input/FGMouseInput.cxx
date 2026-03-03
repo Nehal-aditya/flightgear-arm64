@@ -254,7 +254,7 @@ public:
                 if (curName == "explicit") {
                     cur = FGMouseCursor::instance()->getCursor();
                 } else {
-                    cur = FGMouseCursor::cursorFromString(curName.c_str());
+                    cur = FGMouseCursor::cursorFromString(curName);
                 }
             }
 
@@ -328,7 +328,7 @@ public:
                     if (curName == "explicit") {
                         cur = FGMouseCursor::instance()->getCursor();
                     } else {
-                        cur = FGMouseCursor::cursorFromString(curName.c_str());
+                        cur = FGMouseCursor::cursorFromString(curName);
                     }
                 }
             }
@@ -463,7 +463,7 @@ void FGMouseInput::init()
             SGPropertyNode* mode_node = mouse_node->getChild("mode", j, true);
 
             // Read the mouse cursor for this mode
-            m.modes[j].cursor = FGMouseCursor::cursorFromString(mode_node->getStringValue("cursor", "inherit").c_str());
+            m.modes[j].cursor = FGMouseCursor::cursorFromString(mode_node->getStringValue("cursor", "inherit"));
 
             // Read other properties for this mode
             m.modes[j].constrained = mode_node->getBoolValue("constrained", false);
