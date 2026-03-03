@@ -48,7 +48,7 @@ FGMouseCursor3D::FGMouseCursor3D()
     for (auto cursor : cursor3DNode->getChildren("cursor")) {
         std::string path = cursor->getStringValue("model/path", "");
         std::string cursorStr = cursor->getStringValue("cursor", "");
-        unsigned int cursorId = (int)FGMouseCursor::cursorFromString(cursorStr.c_str());
+        unsigned int cursorId = (int)FGMouseCursor::cursorFromString(cursorStr);
 
         simgear::ErrorReportContext ec("cursor-model", path);
 

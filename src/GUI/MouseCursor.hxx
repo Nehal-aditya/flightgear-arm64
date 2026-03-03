@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <string>
+
 class SGPropertyNode;
 
 class FGMouseCursor
@@ -45,7 +47,7 @@ public:
 
     virtual void mouseMoved() = 0;
 
-    static Cursor cursorFromString(const char* str);
+    static Cursor cursorFromString(const std::string& str);
 
     virtual Cursor getCursor() const;
 
