@@ -11,7 +11,7 @@ variables:
   # complains about INTERFACE_INCLUDE_DIRECTORIES being the source dir
   WIN_FG_DIR: $CI_BUILDS_DIR\flightgear
   MAC_IMAGE: macos-14-xcode-15
-  PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
+
 # do not run pipelines on forks
 # build merge requests, tags and the protected branches
 workflow:
@@ -22,26 +22,31 @@ workflow:
     - if: $CI_COMMIT_TAG
     - if: $CI_COMMIT_REF_PROTECTED == "true"
 
-# see https://pre-commit.com/#gitlab-ci-example if changing this
-
-# this job runs only on MRs, but needs to pass.
-# the version below can fail, but runs over the whole repo, for now
-pre-commit-merge:
+# There is an example at https://pre-commit.com/#gitlab-ci-example
+.pre-commit-common:
   stage: build
   image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/pre-commit:latest
-  script:
-    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
-    - pre-commit run --from-ref origin/"$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" --to-ref "$CI_COMMIT_SHA"
-    - git-clang-format --diff origin/"$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  variables:
+    PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
   cache:
+    key: pre-commit
     paths:
       - ${PRE_COMMIT_HOME}
 
+# This job runs only on MR branches and needs to pass.
+pre-commit-merge:
+  extends: .pre-commit-common
+  script:
+    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+    - >
+      pre-commit run --from-ref origin/"$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+      --to-ref "$CI_COMMIT_SHA"
+    - git-clang-format --diff origin/"$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
 pre-commit:
-  stage: build
-  image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/pre-commit:latest
+  extends: .pre-commit-common
   script:
     # Run on all files. We're quite far from this being error-free, so report
     # success despite reality. This way, the pipeline status can be used to
@@ -49,9 +54,6 @@ pre-commit:
     - pre-commit run --all-files || true
   rules:
     - if: $CI_COMMIT_REF_PROTECTED == "true"
-  cache:
-    paths:
-      - ${PRE_COMMIT_HOME}
 
 linux-build:
   image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/flightgear:latest
