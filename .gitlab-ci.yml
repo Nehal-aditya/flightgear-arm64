@@ -59,8 +59,6 @@ pre-commit:
     CCACHE_DIR: ${CI_PROJECT_DIR}/.cache/ccache
     # This allows one to obtain ccache stats for a single job.
     CCACHE_STATSLOG: ${CI_PROJECT_DIR}/ccache-stats-log
-  before_script:
-    - rm -f $CCACHE_STATSLOG
   after_script:
     # For the particular build recorded in ${CCACHE_STATSLOG}
     - ccache --show-log-stats
