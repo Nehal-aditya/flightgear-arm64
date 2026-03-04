@@ -195,6 +195,7 @@ windows-build:
     # CMake gets sad.
     - Move-Item -Path $CI_PROJECT_DIR\boost $WIN_FG_DIR\boost
     - Move-Item -Path $CI_PROJECT_DIR\msvc140 $WIN_FG_DIR\msvc140
+    - ls $CI_PROJECT_DIR
   script:
     # should ideally be done inside CMake but this works for now
     - $Env:PATH += ";$WIN_FG_DIR\msvc140\3rdparty.x64\bin"
