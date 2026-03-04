@@ -198,6 +198,10 @@ windows-build:
   script:
     # should ideally be done inside CMake but this works for now
     - $Env:PATH += ";$WIN_FG_DIR\msvc140\3rdparty.x64\bin"
+
+    # for ccache.exe
+    - $Env:PATH += ";$CI_PROJECT_DIR"
+
     #  -D CMAKE_BUILD_TYPE=RelWithDebInfo
 
     - >
@@ -207,6 +211,7 @@ windows-build:
       -D MSVC_3RDPARTY_ROOT=$WIN_FG_DIR
       -D OSG_FSTREAM_EXPORT_FIXED:BOOL=ON
       -D CMAKE_PREFIX_PATH="$env:CI_PROJECT_DIR\simgear-dist;$env:CI_PROJECT_DIR\osg-dist"
+      -D ENABLE_CCACHE=ON
 
     - cmake --build $BUILD_DIR --config RelWithDebInfo
     - cmake --build $BUILD_DIR --config RelWithDebInfo --target install
