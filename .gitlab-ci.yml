@@ -54,11 +54,13 @@ pre-commit:
   rules:
     - if: $CI_COMMIT_REF_PROTECTED == "true"
 
-.ccache-variables-and-stats:
+.ccache-variables:
   variables:
     CCACHE_DIR: ${CI_PROJECT_DIR}/.cache/ccache
     # This allows one to obtain ccache stats for a single job.
     CCACHE_STATSLOG: ${CI_PROJECT_DIR}/ccache-stats-log
+
+.ccache-stats:
   after_script:
     # For the particular build recorded in ${CCACHE_STATSLOG}
     - ccache --show-log-stats
@@ -66,7 +68,7 @@ pre-commit:
     - ccache --show-stats
 
 linux-build-and-test:
-  extends: .ccache-variables-and-stats
+  extends: .ccache-variables
   image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/flightgear:latest
   stage: build
   script:
@@ -89,6 +91,8 @@ linux-build-and-test:
     - cd $BUILD_DIR
     - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CI_PROJECT_DIR/osg-dist/lib
     - ./test_suite/fgfs_test_suite --fg-root $CI_PROJECT_DIR/testFGData --junit
+  after_script:
+    - !reference [.ccache-stats, after_script]
   artifacts:
     # Note that the artifacts in artifacts:reports are _always_ uploaded,
     # even for failed jobs (special rule).
@@ -120,7 +124,7 @@ linux-build-and-test:
       - $CCACHE_DIR
 
 linux-qt5-build:
-  extends: .ccache-variables-and-stats
+  extends: .ccache-variables
   image: ${CI_REGISTRY}/flightgear/flightgear-ci-docker/flightgear-qt5:latest
   stage: build
   script:
@@ -136,6 +140,8 @@ linux-qt5-build:
 
     - cmake --build $BUILD_DIR
     - cmake --build $BUILD_DIR --target install
+  after_script:
+    - !reference [.ccache-stats, after_script]
   needs:
     - project: flightgear/simgear
       job: linux-qt5-build
@@ -184,7 +190,7 @@ canvas-pi-build:
 
 windows-build:
   stage: build
-  extends: .ccache-variables-and-stats
+  extends: .ccache-variables
   tags:
     - saas-windows-medium-amd64
   before_script:
@@ -214,6 +220,10 @@ windows-build:
 
     - cmake --build $BUILD_DIR --config RelWithDebInfo
     - cmake --build $BUILD_DIR --config RelWithDebInfo --target install
+  after_script:
+    # PATH setting for ccache.exe
+    - $Env:PATH += ";$CI_PROJECT_DIR"
+    - !reference [.ccache-stats, after_script]
   needs:
     - project: flightgear/simgear
       job: windows-build
@@ -237,7 +247,7 @@ windows-build:
 
 macos-build:
   stage: build
-  extends: .ccache-variables-and-stats
+  extends: .ccache-variables
   tags:
     - saas-macos-medium-m1
   image: $MAC_IMAGE
@@ -260,6 +270,8 @@ macos-build:
 
     - cmake --build $BUILD_DIR
     - cmake --build $BUILD_DIR --target install
+  after_script:
+    - !reference [.ccache-stats, after_script]
   needs:
     - project: flightgear/simgear
       job: macos-build
