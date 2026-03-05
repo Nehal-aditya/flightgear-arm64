@@ -65,6 +65,7 @@ int FGClouds::get_update_event(void) const {
 
 void FGClouds::set_update_event(int count) {
     update_event = count;
+    buildCloudLayers();
 }
 
 void FGClouds::Init(void)
@@ -151,7 +152,7 @@ double FGClouds::buildCloud(SGPropertyNode *cloud_def_root, SGPropertyNode *box_
                 y = w * (y - 0.5) + pos[1]; // E/W
                 z = h * z + pos[2];         // Up/Down. pos[2] is the cloudbase
 
-                addCloud(std::make_unique<SGVoxelTextureCloud>(cld_def, &seed, _options),
+                addCloud(std::make_unique<SGVoxelTextureCloud>(type, cld_def, &seed, _options),
                         index++, lon, lat, z * SG_METER_TO_FEET, x, y);                
             }
         }
@@ -228,7 +229,7 @@ void FGClouds::buildLayer(int iLayer, const string& name, double coverage, doubl
                 SGPropertyNode* cld_def = cloud_def_root->getChild(cloud_name.c_str());
                 float z = (float) altFt * SG_FEET_TO_METER;
 
-                addCloud(std::make_unique<SGVoxelLayerCloud>(cld_def, &seed, coverage, thesky->get_cloud_layer(iLayer)->getThickness_m()),
+                addCloud(std::make_unique<SGVoxelLayerCloud>(cloud_name, cld_def, &seed, coverage, thesky->get_cloud_layer(iLayer)->getThickness_m()),
                         index++, lon, lat, z * SG_METER_TO_FEET, 0, 0);
             } else {
                 SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Unable to find cloud definition for layer type " << cloud_name);
@@ -333,8 +334,6 @@ void FGClouds::buildCloudLayers(void) {
         cloud_root->setStringValue("layer-type", layer_type);
         buildLayer(iLayer, layer_type, coverage_norm, alt_ft);
     }
-
-    rebuildField();
 }
 
 /**
@@ -349,16 +348,17 @@ void FGClouds::buildCloudLayers(void) {
  */
  bool FGClouds::add3DCloud(const SGPropertyNode *arg, SGPropertyNode * root)
  {
-   int index = arg->getIntValue("index", 0);
-   float lon = arg->getFloatValue("lon-deg", 0.0f);
-   float lat = arg->getFloatValue("lat-deg", 0.0f);
-   float alt = arg->getFloatValue("alt-ft", 0.0f);
-   float x = arg->getFloatValue("x-offset-m", 0.0f);
-   float y = arg->getFloatValue("y-offset-m", 0.0f);
+    string name = arg->getStringValue("name", "undefined");
+    int index = arg->getIntValue("index", 0);
+    float lon = arg->getFloatValue("lon-deg", 0.0f);
+    float lat = arg->getFloatValue("lat-deg", 0.0f);
+    float alt = arg->getFloatValue("alt-ft", 0.0f);
+    float x = arg->getFloatValue("x-offset-m", 0.0f);
+    float y = arg->getFloatValue("y-offset-m", 0.0f);
 
-   bool success = addCloud(std::unique_ptr<SGVoxelCloud>(SGVoxelCloud::buildCloud(arg, &seed, _options)),
+    bool success = addCloud(std::unique_ptr<SGVoxelCloud>(SGVoxelCloud::buildCloud(name, arg, &seed, _options)),
                         index, lon, lat, alt, x, y);
-   return success;
+    return success;
  }
 
  /**
@@ -838,7 +838,7 @@ void FGClouds::updateFromOsgTraversal()
     if (!_fieldDirty)
         return;
 
-    buildCloudLayers();
+    rebuildField();
 
     _fieldDirty = false;
 }

@@ -209,7 +209,10 @@ FGEnvironmentMgr::update (double dt)
                                 _environment->get_wind_speed_kt());
   particlesManager->update(dt, globals->get_aircraft_position());
 
-  //if (fgClouds->isDirty()) fgClouds->buildCloudLayers();
+  if (rebuildCloudLayers) {
+    rebuildCloudLayers = false;
+    fgClouds->set_update_event(fgClouds->get_update_event() +1);
+  }
 
   updateTowerPosition();
 
@@ -463,7 +466,7 @@ FGEnvironmentMgr::set_cloud_layer_coverage (int index,
     return;
 
   _sky->get_cloud_layer(index)->setCoverageString(coverage_name);
-  fgClouds->setDirty(true);
+  rebuildCloudLayers = true;
 }
 
 int
@@ -508,7 +511,7 @@ FGEnvironmentMgr::set_cloud_layer_coverage_type (int index, int type )
     return;
 
   _sky->get_cloud_layer(index)->setCoverage(static_cast<SGCloudLayer::Coverage>(type));
-  fgClouds->setDirty(true);
+  rebuildCloudLayers = true;
 }
 
 
