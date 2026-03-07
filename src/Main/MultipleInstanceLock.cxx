@@ -3,6 +3,8 @@
 
 #include "config.h"
 
+#include <simgear/compiler.h>
+
 #include <cassert>
 #include <cstdlib>
 
