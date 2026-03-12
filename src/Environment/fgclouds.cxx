@@ -737,23 +737,37 @@ void FGClouds::rebuildField() {
                 sunOpticalDepth += density * extinction * sunStepLength;
                 float sunTransmittance = std::exp(-sunOpticalDepth);
 
-                // --- VERTICAL (SKY) OPTICAL DEPTH ---
-                float verticalOpticalDepth = 0.0f;
-                if (k < int(_detailedFieldHeight) - 1)
-                {
-                    float aboveTransmittance = shadeRaw[voxelIdx(i,j,k + 1) + 1];  // .g channel
-                    verticalOpticalDepth = -log(std::max(aboveTransmittance, 0.0001f));
-                }
-                verticalOpticalDepth += density * extinction * dz;
-                float verticalTransmittance = std::exp(-verticalOpticalDepth);
-
                 shadeRaw[idx + 0] = sunTransmittance;
-                shadeRaw[idx + 1] = verticalTransmittance;
+                shadeRaw[idx + 1] = 0.0f;  // Filled by dedicated top-down pass below.
                 shadeRaw[idx + 2] = 0.0f;
                 shadeRaw[idx + 3] = 0.0f;                
             }
         }
     }
+
+    // --- VERTICAL SKY TRANSMITTANCE (always top-down, independent of sun) ---
+    // This represents how much sky light has penetrated from above to reach each voxel.
+    // Must be computed top-down so each voxel can read the already-computed voxel above it.
+    for (int k = int(_detailedFieldHeight) - 1; k >= 0; --k)
+    {
+        for (int j = 0; j < int(_detailedFieldWidth); ++j)
+        {
+            for (int i = 0; i < int(_detailedFieldWidth); ++i)
+            {
+                const int idx = voxelIdx(i, j, k);
+                float density = voxelRaw[idx + 2];
+
+                float verticalOpticalDepth = 0.0f;
+                if (k < int(_detailedFieldHeight) - 1)
+                {
+                    float aboveTransmittance = shadeRaw[voxelIdx(i, j, k + 1) + 1];
+                    verticalOpticalDepth = -log(std::max(aboveTransmittance, 0.0001f));
+                }
+                verticalOpticalDepth += density * extinction * dz;
+                shadeRaw[idx + 1] = std::exp(-verticalOpticalDepth);
+            }
+        }
+    }    
 
     // Keep the images alive as members of FGClouds
     _detailedVoxelData = detailedVoxelData;
