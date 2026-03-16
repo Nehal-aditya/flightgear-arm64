@@ -526,7 +526,6 @@ void FGClouds::rebuildField() {
 
     // Maximum and minimum cloud altitudes which we will use to determine an appropriate height for the voxel space.
     float maxCloudAlt = 0.0f;
-    float minCloudAlt = 40000.0f;
 
     const osg::Vec3f centerOsg = toOsg(_centerCart);
 
@@ -544,7 +543,6 @@ void FGClouds::rebuildField() {
             LocalCloudPlacement localCloud = std::make_pair(c, p);
             detailedFieldList.push_back(localCloud);
             maxCloudAlt = std::max(maxCloudAlt, p.z());
-            minCloudAlt = std::min(minCloudAlt, p.z());
         }
         
         // Only use the rough field map if we aren't using a repeating (detailed) field)
@@ -556,7 +554,6 @@ void FGClouds::rebuildField() {
             LocalCloudPlacement localCloud = std::make_pair(c, p);
             roughFieldList.push_back(localCloud);
             maxCloudAlt = std::max(maxCloudAlt, p.z());
-            minCloudAlt = std::min(minCloudAlt, p.z());
         }
     }
 
@@ -684,8 +681,8 @@ void FGClouds::rebuildField() {
 
     // Sun direction in voxel index space (not normalized UV space)
     osg::Vec3f sunDirVoxel(s.x(), s.y(), s.z() * float(_detailedFieldWidth) / float(_detailedFieldHeight));
-    sunDirVoxel.normalize();
     const float sunStepLength = sunDirVoxel.length() / float(_detailedFieldWidth);
+    sunDirVoxel.normalize();
 
     SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Sun Direction Z-Up: " << sunDirVoxel.x() << ", " << sunDirVoxel.y() << ", " << sunDirVoxel.z());
 
