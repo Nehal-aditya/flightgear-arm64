@@ -232,7 +232,7 @@ void FGClouds::buildLayer(int iLayer, const string& name, double coverage, doubl
                 addCloud(std::make_unique<SGVoxelLayerCloud>(cloud_name, cld_def, &seed, coverage, thesky->get_cloud_layer(iLayer)->getThickness_m()),
                         index++, lon, lat, z * SG_METER_TO_FEET, 0, 0);
             } else {
-                SG_LOG(SG_ENVIRONMENT, SG_ALERT, "Unable to find cloud definition for layer type " << cloud_name);
+                SG_LOG(SG_ENVIRONMENT, SG_DEV_ALERT, "Unable to find cloud definition for layer type " << cloud_name);
             }
         }
     }
@@ -805,7 +805,7 @@ void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage) {
 
     if (cloudBoundaryDistances.empty()) {
         // This is an error condition 
-        SG_LOG(SG_ENVIRONMENT, SG_ALERT, "No clouds in voxel data for image " << voxelImage->getName());
+        SG_LOG(SG_ENVIRONMENT, SG_DEV_ALERT, "No clouds in voxel data for image " << voxelImage->getName());
         return;   
     }
 
