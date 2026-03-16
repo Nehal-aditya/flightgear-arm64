@@ -919,7 +919,10 @@ int fgInitAircraft(bool reinit, bool didUseLauncher)
     string aircraftId = fullyQualifiedAircraftId.empty() ? aircraftProp->getStringValue() : fullyQualifiedAircraftId;
 
     flightgear::addSentryTag("aircraft", aircraftId);
-        
+
+    const auto acdp = SGPath::fromUtf8(aircraftDirProp->getStringValue());
+    flightgear::addSentryTag("aircraft-dir", acdp.file());
+
     PackageRef acftPackage;
     if (!haveExplicit) {
         acftPackage = pkgRoot->getPackageById(aircraftId);
