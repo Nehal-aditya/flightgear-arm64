@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include <string>
-#include <osg/Image>
-#include <vector>
 #include <map>
+#include <osg/Image>
+#include <string>
+#include <vector>
 
 #include <simgear/scene/util/SGReaderWriterOptions.hxx>
 
@@ -22,8 +22,8 @@ class SGCloudField;
 class SGVoxelCloud;
 
 
-class FGClouds {
-
+class FGClouds
+{
 private:
     typedef std::pair<std::unique_ptr<const SGVoxelCloud>, osg::Vec3f> CloudPlacement;
 
@@ -73,8 +73,8 @@ private:
     osg::ref_ptr<osg::Image> _roughVoxelData;
     osg::ref_ptr<osg::Image> _voxelShadeData;
 
-    bool add3DCloud(const SGPropertyNode *arg, SGPropertyNode * root);
-    bool delete3DCloud(const SGPropertyNode *arg, SGPropertyNode * root);
+    bool add3DCloud(const SGPropertyNode* arg, SGPropertyNode* root);
+    bool delete3DCloud(const SGPropertyNode* arg, SGPropertyNode* root);
     bool move3DCloud(const SGPropertyNode* arg, SGPropertyNode* root);
 
     /**
@@ -86,7 +86,7 @@ private:
     bool addCloud(std::unique_ptr<const SGVoxelCloud> cloud, int index, SGGeod loc);
 
     // add one cloud, data is not copied, ownership given
-    void addCloud( SGVec3f& pos, const SGVoxelCloud* cloud);
+    void addCloud(SGVec3f& pos, const SGVoxelCloud* cloud);
 
     // Cloud handling functions.
     bool removeCloud(int index);
@@ -96,8 +96,8 @@ private:
     void rebuildField(void);
 
     // Utility functions
-    float getDetailedFieldRadiusM() { return (float) 0.5f * _detailedFieldWidth * _detailedFieldVoxelSize; }
-    float getRoughFieldRadiusM()    { return (float) 0.5f * _roughFieldWidth * _roughFieldVoxelSize; }
+    float getDetailedFieldRadiusM() { return (float)0.5f * _detailedFieldWidth * _detailedFieldVoxelSize; }
+    float getRoughFieldRadiusM() { return (float)0.5f * _roughFieldWidth * _roughFieldVoxelSize; }
     void generateSDF(osg::ref_ptr<osg::Image>);
 
 public:
@@ -112,7 +112,7 @@ public:
     void set_3dClouds(bool enable);
 
     bool isDirty(void) const { return _fieldDirty; }
-    void setDirty(bool dirty)  { _fieldDirty = dirty; }
+    void setDirty(bool dirty) { _fieldDirty = dirty; }
 
     bool isCloudsRepeating(void) const { return _fieldRepeating; }
     void setCloudsRepeating(bool repeat) { _fieldRepeating = repeat; }
@@ -121,12 +121,14 @@ public:
     osg::ref_ptr<osg::Group> getCloudUpdateNode() { return _cloudUpdateNode; }
 };
 
-class FGCloudUpdateCallback : public osg::NodeCallback {
+class FGCloudUpdateCallback : public osg::NodeCallback
+{
 public:
     FGCloudUpdateCallback(FGClouds* clouds)
         : _clouds(clouds) {}
 
-    void operator()(osg::Node* node, osg::NodeVisitor* nv) override {
+    void operator()(osg::Node* node, osg::NodeVisitor* nv) override
+    {
         if (nv->getVisitorType() == osg::NodeVisitor::UPDATE_VISITOR) {
             _clouds->updateFromOsgTraversal();
         }
