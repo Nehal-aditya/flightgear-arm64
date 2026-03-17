@@ -53,15 +53,15 @@ private:
     CloudPlacementMap _cloudPlacementMap;
 
     // This is the ECF cartesian coordinates of the voxel field.
-    SGVec3d _centerCart; 
+    SGVec3d _centerCart;
     osg::Matrixd _cloudPosMatrix;
-    
+
     // Whether the cloud field requires regeneration.
     bool _fieldDirty;
 
     // Whether the cloud field is repeating (by simply mirroring the voxel space texture)
     bool _fieldRepeating;
-    
+
     osg::ref_ptr<simgear::SGReaderWriterOptions> _options;
 
     // A node in the scenegraph purely used to ensure that the voxel data
@@ -87,7 +87,7 @@ private:
 
     // add one cloud, data is not copied, ownership given
     void addCloud( SGVec3f& pos, const SGVoxelCloud* cloud);
-    
+
     // Cloud handling functions.
     bool removeCloud(int index);
     bool repositionCloud(int index, float lon, float lat, float alt);
@@ -110,7 +110,7 @@ public:
     void set_update_event(int count);
     bool get_3dClouds() const;
     void set_3dClouds(bool enable);
-    
+
     bool isDirty(void) const { return _fieldDirty; }
     void setDirty(bool dirty)  { _fieldDirty = dirty; }
 

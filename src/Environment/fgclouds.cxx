@@ -49,7 +49,7 @@ FGClouds::FGClouds() :
 
     _cloudUpdateNode = new osg::Group;
     _cloudUpdateNode->setName("Cloud Update Node");
-    _cloudUpdateNode->addUpdateCallback(new FGCloudUpdateCallback(this));    
+    _cloudUpdateNode->addUpdateCallback(new FGCloudUpdateCallback(this));
 }
 
 FGClouds::~FGClouds()
@@ -153,7 +153,7 @@ double FGClouds::buildCloud(SGPropertyNode *cloud_def_root, SGPropertyNode *box_
                 z = h * z + pos[2];         // Up/Down. pos[2] is the cloudbase
 
                 addCloud(std::make_unique<SGVoxelTextureCloud>(type, cld_def, &seed, _options),
-                        index++, lon, lat, z * SG_METER_TO_FEET, x, y);                
+                        index++, lon, lat, z * SG_METER_TO_FEET, x, y);
             }
         }
     }
@@ -483,7 +483,7 @@ void FGClouds::rebuildField() {
 
     _detailedFieldWidth     = cloudsProp->getIntValue("detailed-voxel-field-width", 256);
     _detailedFieldHeight    = cloudsProp->getIntValue("detailed-voxel-field-height", 64);
-    _detailedFieldVoxelSize = cloudsProp->getIntValue("detailed-voxel-size-m", 200);  
+    _detailedFieldVoxelSize = cloudsProp->getIntValue("detailed-voxel-size-m", 200);
     float extinction = cloudsProp->getFloatValue("extinction-factor", 1.2);
 
     if (_fieldRepeating) {
@@ -499,7 +499,7 @@ void FGClouds::rebuildField() {
         _roughVoxelSizeFactor = cloudsProp->getIntValue("rough-voxel-size-factor", 2);
         _roughFieldVoxelSize  = _detailedFieldVoxelSize * _roughVoxelSizeFactor;
         SGVoxelTextureCloud::setRoughVoxelScale(_roughVoxelSizeFactor);
-        
+
         // The rough field width is a factor of the detailed field width
         _roughFieldWidth  = _detailedFieldWidth * cloudsProp->getIntValue("rough-voxel-field-factor", 2);
         _roughFieldHeight = _detailedFieldHeight / _roughVoxelSizeFactor;
@@ -507,11 +507,11 @@ void FGClouds::rebuildField() {
 
     // Save off the current location, which will be used in transforms.
     // We will determine the altitude later, so make sure it's 0 for
-    // the various coversions between ECF and local coordinates.
+    // the various conversions between ECF and local coordinates.
     SGGeod geod = globals->get_view_position();
     geod.setElevationM(0);
 
-    SGGeodesy::SGGeodToCart(geod, _centerCart);    
+    SGGeodesy::SGGeodToCart(geod, _centerCart);
     _cloudPosMatrix = makeZUpFrameRelative(geod);
     SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Rebuilding field at " << geod.getLatitudeDeg() << " " << geod.getLongitudeDeg() << " " << geod.getElevationFt());
 
@@ -531,23 +531,23 @@ void FGClouds::rebuildField() {
 
     for (const auto& [key, value] : _cloudPlacementMap) {
         const CloudPlacement& cl = value;
-        const SGVoxelCloud* c = std::get<0>(cl).get();        
+        const SGVoxelCloud* c = std::get<0>(cl).get();
         // Transform to Z-up coordinates
         osg::Vec3f q = std::get<1>(cl) - centerOsg;
         osg::Vec3f p = _cloudPosMatrix * q;
 
         // Check if any part is within the X/Y bounds for each of the voxelMaps.
-        if (p.x() > -getDetailedFieldRadiusM() && p.x() < getDetailedFieldRadiusM() && 
+        if (p.x() > -getDetailedFieldRadiusM() && p.x() < getDetailedFieldRadiusM() &&
             p.y() > -getDetailedFieldRadiusM() && p.y() < getDetailedFieldRadiusM()) {
             SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Adding detailed cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
             LocalCloudPlacement localCloud = std::make_pair(c, p);
             detailedFieldList.push_back(localCloud);
             maxCloudAlt = std::max(maxCloudAlt, p.z());
         }
-        
+
         // Only use the rough field map if we aren't using a repeating (detailed) field)
         if (! _fieldRepeating &&
-            p.x() > -getRoughFieldRadiusM() && p.x() < getRoughFieldRadiusM() && 
+            p.x() > -getRoughFieldRadiusM() && p.x() < getRoughFieldRadiusM() &&
             p.y() > -getRoughFieldRadiusM() && p.y() < getRoughFieldRadiusM()) {
             // Local coordinate cloud placement
             SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Adding rough cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
@@ -651,7 +651,7 @@ void FGClouds::rebuildField() {
     // Generate SDF
     generateSDF(detailedVoxelData);
 
-    if (! _fieldRepeating) {    
+    if (! _fieldRepeating) {
         // Now generate the rough voxel space in a similar manner
         for (const auto&  cl  : roughFieldList) {
             const SGVoxelCloud* c = cl.first;
@@ -663,7 +663,7 @@ void FGClouds::rebuildField() {
         // Generate an SDF
         generateSDF(roughVoxelData);
     }
-    
+
 
     // Now build the shade image.  The R channel is the transmittance towards the Sun.  The G channel the transmittance density.
     const float* voxelRaw = reinterpret_cast<const float*>(detailedVoxelData->data());
@@ -671,7 +671,7 @@ void FGClouds::rebuildField() {
 
     auto voxelIdx = [&](int i, int j, int k) {
         return (k * _detailedFieldWidth * _detailedFieldWidth + j * _detailedFieldWidth + i) * 4;
-    };    
+    };
 
     // Get the Sun direction and transform into the Z-up X-north coordinates
     auto l = globals->get_subsystem<FGLight>();
@@ -737,7 +737,7 @@ void FGClouds::rebuildField() {
                 shadeRaw[idx + 0] = sunTransmittance;
                 shadeRaw[idx + 1] = 0.0f;  // Filled by dedicated top-down pass below.
                 shadeRaw[idx + 2] = 0.0f;
-                shadeRaw[idx + 3] = 0.0f;                
+                shadeRaw[idx + 3] = 0.0f;
             }
         }
     }
@@ -764,7 +764,7 @@ void FGClouds::rebuildField() {
                 shadeRaw[idx + 1] = std::exp(-verticalOpticalDepth);
             }
         }
-    }    
+    }
 
     // Keep the images alive as members of FGClouds
     _detailedVoxelData = detailedVoxelData;
@@ -781,7 +781,7 @@ void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage) {
     vector<float> cloudBoundaryDistances;
 
     cloudBoundaryIndices.reserve(voxelImage->s() * voxelImage->t() * voxelImage->r() / 8);  // rough estimate
-    cloudBoundaryDistances.reserve(voxelImage->s() * voxelImage->t() * voxelImage->r() / 8);    
+    cloudBoundaryDistances.reserve(voxelImage->s() * voxelImage->t() * voxelImage->r() / 8);
 
     assert(voxelImage->s() == voxelImage->t());
     size_t width = (size_t) voxelImage->s();
@@ -798,12 +798,12 @@ void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage) {
                 }
             }
         }
-    }    
+    }
 
     if (cloudBoundaryDistances.empty()) {
-        // This is an error condition 
+        // This is an error condition
         SG_LOG(SG_ENVIRONMENT, SG_DEV_ALERT, "No clouds in voxel data for image " << voxelImage->getName());
-        return;   
+        return;
     }
 
     try {
@@ -815,7 +815,7 @@ void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage) {
             cloudBoundaryIndices,
             cloudBoundaryDistances,
             fmm::DistanceSolver<float, 3>(1.0));
-        
+
         // The SDF is now calculated, so write it back to the voxel data.
         float* raw = reinterpret_cast<float*>(voxelImage->data());
         std::size_t idx = 0;
@@ -833,14 +833,14 @@ void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage) {
         }
 
         SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "SDF calculation complete. Maximum distance " << maxDistance);
-    } 
+    }
     catch (const std::exception& e) {
-        // The fmm may through exceptions if it is unable to generate an SDF.  Given that 
+        // The fmm may through exceptions if it is unable to generate an SDF.  Given that
         // our data has a random element, this is insufficient reason to terminate FlightGear,
         // so we will simply log this.
         _FMMExceptionCount++;
         SG_LOG(SG_ENVIRONMENT, SG_DEV_ALERT, "Cloud Fast Marching Method to generate SDF threw exception'" << e.what() << "'. Ignoring.  Cloud ray-marching will be inefficient. Total exceptions: " << _FMMExceptionCount);
-    } 
+    }
 
 }
 
