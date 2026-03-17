@@ -39,8 +39,10 @@ namespace fmm = thinks::fast_marching_method;
 // deployments
 static mt seed;
 
-FGClouds::FGClouds() : index(0),
-                       _FMMExceptionCount(0)
+// Exception count from the fmm library
+static unsigned int _FMMExceptionCount;
+
+FGClouds::FGClouds() : index(0)
 {
     update_event = 0;
     _options = new simgear::SGReaderWriterOptions;
@@ -53,6 +55,11 @@ FGClouds::FGClouds() : index(0),
 
 FGClouds::~FGClouds()
 {
+    // Wait for any in-flight background rebuild to finish before
+    // destroying the placement map (the task holds raw pointers into it).
+    if (_rebuildFuture.valid())
+        _rebuildFuture.wait();
+
     globals->get_commands()->removeCommand("add-cloud");
     globals->get_commands()->removeCommand("del-cloud");
     globals->get_commands()->removeCommand("move-cloud");
@@ -72,6 +79,7 @@ void FGClouds::set_update_event(int count)
 void FGClouds::Init(void)
 {
     mt_init_time_10(&seed);
+    _FMMExceptionCount = 0;
 
     globals->get_commands()->addCommand("add-cloud", this, &FGClouds::add3DCloud);
     globals->get_commands()->addCommand("del-cloud", this, &FGClouds::delete3DCloud);
@@ -266,8 +274,15 @@ void FGClouds::buildLayer(int iLayer, const string& name, double coverage, doubl
 
 void FGClouds::buildCloudLayers(void)
 {
+    // Cancel any in-flight rebuild before clearing the map it holds pointers into
+    if (_rebuildFuture.valid())
+        _rebuildFuture.wait();
+
     // Clear out the existing clouds;  Destructor handles cleanup
-    _cloudPlacementMap.clear();
+    {
+        std::lock_guard<std::mutex> lk(_placementMutex);
+        _cloudPlacementMap.clear();
+    }
 
     // Enable repeating of the voxel space as the clouds we generate should be global
     setCloudsRepeating(true);
@@ -411,6 +426,8 @@ bool FGClouds::addCloud(std::unique_ptr<const SGVoxelCloud> cloud, int index, fl
 
 bool FGClouds::removeCloud(int index)
 {
+    std::lock_guard<std::mutex> lk(_placementMutex);
+
     if (_cloudPlacementMap.contains(index)) {
         _cloudPlacementMap.erase(index); // Destructor deletes the cloud
         _fieldDirty = true;
@@ -422,6 +439,8 @@ bool FGClouds::removeCloud(int index)
 
 bool FGClouds::addCloud(std::unique_ptr<const SGVoxelCloud> cloud, int index, SGGeod loc, float x, float y)
 {
+    std::lock_guard<std::mutex> lk(_placementMutex);
+
     // If this cloud index already exists, don't replace it.
     if (_cloudPlacementMap.contains(index)) return false;
 
@@ -456,6 +475,8 @@ bool FGClouds::repositionCloud(int index, float lon, float lat, float alt)
 
 bool FGClouds::repositionCloud(int index, float lon, float lat, float alt, float x, float y)
 {
+    std::lock_guard<std::mutex> lk(_placementMutex);
+
     auto it = _cloudPlacementMap.find(index);
     if (it == _cloudPlacementMap.end()) return false;
 
@@ -479,35 +500,39 @@ bool FGClouds::repositionCloud(int index, float lon, float lat, float alt, float
     return true;
 }
 
-// Build the cloud field centered on the current location.
-void FGClouds::rebuildField()
+FGClouds::RebuildSnapshot FGClouds::captureSnapshot()
 {
-    if (!_fieldDirty) return;
+    RebuildSnapshot snap;
 
-    // Build and assign the voxel fields
+    // Read config (always main-thread safe)
     auto cloudsProp = globals->get_props()->getNode("/sim/rendering/hdr/clouds/");
+    snap.detailedFieldWidth = cloudsProp->getIntValue("detailed-voxel-field-width", 256);
+    snap.detailedFieldHeight = cloudsProp->getIntValue("detailed-voxel-field-height", 64);
+    snap.detailedFieldVoxelSize = cloudsProp->getIntValue("detailed-voxel-size-m", 200);
+    snap.extinction = cloudsProp->getFloatValue("extinction-factor", 1.2);
+    snap.fieldRepeating = _fieldRepeating;
 
-    _detailedFieldWidth = cloudsProp->getIntValue("detailed-voxel-field-width", 256);
-    _detailedFieldHeight = cloudsProp->getIntValue("detailed-voxel-field-height", 64);
-    _detailedFieldVoxelSize = cloudsProp->getIntValue("detailed-voxel-size-m", 200);
-    float extinction = cloudsProp->getFloatValue("extinction-factor", 1.2);
+    // Write back for use by FGClouds outside of the snapshot.
+    _detailedFieldWidth = snap.detailedFieldWidth;
+    _detailedFieldHeight = snap.detailedFieldHeight;
+    _detailedFieldVoxelSize = snap.detailedFieldVoxelSize;
 
     if (_fieldRepeating) {
-        _roughVoxelSizeFactor = 1;
-        _roughFieldVoxelSize = 1;
-        _roughFieldWidth = 1;
-        _roughFieldHeight = 1;
+        snap.roughVoxelSizeFactor = 1;
+        snap.roughFieldVoxelSize = 1;
+        snap.roughFieldWidth = 1;
+        snap.roughFieldHeight = 1;
         SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Repeating detailed field being used - Rough Voxel field not in use.");
     } else {
         // This is the size factor for the rough field.  Note that as this is in each dimension
         // the occupany is 1/8th
-        _roughVoxelSizeFactor = cloudsProp->getIntValue("rough-voxel-size-factor", 2);
-        _roughFieldVoxelSize = _detailedFieldVoxelSize * _roughVoxelSizeFactor;
-        SGVoxelTextureCloud::setRoughVoxelScale(_roughVoxelSizeFactor);
+        snap.roughVoxelSizeFactor = cloudsProp->getIntValue("rough-voxel-size-factor", 2);
+        snap.roughFieldVoxelSize = snap.detailedFieldVoxelSize * snap.roughVoxelSizeFactor;
+        SGVoxelTextureCloud::setRoughVoxelScale(snap.roughVoxelSizeFactor);
 
         // The rough field width is a factor of the detailed field width
-        _roughFieldWidth = _detailedFieldWidth * cloudsProp->getIntValue("rough-voxel-field-factor", 2);
-        _roughFieldHeight = _detailedFieldHeight / _roughVoxelSizeFactor;
+        snap.roughFieldWidth = snap.detailedFieldWidth * cloudsProp->getIntValue("rough-voxel-field-factor", 2);
+        snap.roughFieldHeight = snap.detailedFieldHeight / snap.roughVoxelSizeFactor;
     }
 
     // Save off the current location, which will be used in transforms.
@@ -525,96 +550,117 @@ void FGClouds::rebuildField()
     fgSetFloat("/sim/rendering/hdr/clouds/cloud-center-z", (float)_centerCart.z());
     fgSetBool("/sim/rendering/hdr/clouds/cloud-field-repeating", _fieldRepeating);
 
-    using LocalCloudPlacement = std::pair<const SGVoxelCloud*, osg::Vec3f>;
-    std::vector<LocalCloudPlacement> detailedFieldList;
-    std::vector<LocalCloudPlacement> roughFieldList;
 
-    // Maximum and minimum cloud altitudes which we will use to determine an appropriate height for the voxel space.
-    float maxCloudAlt = 0.0f;
+    // Sun direction - read subsystem state on main thread
+    auto l = globals->get_subsystem<FGLight>();
+    const osg::Vec4f sunDirection(l->sun_vec_inv()[0],
+                                  l->sun_vec_inv()[1],
+                                  l->sun_vec_inv()[2], 0.0f);
+    const osg::Matrixf cameraZUp = osg::Matrix::inverse(_cloudPosMatrix);
+    osg::Vec4f s = cameraZUp * (-sunDirection);
+    snap.sunDirVoxel = osg::Vec3f(s.x(), s.y(),
+                                  s.z() * float(snap.detailedFieldWidth) /
+                                      float(snap.detailedFieldHeight));
+    snap.sunStepLength = snap.sunDirVoxel.length() / float(snap.detailedFieldWidth);
+    snap.sunDirVoxel.normalize();
 
+    snap.centerCart = _centerCart;
+    snap.cloudPosMatrix = _cloudPosMatrix;
+
+    // Take the placement map snapshot under lock - this is the only part
+    // that races with addCloud/removeCloud.
     const osg::Vec3f centerOsg = toOsg(_centerCart);
+    {
+        const float detailedFieldRadiusM = 0.5f * (float)snap.detailedFieldWidth * (float)snap.detailedFieldVoxelSize;
+        const float roughFieldRadiusM = 0.5f * (float)snap.roughFieldWidth * (float)snap.roughFieldVoxelSize;
 
-    for (const auto& [key, value] : _cloudPlacementMap) {
-        const CloudPlacement& cl = value;
-        const SGVoxelCloud* c = std::get<0>(cl).get();
-        // Transform to Z-up coordinates
-        osg::Vec3f q = std::get<1>(cl) - centerOsg;
-        osg::Vec3f p = _cloudPosMatrix * q;
+        std::lock_guard<std::mutex> lk(_placementMutex);
+        for (const auto& [key, value] : _cloudPlacementMap) {
+            const SGVoxelCloud* c = std::get<0>(value).get();
+            osg::Vec3f q = std::get<1>(value) - centerOsg;
+            osg::Vec3f p = _cloudPosMatrix * q;
 
-        // Check if any part is within the X/Y bounds for each of the voxelMaps.
-        if (p.x() > -getDetailedFieldRadiusM() && p.x() < getDetailedFieldRadiusM() &&
-            p.y() > -getDetailedFieldRadiusM() && p.y() < getDetailedFieldRadiusM()) {
-            SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Adding detailed cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
-            LocalCloudPlacement localCloud = std::make_pair(c, p);
-            detailedFieldList.push_back(localCloud);
-            maxCloudAlt = std::max(maxCloudAlt, p.z());
-        }
+            // Check if any part is within the X/Y bounds for each of the voxelMaps.
+            if (p.x() > -detailedFieldRadiusM && p.x() < detailedFieldRadiusM &&
+                p.y() > -detailedFieldRadiusM && p.y() < detailedFieldRadiusM) {
+                SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Adding detailed cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
+                std::pair<const SGVoxelCloud*, osg::Vec3f> localCloud = std::make_pair(c, p);
+                snap.detailedFieldList.push_back(localCloud);
+            }
 
-        // Only use the rough field map if we aren't using a repeating (detailed) field)
-        if (!_fieldRepeating &&
-            p.x() > -getRoughFieldRadiusM() && p.x() < getRoughFieldRadiusM() &&
-            p.y() > -getRoughFieldRadiusM() && p.y() < getRoughFieldRadiusM()) {
-            // Local coordinate cloud placement
-            SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Adding rough cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
-            LocalCloudPlacement localCloud = std::make_pair(c, p);
-            roughFieldList.push_back(localCloud);
-            maxCloudAlt = std::max(maxCloudAlt, p.z());
+            // Only use the rough field map if we aren't using a repeating (detailed) field)
+            if (!_fieldRepeating &&
+                p.x() > -roughFieldRadiusM && p.x() < roughFieldRadiusM &&
+                p.y() > -roughFieldRadiusM && p.y() < roughFieldRadiusM) {
+                // Local coordinate cloud placement
+                SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Adding rough cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
+                std::pair<const SGVoxelCloud*, osg::Vec3f> localCloud = std::make_pair(c, p);
+                snap.roughFieldList.push_back(localCloud);
+            }
         }
     }
+    return snap;
+}
 
-    if ((_fieldRepeating && detailedFieldList.empty()) ||
-        (!_fieldRepeating && roughFieldList.empty())) {
+// Build the cloud field centered on the current location.
+FGClouds::RebuildResult FGClouds::runRebuild(RebuildSnapshot snap)
+{
+    RebuildResult result;
+    result.fieldRepeating = snap.fieldRepeating;
+
+    if ((snap.fieldRepeating && snap.detailedFieldList.empty()) ||
+        (!snap.fieldRepeating && snap.roughFieldList.empty())) {
         // Nothing to display, so clean up and return early.
         osg::ref_ptr<osg::Image> dummyVoxelData = new osg::Image();
         dummyVoxelData->setName("Dummy Cloud Voxel Data");
         dummyVoxelData->allocateImage(1, 1, 1, GL_RGBA, GL_FLOAT);
         SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "rebuildField - No cloud data in range");
-        simgear::StateAttributeFactory::instance()->setCloudVoxelImages(dummyVoxelData, dummyVoxelData, dummyVoxelData, _fieldRepeating);
-        _fieldDirty = false;
-        return;
+        result.detailedVoxelData = dummyVoxelData;
+        result.roughVoxelData = dummyVoxelData;
+        result.voxelShadeData = dummyVoxelData;
+        return result;
     }
 
-    const int detailedVoxelSpaceSizeMBytes = _detailedFieldWidth * _detailedFieldWidth * _detailedFieldHeight * 12 / 1024 / 1024;
+    const int detailedVoxelSpaceSizeMBytes = snap.detailedFieldWidth * snap.detailedFieldWidth * snap.detailedFieldHeight * 12 / 1024 / 1024;
     SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Rebuilding Cloud voxel field");
-    SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Detailed Voxel size: " << _detailedFieldVoxelSize << "m");
-    SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Detailed Voxel space: " << _detailedFieldWidth << " x " << _detailedFieldWidth << " x " << _detailedFieldHeight << " total size: " << detailedVoxelSpaceSizeMBytes << " MB");
-    SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Detailed Voxel space: " << (_detailedFieldWidth * _detailedFieldVoxelSize / 1000.0) << "x" << (_detailedFieldWidth * _detailedFieldVoxelSize / 1000.0) << "km " << (_detailedFieldHeight * _detailedFieldVoxelSize * SG_METER_TO_FEET) << "ft");
+    SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Detailed Voxel size: " << snap.detailedFieldVoxelSize << "m");
+    SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Detailed Voxel space: " << snap.detailedFieldWidth << " x " << snap.detailedFieldWidth << " x " << snap.detailedFieldHeight << " total size: " << detailedVoxelSpaceSizeMBytes << " MB");
+    SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Detailed Voxel space: " << (snap.detailedFieldWidth * snap.detailedFieldVoxelSize / 1000.0) << "x" << (snap.detailedFieldWidth * snap.detailedFieldVoxelSize / 1000.0) << "km " << (snap.detailedFieldHeight * snap.detailedFieldVoxelSize * SG_METER_TO_FEET) << "ft");
 
-    if (!_fieldRepeating) {
+    if (!snap.fieldRepeating) {
         // As the atmosphere is thin, we assume the detailed field is sufficiently
         // high to include the entire troposphere, so therefore the rough field height is
         // calculated automatically.
-        cloudsProp->setIntValue("rough-voxel-field-height", _roughFieldHeight);
-        const int roughVoxelSpaceSizeMBytes = _roughFieldWidth * _roughFieldWidth * _roughFieldHeight * 12 / 1024 / 1024;
-        SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Rough Voxel size: " << _roughFieldVoxelSize << "m");
-        SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Rough Voxel space" << _roughFieldWidth << "x" << _roughFieldWidth << "x" << _roughFieldHeight << " total size: " << roughVoxelSpaceSizeMBytes << " MB");
-        SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Rough Voxel space: " << (_roughFieldWidth * _roughFieldVoxelSize / 1000.0) << "x" << (_roughFieldWidth * _roughFieldVoxelSize / 1000.0) << "x" << (_roughFieldHeight * _roughFieldVoxelSize / 1000.0) << " km");
+        const int roughVoxelSpaceSizeMBytes = snap.roughFieldWidth * snap.roughFieldWidth * snap.roughFieldHeight * 12 / 1024 / 1024;
+        SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Rough Voxel size: " << snap.roughFieldVoxelSize << "m");
+        SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Rough Voxel space" << snap.roughFieldWidth << "x" << snap.roughFieldWidth << "x" << snap.roughFieldHeight << " total size: " << roughVoxelSpaceSizeMBytes << " MB");
+        SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Rough Voxel space: " << (snap.roughFieldWidth * snap.roughFieldVoxelSize / 1000.0) << "x" << (snap.roughFieldWidth * snap.roughFieldVoxelSize / 1000.0) << "x" << (snap.roughFieldHeight * snap.roughFieldVoxelSize / 1000.0) << " km");
     }
 
-    osg::ref_ptr<osg::Image> roughVoxelData = new osg::Image();
-    roughVoxelData->setName("Rough Cloud Voxel Data");
-    roughVoxelData->setFileName("Rough Cloud Voxel Data");
-    roughVoxelData->allocateImage(_roughFieldWidth, _roughFieldWidth, _roughFieldHeight, GL_RGBA, GL_FLOAT);
+    result.roughVoxelData = new osg::Image();
+    result.roughVoxelData->setName("Rough Cloud Voxel Data");
+    result.roughVoxelData->setFileName("Rough Cloud Voxel Data");
+    result.roughVoxelData->allocateImage(snap.roughFieldWidth, snap.roughFieldWidth, snap.roughFieldHeight, GL_RGBA, GL_FLOAT);
 
-    osg::ref_ptr<osg::Image> detailedVoxelData = new osg::Image();
-    detailedVoxelData->setName("Detailed Cloud Voxel Data");
-    detailedVoxelData->setFileName("Detailed Cloud Voxel Data");
-    detailedVoxelData->allocateImage(_detailedFieldWidth, _detailedFieldWidth, _detailedFieldHeight, GL_RGBA, GL_FLOAT);
+    result.detailedVoxelData = new osg::Image();
+    result.detailedVoxelData->setName("Detailed Cloud Voxel Data");
+    result.detailedVoxelData->setFileName("Detailed Cloud Voxel Data");
+    result.detailedVoxelData->allocateImage(snap.detailedFieldWidth, snap.detailedFieldWidth, snap.detailedFieldHeight, GL_RGBA, GL_FLOAT);
 
-    osg::ref_ptr<osg::Image> voxelShadeData = new osg::Image();
-    voxelShadeData->setName("Voxel Shade Data");
-    voxelShadeData->setFileName("Voxel Shade Data");
-    voxelShadeData->allocateImage(_detailedFieldWidth, _detailedFieldWidth, _detailedFieldHeight, GL_RGBA, GL_FLOAT);
+    result.voxelShadeData = new osg::Image();
+    result.voxelShadeData->setName("Voxel Shade Data");
+    result.voxelShadeData->setFileName("Voxel Shade Data");
+    result.voxelShadeData->allocateImage(snap.detailedFieldWidth, snap.detailedFieldWidth, snap.detailedFieldHeight, GL_RGBA, GL_FLOAT);
 
     // The alpha value is use for a Signed Distance Field, and indicates the maximum distance that can be travelled
     // before hitting something in UV coordinates.  We default to 1 pixel.
-    const float roughSDFMin = 1.0f / (float)_roughFieldWidth;
-    const float detailedSDFMin = 1.0f / (float)_detailedFieldWidth;
+    const float roughSDFMin = 1.0f / (float)snap.roughFieldWidth;
+    const float detailedSDFMin = 1.0f / (float)snap.detailedFieldWidth;
 
     SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "SDF Minima: detailed: " << detailedSDFMin << " rough: " << roughSDFMin);
 
-    float* data = reinterpret_cast<float*>(roughVoxelData->data());
-    size_t numVoxels = _roughFieldWidth * _roughFieldWidth * _roughFieldHeight;
+    float* data = reinterpret_cast<float*>(result.roughVoxelData->data());
+    size_t numVoxels = snap.roughFieldWidth * snap.roughFieldWidth * snap.roughFieldHeight;
     for (size_t i = 0; i < numVoxels; ++i) {
         data[i * 4 + 0] = 0.0f; // x
         data[i * 4 + 1] = 0.0f; // y
@@ -622,8 +668,8 @@ void FGClouds::rebuildField()
         data[i * 4 + 3] = roughSDFMin;
     }
 
-    data = reinterpret_cast<float*>(detailedVoxelData->data());
-    numVoxels = _detailedFieldWidth * _detailedFieldWidth * _detailedFieldHeight;
+    data = reinterpret_cast<float*>(result.detailedVoxelData->data());
+    numVoxels = snap.detailedFieldWidth * snap.detailedFieldWidth * snap.detailedFieldHeight;
     for (size_t i = 0; i < numVoxels; ++i) {
         data[i * 4 + 0] = 0.0f; // x
         data[i * 4 + 1] = 0.0f; // y
@@ -638,60 +684,45 @@ void FGClouds::rebuildField()
     // [1] .y - Type.  From wispy (0.0) to billowy (1.0)
     // [2] .z - Density.  0.0 is no cloud density, 1.0 is fully opaque density.  Use this to determine if there is any cloud at this location.
     // [3] .a - Signed Distance Field in UV space.  The maximum radius sphere centered on this point that doesn't contain any cloud density.  Used for adaptive ray marching.
-    SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Creating detailed field of " << detailedFieldList.size() << " clouds");
+    SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Creating detailed field of " << snap.detailedFieldList.size() << " clouds");
 
-    float maxZ = 0.0;
-
-    for (const auto& cl : detailedFieldList) {
+    for (const auto& cl : snap.detailedFieldList) {
         const SGVoxelCloud* c = cl.first;
         osg::Vec3f p = cl.second;
 
-        float z = (float)c->addCloudToDetailedVoxelField(detailedVoxelData, (float)_detailedFieldVoxelSize, p);
-        maxZ = std::max(z, maxZ);
+        float z = (float)c->addCloudToDetailedVoxelField(result.detailedVoxelData, (float)snap.detailedFieldVoxelSize, p);
+        result.maxZ = std::max(z, result.maxZ);
     }
 
-    // Set the maximum height as a normalized fraction of the voxel space so we can do some early termination of ray tracing.
-    fgSetFloat("/sim/rendering/hdr/clouds/active-voxel-field-height-norm", maxZ / (float)_detailedFieldHeight);
-
     // Generate SDF
-    generateSDF(detailedVoxelData);
+    generateSDF(result.detailedVoxelData);
 
-    if (!_fieldRepeating) {
+    if (!snap.fieldRepeating) {
         // Now generate the rough voxel space in a similar manner
-        for (const auto& cl : roughFieldList) {
+        for (const auto& cl : snap.roughFieldList) {
             const SGVoxelCloud* c = cl.first;
             osg::Vec3f p = cl.second;
 
-            c->addCloudToRoughVoxelField(roughVoxelData, (float)_roughFieldVoxelSize, p);
+            c->addCloudToRoughVoxelField(result.roughVoxelData, (float)snap.roughFieldVoxelSize, p);
         }
 
         // Generate an SDF
-        generateSDF(roughVoxelData);
+        generateSDF(result.roughVoxelData);
     }
 
 
     // Now build the shade image.  The R channel is the transmittance towards the Sun.  The G channel the transmittance density.
-    const float* voxelRaw = reinterpret_cast<const float*>(detailedVoxelData->data());
-    float* shadeRaw = reinterpret_cast<float*>(voxelShadeData->data());
+    const float* voxelRaw = reinterpret_cast<const float*>(result.detailedVoxelData->data());
+    float* shadeRaw = reinterpret_cast<float*>(result.voxelShadeData->data());
 
     auto voxelIdx = [&](int i, int j, int k) {
-        return (k * _detailedFieldWidth * _detailedFieldWidth + j * _detailedFieldWidth + i) * 4;
+        return (k * snap.detailedFieldWidth * snap.detailedFieldWidth + j * snap.detailedFieldWidth + i) * 4;
     };
 
-    // Get the Sun direction and transform into the Z-up X-north coordinates
-    auto l = globals->get_subsystem<FGLight>();
-    const osg::Vec4f sunDirection(l->sun_vec_inv()[0], l->sun_vec_inv()[1], l->sun_vec_inv()[2], 0.0);
-    const osg::Matrixf cameraZUp = osg::Matrix::inverse(_cloudPosMatrix);
-    osg::Vec4f s = cameraZUp * (-sunDirection);
 
-    // Sun direction in voxel index space (not normalized UV space)
-    osg::Vec3f sunDirVoxel(s.x(), s.y(), s.z() * float(_detailedFieldWidth) / float(_detailedFieldHeight));
-    const float sunStepLength = sunDirVoxel.length() / float(_detailedFieldWidth);
-    sunDirVoxel.normalize();
+    SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Sun Direction Z-Up: " << snap.sunDirVoxel.x() << ", " << snap.sunDirVoxel.y() << ", " << snap.sunDirVoxel.z());
 
-    SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Sun Direction Z-Up: " << sunDirVoxel.x() << ", " << sunDirVoxel.y() << ", " << sunDirVoxel.z());
-
-    float dz = 1.0f / float(_detailedFieldHeight);
+    float dz = 1.0f / float(snap.detailedFieldHeight);
 
     // Determine loop order for each axis based on sun direction
     // so that when we process voxel (i,j,k), the sunward neighbour is already computed
@@ -699,33 +730,33 @@ void FGClouds::rebuildField()
     int jStart, jEnd, jStep;
     int kStart, kEnd, kStep;
 
-    if (sunDirVoxel.x() >= 0) {
-        iStart = int(_detailedFieldWidth) - 1;
+    if (snap.sunDirVoxel.x() >= 0) {
+        iStart = int(snap.detailedFieldWidth) - 1;
         iEnd = -1;
         iStep = -1;
     } else {
         iStart = 0;
-        iEnd = int(_detailedFieldWidth);
+        iEnd = int(snap.detailedFieldWidth);
         iStep = 1;
     }
 
-    if (sunDirVoxel.y() >= 0) {
-        jStart = int(_detailedFieldWidth) - 1;
+    if (snap.sunDirVoxel.y() >= 0) {
+        jStart = int(snap.detailedFieldWidth) - 1;
         jEnd = -1;
         jStep = -1;
     } else {
         jStart = 0;
-        jEnd = int(_detailedFieldWidth);
+        jEnd = int(snap.detailedFieldWidth);
         jStep = 1;
     }
 
-    if (sunDirVoxel.z() >= 0) {
-        kStart = int(_detailedFieldHeight) - 1;
+    if (snap.sunDirVoxel.z() >= 0) {
+        kStart = int(snap.detailedFieldHeight) - 1;
         kEnd = -1;
         kStep = -1;
     } else {
         kStart = 0;
-        kEnd = int(_detailedFieldHeight);
+        kEnd = int(snap.detailedFieldHeight);
         kStep = 1;
     }
 
@@ -739,13 +770,13 @@ void FGClouds::rebuildField()
                 // Step to the next voxel in the sun direction
                 float sunOpticalDepth = 0.0f;
 
-                int si = i + int(round(sunDirVoxel.x()));
-                int sj = j + int(round(sunDirVoxel.y()));
-                int sk = k + int(round(sunDirVoxel.z()));
+                int si = i + int(round(snap.sunDirVoxel.x()));
+                int sj = j + int(round(snap.sunDirVoxel.y()));
+                int sk = k + int(round(snap.sunDirVoxel.z()));
 
-                if (si >= 0 && si < int(_detailedFieldWidth) &&
-                    sj >= 0 && sj < int(_detailedFieldWidth) &&
-                    sk >= 0 && sk < int(_detailedFieldHeight)) {
+                if (si >= 0 && si < int(snap.detailedFieldWidth) &&
+                    sj >= 0 && sj < int(snap.detailedFieldWidth) &&
+                    sk >= 0 && sk < int(snap.detailedFieldHeight)) {
                     float sunwardTransmittance = shadeRaw[voxelIdx(si, sj, sk)]; // .r channel
                     sunOpticalDepth = -log(std::max(sunwardTransmittance, 0.0001f));
                 }
@@ -753,7 +784,7 @@ void FGClouds::rebuildField()
 
                 // Add this voxel's contribution
                 // Use the step length in the sun direction (longer diagonal steps = more optical depth)
-                sunOpticalDepth += density * extinction * sunStepLength;
+                sunOpticalDepth += density * snap.extinction * snap.sunStepLength;
                 float sunTransmittance = std::exp(-sunOpticalDepth);
 
                 shadeRaw[idx + 0] = sunTransmittance;
@@ -767,30 +798,39 @@ void FGClouds::rebuildField()
     // --- VERTICAL SKY TRANSMITTANCE (always top-down, independent of sun) ---
     // This represents how much sky light has penetrated from above to reach each voxel.
     // Must be computed top-down so each voxel can read the already-computed voxel above it.
-    for (int k = int(_detailedFieldHeight) - 1; k >= 0; --k) {
-        for (int j = 0; j < int(_detailedFieldWidth); ++j) {
-            for (int i = 0; i < int(_detailedFieldWidth); ++i) {
+    for (int k = int(snap.detailedFieldHeight) - 1; k >= 0; --k) {
+        for (int j = 0; j < int(snap.detailedFieldWidth); ++j) {
+            for (int i = 0; i < int(snap.detailedFieldWidth); ++i) {
                 const int idx = voxelIdx(i, j, k);
                 float density = voxelRaw[idx + 2];
 
                 float verticalOpticalDepth = 0.0f;
-                if (k < int(_detailedFieldHeight) - 1) {
+                if (k < int(snap.detailedFieldHeight) - 1) {
                     float aboveTransmittance = shadeRaw[voxelIdx(i, j, k + 1) + 1];
                     verticalOpticalDepth = -log(std::max(aboveTransmittance, 0.0001f));
                 }
-                verticalOpticalDepth += density * extinction * dz;
+                verticalOpticalDepth += density * snap.extinction * dz;
                 shadeRaw[idx + 1] = std::exp(-verticalOpticalDepth);
             }
         }
     }
 
+    return result;
+}
+
+void FGClouds::commitResult(RebuildResult result)
+{
+    // These fgSet* calls must stay on the main thread
+    fgSetFloat("/sim/rendering/hdr/clouds/active-voxel-field-height-norm",
+               result.maxZ / float(result.detailedVoxelData->r()));
+
     // Keep the images alive as members of FGClouds
-    _detailedVoxelData = detailedVoxelData;
-    _roughVoxelData = roughVoxelData;
-    _voxelShadeData = voxelShadeData;
+    _detailedVoxelData = result.detailedVoxelData;
+    _roughVoxelData = result.roughVoxelData;
+    _voxelShadeData = result.voxelShadeData;
 
     // Push them into the textures
-    simgear::StateAttributeFactory::instance()->setCloudVoxelImages(_detailedVoxelData, _roughVoxelData, _voxelShadeData, _fieldRepeating);
+    simgear::StateAttributeFactory::instance()->setCloudVoxelImages(_detailedVoxelData, _roughVoxelData, _voxelShadeData, result.fieldRepeating);
 }
 
 void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage)
@@ -863,10 +903,20 @@ void FGClouds::generateSDF(osg::ref_ptr<osg::Image> voxelImage)
 
 void FGClouds::updateFromOsgTraversal()
 {
-    if (!_fieldDirty)
-        return;
+    // Poll for a completed background rebuild first
+    if (_rebuildFuture.valid() &&
+        _rebuildFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+        commitResult(_rebuildFuture.get()); // non-blocking — already done
+        // Don't clear _fieldDirty here; a new mutation may have arrived
+        // while the last rebuild was in flight — see below.
+    }
 
-    rebuildField();
-
-    _fieldDirty = false;
+    // Launch a new rebuild if dirty and nothing is running
+    if (_fieldDirty && (!_rebuildFuture.valid() ||
+                        _rebuildFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)) {
+        _fieldDirty = false; // clear before launch; any new mutation re-sets it
+        RebuildSnapshot snap = captureSnapshot();
+        _rebuildFuture = std::async(std::launch::async,
+                                    &FGClouds::runRebuild, std::move(snap));
+    }
 }
