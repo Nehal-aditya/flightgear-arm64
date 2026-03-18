@@ -35,8 +35,16 @@ FGMouseCursor3D::FGMouseCursor3D()
     osg::Switch* sw = new osg::Switch;
     addChild(sw);
 
-    // Read cursor models from /sim/vr/config/cursors/cursor[]
+    // Set up properties and usable defaults
     SGPropertyNode_ptr cursor3DNode = fgGetNode("/sim/vr/config/cursors", true);
+
+    _propReachM = SGPropObjDouble(cursor3DNode, "reach-m");
+    _propReachM.setDefault(100.0);
+
+    _propPxAngleDeg = SGPropObjDouble(cursor3DNode, "px-angle-deg");
+    _propPxAngleDeg.setDefault(0.05);
+
+    // Read cursor models from /sim/vr/config/cursors/cursor[]
     for (auto cursor : cursor3DNode->getChildren("cursor")) {
         std::string path = cursor->getStringValue("model/path", "");
         std::string cursorStr = cursor->getStringValue("cursor", "");
@@ -150,8 +158,7 @@ FGRenderer::PickList FGMouseCursor3D::update(bool forcePick)
                 _motion2d = SGVec2d(0.0, 0.0);
             } else if (motion) {
                 // Rotate in view space based on 2D mouse motion
-                // FIXME adaptive to DPI of screen?
-                const double pixelAngle = SGMiscd::deg2rad(0.05);
+                const double pixelAngle = SGMiscd::deg2rad(_propPxAngleDeg);
                 auto motionRotation = SGQuatd::fromEulerRad(0.0,
                                                             pixelAngle * _motion2d.x(),
                                                             -pixelAngle * _motion2d.y());
@@ -164,9 +171,7 @@ FGRenderer::PickList FGMouseCursor3D::update(bool forcePick)
         }
 
         // Pick scene using the latest target position
-        // FIXME configurable reach
-        const double reach = 100.0;
-        targetGlobal = viewPosition + normalize(vecGlobal) * reach;
+        targetGlobal = viewPosition + normalize(vecGlobal) * _propReachM;
         pickList = globals->get_renderer()->pick(toOsg(viewPosition), toOsg(targetGlobal));
         if (!pickList.empty())
             targetGlobal = pickList.front().info.wgs84;
