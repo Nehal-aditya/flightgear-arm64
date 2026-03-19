@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# SPDX-FileCopyrightText: James Turner <james@gmail.com>
 function(setup_fgfs_libraries target)
     if(RTI_FOUND)
         set(HLA_LIBRARIES ${RTI_LDFLAGS})
