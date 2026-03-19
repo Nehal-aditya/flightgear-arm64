@@ -145,6 +145,7 @@ private:
 
     // Utility functions
     static void generateSDF(osg::ref_ptr<osg::Image>);
+    osg::Vec3f getFinalPos(SGGeod loc, float x, float y);
 
     // Asynchronous rebuild of the cloud layers.
     RebuildSnapshot captureSnapshot();

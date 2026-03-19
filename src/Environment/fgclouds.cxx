@@ -40,7 +40,7 @@ namespace fmm = thinks::fast_marching_method;
 static mt seed;
 
 // Exception count from the fmm library
-static unsigned int _FMMExceptionCount;
+static unsigned int _FMMExceptionCount = 0;
 
 FGClouds::FGClouds() : index(0)
 {
@@ -182,8 +182,8 @@ void FGClouds::buildLayer(int iLayer, const string& name, double coverage, doubl
 
     SGSky* thesky = globals->get_renderer()->getSky();
 
-    float lon = fgGetNode("/position/longitude-deg", false)->getFloatValue();
-    float lat = fgGetNode("/position/latitude-deg", false)->getFloatValue();
+    float lon = globals->get_aircraft_position().getLongitudeDeg();
+    float lat = globals->get_aircraft_position().getLatitudeDeg();
 
     SGPropertyNode* cloud_def_root = fgGetNode("/environment/cloudlayers/clouds", false);
     SGPropertyNode* box_def_root = fgGetNode("/environment/cloudlayers/boxes", false);
@@ -437,18 +437,13 @@ bool FGClouds::removeCloud(int index)
     }
 }
 
-bool FGClouds::addCloud(std::unique_ptr<const SGVoxelCloud> cloud, int index, SGGeod loc, float x, float y)
+osg::Vec3f FGClouds::getFinalPos(SGGeod loc, float x, float y)
 {
-    std::lock_guard<std::mutex> lk(_placementMutex);
-
-    // If this cloud index already exists, don't replace it.
-    if (_cloudPlacementMap.contains(index)) return false;
-
-    float alt = loc.getElevationFt();
+    const float alt = loc.getElevationFt();
     // Determine any shift by x/y
     if ((x != 0.0f) || (y != 0.0f)) {
         double crs = 90.0 - SG_RADIANS_TO_DEGREES * atan2(y, x);
-        double dst = sqrt(x * x + y * y);
+        double dst = dist(SGVec2f(x, y), SGVec2f(0.0, 0.0));
         double endcrs;
 
         SGGeod base_pos = SGGeod::fromGeodFt(loc, 0.0f);
@@ -461,7 +456,17 @@ bool FGClouds::addCloud(std::unique_ptr<const SGVoxelCloud> cloud, int index, SG
     // Work out where this cloud should go in OSG coordinates.
     SGVec3<double> cart;
     SGGeodesy::SGGeodToCart(loc, cart);
-    osg::Vec3f pos = toOsg(cart);
+    return toOsg(cart);
+}
+
+bool FGClouds::addCloud(std::unique_ptr<const SGVoxelCloud> cloud, int index, SGGeod loc, float x, float y)
+{
+    std::lock_guard<std::mutex> lk(_placementMutex);
+
+    // If this cloud index already exists, don't replace it.
+    if (_cloudPlacementMap.contains(index)) return false;
+    osg::Vec3f pos = getFinalPos(loc, x, y);
+
     _cloudPlacementMap.emplace(index, std::make_pair(std::move(cloud), pos));
     _fieldDirty = true;
 
@@ -481,19 +486,7 @@ bool FGClouds::repositionCloud(int index, float lon, float lat, float alt, float
     if (it == _cloudPlacementMap.end()) return false;
 
     SGGeod loc = SGGeod::fromDegFt(lon, lat, alt);
-
-    if ((x != 0.0f) || (y != 0.0f)) {
-        double crs = 90.0 - SG_RADIANS_TO_DEGREES * atan2(y, x);
-        double dst = sqrt(x * x + y * y);
-        double endcrs;
-        SGGeod base_pos = SGGeod::fromGeodFt(loc, 0.0f);
-        SGGeodesy::direct(base_pos, crs, dst, loc, endcrs);
-        loc.setElevationFt(alt);
-    }
-
-    SGVec3<double> cart;
-    SGGeodesy::SGGeodToCart(loc, cart);
-    osg::Vec3f pos = toOsg(cart);
+    osg::Vec3f pos = getFinalPos(loc, x, y);
 
     it->second.second = pos; // update position, cloud object untouched
     _fieldDirty = true;
@@ -553,9 +546,7 @@ FGClouds::RebuildSnapshot FGClouds::captureSnapshot()
 
     // Sun direction - read subsystem state on main thread
     auto l = globals->get_subsystem<FGLight>();
-    const osg::Vec4f sunDirection(l->sun_vec_inv()[0],
-                                  l->sun_vec_inv()[1],
-                                  l->sun_vec_inv()[2], 0.0f);
+    const osg::Vec4f sunDirection = toOsg(l->sun_vec_inv());
     const osg::Matrixf cameraZUp = osg::Matrix::inverse(_cloudPosMatrix);
     osg::Vec4f s = cameraZUp * (-sunDirection);
     snap.sunDirVoxel = osg::Vec3f(s.x(), s.y(),
@@ -584,7 +575,7 @@ FGClouds::RebuildSnapshot FGClouds::captureSnapshot()
             if (p.x() > -detailedFieldRadiusM && p.x() < detailedFieldRadiusM &&
                 p.y() > -detailedFieldRadiusM && p.y() < detailedFieldRadiusM) {
                 SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Adding detailed cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
-                std::pair<const SGVoxelCloud*, osg::Vec3f> localCloud = std::make_pair(c, p);
+                auto localCloud = std::make_pair(c, p);
                 snap.detailedFieldList.push_back(localCloud);
             }
 
@@ -594,7 +585,7 @@ FGClouds::RebuildSnapshot FGClouds::captureSnapshot()
                 p.y() > -roughFieldRadiusM && p.y() < roughFieldRadiusM) {
                 // Local coordinate cloud placement
                 SG_LOG(SG_ENVIRONMENT, SG_DEBUG, "Adding rough cloud at " << p.x() << " " << p.y() << " " << p.z() << " d: " << p.length());
-                std::pair<const SGVoxelCloud*, osg::Vec3f> localCloud = std::make_pair(c, p);
+                auto localCloud = std::make_pair(c, p);
                 snap.roughFieldList.push_back(localCloud);
             }
         }
