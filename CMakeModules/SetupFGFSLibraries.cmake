@@ -25,9 +25,9 @@ function(setup_fgfs_libraries target)
         target_link_libraries(${target} PRIVATE osgXR)
     endif()
 
-    target_link_libraries(${target} PRIVATE fgsqlite3 fgvoicesynth fgembeddedresources)
+    target_link_libraries(${target} PRIVATE fgsqlite3 fgvoicesynth fgembeddedresources FGTHinksFMM)
 
-    target_link_libraries(${target} PRIVATE
+    target_link_libraries(${target} PRIVATE        
         SimGearCore
         SimGearScene
         Boost::boost
