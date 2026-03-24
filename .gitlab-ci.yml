@@ -76,6 +76,7 @@ pre-commit:
         echo "Clearing the 'ccache' cache"
         ccache --clear
       fi
+    - rm -f $CCACHE_STATSLOG
 
 # Optional clearing of the 'ccache' cache (PowerShell version)
 .ccache-pre_windows:
@@ -84,6 +85,10 @@ pre-commit:
       if ('$[[ inputs.clear-ccache-cache ]]' -eq 'true') {
         echo 'Clearing the ''ccache'' cache'
         ccache --clear
+      }
+    - |
+      if (Test-Path $CCACHE_STATSLOG) {
+        Remove-Item -Path $CCACHE_STATSLOG
       }
 
 .ccache-stats:
@@ -255,7 +260,7 @@ windows-build:
   cache:
     key: windows-amd64-$BRANCH_REF
     paths:
-      - ccache-cache
+      - $CCACHE_DIR
 
 macos-build:
   stage: build
