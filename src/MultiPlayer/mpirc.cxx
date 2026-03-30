@@ -266,18 +266,13 @@ bool IRCConnection::parseReceivedLine(std::string line)
 
         //joining channel might help while development, maybe removed later
         //join(IRC_TEST_CHANNEL);
-    }
-    else if (command == IRC_RPL_MOTD) {
-    }
-    else if (command == IRC_RPL_MOTDSTART) {
-    }
-    else if (command == IRC_RPL_ENDOFMOTD) {
-    }
-    else if (command == IRC_ERR_NOSUCHNICK) {
+    } else if (command == IRC_RPL_MOTD) {
+    } else if (command == IRC_RPL_MOTDSTART) {
+    } else if (command == IRC_RPL_ENDOFMOTD) {
+    } else if (command == IRC_ERR_NOSUCHNICK) {
         // server return code if we send to invalid nickname
         if (_pIRCReturnCode) _pIRCReturnCode->setStringValue(IRC_ERR_NOSUCHNICK);
-    }
-    else if (command == "ERROR") {
+    } else if (command == "ERROR") {
         if (_pIRCReturnCode) _pIRCReturnCode->setStringValue(params);
         disconnect();
     }

@@ -195,4 +195,4 @@ std::ostream& operator<<(std::ostream&, const AddonVersion&);
 
 } // of namespace addons
 
-} // of namespace flightgear
+} // namespace flightgear

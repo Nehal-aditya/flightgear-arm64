@@ -250,4 +250,4 @@ std::ostream& operator<<(std::ostream& os, const Addon& addon);
 
 } // of namespace addons
 
-} // of namespace flightgear
+} // namespace flightgear

@@ -115,4 +115,4 @@ int nr_gaussj(double **a, int n, double **b, int m);
 
 void nr_copymat(double **orig, int n, double **copy);
 void nr_multmat(double **m1, int n, double **m2, double **prod);
-void nr_printmat(double **a, int n);
+void nr_printmat(double** a, int n);

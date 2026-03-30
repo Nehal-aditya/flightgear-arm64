@@ -168,7 +168,7 @@ float Launchbar::getExtension(void)
     case Completed:
       return "Completed";
     default:
-      return "Disengaged";
+        return "Disengaged";
     }
   }
 
@@ -309,14 +309,13 @@ void Launchbar::calcForce(Ground *g_cb, RigidBody* body, State* s, float* lv, fl
       }
 
       if (mountdist_xz < _length) {
-        // the launchbar points forward, so we need to change the signs here
-        float ang = -Math::asin(mountdist_xz/_length)
-          + Math::atan2(ground[2], ground[0]) + YASIM_PI2;
-        ang = -ang;
-            _frac = (ang - _up_ang)/(_down_ang - _up_ang);
+          // the launchbar points forward, so we need to change the signs here
+          float ang = -Math::asin(mountdist_xz / _length) + Math::atan2(ground[2], ground[0]) + YASIM_PI2;
+          ang = -ang;
+          _frac = (ang - _up_ang) / (_down_ang - _up_ang);
       } else {
-            _frac = _extension;
-    }
+          _frac = _extension;
+      }
     }
 
     // Now do it again for the holdback

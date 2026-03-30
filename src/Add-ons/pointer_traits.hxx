@@ -50,4 +50,4 @@ struct shared_ptr_traits<std::shared_ptr<T>>
 
 } // of namespace addons
 
-} // of namespace flightgear
+} // namespace flightgear

@@ -50,8 +50,8 @@ const uint32_t PROTO_VER = 0x00010001;  // 1.1
 // Header for use with all messages sent
 struct T_MsgHdr {
     xdr_data_t  Magic;                  // Magic Value
-    xdr_data_t  Version;                // Protocol version
-    xdr_data_t  MsgId;                  // Message identifier
+    xdr_data_t Version;                 // Protocol version
+    xdr_data_t MsgId;                   // Message identifier
     xdr_data_t  MsgLen;                 // absolute length of message
 	xdr_data_t  RequestedRangeNm;       // obsolete field (ReplyAddress) reused to request a range to fgms
     xdr_data_t  ReplyPort;              // player's receiver port
@@ -104,9 +104,9 @@ struct FGPropertyData {
   // While the type isn't transmitted, it is needed for the destructor
   simgear::props::Type type;
   union {
-    int int_value;
-    float float_value;
-    char* string_value;
+      int int_value;
+      float float_value;
+      char* string_value;
   };
   FGPropertyData() : string_value(nullptr) {}
   ~FGPropertyData() {

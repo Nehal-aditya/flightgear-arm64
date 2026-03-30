@@ -7,10 +7,10 @@
 
 #include "ControlMap.hpp"
 #include "Model.hpp"
-#include "Wing.hpp"
 #include "Rotor.hpp"
 #include "Vector.hpp"
 #include "Version.hpp"
+#include "Wing.hpp"
 
 namespace yasim {
 
@@ -144,38 +144,38 @@ public:
 
 private:
     struct Tank {
-      float pos[3] {0,0,0};
-      float cap {0}, fill {0}, density {0};
-      int handle {-1};
+        float pos[3]{0, 0, 0};
+        float cap{0}, fill{0}, density{0};
+        int handle{-1};
     };
     struct Fuselage {
-      float  front[3] {0,0,0}, back[3] {0,0,0};
-      float  width, taper, mid, _cx, _cy, _cz, _idrag;
-      Vector surfs;
+        float front[3]{0, 0, 0}, back[3]{0, 0, 0};
+        float width, taper, mid, _cx, _cy, _cz, _idrag;
+        Vector surfs;
     };
     struct GearRec {
-      Gear* gear;
-      Surface* surf;
-      float wgt {0};
+        Gear* gear;
+        Surface* surf;
+        float wgt{0};
     };
     struct ThrustRec {
-      int handle {-1};
-      Thruster* thruster {nullptr};
-      float cg[3] {0,0,0};
-      float mass {0};
+        int handle{-1};
+        Thruster* thruster{nullptr};
+        float cg[3]{0, 0, 0};
+        float mass{0};
     };
     struct ControlSetting {
-      int propHandle {-1};
-      float val {0};
+        int propHandle{-1};
+        float val{0};
     };
     struct WeightRec {
-      int handle {-1};
-      Surface* surf {nullptr};
+        int handle{-1};
+        Surface* surf{nullptr};
     };
     struct SolveWeight {
-      int id {-1};
-      Configuration cfg {APPROACH};
-      float wgt {0};
+        int id{-1};
+        Configuration cfg{APPROACH};
+        float wgt{0};
     };
     struct ContactRec {
       Gear* gear {nullptr};
@@ -263,21 +263,21 @@ private:
     float _liftRatio {1};
     ControlSetting* _tailIncidence {nullptr}; // added to approach config so solver can change it
     // Copy of _tailIncidence added to cruise config. See setHstabTrimControl() for explanation.
-    ControlSetting* _tailIncidenceCopy {nullptr};
+    ControlSetting* _tailIncidenceCopy{nullptr};
     ControlSetting* _approachElevator {nullptr};
     const char* _failureMsg {0};
     /// hard limits for cg from gear position
-    float _cgMax {-1e6};
+    float _cgMax{-1e6};
     /// hard limits for cg from gear position
-    float _cgMin {1e6};
+    float _cgMin{1e6};
     /// desired cg max in %MAC from config
-    float _cgDesiredMax {0.3f};
+    float _cgDesiredMax{0.3f};
     /// desired cg min in %MAC from config
-    float _cgDesiredMin {0.25f};
+    float _cgDesiredMin{0.25f};
     /// calculated desired cg x max
-    float _cgDesiredFront {0};
+    float _cgDesiredFront{0};
     /// calculated desired cg x min
-    float _cgDesiredAft {0};
+    float _cgDesiredAft{0};
 };
 
 }; // namespace yasim

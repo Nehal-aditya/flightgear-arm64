@@ -54,4 +54,4 @@ class unable_to_create_addon_storage_dir;
 
 } // of namespace addons
 
-} // of namespace flightgear
+} // namespace flightgear

@@ -72,4 +72,4 @@ float           XDR_decode_float    ( const xdr_data_t & f_Val );
 
 /* double */
 xdr_data2_t     XDR_encode_double   ( const double & d_Val );
-double          XDR_decode_double   ( const xdr_data2_t & d_Val );
+double XDR_decode_double(const xdr_data2_t& d_Val);

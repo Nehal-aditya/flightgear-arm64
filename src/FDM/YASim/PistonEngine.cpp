@@ -269,7 +269,7 @@ void PistonEngine::calc(float pressure, float temp, float speed)
     // state oil temp greater at engine off than on to reflect no
     // circulation.  Nothing fancy, but populates the gauge with a
     // plausible value.
-    float tau;	// secs
+    float tau; // secs
     if(_running) {
 	_oilTempTarget = 363.0f + (30.0f * (power/_power0));
 	tau = 600;
@@ -277,7 +277,7 @@ void PistonEngine::calc(float pressure, float temp, float speed)
 	tau -= (power/_power0) * 300.0f;
     } else {
 	_oilTempTarget = temp;
-	tau = 1500;
+    tau = 1500;
     }
     _dOilTempdt = (_oilTempTarget - _oilTemp) / tau;
 }

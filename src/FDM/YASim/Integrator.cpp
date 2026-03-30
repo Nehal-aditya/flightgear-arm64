@@ -112,20 +112,20 @@ void Integrator::calcNewInterval()
         extrapolatePosition(pos[i], currVel, dt, _s.orient, ori[i]);
 
 	// add acceleration to (original!) velocity
-	Math::set3(currAcc, tmp);
-	Math::mul3(dt, tmp, tmp);
-	Math::add3(_s.v, tmp, vel[i]);
+        Math::set3(currAcc, tmp);
+        Math::mul3(dt, tmp, tmp);
+        Math::add3(_s.v, tmp, vel[i]);
 
-	// add rotational acceleration to rotation
-	Math::set3(currRac, tmp);
-	Math::mul3(dt, tmp, tmp);
-	Math::add3(_s.rot, tmp, rot[i]);
+        // add rotational acceleration to rotation
+        Math::set3(currRac, tmp);
+        Math::mul3(dt, tmp, tmp);
+        Math::add3(_s.rot, tmp, rot[i]);
 
-	//
-	// Tell the environment to generate new forces on the body,
-	// extract the accelerations, and convert to vectors in the
-	// global frame.
-	//
+        //
+        // Tell the environment to generate new forces on the body,
+        // extract the accelerations, and convert to vectors in the
+        // global frame.
+        //
         _body->reset();
 
         // FIXME.  Copying into a state object is clumsy!  The
@@ -149,9 +149,11 @@ void Integrator::calcNewInterval()
 
 	//
 	// Save the resulting derivatives for the next iteration
-	//
-	currVel = vel[i]; currAcc = acc[i];
-	currRot = rot[i]; currRac = rac[i];
+    //
+    currVel = vel[i];
+    currAcc = acc[i];
+    currRot = rot[i];
+    currRac = rac[i];
     }
 
     // Average the resulting derivatives together according to their
@@ -229,9 +231,15 @@ void Integrator::rotMatrix(float* r, float dt, float* out)
     // coriolis rotation.  And it's still preserves half the floating
     // point precision of a radian-per-iteration rotation.
     if(angle < 1e-06) {
-        out[0] = 1; out[1] = 0; out[2] = 0;
-        out[3] = 0; out[4] = 1; out[5] = 0;
-        out[6] = 0; out[7] = 0; out[8] = 1;
+        out[0] = 1;
+        out[1] = 0;
+        out[2] = 0;
+        out[3] = 0;
+        out[4] = 1;
+        out[5] = 0;
+        out[6] = 0;
+        out[7] = 0;
+        out[8] = 1;
         return;
     }
 

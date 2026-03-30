@@ -109,4 +109,4 @@ struct contact_traits<Maintainer>
 
 } // of namespace addons
 
-} // of namespace flightgear
+} // namespace flightgear

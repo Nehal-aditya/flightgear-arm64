@@ -130,23 +130,25 @@ void balloon::update()
     /* later, but currently was my main concern to get it going...          */
     /************************************************************************/
 
-   // I really don't think there is a solution for this without WeatherCM
-   // but this is a hack, and it's working -- EMH
-   double mAir = 1;
-   float Q = 0;
+    // I really don't think there is a solution for this without WeatherCM
+    // but this is a hack, and it's working -- EMH
+    double mAir = 1;
+    float Q = 0;
 
     // gain of energy by heating:
     if (fuel_left > 0.0)	//but only with some fuel left ;-)
     {
-	float fuel_burning = current_burner_strength * max_flow_of_fuel_per_second * dt * weight_of_total_fuel;	//in kg
+        float fuel_burning = current_burner_strength * max_flow_of_fuel_per_second * dt * weight_of_total_fuel; //in kg
 
-	//convert to cubemetres (I'm wrongly assuming 'normal' conditions; but that's correct for my special case)
-	float cube_metres_burned = fuel_burning / 2.2;  //2.2 is the density for propane
+        //convert to cubemetres (I'm wrongly assuming 'normal' conditions; but that's correct for my special case)
+        float cube_metres_burned = fuel_burning / 2.2; //2.2 is the density for propane
 
-	fuel_left -= fuel_burning / weight_of_total_fuel;
+        fuel_left -= fuel_burning / weight_of_total_fuel;
 
-	// get energy through burning.
-	Q += 22250.0 * cube_metres_burned;  //22250 for propan, 29500 would be butane and if you dare: 2580 would be hydrogen...
+        // get energy through burning.
+        Q += 22250.0 * cube_metres_burned; //22250 for propan, 29500 would be
+                                           // butane and if you dare: 2580 would
+                                           // be hydrogen...
     }
 
     // calculate the new temperature in the inside:
@@ -172,7 +174,7 @@ void balloon::update()
     aTotal = (1.0 / mTotal)*fTotal;
 
     //integrate the displacement: d = 0.5 * a * dt**2 + v * dt + d
-    vTotal = dt*velocity;
+    vTotal = dt * velocity;
     dTotal = (0.5*dt*dt)*aTotal; dTotal += vTotal;
 
     //integrate the velocity to 'velocity': v = a * dt + v
@@ -223,7 +225,7 @@ void balloon::getHPR(SGVec3f& angles) const //the balloon isn't always exactly v
     angles = hpr;
 }
 
-void balloon::setHPR(const SGVec3f& angles)  //the balloon isn't always exactly vertical
+void balloon::setHPR(const SGVec3f& angles) //the balloon isn't always exactly vertical
 {
     hpr = angles;
 }

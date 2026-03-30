@@ -73,16 +73,15 @@ struct State {
 
     void setupSpeedAndPosition(float speed, float gla)
     {
+        // FIXME check axis, guess sin should go to 2 instead of 1?
+        v[0] = speed * Math::cos(gla);
+        v[1] = -speed * Math::sin(gla);
+        v[2] = 0;
+        for (int i = 0; i < 3; i++) {
+            pos[i] = rot[i] = acc[i] = racc[i] = 0;
+        }
 
-      // FIXME check axis, guess sin should go to 2 instead of 1?
-      v[0] = speed*Math::cos(gla);
-      v[1] = -speed*Math::sin(gla);
-      v[2] = 0;
-      for(int i=0; i<3; i++) {
-        pos[i] = rot[i] = acc[i] = racc[i] = 0;
-      }
-
-      pos[2] = 1;
+        pos[2] = 1;
     }
 
     void setupState(float aoa, float speed, float gla) {

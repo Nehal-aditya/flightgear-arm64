@@ -643,7 +643,7 @@ void FGFDM::parseWing(const XMLAttributes* a, const char* type, Airplane* airpla
 
     float dragFactor = attrf(a, "pdrag", 1);
     if (a->hasAttribute("effectiveness")) {
-/* FIXME:
+        /* FIXME:
  * check if all attributes have "good" names and update parser AND documentation together
  * only after that issue warnings
         SG_LOG(SG_FLIGHT, SG_ALERT, "Warning: " <<

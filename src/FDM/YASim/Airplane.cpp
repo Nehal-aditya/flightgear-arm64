@@ -40,7 +40,7 @@ Airplane::~Airplane()
         delete g;
     }
     for(i=0; i<_surfs.size(); i++)
-	delete (Surface*)_surfs.get(i);
+        delete (Surface*)_surfs.get(i);
     for(i=0; i<_contacts.size(); i++) {
         ContactRec* c = (ContactRec*)_contacts.get(i);
         delete c->gear;
@@ -576,7 +576,7 @@ void Airplane::compile(bool verbose)
 
     // Add the tanks, empty for now.
     float totalFuel = 0;
-    for(int i=0; i<_tanks.size(); i++) {
+    for (int i = 0; i < _tanks.size(); i++) {
         Tank* t = (Tank*)_tanks.get(i);
         t->handle = body->addMass(0, t->pos);
         totalFuel += t->cap;
@@ -923,7 +923,7 @@ void Airplane::solveAirplane(bool verbose)
 
     float prevTailDelta {0};
     while(1) {
-        if(_solutionIterations++ > _solverMaxIterations) {
+        if (_solutionIterations++ > _solverMaxIterations) {
             _failureMsg = "Solution failed to converge!";
             return;
         }
@@ -1077,8 +1077,7 @@ void Airplane::solveHelicopter(bool verbose)
             1/_solverDelta));
         applyLiftRatio(Math::pow(rg->getYasimLiftFactor(),
             1/_solverDelta));
-    }
-    else
+    } else
     //huh, no wing and no rotor? (_rotorgear is constructed,
     //if a rotor is defined
     {
@@ -1156,16 +1155,16 @@ float Airplane::getTailIncidence() const
 {
     if (_tailIncidence != nullptr) {
         return _tailIncidence->val;
-    }
-    else return 0;
+    } else
+        return 0;
 }
 
 float Airplane::getApproachElevator() const
 {
     if (_approachElevator != nullptr) {
         return _approachElevator->val;
-    }
-    else return 0;
+    } else
+        return 0;
 }
 
 }; // namespace yasim

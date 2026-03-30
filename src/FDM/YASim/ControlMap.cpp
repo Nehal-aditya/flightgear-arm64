@@ -64,8 +64,7 @@ static const std::vector<std::string> ControlNames = {
     "WINCHRELSPEED",
     "HITCHOPEN",
     "PLACEWINCH",
-    "FINDAITOW"
-}; //! keep this list in sync with the enum ControlType in ControlMap.hpp !
+    "FINDAITOW"}; //! keep this list in sync with the enum ControlType in ControlMap.hpp !
 
 ControlMap::~ControlMap()
 {
@@ -120,9 +119,7 @@ ControlMap::OutRec* ControlMap::getOutRec(ObjectID id, ControlType control)
     OutRec* out {nullptr};
     for(int i = 0; i < _outputs.size(); i++) {
         OutRec* o = (OutRec*)_outputs.get(i);
-        if(o->oid.object == id.object && o->oid.subObj == id.subObj
-            && o->control == control)
-        {
+        if (o->oid.object == id.object && o->oid.subObj == id.subObj && o->control == control) {
             out = o;
             break;
         }
@@ -185,8 +182,7 @@ float ControlMap::getOutputR(int handle)
 
 void ControlMap::applyControls(float dt)
 {
-    for(int outrec=0; outrec<_outputs.size(); outrec++)
-    {
+    for (int outrec = 0; outrec < _outputs.size(); outrec++) {
         OutRec* o = (OutRec*)_outputs.get(outrec);
 
         // Generate a summed value.  Note the check for "split"
@@ -288,7 +284,7 @@ void ControlMap::applyControls(float dt)
                 ((Wing*)obj)->setFlapEffectiveness(WING_FLAP0,lval);
                 break;
             case FLAP1:
-                ((Wing*)obj)->setFlapPos(WING_FLAP1,lval, rval);
+                ((Wing*)obj)->setFlapPos(WING_FLAP1, lval, rval);
                 break;
             case FLAP1EFFECTIVENESS:
                 ((Wing*)obj)->setFlapEffectiveness(WING_FLAP1,lval);
@@ -300,10 +296,10 @@ void ControlMap::applyControls(float dt)
                 ((Rotor*)obj)->setCollective(lval);
                 break;
             case CYCLICAIL:
-                ((Rotor*)obj)->setCyclicail(lval,rval);
+                ((Rotor*)obj)->setCyclicail(lval, rval);
                 break;
             case CYCLICELE:
-                ((Rotor*)obj)->setCyclicele(lval,rval);
+                ((Rotor*)obj)->setCyclicele(lval, rval);
                 break;
             case TILTPITCH:
                 ((Rotor*)obj)->setTiltPitch(lval);
@@ -420,8 +416,7 @@ ControlMap::ControlType ControlMap::getControlByName(const std::string& name)
 {
     auto it = std::find(ControlNames.begin(), ControlNames.end(), name);
     if (it == ControlNames.end()) {
-        SG_LOG(SG_FLIGHT,SG_ALERT,"Unrecognized control type '" << name
-            << "' in YASim aircraft description.");
+        SG_LOG(SG_FLIGHT, SG_ALERT, "Unrecognized control type '" << name << "' in YASim aircraft description.");
         exit(1);
     }
     return static_cast<ControlType>(std::distance(ControlNames.begin(), it));

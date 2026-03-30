@@ -143,13 +143,13 @@ void Hitch::setOpen(bool isOpen)
    //test if we already processed this before
     //without this test a binded property could
     //try to close the Hitch every run
-    //it will close, if we are near the end
-    //e.g. if we are flying over the parked
-    //tow-aircraft....
-    if (isOpen==_last_wish)
-        return;
-    _last_wish=isOpen;
-    _open=isOpen;
+   //it will close, if we are near the end
+   //e.g. if we are flying over the parked
+   //tow-aircraft....
+   if (isOpen == _last_wish)
+       return;
+   _last_wish = isOpen;
+   _open = isOpen;
 }
 
 void Hitch::setTowElasticConstant(float sc)
@@ -486,7 +486,7 @@ void Hitch::calcForce(Ground *g_cb, RigidBody* body, State* s)
         Math::mul3(-(1-grav_frac)*grav_force,ground,fg);
         //the total force on tow end position:
         //note: sub: _force on tow-end is negative of force on hitch position
-        Math::sub3(fg,_force,fb);
+        Math::sub3(fg, _force, fb);
         float fa_=Math::mag3(fa);
         float fb_=Math::mag3(fb);
         float stretchedTowLen;
@@ -538,8 +538,6 @@ void Hitch::calcForce(Ground *g_cb, RigidBody* body, State* s)
         _force[0]=_force[1]=_force[2]=0;
         _towEndForce[0]=_towEndForce[1]=_towEndForce[2]=0;
     }
-
-
 }
 
 // Computed values: total force

@@ -30,4 +30,4 @@ public:
 
 } // of namespace addons
 
-} // of namespace flightgear
+} // namespace flightgear

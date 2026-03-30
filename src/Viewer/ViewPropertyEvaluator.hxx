@@ -13,7 +13,7 @@
 
 namespace ViewPropertyEvaluator {
 
-    /*
+/*
     Overview:
 
         We provide efficient evaluation of 'nested properties', where the path
@@ -41,7 +41,7 @@ namespace ViewPropertyEvaluator {
                     "((/sim/view[0]/config/root)/position/altitude-ft)"
                     );
 
-        - will behave like this:
+        will behave like this:
 
             globals->get_props()->getDoubleValue(
                     globals->get_props()->getStringValue(
@@ -71,21 +71,21 @@ namespace ViewPropertyEvaluator {
         [This allows us to set up a listener for the property node so we can
         detect changes to its value; it might be nice to instead add something
         to Simgear that allows one to listen to creation of a particular path.]
-    */
+*/
 
 
-    /* Evaluates a spec as a string. The returned reference will be valid for
-    ever (until ViewPropertyEvaluator::clear() is called); its value will be
-    unchanged until the next time the spec (or a spec that depends on it) is
-    evaluated.
+/* Evaluates a spec as a string. The returned reference will be valid for
+   ever (until ViewPropertyEvaluator::clear() is called); its value will be
+   unchanged until the next time the spec (or a spec that depends on it) is
+   evaluated.
 
-    For example, getStringValue("/sim/chase-distance-m") will return
-    "/sim/chase-distance-m", while getStringValue("(/sim/chase-distance-m)")
-    will return "-25" or similar, depending on the aircraft.
-    */
-    const std::string& getStringValue(const char* spec);
+   For example, getStringValue("/sim/chase-distance-m") will return
+   "/sim/chase-distance-m", while getStringValue("(/sim/chase-distance-m)")
+   will return "-25" or similar, depending on the aircraft.
+*/
+const std::string& getStringValue(const char* spec);
 
-    /* Evaluates a spec as a double. Only makes sense if <spec> has top-level
+/* Evaluates a spec as a double. Only makes sense if <spec> has top-level
     "(...)".
 
     For example, getDoubleValue("(/sim/chase-distance-m)") will return -25.0 or
@@ -93,19 +93,20 @@ namespace ViewPropertyEvaluator {
 
     When this function is used, it doesn't install a listener for the top-level
     node, instead it always calls <top-level-node>->getDoubleValue().
-    */
-    double getDoubleValue(const char* spec, double default_=0);
+*/
+double getDoubleValue(const char* spec, double default_ = 0);
 
-    /* Similar to getDoubleValue(). */
-    bool getBoolValue(const char* spec, bool default_=false);
+/* Similar to getDoubleValue(). */
+bool getBoolValue(const char* spec, bool default_ = false);
 
 
-    /* Outputs detailed information about all specs that have been seen.
+/* Outputs detailed information about all specs that have been seen.
 
     E.g.:
         SG_LOG(SG_VIEW, SG_DEBUG, "ViewPropertyEvaluator:\n" << ViewPropertyEvaluator::Dump());
-    */
-    struct Dump {};
+*/
+struct Dump {
+};
     std::ostream& operator << (std::ostream& out, const Dump& dump);
 
     struct DumpOne {

@@ -63,7 +63,7 @@ public:
 
 
     enum {
-        OPT_SPLIT  = 0x01,
+        OPT_SPLIT = 0x01,
         OPT_INVERT = 0x02,
         OPT_SQUARE = 0x04
     };
@@ -139,13 +139,13 @@ private:
         float oldValueLeft {0};
         float oldValueRight {0};
     };
-    struct MapRec  {
+    struct MapRec {
         int id {0};
         int opt {0};
         float val {0};
-        float src0 {0};
-        float src1 {0};
-        float dst0 {0};
+        float src0{0};
+        float src1{0};
+        float dst0{0};
         float dst1 {0};
     };
 

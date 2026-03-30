@@ -514,10 +514,8 @@ void Gear::calcForce(Ground *g_cb, RigidBody* body, State *s, float* v, float* r
             *_frac*_frac*3*25-_frac*_frac*_frac*2*125;
 
     float fmag = clen * _spring * // codespell:ignore clen
-            (
-            frac_with_initial_load
-            + _spring2 * pow( frac_with_initial_load, 2)
-            );
+                 (
+                     frac_with_initial_load + _spring2 * pow(frac_with_initial_load, 2));
     if (_speed_planing>0)
     {
         float v = Math::mag3(cv);

@@ -142,11 +142,10 @@ double **nr_matrix(long nrl, long nrh, long ncl, long nch)
 
     /* allocate rows and set pointers to them */
     m[nrl] = (double *) malloc((size_t)((nrow*ncol+NR_END)*sizeof(double)));
-    if (!m[nrl])
-        {
-            fprintf(stderr, "Memory failure in routine 'matrix'\n");
-            exit(1);
-        }
+    if (!m[nrl]) {
+        fprintf(stderr, "Memory failure in routine 'matrix'\n");
+        exit(1);
+    }
 
     m[nrl] += NR_END;
     m[nrl] -= ncl;
@@ -221,14 +220,18 @@ int nr_gaussj(double **a, int n, double **b, int m)
                         }
             ++(ipiv[icol]);
 
-/*    We now have the pivot element, so we interchange rows, if needed,  */
+            /* clang-format off */
+
+/* We now have the pivot element, so we interchange rows, if needed,     */
 /* to put the pivot element on the diagonal.  The columns are not        */
 /* physically interchanged, only relabeled: indxc[i], the column of the  */
 /* ith pivot element, is the ith column that is reduced, while indxr[i]  */
-/* is the row in which that pivot element was originally located. If      */
+/* is the row in which that pivot element was originally located. If     */
 /* indxr[i] != indxc[i] there is an implied column interchange.  With    */
 /* this form of bookkeeping, the solution b's will end up in the correct */
 /* order, and the inverse matrix will be scrambed by columns.            */
+
+            /* clang-format on */
 
             if (irow != icol)
                 {
@@ -257,13 +260,12 @@ int nr_gaussj(double **a, int n, double **b, int m)
                     }
         }
 
-/* This is the end of the mail loop over columns of the reduction.
-   It only remains to unscrambled the solution in view of the column
-   interchanges. We do this by interchanging pairs of columns in
-   the reverse order that the permutation was built up. */
+        /* This is the end of the mail loop over columns of the reduction. It
+           only remains to unscrambled the solution in view of the column
+           interchanges. We do this by interchanging pairs of columns in the
+           reverse order that the permutation was built up. */
 
-    for (l=n;l>=1;l--)
-        {
+        for (l = n; l >= 1; l--) {
             if (indxr[l] != indxc[l])
                 for (k=1;k<=n;k++)
                     SWAP(a[k][indxr[l]],a[k][indxc[l]])
@@ -306,20 +308,17 @@ void nr_multmat(double **m1, int n, double **m2, double **prod)
 }
 
 
-
 void nr_printmat(double **a, int n)
 {
     int i,j;
 
     printf("\n");
-    for(i=1;i<=n;i++)
-      {
-          for(j=1;j<=n;j++)
-              printf("% 9.4f ", a[i][j]);
-          printf("\n");
-      }
+    for (i = 1; i <= n; i++) {
+        for (j = 1; j <= n; j++)
+            printf("% 9.4f ", a[i][j]);
+        printf("\n");
+    }
     printf("\n");
-
 }
 
 
@@ -342,8 +341,8 @@ void testmat( void ) /* main() for test purposes */
         {
               if (loop != 0)
                       for(i=1;i<=n;i++)
-                    for(j=1;j<=n;j++)
-                        mat1[i][j] = 2.0 - 4.0*invmaxlong*(double) rand();
+                          for (j = 1; j <= n; j++)
+                              mat1[i][j] = 2.0 - 4.0 * invmaxlong * (double)rand();
 
                 printf("Original matrix:\n");
             nr_printmat( mat1, n );

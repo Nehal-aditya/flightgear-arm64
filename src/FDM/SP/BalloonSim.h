@@ -26,7 +26,7 @@ private:
     float dt;				//in s
 
     SGVec3f gravity_vector;		//in m/s*s
-    SGVec3f hpr;				//the balloon isn't always exactly vertical (e.g. during gusts); normalized
+    SGVec3f hpr;                //the balloon isn't always exactly vertical (e.g. during gusts); normalized
     SGVec3f velocity;			//current velocity; it gets iterated at each 'update'
     SGVec3f position;			//current position in lat/lon/alt
 
@@ -46,18 +46,18 @@ private:
     float weight_of_cargo;		//passengers and anything left (e.g. sand bags that are thrown away to give additional lift)
 
     float fuel_left;			//as a percentage
-    float max_flow_of_fuel_per_second;	//in percent per second
+    float max_flow_of_fuel_per_second; //in percent per second
     float current_burner_strength;
 
-    float lambda;			//waermeuebergangskoeffizient (heat transmission coefficient?!?) for the envelope
+    float lambda;                   //waermeuebergangskoeffizient (heat transmission coefficient?!?) for the envelope
     float l_of_the_envelope;		//the thickness of the envelope (in m)
 
-    float T;				//temperature inside the balloon
+    float T; //temperature inside the balloon
 
     float ground_level;
 
 public:
-    balloon();				//constructor for initializing the balloon
+    balloon(); //constructor for initializing the balloon
 
     void update();			//dt = time in seconds since last call
     void set_burner_strength(const float bs);
@@ -68,8 +68,8 @@ public:
     void getPosition(SGVec3f& v) const;
     void setPosition(const SGVec3f& v);
 
-    void getHPR(SGVec3f& angles) const;   //the balloon isn't always exactly vertical
-    void setHPR(const SGVec3f& angles);   //the balloon isn't always exactly vertical
+    void getHPR(SGVec3f& angles) const; //the balloon isn't always exactly vertical
+    void setHPR(const SGVec3f& angles); //the balloon isn't always exactly vertical
 
     void setGroundLevel(const float altitude);
 

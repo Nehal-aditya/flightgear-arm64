@@ -64,6 +64,6 @@ private:
     bool snow = false;		// is it snowed over?
     bool solid = true;		// is it solid ground or water?
     bool water_body = false;	// if water, can it ge frozen over?
-    bool frozen = false;	// is it actually frozen?
+    bool frozen = false;        // is it actually frozen?
     bool mud = false;		// is it mud?
 };

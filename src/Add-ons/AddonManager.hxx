@@ -97,4 +97,4 @@ private:
 
 } // of namespace addons
 
-} // of namespace flightgear
+} // namespace flightgear

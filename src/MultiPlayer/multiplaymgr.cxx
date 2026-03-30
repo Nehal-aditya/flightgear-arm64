@@ -197,6 +197,8 @@ static xdr_data_t *decode_received_launchbar_state(const IdPropertyList *propDef
     return xdr;
 }
 
+// clang-format off
+
 // A static map of protocol property id values to property paths,
 // This should be extendable dynamically for every specific aircraft ...
 // For now only that static list
@@ -658,6 +660,9 @@ static const IdPropertyList sIdPropertyList[] = {
     // Add new MP properties here
     { V2020_4_BASE, "instrumentation/transponder/mach-number", simgear::props::FLOAT, TT_SHORT_FLOAT_4, V1_1_2_PROP_ID, NULL, NULL },
 };
+
+// clang-format on
+
 /*
  * For the 2017.x version 2 protocol the properties are sent in two partitions,
  * the first of these is a V1 protocol packet (which should be fine with all clients), and a V2 partition
@@ -1900,8 +1905,7 @@ int FGMultiplayMgr::GetMsg(MsgBuf& msgBuf, simgear::IPAddress& SenderAddress)
         // We are replaying, so return non-chat multiplayer messages from
         // mReplayMessageQueue and live chat messages from mSocket.
         //
-        for(;;) {
-
+        for (;;) {
             if (mReplayMessageQueue.empty()) {
                 // No recorded messages available, so look for live messages
                 // from <mSocket>.
@@ -2665,70 +2669,71 @@ FGMultiplayMgr::addMultiplayer(const std::string& callsign,
 
   SGPropertyNode_ptr    set;
 
-  if (simgear::strutils::ends_with(modelName, ".xml")
-      && simgear::strutils::starts_with(modelName, "Aircraft/")) {
+  if (simgear::strutils::ends_with(modelName, ".xml") && simgear::strutils::starts_with(modelName, "Aircraft/")) {
+      std::string tail = modelName.substr(strlen("Aircraft/"));
 
-    std::string tail = modelName.substr(strlen("Aircraft/"));
+      PathList dirs(globals->get_aircraft_paths());
 
-    PathList    dirs(globals->get_aircraft_paths());
-
-    /* Need to append <fgdata>/Aircraft, otherwise we won't be able to find
+      /* Need to append <fgdata>/Aircraft, otherwise we won't be able to find
     c172p. */
-    SGPath  fgdata_aircraft = globals->get_fg_root();
-    fgdata_aircraft.append("Aircraft");
-    dirs.push_back(fgdata_aircraft);
+      SGPath fgdata_aircraft = globals->get_fg_root();
+      fgdata_aircraft.append("Aircraft");
+      dirs.push_back(fgdata_aircraft);
 
-    SGPath model_file;
-    PathList::const_iterator it = std::find_if(dirs.begin(), dirs.end(),
-        [&](SGPath dir) {
-            model_file = dir;
-            model_file.append(tail);
-            return model_file.exists();
-        });
+      SGPath model_file;
+      PathList::const_iterator it = std::find_if(dirs.begin(), dirs.end(),
+                                                 [&](SGPath dir) {
+                                                     model_file = dir;
+                                                     model_file.append(tail);
+                                                     return model_file.exists();
+                                                 });
 
+      // clang-format off
     if (it != dirs.end()) {
-      /* We've found the model file.
+     /* We've found the model file.
 
-      Now try each -set.xml file in <modelName> aircraft directory. In theory
-      an aircraft could have a -set.xml in an unrelated directory so we should
-      scan all directories in globals->get_aircraft_paths(), but in practice
-      most -set.xml files and models are in the same aircraft directory. */
-      std::string model_file_head = it->str() + '/';
-      std::string model_file_tail = model_file.str().substr(model_file_head.size());
-      ssize_t p = model_file_tail.find('/');
-      std::string aircraft_dir = model_file_head + model_file_tail.substr(0, p);
-      simgear::Dir  dir(aircraft_dir);
-      std::vector<SGPath>   dir_contents = dir.children(0 /*types*/, "-set.xml");
-      /* simgear::Dir::children() claims that second param is glob, but
-      actually it's just a suffix. */
+        Now try each -set.xml file in <modelName> aircraft directory. In theory
+        an aircraft could have a -set.xml in an unrelated directory so we should
+        scan all directories in globals->get_aircraft_paths(), but in practice
+        most -set.xml files and models are in the same aircraft directory. */
+        std::string model_file_head = it->str() + '/';
+        std::string model_file_tail = model_file.str().substr(model_file_head.size());
+        ssize_t p = model_file_tail.find('/');
+        std::string aircraft_dir = model_file_head + model_file_tail.substr(0, p);
+        simgear::Dir dir(aircraft_dir);
+        std::vector<SGPath> dir_contents = dir.children(0 /*types*/, "-set.xml");
+        /* simgear::Dir::children() claims that second param is glob, but
+           actually it's just a suffix. */
 
-      for (auto path: dir_contents) {
-        /* Load into a local SGPropertyNode.
+        for (auto path : dir_contents) {
+         /* Load into a local SGPropertyNode.
 
-        As of 2020-03-08 we don't load directly into the global property tree
-        because that appears to result in runtime-specific multiplayer values
-        being written to autosave*.xml and reloaded next time fgfs is run,
-        which results in lots of bogus properties within /ai/multiplayer. So
-        instead we load into a local SGPropertyNode, then copy selected values
-        into the global tree below. */
-        set = new SGPropertyNode;
-        bool    ok = true;
-        try {
-          readProperties(path, set);
-        }
-        catch ( const std::exception & ) {
-          ok = false;
-        }
-        if (ok) {
-          SGPropertyNode* sim_model_path = set->getNode("sim/model/path");
-          if (sim_model_path && sim_model_path->getStringValue() == modelName) {
-            /* We've found (and loaded) a matching -set.xml. */
-            break;
+            As of 2020-03-08 we don't load directly into the global property
+            tree because that appears to result in runtime-specific
+            multiplayer values being written to autosave*.xml and reloaded
+            next time fgfs is run, which results in lots of bogus properties
+            within /ai/multiplayer. So instead we load into a local
+            SGPropertyNode, then copy selected values into the global tree
+            below. */
+              // clang-format on
+              set = new SGPropertyNode;
+              bool ok = true;
+              try {
+                  readProperties(path, set);
+              } catch (const std::exception&) {
+                  ok = false;
+              }
+              if (ok) {
+                  SGPropertyNode* sim_model_path = set->getNode("sim/model/path");
+                  if (sim_model_path &&
+                      sim_model_path->getStringValue() == modelName) {
+                      /* We've found (and loaded) a matching -set.xml. */
+                      break;
+                  }
+              }
+              set.reset();
           }
-        }
-        set.reset();
       }
-    }
   }
 
   // Copy values from our local <set>/sim/view[]/config/* into global

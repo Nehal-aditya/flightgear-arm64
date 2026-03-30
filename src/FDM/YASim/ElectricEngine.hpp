@@ -30,7 +30,7 @@ private:
     float _omega0 {0};		// Reference engine speed
     float _minThrottle {0.05f};		// minimum throttle [0:1]
     float _K {0};			// _K = Eb/omega = tau/Ia
-    float _Rm {1};    // engine windig resistance
+    float _Rm{1};           // engine windig resistance
 
     // Runtime state/output:
     float _torque {0};  // actual torque of the motor

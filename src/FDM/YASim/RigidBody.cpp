@@ -46,8 +46,8 @@ int RigidBody::addMass(float mass, const float* pos, bool isStatic)
 /// handle: returned by addMass
 void RigidBody::setMass(int handle, float mass)
 {
-    if (_masses[handle].m  == mass)
-      return;
+    if (_masses[handle].m == mass)
+        return;
     _masses[handle].m = mass;
     // if static mass is changed, reset pre-calculated mass
     // may apply to weights like cargo, pax, that usually do not change with FDM rate

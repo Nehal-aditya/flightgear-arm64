@@ -60,4 +60,4 @@ class unable_to_create_addon_storage_dir : public error
 
 } // of namespace addons
 
-} // of namespace flightgear
+} // namespace flightgear

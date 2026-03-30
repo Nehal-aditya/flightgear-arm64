@@ -11,43 +11,42 @@
 
 namespace ViewPropertyEvaluator {
 
-    /* We represent a spec as graph, using alternating Sequence and Node
-    objects so that different specs share common information; e.g. this ensures
-    that we don't install more than one listener for the same SGPropertyNode.
+/* We represent a spec as graph, using alternating Sequence and Node
+   objects so that different specs share common information; e.g. this ensures
+   that we don't install more than one listener for the same SGPropertyNode.
 
-    Evaluating top-level nodes:
+   Evaluating top-level nodes:
 
-        Currently ViewPropertyEvaluator::getDoubleValue() will always
-        reevaluate the top-level SGPropertyNode by calling its getDoubleValue()
-        member. This usually gives the desired behaviour because most
-        final property nodes that we are used with don't appear to make
-        valueChanged() callbacks, and it's anyway probably more efficient to
-        not use such callbacks for rapidly-changing values.
+     Currently ViewPropertyEvaluator::getDoubleValue() will always
+     reevaluate the top-level SGPropertyNode by calling its getDoubleValue()
+     member. This usually gives the desired behaviour because most
+     final property nodes that we are used with don't appear to make
+     valueChanged() callbacks, and it's anyway probably more efficient to
+     not use such callbacks for rapidly-changing values.
 
-        However it would be good to be clearer about this, e.g. maybe we could
-        have a second bracket notation to indicate that we should evaluate and
-        cache the SGPropertyNode but not its string/double value. E.g.:
+     However it would be good to be clearer about this, e.g. maybe we could
+     have a second bracket notation to indicate that we should evaluate and
+     cache the SGPropertyNode but not its string/double value. For instance,
 
-            ViewPropertyEvaluator::getDoubleValue(
-                    "{(/sim/view[0]/config/root)/position/altitude-ft}"
-                    );
+         ViewPropertyEvaluator::getDoubleValue(
+                 "{(/sim/view[0]/config/root)/position/altitude-ft}"
+                 );
 
-        - would not attempt to install a valueChanged() callback for the
-        top-level SGPropertyNode.
+     would not attempt to install a valueChanged() callback for the
+     top-level SGPropertyNode.
 */
 
-    struct Sequence;
-    struct Node;
+struct Sequence;
+struct Node;
 
-    struct Sequence
-    {
-        Sequence();
+struct Sequence {
+    Sequence();
 
-        std::vector<std::shared_ptr<Node>>  _nodes;
-        std::vector<Node*>                  _parents;
-        bool                                _rescan;
-        std::string                         _value;
-    };
+    std::vector<std::shared_ptr<Node>> _nodes;
+    std::vector<Node*> _parents;
+    bool _rescan;
+    std::string _value;
+};
 
     struct Node : SGPropertyChangeListener
     {

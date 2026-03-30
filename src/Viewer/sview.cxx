@@ -241,8 +241,7 @@ update() must be called before m_root is dereferenced. */
     }
 
     std::string         m_callsign;
-    SGPropertyNode_ptr  m_root;
-
+    SGPropertyNode_ptr m_root;
 };
 
 /* A step that sets position to aircraft origin and direction to aircraft's
@@ -281,8 +280,7 @@ struct SviewStepAircraft : SviewStep
         out << " <SviewStepAircraft:" + m_callsign.m_callsign + ">";
     }
 
-    private:
-
+private:
     Callsign            m_callsign;
 
     SGPropertyNode_ptr  m_longitude;
