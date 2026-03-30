@@ -105,7 +105,7 @@ AddonManager::loadConfigFileIfExists(const SGPath& configFile)
       "unable to load add-on config file '" + configFile.utf8Str() + "': " +
       e.getFormattedMessage());
   }
-  
+
   // bug https://sourceforge.net/p/flightgear/codetickets/2059/
   // since we're loading this after autosave.xml is loaded, the defaults
   // always take precedence. To fix this, only copy a value from the
@@ -114,12 +114,12 @@ AddonManager::loadConfigFileIfExists(const SGPath& configFile)
   copyPropertiesIf(configProps, globals->get_props(), [](const SGPropertyNode* src) {
     if (src->nChildren() > 0)
       return true;
-    
-    // find the correspnding destination node
+
+    // find the corresponding destination node
     auto dstNode = globals->get_props()->getNode(src->getPath());
     if (!dstNode)
       return true; // easy, just copy it
-    
+
     // copy if it's NOT marked archive. In other words, we can replace
     // values from defaults, but not autosave
     return dstNode->getAttribute(SGPropertyNode::USERARCHIVE) == false;
@@ -211,7 +211,7 @@ AddonManager::registerAddon(const SGPath& addonPath)
       SG_LOG(SG_GENERAL, SG_INFO, "Registering data path for add-on: " << addon->getName());
       globals->append_data_path(dataPath, true /* after FG_ROOT */);
   }
-    
+
     // This preserves the registration order
     _registeredAddons.push_back(addon);
     SG_LOG(SG_GENERAL, SG_INFO, msg);
