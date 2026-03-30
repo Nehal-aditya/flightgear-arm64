@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2025 James Turner <james@flightgear.org>
 
 exclude: ^3rdparty/|^src/FDM/JSBSim/
+exclude: ^src/Main/README$
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
