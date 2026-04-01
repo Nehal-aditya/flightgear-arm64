@@ -634,6 +634,8 @@ View::recalc ()
     _absolute_view_pos = _absoluteLocalPos;
     mViewOrientation = _localOr;
 #ifdef ENABLE_OSGXR
+    // VRManager requires a renderer, which won't be available in the test suite
+    #if !defined(BUILDING_TESTSUITE)
     auto pose = flightgear::VRManager::instance()->getHeadSpace()->locate();
     if (pose.isPositionValid()) {
         _absolute_view_pos += mViewOrientation.backTransform(toVec3d(toSG(pose.getPosition())));
@@ -641,6 +643,7 @@ View::recalc ()
     if (pose.isOrientationValid()) {
         mViewOrientation = mViewOrientation * toSG(pose.getOrientation());
     }
+    #endif
 #endif
 
     set_clean();
