@@ -220,9 +220,12 @@ bool FGMouseCursor::setCursorCommand(const SGPropertyNode* arg, SGPropertyNode*)
         my->setIntValue(y);
     }
 
-
-    Cursor c = cursorFromString(arg->getStringValue("cursor").c_str());
-    setCursor(c);
+    auto* cursor = arg->getNode("cursor");
+    if (cursor && cursor->getType() != simgear::props::NONE) {
+        Cursor c = cursorFromString(cursor->getStringValue());
+        setCursor(c);
+        setCursorVisible(c != CURSOR_NONE);
+    }
     return true;
 }
 
@@ -232,23 +235,47 @@ typedef struct {
 } MouseCursorMap;
 
 const MouseCursorMap mouse_cursor_map[] = {
-    { "inherit", FGMouseCursor::CURSOR_ARROW },
-    { "crosshair", FGMouseCursor::CURSOR_CROSSHAIR },
-    { "left-right", FGMouseCursor::CURSOR_LEFT_RIGHT },
-    { "hand", FGMouseCursor::CURSOR_HAND },
-    { "closed-hand", FGMouseCursor::CURSOR_CLOSED_HAND },
-    { "text", FGMouseCursor::CURSOR_IBEAM },
+    {"none", FGMouseCursor::CURSOR_NONE},
+    {"arrow", FGMouseCursor::CURSOR_ARROW},
+    {"hand", FGMouseCursor::CURSOR_HAND},
+    {"closed-hand", FGMouseCursor::CURSOR_CLOSED_HAND},
+    {"crosshair", FGMouseCursor::CURSOR_CROSSHAIR},
+    {"text", FGMouseCursor::CURSOR_IBEAM},
+    {"in-out", FGMouseCursor::CURSOR_IN_OUT},
+    {"left-right", FGMouseCursor::CURSOR_LEFT_RIGHT},
+    {"up-down", FGMouseCursor::CURSOR_UP_DOWN},
+    {"left-side", FGMouseCursor::CURSOR_LEFT_SIDE},
+    {"right-side", FGMouseCursor::CURSOR_RIGHT_SIDE},
+    {"top-side", FGMouseCursor::CURSOR_TOP_SIDE},
+    {"bottom-side", FGMouseCursor::CURSOR_BOTTOM_SIDE},
+    {"top-left", FGMouseCursor::CURSOR_TOP_LEFT},
+    {"top-right", FGMouseCursor::CURSOR_TOP_RIGHT},
+    {"bottom-left", FGMouseCursor::CURSOR_BOTTOM_LEFT},
+    {"bottom-right", FGMouseCursor::CURSOR_BOTTOM_RIGHT},
+    {"spin-cw", FGMouseCursor::CURSOR_SPIN_CW},
+    {"spin-ccw", FGMouseCursor::CURSOR_SPIN_CCW},
+    {"wait", FGMouseCursor::CURSOR_WAIT},
 
-// aliases
-    { "drag-horizontal", FGMouseCursor::CURSOR_LEFT_RIGHT },
-    { "drag-vertical", FGMouseCursor::CURSOR_UP_DOWN },
-    { 0, FGMouseCursor::CURSOR_ARROW }
-};
+    // aliases
+    {"inherit", FGMouseCursor::CURSOR_ARROW},
+    {"pointer", FGMouseCursor::CURSOR_ARROW},
+    {"drag-horizontal", FGMouseCursor::CURSOR_LEFT_RIGHT},
+    {"drag-vertical", FGMouseCursor::CURSOR_UP_DOWN},
+    {"leftright", FGMouseCursor::CURSOR_LEFT_RIGHT},
+    {"topside", FGMouseCursor::CURSOR_TOP_SIDE},
+    {"bottomside", FGMouseCursor::CURSOR_BOTTOM_SIDE},
+    {"leftside", FGMouseCursor::CURSOR_LEFT_SIDE},
+    {"rightside", FGMouseCursor::CURSOR_RIGHT_SIDE},
+    {"topleft", FGMouseCursor::CURSOR_TOP_LEFT},
+    {"topright", FGMouseCursor::CURSOR_TOP_RIGHT},
+    {"bottomleft", FGMouseCursor::CURSOR_BOTTOM_LEFT},
+    {"bottomright", FGMouseCursor::CURSOR_BOTTOM_RIGHT},
+    {0, FGMouseCursor::CURSOR_ARROW}};
 
-FGMouseCursor::Cursor FGMouseCursor::cursorFromString(const char* cursor_name)
+FGMouseCursor::Cursor FGMouseCursor::cursorFromString(const std::string& cursor_name)
 {
     for (unsigned int k = 0; mouse_cursor_map[k].name != 0; k++) {
-        if (!strcmp(mouse_cursor_map[k].name, cursor_name)) {
+        if (!strcmp(mouse_cursor_map[k].name, cursor_name.c_str())) {
             return mouse_cursor_map[k].cursor;
         }
     }
