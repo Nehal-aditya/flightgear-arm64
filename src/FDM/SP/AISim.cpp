@@ -101,9 +101,9 @@ FGAISim::FGAISim(double dt)
         for (size_t i=0; i<no_contacts; ++i) {
             if (cg_agl < contact_pos[i][Z]) cg_agl = contact_pos[i][Z];
         }
-        cg_agl += cg[Z];   // cg[Z] is negative when CG is above the aero datum
+        cg_agl += cg[Z]; // cg[Z] is negative when CG is above the aero datum
     }
-    if (cg_agl <= 0.0f) cg_agl = -cg[Z];  // fallback: no gear defined
+    if (cg_agl <= 0.0f) cg_agl = -cg[Z]; // fallback: no gear defined
     set_altitude_agl_ft(cg_agl);
 
     // Contact point at the center of gravity
@@ -205,7 +205,7 @@ FGAISim::update(double ddt)
     alpha = (vUVWaero[U] < 1.0f) ? 0.0f : std::atan2(vUVWaero[W], vUVWaero[U]);
     set_alpha_rad( alpha );
 
-    beta = (velocity < 1.0f) ? 0.0f : std::asin(vUVWaero[V]/velocity);
+    beta = (velocity < 1.0f) ? 0.0f : std::asin(vUVWaero[V] / velocity);
     set_beta_rad( beta );
 
     /* set_alpha_rad and set_beta_rad set the new AOA */
@@ -782,7 +782,7 @@ FGAISim::load(std::string path)
             n2[i] *= n2[i];
         }
 
-        FTmax /= (rho*n2[i]);
+        FTmax /= (rho * n2[i]);
 
         FT[i] = dir * FTmax;
 
@@ -793,9 +793,9 @@ FGAISim::load(std::string path)
          *   - Centre-line engines (arm ≈ 0) get only the propeller torque,
          *     which is the dominant effect for single-engine propeller aircraft */
         float MTmax = data[engstr + "/MT_max"];
-        MTmax /= (rho*n2[i]);
-        MT[i] = simd4::cross(arm, dir) * FTmax   // moment from thrust line offset
-                + dir * MTmax;                   // propeller torque along thrust axis
+        MTmax /= (rho * n2[i]);
+        MT[i] = simd4::cross(arm, dir) * FTmax // moment from thrust line offset
+                + dir * MTmax;                 // propeller torque along thrust axis
     }
     while(++no_engines < AISIM_MAX);
 
