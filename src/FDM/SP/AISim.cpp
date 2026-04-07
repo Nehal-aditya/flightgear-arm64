@@ -219,8 +219,10 @@ FGAISim::update(double ddt)
     aiVec4 Ccbar2U = (xCq * vPQR[Q] + xCadot * AOAdot[ALPHA]) * cbar_2U;
     aiVec4 Cb2U = (xCp * vPQR[P] + xCr * vPQR[R]) * b_2U;
 
-    /* xCDYLT and xClmnT already have their factors applied */
-    /* in the functions in the header file.                 */
+    /* Add Drag, Side, Lift and Roll, Pitch and Yaw coefficients */
+    /* for Rudder, Elevator, Aileron and Flaps.                  */
+    /* xCDYLT and xClmnT already have their factors applied in   */
+    /* the functions in the header file.                         */
     aiVec4 CDYL(0.0f, Cb2U[SIDE], Ccbar2U[LIFT]);
     aiVec4 Clmn(Cb2U[ROLL], Ccbar2U[PITCH], Cb2U[YAW]);
     size_t i = 3;
@@ -230,6 +232,7 @@ FGAISim::update(double ddt)
     }
     while(i--);
 
+    /* Add Induced Drag */
     float CL = CDYL[LIFT];
     CDYL += aiVec3(CDi * CL * CL, 0.0f, 0.0f);
 
@@ -237,7 +240,7 @@ FGAISim::update(double ddt)
     aiVec3 FDYL = CDYL*Coef2Force;
     aiVec3 Mlmn = Clmn*Coef2Moment;
 
-    /* convert from wind axes to body axes */
+    /* Convert from wind axes to body axes */
     /* Ry(alpha)*Rz(-beta) built as an aiMtx4 from pre-computed
      * trig scalars, then applied as a single matrix-vector multiply.
      *
@@ -258,7 +261,7 @@ FGAISim::update(double ddt)
     aiVec3 gravity_body = mNed2Body*gravity_ned;
     FXYZ_body += gravity_body*mass;
 
-    /* Thrust */
+    /* Thrust force and moment as a function of normalized throttle */
     float Cth = rho*throttle*throttle;
     for (i = 0; i < no_engines; i++) {
         aiVec3 FEngine = FT[i]*(Cth*n2[i]);
@@ -268,7 +271,7 @@ FGAISim::update(double ddt)
         Mlmn += MEngine;
     }
 
-    /* contact point (landing gear) forces and moments */
+    /* Contact point (landing gear) forces and moments */
     WoW = false;
     if (no_contacts && cg_agl < 10.0f)
     {
