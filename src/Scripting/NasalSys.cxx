@@ -1063,8 +1063,6 @@ void FGNasalSys::init()
         SG_LOG(SG_GENERAL, SG_ALERT, "duplicate init of Nasal");
     }
 
-    ScriptBinding::registerFactory();
-
     int i;
 
     d->_context = naNewContext();
