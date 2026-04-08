@@ -151,8 +151,7 @@ FGAISim::init()
 }
 
 // FlightGear FDM update
-void
-FGAISim::update(double dt)
+void FGAISim::update(double dt)
 {
 #ifdef ENABLE_SP_FDM
     if (is_suspended() || dt == 0)
@@ -193,8 +192,7 @@ void AISim::update_aimodel(double dt)
 }
 #endif
 
-void
-FGAISim::update_fdm(double ddt)
+void FGAISim::update_fdm(double ddt)
 {
     // initialize all of AISim vars
     aiVec3 dt(ddt);
@@ -817,7 +815,7 @@ FGAISim::load(std::string path)
         float MTmax = data[engstr + "/MT_max"];
         MTmax /= (AISIM_RHO * n2[i]);
         MT[i] = simd4::cross(arm, dir) * FTmax // moment from thrust line offset
-                + dir * MTmax;             // propeller torque along thrust axis
+                + dir * MTmax;                 // propeller torque along thrust axis
     }
     while(++no_engines < AISIM_MAX);
 
