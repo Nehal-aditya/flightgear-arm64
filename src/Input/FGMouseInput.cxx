@@ -19,6 +19,7 @@
 #include <simgear/scene/util/SGPickCallback.hxx>
 #include <simgear/structure/commands.hxx>
 #include <simgear/timing/timestamp.hxx>
+#include <simgear/structure/commands.hxx>
 
 #include "FGButton.hxx"
 #include <GUI/MouseCursor.hxx>
