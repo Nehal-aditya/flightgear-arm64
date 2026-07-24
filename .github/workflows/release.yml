@@ -68,7 +68,7 @@ jobs:
             "-DCMAKE_PREFIX_PATH=C:\stage\osg;C:\vcpkg\installed\arm64-windows" ^
             -DCMAKE_BUILD_TYPE=Release ^
             -DENABLE_TESTS=OFF ^
-            -DCMAKE_CXX_FLAGS="-DNASAL_LE"
+            -DCMAKE_CXX_FLAGS="-DNASAL_LE /EHsc"
           cmake --build simgear-build --config Release --target INSTALL
       - uses: actions/upload-artifact@v4
         with: { name: simgear-install, path: C:\stage\simgear }
@@ -98,7 +98,7 @@ jobs:
             "-DCMAKE_PREFIX_PATH=C:\stage\osg;C:\stage\simgear;C:\vcpkg\installed\arm64-windows" ^
             -DCMAKE_BUILD_TYPE=Release ^
             -DFG_BUILD_TYPE=Release ^
-            -DCMAKE_CXX_FLAGS="-DNASAL_LE"
+            -DCMAKE_CXX_FLAGS="-DNASAL_LE /EHsc"
           cmake --build flightgear-build --config Release --target INSTALL
 
       - name: Assemble slim runtime package
