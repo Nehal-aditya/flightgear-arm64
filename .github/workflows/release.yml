@@ -6,6 +6,7 @@ on:
 
 env:
   VCPKG_TRIPLET: arm64-windows
+  VCPKG_BUILD_TYPE: release
 
 jobs:
   deps:
@@ -38,10 +39,15 @@ jobs:
           cmake -S osg -B osg-build -G "Visual Studio 17 2022" -A ARM64 ^
             -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
             -DVCPKG_TARGET_TRIPLET=${{ env.VCPKG_TRIPLET }} ^
-            -DCMAKE_INSTALL_PREFIX=C:\install
+            -DCMAKE_BUILD_TYPE=Release ^
+            -DCMAKE_INSTALL_PREFIX=C:\stage\osg
           cmake --build osg-build --config Release --target INSTALL
       - uses: actions/upload-artifact@v4
-        with: { name: osg-install, path: C:\install }
+        with: { name: osg-install, path: C:\stage\osg }
+      - name: Clean build tree
+        if: always()
+        shell: pwsh
+        run: Remove-Item -Recurse -Force osg-build -ErrorAction SilentlyContinue
 
   simgear:
     needs: osg
@@ -52,19 +58,23 @@ jobs:
       - uses: actions/download-artifact@v4
         with: { name: vcpkg-installed, path: C:\vcpkg\installed }
       - uses: actions/download-artifact@v4
-        with: { name: osg-install, path: C:\install }
+        with: { name: osg-install, path: C:\stage\osg }
       - shell: cmd
         run: |
           cmake -S simgear -B simgear-build -G "Visual Studio 17 2022" -A ARM64 ^
             -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
             -DVCPKG_TARGET_TRIPLET=${{ env.VCPKG_TRIPLET }} ^
-            -DCMAKE_INSTALL_PREFIX=C:\install ^
-            -DCMAKE_PREFIX_PATH=C:\install ^
+            -DCMAKE_INSTALL_PREFIX=C:\stage\simgear ^
+            -DCMAKE_PREFIX_PATH=C:\stage\osg ^
             -DCMAKE_BUILD_TYPE=Release ^
             -DENABLE_TESTS=OFF
           cmake --build simgear-build --config Release --target INSTALL
       - uses: actions/upload-artifact@v4
-        with: { name: simgear-install, path: C:\install }
+        with: { name: simgear-install, path: C:\stage\simgear }
+      - name: Clean build tree
+        if: always()
+        shell: pwsh
+        run: Remove-Item -Recurse -Force simgear-build -ErrorAction SilentlyContinue
 
   flightgear:
     needs: simgear
@@ -75,18 +85,41 @@ jobs:
       - uses: actions/download-artifact@v4
         with: { name: vcpkg-installed, path: C:\vcpkg\installed }
       - uses: actions/download-artifact@v4
-        with: { name: simgear-install, path: C:\install }
+        with: { name: osg-install, path: C:\stage\osg }
+      - uses: actions/download-artifact@v4
+        with: { name: simgear-install, path: C:\stage\simgear }
       - shell: cmd
         run: |
           cmake -S flightgear -B flightgear-build -G "Visual Studio 17 2022" -A ARM64 ^
             -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
             -DVCPKG_TARGET_TRIPLET=${{ env.VCPKG_TRIPLET }} ^
-            -DCMAKE_INSTALL_PREFIX=C:\install ^
-            -DCMAKE_PREFIX_PATH=C:\install ^
+            -DCMAKE_INSTALL_PREFIX=C:\stage\flightgear ^
+            "-DCMAKE_PREFIX_PATH=C:\stage\osg;C:\stage\simgear" ^
+            -DCMAKE_BUILD_TYPE=Release ^
             -DFG_BUILD_TYPE=Release
           cmake --build flightgear-build --config Release --target INSTALL
+
+      - name: Assemble slim runtime package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path C:\package\bin -Force | Out-Null
+
+          # Runtime bins from each stage (fgfs.exe, osg dlls, osgPlugins, simgear dlls if any)
+          Copy-Item -Path C:\stage\flightgear\bin\* -Destination C:\package\bin -Recurse -Force
+          Copy-Item -Path C:\stage\osg\bin\* -Destination C:\package\bin -Recurse -Force
+          if (Test-Path C:\stage\simgear\bin) {
+            Copy-Item -Path C:\stage\simgear\bin\* -Destination C:\package\bin -Recurse -Force
+          }
+
+          # vcpkg runtime DLLs (zlib, libpng, freetype, openal, curl, c-ares, etc.)
+          Copy-Item -Path C:\vcpkg\installed\arm64-windows\bin\*.dll -Destination C:\package\bin -Force
+
       - uses: actions/upload-artifact@v4
-        with: { name: flightgear-arm64-build, path: C:\install }
+        with: { name: flightgear-arm64-build, path: C:\package }
+      - name: Clean build tree
+        if: always()
+        shell: pwsh
+        run: Remove-Item -Recurse -Force flightgear-build -ErrorAction SilentlyContinue
 
   release:
     needs: flightgear
