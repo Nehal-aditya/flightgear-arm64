@@ -1,7 +1,7 @@
 # Ignore all hidden directories (i.e., .idea, .vscode). This casts a very wide net,
 # and a case could be made either way for it being a good thing or a bad thing.
 .*
-
+!.github
 # Make exceptions for specific hidden directories/files.
 !.gitignore
 !.gitlab/**
