@@ -12,7 +12,7 @@ jobs:
     runs-on: windows-11-arm
     steps:
       - uses: actions/checkout@v4
-        with: { repository: Nehal-aditya/flightgear-arm64, ref: arm64-ci, path: manifest }
+        with: { repository: Nehal-aditya/flightgear-arm64, ref: next, path: manifest }
       - name: Cache vcpkg
         uses: actions/cache@v4
         with:
@@ -30,7 +30,7 @@ jobs:
     runs-on: windows-11-arm
     steps:
       - uses: actions/checkout@v4
-        with: { repository: Nehal-aditya/openscenegraph-arm64, ref: arm64-ci, path: osg }
+        with: { repository: Nehal-aditya/openscenegraph-arm64, ref: next, path: osg }
       - uses: actions/download-artifact@v4
         with: { name: vcpkg-installed, path: C:\vcpkg\installed }
       - shell: cmd
@@ -48,7 +48,7 @@ jobs:
     runs-on: windows-11-arm
     steps:
       - uses: actions/checkout@v4
-        with: { repository: Nehal-aditya/simgear-arm64, ref: arm64-ci, path: simgear }
+        with: { repository: Nehal-aditya/simgear-arm64, ref: next, path: simgear }
       - uses: actions/download-artifact@v4
         with: { name: vcpkg-installed, path: C:\vcpkg\installed }
       - uses: actions/download-artifact@v4
@@ -71,7 +71,7 @@ jobs:
     runs-on: windows-11-arm
     steps:
       - uses: actions/checkout@v4
-        with: { repository: Nehal-aditya/flightgear-arm64, ref: arm64-ci, path: flightgear }
+        with: { repository: Nehal-aditya/flightgear-arm64, ref: next, path: flightgear }
       - uses: actions/download-artifact@v4
         with: { name: vcpkg-installed, path: C:\vcpkg\installed }
       - uses: actions/download-artifact@v4
