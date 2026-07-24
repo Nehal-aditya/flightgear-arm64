@@ -1,0 +1,9 @@
+{
+  "name": "flightgear-arm64",
+  "version": "2024.1.2",
+  "dependencies": [
+    "boost-headers", "boost-thread", "boost-system", "boost-filesystem",
+    "zlib", "libpng", "libjpeg-turbo", "tiff", "freetype", "openal-soft",
+    "curl", "plib"
+  ]
+}
