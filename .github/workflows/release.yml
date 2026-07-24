@@ -1,0 +1,108 @@
+name: FlightGear ARM64 Build & Release
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+env:
+  VCPKG_TRIPLET: arm64-windows
+
+jobs:
+  deps:
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+        with: { repository: Nehal-aditya/flightgear-arm64, ref: arm64-ci, path: manifest }
+      - name: Cache vcpkg
+        uses: actions/cache@v4
+        with:
+          path: C:\vcpkg\installed
+          key: vcpkg-${{ env.VCPKG_TRIPLET }}-${{ hashFiles('manifest/vcpkg.json') }}
+      - name: Bootstrap & install
+        shell: pwsh
+        run: |
+          git clone https://github.com/microsoft/vcpkg C:\vcpkg
+          C:\vcpkg\bootstrap-vcpkg.bat
+          C:\vcpkg\vcpkg.exe install --triplet $env:VCPKG_TRIPLET --x-manifest-root=manifest --x-install-root=C:\vcpkg\installed
+      - uses: actions/upload-artifact@v4
+        with: { name: vcpkg-installed, path: C:\vcpkg\installed }
+
+  osg:
+    needs: deps
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+        with: { repository: Nehal-aditya/openscenegraph-arm64, ref: arm64-ci, path: osg }
+      - uses: actions/download-artifact@v4
+        with: { name: vcpkg-installed, path: C:\vcpkg\installed }
+      - shell: cmd
+        run: |
+          cmake -S osg -B osg-build -G "Visual Studio 17 2022" -A ARM64 ^
+            -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
+            -DVCPKG_TARGET_TRIPLET=${{ env.VCPKG_TRIPLET }} ^
+            -DCMAKE_INSTALL_PREFIX=C:\install
+          cmake --build osg-build --config Release --target INSTALL
+      - uses: actions/upload-artifact@v4
+        with: { name: osg-install, path: C:\install }
+
+  simgear:
+    needs: osg
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+        with: { repository: Nehal-aditya/simgear-arm64, ref: arm64-ci, path: simgear }
+      - uses: actions/download-artifact@v4
+        with: { name: vcpkg-installed, path: C:\vcpkg\installed }
+      - uses: actions/download-artifact@v4
+        with: { name: osg-install, path: C:\install }
+      - shell: cmd
+        run: |
+          cmake -S simgear -B simgear-build -G "Visual Studio 17 2022" -A ARM64 ^
+            -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
+            -DVCPKG_TARGET_TRIPLET=${{ env.VCPKG_TRIPLET }} ^
+            -DCMAKE_INSTALL_PREFIX=C:\install ^
+            -DCMAKE_PREFIX_PATH=C:\install
+          cmake --build simgear-build --config Release --target INSTALL
+      - uses: actions/upload-artifact@v4
+        with: { name: simgear-install, path: C:\install }
+
+  flightgear:
+    needs: simgear
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+        with: { repository: Nehal-aditya/flightgear-arm64, ref: arm64-ci, path: flightgear }
+      - uses: actions/download-artifact@v4
+        with: { name: vcpkg-installed, path: C:\vcpkg\installed }
+      - uses: actions/download-artifact@v4
+        with: { name: simgear-install, path: C:\install }
+      - shell: cmd
+        run: |
+          cmake -S flightgear -B flightgear-build -G "Visual Studio 17 2022" -A ARM64 ^
+            -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
+            -DVCPKG_TARGET_TRIPLET=${{ env.VCPKG_TRIPLET }} ^
+            -DCMAKE_INSTALL_PREFIX=C:\install ^
+            -DCMAKE_PREFIX_PATH=C:\install ^
+            -DFG_BUILD_TYPE=Release
+          cmake --build flightgear-build --config Release --target INSTALL
+      - uses: actions/upload-artifact@v4
+        with: { name: flightgear-arm64-build, path: C:\install }
+
+  release:
+    needs: flightgear
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: flightgear-arm64-build, path: dist }
+      - name: Zip build
+        run: cd dist && zip -r ../flightgear-arm64-${{ github.run_number }}.zip .
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: arm64-${{ github.run_number }}
+          name: FlightGear ARM64 build ${{ github.run_number }}
+          files: flightgear-arm64-${{ github.run_number }}.zip
+          prerelease: true
+          body: |
+            Native ARM64 Windows build. Requires FGDATA separately:
+            `git clone --depth 1 https://gitlab.com/flightgear/fgdata.git`
+            Then run with `fgfs.exe --fg-root=path\to\fgdata`
