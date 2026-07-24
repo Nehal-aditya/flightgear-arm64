@@ -59,7 +59,9 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
             -DVCPKG_TARGET_TRIPLET=${{ env.VCPKG_TRIPLET }} ^
             -DCMAKE_INSTALL_PREFIX=C:\install ^
-            -DCMAKE_PREFIX_PATH=C:\install
+            -DCMAKE_PREFIX_PATH=C:\install ^
+            -DCMAKE_BUILD_TYPE=Release ^
+            -DENABLE_TESTS=OFF
           cmake --build simgear-build --config Release --target INSTALL
       - uses: actions/upload-artifact@v4
         with: { name: simgear-install, path: C:\install }
