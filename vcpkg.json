@@ -4,6 +4,6 @@
   "dependencies": [
     "boost-headers", "boost-thread", "boost-system", "boost-filesystem",
     "zlib", "libpng", "libjpeg-turbo", "tiff", "freetype", "openal-soft",
-    "curl", "plib"
+    "curl", "plib", "c-ares"
   ]
 }
