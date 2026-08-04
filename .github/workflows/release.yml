@@ -29,6 +29,23 @@ jobs:
       - uses: actions/upload-artifact@v4
         with: { name: vcpkg-installed, path: C:\vcpkg\installed }
 
+  qt:
+    runs-on: windows-11-arm
+    steps:
+      - name: Cache Qt
+        id: cache-qt
+        uses: actions/cache@v4
+        with:
+          path: C:\vcpkg\installed
+          key: qt6-${{ env.VCPKG_TRIPLET }}-v1
+      - name: Install Qt via vcpkg
+        if: steps.cache-qt.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          C:\vcpkg\vcpkg.exe install "qtbase[widgets]" qtdeclarative qtsvg --triplet $env:VCPKG_TRIPLET --x-install-root=C:\vcpkg\installed
+      - uses: actions/upload-artifact@v4
+        with: { name: qt-installed, path: C:\vcpkg\installed }
+
   osg:
     needs: deps
     runs-on: windows-11-arm
@@ -81,13 +98,15 @@ jobs:
         run: Remove-Item -Recurse -Force simgear-build -ErrorAction SilentlyContinue
 
   flightgear:
-    needs: simgear
+    needs: [simgear, qt]
     runs-on: windows-11-arm
     steps:
       - uses: actions/checkout@v4
         with: { repository: Nehal-aditya/flightgear-arm64, ref: next, path: flightgear }
       - uses: actions/download-artifact@v4
         with: { name: vcpkg-installed, path: C:\vcpkg\installed }
+      - uses: actions/download-artifact@v4
+        with: { name: qt-installed, path: C:\vcpkg\installed }
       - uses: actions/download-artifact@v4
         with: { name: osg-install, path: C:\stage\osg }
       - uses: actions/download-artifact@v4
