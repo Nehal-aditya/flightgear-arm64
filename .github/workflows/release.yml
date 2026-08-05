@@ -36,15 +36,15 @@ jobs:
         id: cache-qt
         uses: actions/cache@v4
         with:
-          path: C:\vcpkg\installed
+          path: C:\vcpkg\installed-qt
           key: qt6-${{ env.VCPKG_TRIPLET }}-v1
       - name: Install Qt via vcpkg
         if: steps.cache-qt.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          C:\vcpkg\vcpkg.exe install "qtbase[widgets]" qtdeclarative qtsvg --triplet $env:VCPKG_TRIPLET --x-install-root=C:\vcpkg\installed
+          C:\vcpkg\vcpkg.exe install "qtbase[widgets]" qtdeclarative qtsvg --triplet $env:VCPKG_TRIPLET --x-install-root=C:\vcpkg\installed-qt
       - uses: actions/upload-artifact@v4
-        with: { name: qt-installed, path: C:\vcpkg\installed }
+        with: { name: qt-installed, path: C:\vcpkg\installed-qt }
 
   osg:
     needs: deps
@@ -106,7 +106,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with: { name: vcpkg-installed, path: C:\vcpkg\installed }
       - uses: actions/download-artifact@v4
-        with: { name: qt-installed, path: C:\vcpkg\installed }
+        with: { name: qt-installed, path: C:\vcpkg\installed-qt }
       - uses: actions/download-artifact@v4
         with: { name: osg-install, path: C:\stage\osg }
       - uses: actions/download-artifact@v4
@@ -117,9 +117,10 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
             -DVCPKG_TARGET_TRIPLET=${{ env.VCPKG_TRIPLET }} ^
             -DCMAKE_INSTALL_PREFIX=C:\stage\flightgear ^
-            "-DCMAKE_PREFIX_PATH=C:\stage\osg;C:\stage\simgear;C:\vcpkg\installed\arm64-windows" ^
+            "-DCMAKE_PREFIX_PATH=C:\stage\osg;C:\stage\simgear;C:\vcpkg\installed\arm64-windows;C:\vcpkg\installed-qt" ^
             -DCMAKE_BUILD_TYPE=Release ^
             -DFG_BUILD_TYPE=Release ^
+            -DENABLE_SIMD=OFF ^
             -DCMAKE_CXX_FLAGS="-DWIN32 -D_WIN32 -DNASAL_LE /EHsc" ^
             -DCMAKE_C_FLAGS="-DWIN32 -D_WIN32" ^
             -DFINAL_MSVC_3RDPARTY_DIR="C:\\vcpkg\\installed\\arm64-windows"
@@ -139,6 +140,9 @@ jobs:
 
           # vcpkg runtime DLLs (zlib, libpng, freetype, openal, curl, c-ares, etc.)
           Copy-Item -Path C:\vcpkg\installed\arm64-windows\bin\*.dll -Destination C:\package\bin -Force
+
+          # 3. Call windeployqt from the alternative folder directory to fetch plugins (platforms, qsvg, styles)
+          & C:\vcpkg\installed-qt\arm64-windows\tools\Qt6\bin\windeployqt.exe --release --no-translations --compiler-runtime "C:\package\bin\fgfs.exe"
 
       - uses: actions/upload-artifact@v4
         with: { name: flightgear-arm64-build, path: C:\package }
