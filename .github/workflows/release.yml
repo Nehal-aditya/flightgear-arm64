@@ -145,7 +145,7 @@ jobs:
           Copy-Item -Path C:\vcpkg\installed\arm64-windows\bin\*.dll -Destination C:\package\bin -Force
 
           # 3. Call windeployqt from the alternative folder directory to fetch plugins (platforms, qsvg, styles)
-          & C:\vcpkg\installed-qt\arm64-windows\bin\windeployqt.exe --release --no-translations --compiler-runtime "C:\package\bin\fgfs.exe"
+          & "C:\vcpkg\installed-qt\arm64-windows\tools\Qt6\bin\windeployqt.exe" --release --no-translations --compiler-runtime "C:\package\bin\fgfs.exe"
 
       - uses: actions/upload-artifact@v4
         with: { name: flightgear-arm64-build, path: C:\package }
