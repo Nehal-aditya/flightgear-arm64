@@ -144,19 +144,17 @@ jobs:
           # vcpkg runtime DLLs (zlib, libpng, freetype, openal, curl, c-ares, etc.)
           Copy-Item -Path C:\vcpkg\installed\arm64-windows\bin\*.dll -Destination C:\package\bin -Force
 
-          # 1. Dynamically locate windeployqt.exe within the isolated installation tree
-          $WindeployqtPath = (Get-ChildItem -Path "C:\vcpkg\installed-qt" -Filter "windeployqt.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+          # 3. Copy target Qt6 libraries directly from the isolated Qt folder
+          Copy-Item -Path C:\vcpkg\installed-qt\arm64-windows\bin\*.dll -Destination C:\package\bin -Force
 
-          if (-not $WindeployqtPath) {
-              Write-Error "Could not find windeployqt.exe in C:\vcpkg\installed-qt"
-              exit 1
+          # 4. Explicitly package the mandatory window platform plugin to fix initialization crashes
+          Copy-Item -Path C:\vcpkg\installed-qt\arm64-windows\plugins\platforms\qwindows.dll -Destination C:\package\bin\platforms\ -Force
+          
+          # 5. Optional: Copy SVG and icon rendering plugins if present
+          if (Test-Path C:\vcpkg\installed-qt\arm64-windows\plugins\imageformats) {
+            Copy-Item -Path C:\vcpkg\installed-qt\arm64-windows\plugins\imageformats -Destination C:\package\bin\ -Recurse -Force
           }
-
-          Write-Output "Found deploy tool at: $WindeployqtPath"
-
-          # 2. Execute the dynamically discovered deployment utility securely
-          & $WindeployqtPath --release --no-translations --compiler-runtime "C:\package\bin\fgfs.exe"
-
+            
       - uses: actions/upload-artifact@v4
         with: { name: flightgear-arm64-build, path: C:\package }
       - name: Clean build tree
